@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Decklist</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="deck off" id="deck">
+    <div class="plate">
+      <header class="deck-head">
+        <div class="ident">
+          <div class="legend-art"><img id="legendArt" alt="" draggable="false"></div>
+          <div class="ident-text">
+            <span class="label">Legend</span>
+            <strong id="legendName">No legend listed</strong>
+            <span class="champion" id="championName"></span>
+          </div>
+        </div>
+        <div class="runes" id="runes"></div>
+        <div class="battlefields" id="battlefields"></div>
+      </header>
+
+      <section class="main-grid" id="mainGrid"></section>
+
+      <footer class="rack" id="rack">
+        <span class="label">Sideboard</span>
+        <div class="rack-cards" id="rackCards"></div>
+      </footer>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">Decklist is hidden: paste a list and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

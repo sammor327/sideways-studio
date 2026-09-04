@@ -171,6 +171,10 @@
       <div class="scene-name">POV overlay <span class="onair hidden" id="povOnAir">ON AIR</span></div>
       <button id="togglePov" class="scene-toggle">OFF</button>
     </div>
+    <div class="scene-row">
+      <div class="scene-name">Decklist <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
+      <button id="toggleDeck" class="scene-toggle">OFF</button>
+    </div>
     <div class="scene-row popup-row">
       <div class="scene-name">Card popup <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
       <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
@@ -285,6 +289,16 @@
   </section>
 
   <section class="card">
+    <h2>Decklist</h2>
+    <label>Paste a decklist
+      <textarea id="deckList" rows="12" spellcheck="false" placeholder="Legend: Ahri, Nine-Tailed Fox&#10;Champion: Ahri, Alluring&#10;Battlefields:&#10;Sunken Temple&#10;Runes:&#10;6 Calm&#10;6 Mind&#10;Main:&#10;3 Stupefy"></textarea>
+    </label>
+    <label class="inline"><input type="checkbox" id="deckSideboard" checked> Show the sideboard rack</label>
+    <p class="hint" id="deckSummary">Nothing pasted yet.</p>
+    <div class="row"><button id="deckClear" class="danger-ghost">Clear decklist</button></div>
+  </section>
+
+  <section class="card">
     <h2>Theme</h2>
     <div class="theme-colors">
       <label class="inline">Accent 1 <input type="color" id="accentA" value="#11b6fb"></label>
@@ -352,6 +366,13 @@
       <div class="url-line">
         <input class="url-input" id="povUrl" readonly>
         <button data-copy="povUrl">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Decklist source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="decklistUrl" readonly>
+        <button data-copy="decklistUrl">Copy</button>
       </div>
     </div>
     <div class="row version-row">

@@ -140,7 +140,7 @@ button.clear:hover { border-color: #e33; }
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   padding: 0 20px 10px;
 }
@@ -315,6 +315,17 @@ code { background: #0c0f12; padding: 1px 5px; }
   white-space: nowrap;
 }
 .clear-mini { padding: 4px 8px; font-size: 12px; }
+
+textarea {
+  background: #0c0f12;
+  border: 1px solid #2a323b;
+  color: #e8edf1;
+  padding: 8px 10px;
+  font: 13px/1.45 ui-monospace, Consolas, monospace;
+  resize: vertical;
+  min-height: 150px;
+}
+textarea:focus { outline: 2px solid var(--tes-blue); }
 
 /* --- theme card --- */
 .theme-colors { display: flex; gap: 16px; }

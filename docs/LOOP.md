@@ -71,7 +71,12 @@ enough that persona 1 sees a different product.
 - [ ] Part 7 — Bracket (Top 8 / Top 4, legend portraits, series scores).
 - [ ] Part 8 — Standings (manual pages, CSV/paste import, dropped-player
   status marks) + Riot attribution line component for full-frame scenes.
-- [ ] Part 9 — Decklist (port FlipDeck parser + renderer).
+- [x] **Part 9 — Decklist**: FlipDeck's `src/lib/decks/parse.ts` ported to
+  `server/decklist.js`, names resolved against the local card index, and a
+  card-grid plate scene. Shipped 2026-09-04, out of roadmap order on Sam's
+  ask. The plate reproduces FlipDeck's grammar, not `Plate.tsx` pixel for
+  pixel: no build-in cascade, and the exact video-deck-plate design is a
+  separate pass.
 - [ ] Part 10 — Timers (start/pause/reset, panel + overlay element).
 - [x] Part 11 — Theming: pulled forward to Loop 2 on Sam's feedback (accent
   color pickers, logo upload, curated Google Fonts downloaded + cached for
@@ -152,11 +157,40 @@ enough that persona 1 sees a different product.
 - The build hardcodes the same hero-art path as `server/legends.js`. Anyone
   building on another machine needs `SIDEWAYS_HERO_DIR` set, or the exe ships
   without hero cutouts (it warns and carries on).
+- The decklist plate approximates FlipDeck's card grid rather than porting
+  `src/remotion/decks/Plate.tsx` (404 lines of Remotion, with a legend-slide
+  and card-cascade build-in). Worth a pass if the plate has to match the
+  video deck plates exactly.
+- A Battlefield card listed in the decklist MAIN deck renders portrait in the
+  grid; only the header pills rotate. Correct for the stored art, odd to read.
+- Long legend names on the decklist plate ellipsise at a fixed 620px rather
+  than auto-fitting the way the POV lines do.
 - Monitor iframes add 4 WS clients per open panel; interplay with OBS
   "shutdown source when not visible" on the real scene URLs is untested until
   the Priya (OBS power user) loop.
 
 ## Loop log
+
+### 2026-09-04 (out of band: Part 9 Decklist, then v0.2.0)
+Sam asked for FlipDeck's deckbuilding tool as a Sideways Studio scene, in 15
+minutes; it took about 30. `server/decklist.js` is a straight port of
+FlipDeck's `src/lib/decks/parse.ts` so both tools read a paste the same way
+(headers in any casing, "3 X" / "3x X" / "X x3" / bare names, bullets, inline
+`Legend:`, duplicate merging, the rune-suffix strip) plus its warn-only
+legality checks. Resolution runs against the card index this app already
+carries: exact normalised name, then a UNIQUE prefix match, so an ambiguous
+name resolves to nothing rather than to a guess. The paste itself is the
+state; the scene and the panel both POST it to `/api/decklist/parse`, so the
+summary the operator reads and the plate that airs can never disagree.
+`cleanMultiline` is the one sanitizer that keeps newlines. The scene follows
+FlipDeck's card-grid grammar: legend with cropped art, rune counts with domain
+icons, battlefield pills rotated from the loaded file's own dimensions, the
+main deck as a grid of card scans with quantity badges, and a sideboard rack.
+One layout bug found and fixed in the browser: fixed-aspect cards overflowed
+the plate and pushed the rack off it, so the grid rows now share the height
+that is left. Verified on a 25-line list: 14 card images resolved and loaded,
+1920x1080 with no scroll, no console errors, and an unresolved Vendetta name
+rendering as a named panel. Shipped as v0.2.0.
 
 ### Loop 5 - 2026-09-02 (persona 5: Lena, play-by-play caster; Part 5 POV overlay)
 Sam left the feedback line blank: no feedback, run the loop.

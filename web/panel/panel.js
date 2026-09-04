@@ -53,6 +53,21 @@ function renderScenes(s) {
     renderFeaturedCard(P, s.preview.match[side].card);
   }
 
+  const dk = s.preview.scenes.decklist;
+  const dkBtn = $('toggleDeck');
+  dkBtn.textContent = dk.visible ? 'ON' : 'OFF';
+  dkBtn.classList.toggle('on', dk.visible);
+  dkBtn.disabled = !dk.list.trim();
+  $('deckOnAir').classList.toggle('hidden', !s.program.scenes.decklist.visible);
+  if (document.activeElement !== $('deckList')) $('deckList').value = dk.list;
+  // Summarise a list that arrived from state (a reload, or the other panel),
+  // not just one the operator is typing.
+  if (dk.list !== summarisedList) {
+    summarisedList = dk.list;
+    summariseDeck(dk.list);
+  }
+  if (document.activeElement !== $('deckSideboard')) $('deckSideboard').checked = dk.showSideboard;
+
   const cp = s.preview.scenes.cardpopup;
   const cpAir = s.program.scenes.cardpopup.visible;
   const cardBtn = $('toggleCard');
@@ -539,6 +554,7 @@ $('cardpopupUrl').value = `${location.origin}/scenes/cardpopup/?transparent=1`;
 $('igoUrl').value = `${location.origin}/scenes/igo1v1/?transparent=1`;
 $('igo2Url').value = `${location.origin}/scenes/igo2v2/?transparent=1`;
 $('povUrl').value = `${location.origin}/scenes/pov/?transparent=1`;
+$('decklistUrl').value = `${location.origin}/scenes/decklist/?transparent=1`;
 
 for (const input of document.querySelectorAll('.url-input')) {
   input.addEventListener('focus', () => input.select());
@@ -746,6 +762,58 @@ $('dbPrefetchFull').addEventListener('click', async () => {
 
 pollDbStatus();
 loadFontList();
+
+// --- decklist ---
+//
+// The server owns parsing and name resolution, so the count the operator reads
+// here is the same one the plate draws.
+
+let deckTimer = null;
+let summarisedList = null;
+
+async function summariseDeck(list) {
+  if (!list.trim()) { $('deckSummary').textContent = 'Nothing pasted yet.'; return; }
+  try {
+    const d = await (await fetch('/api/decklist/parse', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ list }),
+    })).json();
+    const bits = [`${d.counts.main} main`];
+    if (d.counts.sideboard) bits.push(`${d.counts.sideboard} sideboard`);
+    if (d.counts.runes) bits.push(`${d.counts.runes} runes`);
+    if (d.counts.unresolved) bits.push(`${d.counts.unresolved} not in the card database`);
+    $('deckSummary').textContent = bits.join(', ') + '.'
+      + (d.warnings.length ? ' ' + d.warnings[0] : '');
+  } catch {
+    $('deckSummary').textContent = 'Could not read that list.';
+  }
+}
+
+$('deckList').addEventListener('input', () => {
+  clearTimeout(deckTimer);
+  const list = $('deckList').value;
+  deckTimer = setTimeout(() => {
+    post({ scenes: { decklist: { list } } });
+    summariseDeck(list);
+  }, 400);
+});
+
+$('deckSideboard').addEventListener('change', () => {
+  post({ scenes: { decklist: { showSideboard: $('deckSideboard').checked } } });
+});
+
+$('deckClear').addEventListener('click', () => {
+  if (!confirm('Clear the decklist in preview?')) return;
+  $('deckList').value = '';
+  post({ scenes: { decklist: { list: '', visible: false } } });
+  summariseDeck('');
+});
+
+$('toggleDeck').addEventListener('click', () => {
+  if (!state) return;
+  post({ scenes: { decklist: { visible: !state.preview.scenes.decklist.visible } } });
+});
 
 // --- update channel ---
 //

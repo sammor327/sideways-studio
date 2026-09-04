@@ -12,6 +12,7 @@ import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fo
 import { getState, applyUpdate, onChange, setThemeLogo, initState } from './state.js';
 import { initCardDb, cardDbStatus, syncCardDb, prefetchFullArt, searchCards, getArtFile } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
+import { buildDeck } from './decklist.js';
 
 const DATA_DIR_THEME = path.join(DATA_DIR, 'theme');
 const LOGO_EXT = ['png', 'jpg', 'webp', 'svg'];
@@ -141,6 +142,21 @@ const server = http.createServer(async (req, res) => {
       res.end(data);
     } catch {
       res.writeHead(404); res.end('no logo');
+    }
+    return;
+  }
+
+  // Decklist paste to resolved cards. The scene and the panel both post here
+  // rather than each carrying a parser, so what the operator previews is
+  // exactly what airs.
+  if (url.pathname === '/api/decklist/parse' && req.method === 'POST') {
+    try {
+      const { list } = JSON.parse((await readBody(req)).toString('utf8'));
+      res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      res.end(JSON.stringify(buildDeck(typeof list === 'string' ? list : '')));
+    } catch {
+      res.writeHead(400, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: false, error: 'invalid JSON' }));
     }
     return;
   }
@@ -360,6 +376,7 @@ async function start() {
     console.log(`    In-game 1v1:    ${base}/scenes/igo1v1/?transparent=1`);
     console.log(`    In-game 2v2:    ${base}/scenes/igo2v2/?transparent=1`);
     console.log(`    POV overlay:    ${base}/scenes/pov/?transparent=1`);
+    console.log(`    Decklist:       ${base}/scenes/decklist/?transparent=1`);
     if (isPackaged) {
       console.log('');
       console.log(`  Working folder:   ${APP_ROOT}`);

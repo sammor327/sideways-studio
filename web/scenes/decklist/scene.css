@@ -1,0 +1,177 @@
+/* Decklist plate. Follows FlipDeck's card-grid grammar rather than a text
+   list: a floating legend, rune counts, battlefield pills, the main deck as a
+   grid of card scans with quantity badges, and a sideboard rack. The cards
+   are the content.
+
+   Motion contract: --t is the in/out seek clock, every read var(--t, 1) so a
+   clock that never started renders settled on air, never invisible. */
+
+.deck {
+  position: absolute;
+  inset: 0;
+  opacity: var(--t, 1);
+  display: grid;
+  place-items: center;
+}
+.deck.off { display: none; }
+
+.plate {
+  width: calc(1720 * var(--u));
+  height: calc(940 * var(--u));
+  padding: calc(28 * var(--u)) calc(34 * var(--u));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: calc(18 * var(--u));
+  background: linear-gradient(160deg, rgba(10, 14, 19, 0.94), rgba(6, 9, 12, 0.97));
+  border-bottom: calc(5 * var(--u)) solid transparent;
+  border-image: var(--tes-grad) 1;
+  box-shadow: 0 calc(20 * var(--u)) calc(60 * var(--u)) rgba(0, 0, 0, 0.55);
+  transform: translateY(calc((1 - var(--t, 1)) * 26 * var(--u)));
+}
+/* Transparent sources composite the plate over the program feed, so the panel
+   ground is dropped and the cards carry themselves. */
+html.transparent .plate {
+  background: linear-gradient(160deg, rgba(10, 14, 19, 0.82), rgba(6, 9, 12, 0.88));
+}
+
+.label {
+  font: 700 calc(13 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(2.5 * var(--u));
+  color: #8b98a5;
+}
+
+/* --- header: legend, runes, battlefields --- */
+
+.deck-head {
+  display: flex;
+  align-items: center;
+  gap: calc(26 * var(--u));
+  flex: 0 0 auto;
+}
+.ident { display: flex; align-items: center; gap: calc(16 * var(--u)); min-width: 0; }
+.legend-art {
+  width: calc(96 * var(--u));
+  height: calc(134 * var(--u));
+  flex: 0 0 auto;
+  overflow: hidden;
+  background: #11263c;
+  border-bottom: calc(3 * var(--u)) solid transparent;
+  border-image: var(--tes-grad) 1;
+}
+.legend-art img { width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.legend-art img.hidden { display: none; }
+.ident-text { display: flex; flex-direction: column; gap: calc(4 * var(--u)); min-width: 0; }
+.ident-text strong {
+  font: italic 700 calc(38 * var(--u))/1.05 var(--tes-font);
+  color: #fff;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(620 * var(--u));
+}
+.champion {
+  font: 500 calc(18 * var(--u))/1 var(--tes-font);
+  color: var(--tes-blue, #11b6fb);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+}
+.champion:empty { display: none; }
+
+.runes { display: flex; gap: calc(10 * var(--u)); margin-left: auto; flex: 0 0 auto; }
+.rune {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  padding: calc(6 * var(--u)) calc(12 * var(--u));
+  background: rgba(255, 255, 255, 0.06);
+  font: 700 calc(20 * var(--u))/1 var(--tes-font);
+  color: #fff;
+}
+.rune img { width: calc(22 * var(--u)); height: calc(22 * var(--u)); }
+.rune img.hidden { display: none; }
+
+.battlefields { display: flex; gap: calc(8 * var(--u)); flex: 0 0 auto; }
+.bf-pill {
+  width: calc(112 * var(--u));
+  height: calc(64 * var(--u));
+  overflow: hidden;
+  background: #11263c;
+  position: relative;
+}
+.bf-pill img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(64 * var(--u));
+  height: calc(112 * var(--u));
+  object-fit: cover;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.bf-pill img.flat {
+  position: static;
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+.bf-pill img.hidden { display: none; }
+
+/* --- main deck: a grid of card scans, columns set by the scene --- */
+
+.main-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 6), 1fr);
+  /* Rows share the height that is left rather than each card claiming its
+     own aspect: a long list has to shrink to fit, never push the sideboard
+     rack off the plate. */
+  grid-auto-rows: 1fr;
+  gap: calc(10 * var(--u));
+  overflow: hidden;
+}
+.card {
+  position: relative;
+  background: #10151b;
+  overflow: hidden;
+}
+.card img { width: 100%; height: 100%; object-fit: cover; }
+.card img.hidden { display: none; }
+/* An unresolved name still renders: a broadcast graphic must show something. */
+.card .fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(8 * var(--u));
+  font: 600 calc(14 * var(--u))/1.2 var(--tes-font);
+  color: #cdd6df;
+  background: linear-gradient(160deg, #161d25, #0d1116);
+}
+.card.miss .fallback { display: flex; }
+.qty {
+  position: absolute;
+  right: calc(4 * var(--u));
+  bottom: calc(4 * var(--u));
+  min-width: calc(26 * var(--u));
+  padding: calc(2 * var(--u)) calc(6 * var(--u));
+  background: rgba(6, 9, 12, 0.9);
+  border-left: calc(3 * var(--u)) solid var(--tes-green, #1bef19);
+  font: 800 calc(20 * var(--u))/1.2 var(--tes-font);
+  color: #fff;
+  text-align: center;
+}
+/* A single copy needs no badge: the grid already says one. */
+.card.single .qty { display: none; }
+
+/* --- sideboard rack --- */
+
+.rack { flex: 0 0 auto; display: flex; align-items: center; gap: calc(14 * var(--u)); }
+.rack.hidden { display: none; }
+.rack-cards { display: flex; gap: calc(8 * var(--u)); }
+.rack .card { width: calc(74 * var(--u)); height: calc(104 * var(--u)); flex: 0 0 auto; }
+.rack .qty { font-size: calc(15 * var(--u)); min-width: calc(20 * var(--u)); }
