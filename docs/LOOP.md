@@ -171,6 +171,22 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-04b (v0.2.1: the launch prompt could consent without a keystroke)
+A packaged 0.1.0 installed a NON-required 0.2.0 twice with nobody at the
+keyboard, both times in a console window that had just been created and taken
+focus. It could not be reproduced with stdout redirected: there the countdown
+times out, prints "Starting the installed version", binds its port and leaves
+the exe alone, which is the designed behaviour. The cause was never pinned
+down, so the fix does not rest on the diagnosis. Consent is now narrow: the
+answer must be an exact single byte, input arriving in the first 800ms after
+the prompt is ignored as console noise, setRawMode failures resolve to the
+default instead of waiting for a key that can never arrive, and the caller
+refuses to install an optional release unless the answer actually came from a
+keystroke. An unattended machine starts what it already has, whatever stdin
+does. Worth remembering the shape of this one: the safety rule was expressed
+only in the value of a timeout fallback, and a single unexpected byte routed
+around it. It is now an explicit check at the decision point.
+
 ### 2026-09-04 (out of band: Part 9 Decklist, then v0.2.0)
 Sam asked for FlipDeck's deckbuilding tool as a Sideways Studio scene, in 15
 minutes; it took about 30. `server/decklist.js` is a straight port of

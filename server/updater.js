@@ -241,39 +241,65 @@ export async function swapAndRestart() {
 // One keystroke, with a visible countdown. Resolves to the default if nobody
 // answers or if there is no console to answer on (output redirected, launched
 // by a service). Never leaves the app waiting forever.
+//
+// Hardened after a packaged 0.1.0 installed a NON-required 0.2.0 twice with
+// nobody at the keyboard, in a console window that had just been created and
+// taken focus. It could not be reproduced with stdout redirected, where the
+// countdown times out and starts the installed version correctly, so the
+// cause was never pinned down; a stray key event reaching a brand new console
+// is the best explanation. Rather than trust that diagnosis, consent is now
+// narrow: an exact single-byte y, ignored for the first moment after the
+// prompt appears, and the caller additionally refuses to install a
+// non-required release unless the answer really came from a keystroke.
+const IGNORE_INPUT_MS = 800;
+
 function askWithCountdown(options, seconds, fallback) {
   return new Promise((resolve) => {
     const stdin = process.stdin;
     if (!stdin.isTTY) {
-      resolve(fallback);
+      resolve({ answer: fallback, fromKey: false });
       return;
     }
+    const openedAt = Date.now();
     let left = seconds;
     let done = false;
     const draw = () => process.stdout.write(`\r  ${options}  starting in ${String(left).padStart(2)}s `);
-    const finish = (answer) => {
+    const finish = (answer, fromKey) => {
       if (done) return;
       done = true;
       clearInterval(timer);
       stdin.removeListener('data', onData);
-      stdin.setRawMode(false);
+      try { stdin.setRawMode(false); } catch { /* console already gone */ }
       stdin.pause();
       process.stdout.write('\r' + ' '.repeat(72) + '\r');
-      resolve(answer);
+      resolve({ answer, fromKey });
     };
     const onData = (buf) => {
-      const key = buf.toString('utf8').trim().toLowerCase();
-      if (buf[0] === 3) { finish('quit'); return; }      // ctrl-c
-      if (key === 'y') finish('update');
-      else if (key === 'n' || buf[0] === 13) finish('later');
-      else if (key === 's') finish('skip');
+      if (buf[0] === 3) { finish('quit', true); return; }        // ctrl-c always wins
+      // Anything that arrives as the console is still being set up is noise,
+      // not an answer.
+      if (Date.now() - openedAt < IGNORE_INPUT_MS) return;
+      // Exactly one byte: a real single keypress, not a pasted or synthesised
+      // buffer that happens to contain the letter.
+      if (buf.length !== 1) return;
+      const code = buf[0];
+      if (code === 0x79 || code === 0x59) finish('update', true);        // y / Y
+      else if (code === 0x6e || code === 0x4e || code === 13) finish('later', true);  // n / N / enter
+      else if (code === 0x73 || code === 0x53) finish('skip', true);     // s / S
     };
     const timer = setInterval(() => {
       left -= 1;
-      if (left <= 0) finish(fallback);
+      if (left <= 0) finish(fallback, false);
       else draw();
     }, 1000);
-    stdin.setRawMode(true);
+    try {
+      stdin.setRawMode(true);
+    } catch {
+      // No usable console input: do not sit here waiting for a key that can
+      // never arrive.
+      resolve({ answer: fallback, fromKey: false });
+      return;
+    }
     stdin.resume();
     stdin.on('data', onData);
     draw();
@@ -295,9 +321,15 @@ export async function runLaunchCheck() {
   if (manifest.notes) {
     for (const line of manifest.notes.split('\n').slice(0, 4)) console.log(`    ${line}`);
   }
-  const answer = manifest.required
+  const asked = manifest.required
     ? await askWithCountdown('[Y] update now   [N] not this time', PROMPT_SECONDS, 'update')
     : await askWithCountdown('[Y] update now   [N] not now   [S] skip this version', PROMPT_SECONDS, 'later');
+
+  // The structural guarantee: an optional release can only ever install from a
+  // real keystroke. However stdin behaves, an unattended machine starts the
+  // version it already has.
+  let answer = asked.answer;
+  if (answer === 'update' && !asked.fromKey && !manifest.required) answer = 'later';
 
   if (answer === 'quit') process.exit(0);
   if (answer === 'skip') {
