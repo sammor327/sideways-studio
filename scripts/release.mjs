@@ -32,7 +32,8 @@ const notesIdx = args.indexOf('--notes');
 const notes = notesIdx >= 0 ? (args[notesIdx + 1] || '') : '';
 const skipBuild = args.includes('--no-build');
 
-const gh = (a, opts = {}) => execFileSync('gh', a, { encoding: 'utf8', ...opts }).trim();
+// execFileSync returns null when stdio is inherited, so do not assume a string.
+const gh = (a, opts = {}) => (execFileSync('gh', a, { encoding: 'utf8', ...opts }) || '').trim();
 
 const { version } = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'));
 const tag = `v${version}`;
