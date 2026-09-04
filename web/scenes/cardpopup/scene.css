@@ -1,0 +1,112 @@
+/* Card popup — standalone transparent source. Default sits right of center;
+   ?side=left mirrors it (URL owns presentation).
+
+   Motion contract: --t is the in/out seek clock (0 = off-stage, 1 = settled).
+   Every read is var(--t, 1): a missing clock renders the settled card, never
+   an invisible one. Slide + flip are plain multiplies, no CSS trig. */
+
+.popup {
+  position: absolute;
+  top: 50%;
+  left: calc(1560 * var(--u));
+  width: calc(460 * var(--u));
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(18 * var(--u));
+  perspective: calc(1400 * var(--u));
+}
+.stage.side-left .popup { left: calc(360 * var(--u)); }
+.popup.off { display: none; }
+
+.card-box, .name-plate {
+  opacity: var(--t, 1);
+  transform:
+    translateX(calc((1 - var(--t, 1)) * 420 * var(--u)))
+    rotateY(calc((1 - var(--t, 1)) * 55deg));
+}
+.stage.side-left .card-box, .stage.side-left .name-plate {
+  transform:
+    translateX(calc((1 - var(--t, 1)) * -420 * var(--u)))
+    rotateY(calc((1 - var(--t, 1)) * -55deg));
+}
+
+.card-box {
+  position: relative;
+  width: calc(460 * var(--u));
+  height: calc(644 * var(--u));
+  background: var(--tes-ink);
+  border-bottom: calc(5 * var(--u)) solid transparent;
+  border-image: var(--tes-grad) 1;
+  box-shadow: 0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.55);
+}
+/* Battlefields are landscape cards stored portrait: the scene swaps the box
+   to landscape and rotates the art (onload check, never per-card). */
+.popup.bf .card-box { width: calc(644 * var(--u)); height: calc(460 * var(--u)); }
+
+#cardArt {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.popup.bf #cardArt {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: calc(460 * var(--u));
+  height: calc(644 * var(--u));
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+#cardArt.hidden { display: none; }
+
+/* End of the image fallback chain: a named placeholder panel, never a broken
+   img glyph on program output. */
+.card-fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(30 * var(--u));
+  background: linear-gradient(160deg, #10151b, #0a0d10);
+  color: #e8edf1;
+  font: italic 700 calc(40 * var(--u))/1.25 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.5 * var(--u));
+}
+.card-fallback.on { display: flex; }
+
+.name-plate {
+  background: var(--tes-plate);
+  color: #fff;
+  min-width: calc(300 * var(--u));
+  max-width: calc(620 * var(--u));
+  padding: calc(12 * var(--u)) calc(28 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  border-bottom: calc(4 * var(--u)) solid transparent;
+  border-image: var(--tes-grad) 1;
+}
+.card-name {
+  font: italic 700 calc(28 * var(--u))/1.15 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(570 * var(--u));
+  text-overflow: ellipsis;
+}
+.card-type {
+  font: 500 calc(15 * var(--u))/1 var(--tes-font);
+  color: #8b98a5;
+  text-transform: uppercase;
+  letter-spacing: calc(2 * var(--u));
+}
+.card-type:empty { display: none; }

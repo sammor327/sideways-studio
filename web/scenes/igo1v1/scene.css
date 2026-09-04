@@ -1,0 +1,146 @@
+/* IGO 1v1 — right-sidebar in-game overlay. Chrome is a baked plate from
+   IGO-V2-PREPPED.psd; everything data-bearing renders live on top at the
+   PSD's design coordinates (all metrics in --u).
+
+   Motion contract: --t drives a whole-overlay fade (a persistent in-game
+   overlay wants a calm fade, not a slide that would drag the game frame).
+   Every read is var(--t, 1): missing clock = settled on air. */
+
+.igo {
+  position: absolute;
+  inset: 0;
+  opacity: var(--t, 1);
+}
+.igo.off { display: none; }
+
+.plate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Holder image windows (261x242 at the PSD's GREEN/BLUEIMAGE bboxes).
+   Legend mode: dark backdrop + hero art. Webcam mode: fully transparent so
+   the OBS source behind shows through the punched plate window. */
+.holder {
+  position: absolute;
+  left: calc(1645 * var(--u));
+  width: calc(261 * var(--u));
+  height: calc(242 * var(--u));
+  overflow: hidden;
+}
+.holder.green { top: calc(17 * var(--u)); }
+.holder.blue { top: calc(822 * var(--u)); }
+.mode-webcam .holder { display: none; }
+
+.holder-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(170deg, #10151b, #080b0e);
+}
+.hero {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero.icon-tier {
+  /* RR cutouts are 256px alpha portraits: center them instead of stretching. */
+  object-fit: contain;
+  padding: calc(14 * var(--u));
+}
+.hero.hidden { display: none; }
+.holder-chip {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font: italic 800 calc(84 * var(--u))/1 var(--tes-font);
+  color: #2a323b;
+}
+.holder-chip.on { display: flex; }
+
+/* Series tick stacks, left of the name block. Slots shrink for Bo5 so three
+   fit the same bar. */
+.ticks {
+  position: absolute;
+  left: calc(1647 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(1 * var(--u));
+}
+.ticks.green { top: calc(267 * var(--u)); --tick-color: var(--tes-green); }
+.ticks.blue { top: calc(763 * var(--u)); --tick-color: var(--tes-blue); }
+.tick {
+  /* border-box: the ring lives inside the 25px design size, so the stack
+     matches the PSD slot pitch exactly and stays centered on the text
+     block (the pips read off-center otherwise). */
+  box-sizing: border-box;
+  width: calc(25 * var(--u));
+  height: calc(25 * var(--u));
+  border-radius: 50%;
+  border: calc(2 * var(--u)) solid var(--tick-color);
+  background: #0a0a0a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(calc(1 + 0.25 * var(--bump, 0)));
+}
+.ticks.slots-3 .tick {
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+}
+.tick::after {
+  content: '';
+  width: 62%;
+  height: 62%;
+  border-radius: 50%;
+  background: var(--tick-color);
+  opacity: 0;
+}
+.tick.won::after { opacity: 1; }
+
+/* Name and battlefield lines, white italic on the baked black bar. */
+.pname, .bf {
+  position: absolute;
+  left: calc(1680 * var(--u));
+  width: calc(235 * var(--u));
+  color: #fff;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Sizes come from the PSD type layers (24px names, 18px battlefields);
+   tops place the cap height at the PSD ink positions. */
+.pname { font: italic 800 calc(24 * var(--u))/1 var(--tes-font); }
+.bf { font: italic 500 calc(18 * var(--u))/1 var(--tes-font); color: #d8dee4; }
+.pname.green { top: calc(270 * var(--u)); }
+.bf.green { top: calc(296 * var(--u)); }
+.pname.blue { top: calc(767 * var(--u)); }
+.bf.blue { top: calc(793 * var(--u)); }
+
+/* Center logo panel: always the styled dark panel (Sam, Loop 4); the event's
+   uploaded logo sits inside when set, otherwise the panel stays blank. */
+.logo-panel {
+  position: absolute;
+  left: calc(1640 * var(--u));
+  top: calc(462 * var(--u));
+  width: calc(272 * var(--u));
+  height: calc(152 * var(--u));
+  border-radius: calc(10 * var(--u));
+  background: #050505;
+  border-bottom: calc(3 * var(--u)) solid transparent;
+  border-image: var(--tes-grad) 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.logo-panel img {
+  max-width: 86%;
+  max-height: 80%;
+}
+.logo-panel img[src=""], .logo-panel img:not([src]) { display: none; }

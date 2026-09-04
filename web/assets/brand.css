@@ -1,0 +1,11 @@
+/* Turn'em Sideways brand tokens — the default theme.
+   Distribution note: Akzidenz-Grotesk Next is the true TES face but is not
+   redistributable; the stack below is the placeholder until the font loop. */
+:root {
+  --tes-blue: #11b6fb;
+  --tes-green: #1bef19;
+  --tes-grad: linear-gradient(135deg, var(--tes-blue), var(--tes-green));
+  --tes-ink: #0c0f12;
+  --tes-plate: #0a0a0a;
+  --tes-font: 'Segoe UI', 'Arial Narrow', Arial, sans-serif;
+}

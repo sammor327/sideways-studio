@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Combined Output</title>
+<style>
+/* Combined broadcast output: every graphic in ONE transparent browser
+   source (one Chromium instance instead of one per scene). Each scene keeps
+   its own sync client and toggles independently from the panel.
+   ?popupside=left mirrors the card popup (URL owns presentation). */
+html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const popupSide = q.get('popupside') === 'left' ? '&side=left' : '';
+  const anim = q.get('anim') === '0' ? '&anim=0' : '';
+  // POV and the IGOs at the bottom of the stack, popup above them, score bug
+  // on top.
+  const SCENES = [
+    `/scenes/pov/?transparent=1${anim}`,
+    `/scenes/igo1v1/?transparent=1${anim}`,
+    `/scenes/igo2v2/?transparent=1${anim}`,
+    `/scenes/cardpopup/?transparent=1${popupSide}${anim}`,
+    `/scenes/scorebug/?transparent=1${anim}`,
+  ];
+  for (const src of SCENES) {
+    const f = document.createElement('iframe');
+    f.src = src;
+    f.setAttribute('allowtransparency', 'true');
+    document.body.appendChild(f);
+  }
+</script>
+</body>
+</html>

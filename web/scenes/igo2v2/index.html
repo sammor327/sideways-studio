@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: In-Game Overlay 2v2</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="igo off mode-legend" id="igo">
+    <img class="plate" src="./plate.webp" alt="" draggable="false">
+
+    <div class="holder p1" id="holder-g1">
+      <div class="holder-fill"></div>
+      <img class="hero" id="hero-g1" alt="" draggable="false">
+      <div class="holder-chip" id="chip-g1"></div>
+    </div>
+    <div class="holder p2" id="holder-g2">
+      <div class="holder-fill"></div>
+      <img class="hero" id="hero-g2" alt="" draggable="false">
+      <div class="holder-chip" id="chip-g2"></div>
+    </div>
+    <div class="pname pos1" id="name-g1"></div>
+    <div class="pname pos2" id="name-g2"></div>
+    <div class="bf bpos1" id="bf-g1"></div>
+    <div class="bf bpos2" id="bf-g2"></div>
+    <div class="ticks green" id="gticks"></div>
+    <div class="teamname green" id="gteam"></div>
+
+    <div class="holder p3" id="holder-b1">
+      <div class="holder-fill"></div>
+      <img class="hero" id="hero-b1" alt="" draggable="false">
+      <div class="holder-chip" id="chip-b1"></div>
+    </div>
+    <div class="holder p4" id="holder-b2">
+      <div class="holder-fill"></div>
+      <img class="hero" id="hero-b2" alt="" draggable="false">
+      <div class="holder-chip" id="chip-b2"></div>
+    </div>
+    <div class="pname pos3" id="name-b1"></div>
+    <div class="pname pos4" id="name-b2"></div>
+    <div class="bf bpos3" id="bf-b1"></div>
+    <div class="bf bpos4" id="bf-b2"></div>
+    <div class="ticks blue" id="bticks"></div>
+    <div class="teamname blue" id="bteam"></div>
+
+    <div class="logo-panel"><img id="logoCustom" alt="" draggable="false"></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">2v2 overlay is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

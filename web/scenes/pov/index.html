@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: POV Overlay</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/assets/fonts/beaufort.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="pov off" id="pov">
+
+    <div class="side left" id="lside">
+      <div class="slot card"><img class="art" id="lcardImg" alt="" draggable="false"></div>
+      <div class="slot legend"><img class="art" id="llegendImg" alt="" draggable="false"></div>
+      <div class="slot battlefield"><img class="art" id="lbfImg" alt="" draggable="false"></div>
+      <img class="cover legend" src="./cover-legend-left.webp" alt="" draggable="false">
+      <img class="cover battlefield" src="./cover-battlefield-left.webp" alt="" draggable="false">
+      <div class="plate-win"><img class="plate" src="./plate.webp" alt="" draggable="false"></div>
+      <div class="line score" id="lscore"><span class="digit">0</span></div>
+      <div class="line player" id="lplayer"></div>
+      <div class="line legend" id="llegend"></div>
+      <div class="line champion" id="lchampion"></div>
+      <div class="line battlefield" id="lbattlefield"></div>
+    </div>
+
+    <div class="side right" id="rside">
+      <div class="slot card"><img class="art" id="rcardImg" alt="" draggable="false"></div>
+      <div class="slot legend"><img class="art" id="rlegendImg" alt="" draggable="false"></div>
+      <div class="slot battlefield"><img class="art" id="rbfImg" alt="" draggable="false"></div>
+      <img class="cover legend" src="./cover-legend-right.webp" alt="" draggable="false">
+      <img class="cover battlefield" src="./cover-battlefield-right.webp" alt="" draggable="false">
+      <div class="plate-win"><img class="plate" src="./plate.webp" alt="" draggable="false"></div>
+      <div class="line score" id="rscore"><span class="digit">0</span></div>
+      <div class="line player" id="rplayer"></div>
+      <div class="line legend" id="rlegend"></div>
+      <div class="line champion" id="rchampion"></div>
+      <div class="line battlefield" id="rbattlefield"></div>
+    </div>
+
+  </div>
+  <img class="psd-ref" id="psdRef" alt="" draggable="false">
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">POV overlay is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

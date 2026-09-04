@@ -1,0 +1,345 @@
+// Self-update for the packaged app.
+//
+// Every launch asks the release channel whether there is a newer build. The
+// rule that shapes all of this: NEVER block the show. The check has a short
+// timeout, any failure is silent, and an unanswered prompt starts the version
+// already installed. A release can be marked `required` in the manifest, and
+// only those install themselves when nobody answers (Sam's call).
+//
+// The manifest lives at a fixed URL that always points at the newest release,
+// so there is no API to rate-limit and nothing to keep in sync by hand:
+//   https://github.com/<owner>/<repo>/releases/latest/download/update.json
+//
+// Trust model: the manifest is fetched over HTTPS and carries the SHA-256 of
+// the exe, which is verified before anything is swapped in. That stops a
+// corrupted or truncated download and a swapped asset. It does NOT stop a
+// compromised release channel; only code signing would, and the build is not
+// signed yet (roadmap Part 15).
+import { createHash } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { APP_ROOT, APP_VERSION, DATA_DIR, isPackaged } from './runtime.js';
+
+const OWNER = 'sammor327';
+const REPO = 'sideways-studio';
+export const MANIFEST_URL = process.env.SIDEWAYS_UPDATE_URL
+  || `https://github.com/${OWNER}/${REPO}/releases/latest/download/update.json`;
+
+// Only these hosts may serve an executable we are about to run: a manifest
+// pointing anywhere else is treated as broken, not followed. The manifest's
+// own host is trusted too, so pointing SIDEWAYS_UPDATE_URL at another channel
+// (an R2 bucket, say) works without a code change.
+const DOWNLOAD_HOSTS = new Set([
+  'github.com',
+  'objects.githubusercontent.com',
+  'release-assets.githubusercontent.com',
+]);
+try {
+  DOWNLOAD_HOSTS.add(new URL(MANIFEST_URL).hostname);
+} catch { /* a malformed override just leaves the defaults */ }
+
+// Plain http is only ever acceptable against a loopback channel, which is how
+// the update flow gets tested without publishing anything.
+const isLoopback = (host) => host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+
+const CHECK_TIMEOUT_MS = 5000;
+const PROMPT_SECONDS = 15;
+
+const STATE_FILE = path.join(DATA_DIR, 'update-state.json');
+const EXE = process.execPath;
+const NEW_EXE = `${EXE}.new`;
+const OLD_EXE = `${EXE}.old`;
+
+// What the panel polls. `phase` is idle | checking | available | downloading |
+// verifying | ready | error | uptodate | disabled.
+const status = {
+  phase: isPackaged ? 'idle' : 'disabled',
+  currentVersion: APP_VERSION,
+  version: null,
+  notes: '',
+  required: false,
+  progress: 0,
+  error: null,
+  skipped: null,
+};
+
+export function updateStatus() {
+  return { ...status, manifestUrl: MANIFEST_URL };
+}
+
+// "0.10.2" > "0.9.9". Anything unparseable sorts as older so a malformed
+// manifest can never trigger an update.
+function isNewer(candidate, current) {
+  const parse = (v) => String(v).trim().replace(/^v/, '').split('.').map((n) => Number.parseInt(n, 10));
+  const a = parse(candidate);
+  const b = parse(current);
+  if (a.length < 3 || a.some(Number.isNaN)) return false;
+  for (let i = 0; i < 3; i += 1) {
+    const x = a[i] || 0;
+    const y = b[i] || 0;
+    if (x !== y) return x > y;
+  }
+  return false;
+}
+
+async function readState() {
+  try {
+    return JSON.parse(await readFile(STATE_FILE, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+async function writeState(next) {
+  try {
+    await mkdir(DATA_DIR, { recursive: true });
+    await writeFile(STATE_FILE, JSON.stringify(next, null, 2));
+  } catch { /* a read-only folder must not stop the app starting */ }
+}
+
+// The most recent usable manifest, so the panel's Install button does not have
+// to round-trip the release channel again.
+let lastManifest = null;
+export const getManifest = () => lastManifest;
+
+// A previous update left the replaced binary behind; it is unlocked now.
+export async function cleanupOldBinary() {
+  await rm(OLD_EXE, { force: true }).catch(() => {});
+  await rm(NEW_EXE, { force: true }).catch(() => {});
+}
+
+function validManifest(m) {
+  if (!m || typeof m !== 'object') return null;
+  if (typeof m.version !== 'string' || typeof m.url !== 'string') return null;
+  if (typeof m.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(m.sha256)) return null;
+  let url;
+  try {
+    url = new URL(m.url);
+  } catch {
+    return null;
+  }
+  const secure = url.protocol === 'https:' || (url.protocol === 'http:' && isLoopback(url.hostname));
+  if (!secure || !DOWNLOAD_HOSTS.has(url.hostname)) return null;
+  return {
+    version: m.version.trim().replace(/^v/, ''),
+    url: m.url,
+    sha256: m.sha256.toLowerCase(),
+    size: Number.isFinite(m.size) ? m.size : 0,
+    notes: typeof m.notes === 'string' ? m.notes.slice(0, 500) : '',
+    required: m.required === true,
+  };
+}
+
+// Returns the manifest when a newer build exists, otherwise null. Never
+// throws: no network, no DNS, a 404 before the first release, a garbage
+// manifest, all just mean "carry on with what is installed".
+export async function checkForUpdate({ ignoreSkipped = false } = {}) {
+  if (!isPackaged) return null;
+  status.phase = 'checking';
+  status.error = null;
+  try {
+    const res = await fetch(MANIFEST_URL, {
+      cache: 'no-store',
+      redirect: 'follow',
+      signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const manifest = validManifest(await res.json());
+    if (!manifest) throw new Error('unusable manifest');
+    if (!isNewer(manifest.version, APP_VERSION)) {
+      status.phase = 'uptodate';
+      return null;
+    }
+    const saved = await readState();
+    status.skipped = saved.skippedVersion || null;
+    if (!ignoreSkipped && !manifest.required && saved.skippedVersion === manifest.version) {
+      status.phase = 'uptodate';
+      return null;
+    }
+    lastManifest = manifest;
+    Object.assign(status, {
+      phase: 'available',
+      version: manifest.version,
+      notes: manifest.notes,
+      required: manifest.required,
+    });
+    return manifest;
+  } catch (err) {
+    status.phase = 'idle';
+    status.error = err.message;
+    return null;
+  }
+}
+
+export async function skipVersion(version) {
+  await writeState({ ...(await readState()), skippedVersion: version });
+  status.skipped = version;
+  status.phase = 'uptodate';
+}
+
+// Download beside the exe, hash it, and only then put it in place.
+export async function downloadUpdate(manifest) {
+  status.phase = 'downloading';
+  status.progress = 0;
+  status.error = null;
+  try {
+    const res = await fetch(manifest.url, { redirect: 'follow' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const total = Number(res.headers.get('content-length')) || manifest.size || 0;
+    const hash = createHash('sha256');
+    const chunks = [];
+    let seen = 0;
+    for await (const chunk of res.body) {
+      chunks.push(chunk);
+      hash.update(chunk);
+      seen += chunk.length;
+      if (total) status.progress = Math.min(99, Math.round((seen / total) * 100));
+    }
+    status.phase = 'verifying';
+    const digest = hash.digest('hex');
+    if (digest !== manifest.sha256) {
+      throw new Error(`checksum mismatch (expected ${manifest.sha256.slice(0, 12)}, got ${digest.slice(0, 12)})`);
+    }
+    await rm(NEW_EXE, { force: true }).catch(() => {});
+    await writeFile(NEW_EXE, Buffer.concat(chunks));
+    status.phase = 'ready';
+    status.progress = 100;
+    return true;
+  } catch (err) {
+    status.phase = 'error';
+    status.error = err.message;
+    return false;
+  }
+}
+
+// Windows will not let a running exe be deleted, but it will let it be
+// renamed, so the handover is: rename the running file out of the way, move
+// the new one into its place, start it. A tiny batch file does that after we
+// have exited, then deletes itself.
+export async function swapAndRestart() {
+  const script = path.join(APP_ROOT, 'sideways-update.cmd');
+  const cmd = [
+    '@echo off',
+    'ping -n 3 127.0.0.1 >nul',
+    `move /y "${EXE}" "${OLD_EXE}" >nul 2>&1`,
+    `move /y "${NEW_EXE}" "${EXE}" >nul 2>&1`,
+    `if not exist "${EXE}" move /y "${OLD_EXE}" "${EXE}" >nul 2>&1`,
+    `start "" "${EXE}"`,
+    '(goto) 2>nul & del "%~f0"',
+    '',
+  ].join('\r\n');
+  await writeFile(script, cmd);
+  spawn('cmd.exe', ['/c', script], {
+    cwd: APP_ROOT,
+    detached: true,
+    stdio: 'ignore',
+    windowsHide: true,
+  }).unref();
+}
+
+// One keystroke, with a visible countdown. Resolves to the default if nobody
+// answers or if there is no console to answer on (output redirected, launched
+// by a service). Never leaves the app waiting forever.
+function askWithCountdown(options, seconds, fallback) {
+  return new Promise((resolve) => {
+    const stdin = process.stdin;
+    if (!stdin.isTTY) {
+      resolve(fallback);
+      return;
+    }
+    let left = seconds;
+    let done = false;
+    const draw = () => process.stdout.write(`\r  ${options}  starting in ${String(left).padStart(2)}s `);
+    const finish = (answer) => {
+      if (done) return;
+      done = true;
+      clearInterval(timer);
+      stdin.removeListener('data', onData);
+      stdin.setRawMode(false);
+      stdin.pause();
+      process.stdout.write('\r' + ' '.repeat(72) + '\r');
+      resolve(answer);
+    };
+    const onData = (buf) => {
+      const key = buf.toString('utf8').trim().toLowerCase();
+      if (buf[0] === 3) { finish('quit'); return; }      // ctrl-c
+      if (key === 'y') finish('update');
+      else if (key === 'n' || buf[0] === 13) finish('later');
+      else if (key === 's') finish('skip');
+    };
+    const timer = setInterval(() => {
+      left -= 1;
+      if (left <= 0) finish(fallback);
+      else draw();
+    }, 1000);
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.on('data', onData);
+    draw();
+  });
+}
+
+// The launch-time flow. Returns true when the app is handing over to an
+// updated copy and should stop starting up.
+export async function runLaunchCheck() {
+  if (!isPackaged) return false;
+  if (process.argv.includes('--skip-update') || process.env.SIDEWAYS_NO_UPDATE === '1') return false;
+
+  await cleanupOldBinary();
+  const manifest = await checkForUpdate();
+  if (!manifest) return false;
+
+  console.log('');
+  console.log(`  Update available: ${APP_VERSION} to ${manifest.version}${manifest.required ? '  (required)' : ''}`);
+  if (manifest.notes) {
+    for (const line of manifest.notes.split('\n').slice(0, 4)) console.log(`    ${line}`);
+  }
+  const answer = manifest.required
+    ? await askWithCountdown('[Y] update now   [N] not this time', PROMPT_SECONDS, 'update')
+    : await askWithCountdown('[Y] update now   [N] not now   [S] skip this version', PROMPT_SECONDS, 'later');
+
+  if (answer === 'quit') process.exit(0);
+  if (answer === 'skip') {
+    await skipVersion(manifest.version);
+    console.log(`  Skipping ${manifest.version}. It will not be offered again.`);
+    return false;
+  }
+  if (answer !== 'update') {
+    console.log('  Starting the installed version.');
+    return false;
+  }
+
+  console.log(`  Downloading ${manifest.version}...`);
+  let lastShown = -1;
+  const ticker = setInterval(() => {
+    if (status.progress !== lastShown) {
+      lastShown = status.progress;
+      process.stdout.write(`\r  ${status.phase} ${status.progress}%   `);
+    }
+  }, 250);
+  const ok = await downloadUpdate(manifest);
+  clearInterval(ticker);
+  process.stdout.write('\r' + ' '.repeat(40) + '\r');
+
+  if (!ok) {
+    console.log(`  Update failed: ${status.error}`);
+    console.log('  Starting the installed version instead.');
+    return false;
+  }
+  console.log('  Update ready. Restarting into the new version...');
+  await swapAndRestart();
+  return true;
+}
+
+// Panel-triggered install: same download, then hand over. The reply goes out
+// before the process exits so the panel can say what is happening.
+export async function installLatest() {
+  const manifest = lastManifest || await checkForUpdate({ ignoreSkipped: true });
+  if (!manifest) return { ok: false, error: 'no update available' };
+  const ok = await downloadUpdate(manifest);
+  if (!ok) return { ok: false, error: status.error };
+  await swapAndRestart();
+  setTimeout(() => process.exit(0), 600);
+  return { ok: true, version: manifest.version };
+}

@@ -1,0 +1,15 @@
+/* Beaufort for LOL is Riot's display face. Bundling it is permitted: this is
+   an official Riot project (SPEC amendment 2026-08-10). It is the POV
+   overlay's designed face; scenes that do not need it never load this file.
+   The fallback is the theme face, never a system serif. */
+@font-face {
+  font-family: 'Beaufort for LOL';
+  src: url('./BeaufortforLOL-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --pov-font: 'Beaufort for LOL', var(--tes-font);
+}

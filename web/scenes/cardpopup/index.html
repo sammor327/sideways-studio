@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Card Popup</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="popup off" id="popup">
+    <div class="card-box" id="cardBox">
+      <img id="cardArt" alt="" draggable="false">
+      <div class="card-fallback" id="cardFallback"><span id="fallbackName"></span></div>
+    </div>
+    <div class="name-plate" id="namePlate">
+      <span class="card-name" id="cardName"></span>
+      <span class="card-type" id="cardType"></span>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">Card popup is hidden: stage a card and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

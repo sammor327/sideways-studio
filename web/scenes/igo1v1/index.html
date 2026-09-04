@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: In-Game Overlay 1v1</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="igo off mode-legend" id="igo">
+    <img class="plate" src="./plate.webp" alt="" draggable="false">
+
+    <div class="holder green" id="gholder">
+      <div class="holder-fill"></div>
+      <img class="hero" id="ghero" alt="" draggable="false">
+      <div class="holder-chip" id="gchip"></div>
+    </div>
+    <div class="ticks green" id="gticks"></div>
+    <div class="pname green" id="gname"></div>
+    <div class="bf green" id="gbf"></div>
+
+    <div class="holder blue" id="bholder">
+      <div class="holder-fill"></div>
+      <img class="hero" id="bhero" alt="" draggable="false">
+      <div class="holder-chip" id="bchip"></div>
+    </div>
+    <div class="ticks blue" id="bticks"></div>
+    <div class="pname blue" id="bname"></div>
+    <div class="bf blue" id="bbf"></div>
+
+    <div class="logo-panel" id="logoPanel"><img id="logoCustom" alt="" draggable="false"></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">In-game overlay is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

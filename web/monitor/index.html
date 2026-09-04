@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Monitor</title>
+<style>
+/* Monitor: stacks every scene the way they would sit on the program feed.
+   ?mode=preview forces scenes visible (staged content included);
+   ?mode=program shows air truth. The checkerboard reads as "transparent
+   here", exactly like an editor's alpha grid. Never a broadcast URL. */
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  --sq: 20px;
+  background:
+    repeating-conic-gradient(#20262d 0% 25%, #161b21 0% 50%)
+    0 0 / var(--sq) var(--sq);
+}
+iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+}
+</style>
+</head>
+<body>
+<script>
+  const SCENES = ['pov', 'igo1v1', 'igo2v2', 'cardpopup', 'scorebug'];
+  const preview = new URLSearchParams(location.search).get('mode') === 'preview';
+  for (const scene of SCENES) {
+    const f = document.createElement('iframe');
+    f.src = `/scenes/${scene}/?transparent=1${preview ? '&preview=1' : ''}`;
+    f.setAttribute('allowtransparency', 'true');
+    document.body.appendChild(f);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+/* Score bug — standalone transparent source, positionable in OBS/vMix.
+   Rendered top-center of the 1920x1080 stage.
+
+   Motion contract: --t is the in/out seek clock (0 = off-stage, 1 = settled).
+   Every read is var(--t, 1) so a missing clock renders ON AIR, never blank.
+   Per-element stagger derives a windowed --seg from --t and a --d delay. */
+
+.bug {
+  position: absolute;
+  top: calc(36 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  gap: calc(10 * var(--u));
+}
+.bug.off { display: none; }
+
+.side {
+  display: flex;
+  align-items: stretch;
+  gap: calc(8 * var(--u));
+}
+
+/* Windowed segment progress: each element animates inside its own slice of
+   the master clock. clamp((t - d) / span, 0, 1), all lengths in --u. */
+.plate, .ticks, .mid {
+  --seg: clamp(0, calc((var(--t, 1) - var(--d, 0)) / 0.6), 1);
+  opacity: var(--seg);
+  transform: translateY(calc((1 - var(--seg)) * -60 * var(--u)));
+}
+
+.plate {
+  background: var(--tes-plate);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  border-bottom: calc(4 * var(--u)) solid transparent;
+  border-image: var(--tes-grad) 1;
+}
+
+.name-plate {
+  padding: 0 calc(26 * var(--u));
+  min-width: calc(280 * var(--u));
+  height: calc(64 * var(--u));
+  font: italic 700 calc(30 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.5 * var(--u));
+}
+.left .name-plate { justify-content: flex-end; }
+.right .name-plate { justify-content: flex-start; }
+
+.score-plate {
+  width: calc(78 * var(--u));
+  height: calc(64 * var(--u));
+  justify-content: center;
+  background: var(--tes-ink);
+}
+.score {
+  font: 800 calc(42 * var(--u))/1 var(--tes-font);
+  color: #fff;
+  /* --bump is a JS-shaped 0->1->0 pulse on score change. */
+  transform: scale(calc(1 + 0.22 * var(--bump, 0)));
+  display: inline-block;
+}
+
+.ticks {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(7 * var(--u));
+}
+.tick {
+  /* border-box so the ring stays inside the 16px design size and the pip
+     column centers exactly (Sam, Loop 4). */
+  box-sizing: border-box;
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+  background: #1c2126;
+  border: calc(2 * var(--u)) solid #2c3238;
+  transform: rotate(45deg) scale(calc(1 + 0.35 * var(--bump, 0)));
+}
+.tick.won {
+  background: var(--tes-grad);
+  border-color: transparent;
+}
+
+.mid {
+  width: calc(12 * var(--u));
+  display: flex;
+}
+.mid-bar {
+  width: 100%;
+  background: var(--tes-grad);
+  /* Ambient shimmer: --loop cycles 0..1 from the loop clock. */
+  filter: brightness(calc(0.9 + 0.45 * var(--loop, 0)));
+}

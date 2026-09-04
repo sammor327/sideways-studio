@@ -1,0 +1,44 @@
+/* Shared stage geometry (broadcast-line-handoff §3.3).
+   Author at fixed 1920x1080 design pixels; every metric is calc(N * var(--u)).
+   At exactly 1920x1080 (what the mixer captures) --u is 1px. */
+:root {
+  --u: min(100vw / 1920, 100vh / 1080);
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: #0c0f12;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+/* ?transparent=1 — the browser source composites over the program feed. */
+html.transparent body {
+  background: transparent;
+}
+
+.stage {
+  position: relative;
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
+}
+
+/* Compact diagnostic chip for overlay scenes (never a full-frame plate on an
+   overlay, never a blank error). Scenes toggle .on when appropriate. */
+.stage-diag {
+  position: absolute;
+  left: calc(24 * var(--u));
+  bottom: calc(24 * var(--u));
+  padding: calc(8 * var(--u)) calc(14 * var(--u));
+  background: rgba(0, 0, 0, 0.82);
+  border-left: calc(3 * var(--u)) solid var(--tes-blue, #11b6fb);
+  color: #fff;
+  font: 500 calc(15 * var(--u))/1.3 var(--tes-font, sans-serif);
+  display: none;
+}
+.stage-diag.on { display: block; }

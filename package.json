@@ -1,0 +1,21 @@
+{
+  "name": "sideways-studio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Locally hosted broadcast graphics for Riftbound streams. Built by Sam Morris / Turn'em Sideways.",
+  "scripts": {
+    "start": "node server/index.js",
+    "build:icon": "py scripts/make-icon.py",
+    "build:exe": "node scripts/build-exe.mjs",
+    "release": "node scripts/release.mjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "rcedit": "^5.0.2"
+  }
+}

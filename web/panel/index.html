@@ -1,0 +1,371 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sideways Studio</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="./panel.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>SIDEWAYS <span>STUDIO</span></h1>
+    <p>Riftbound broadcast graphics</p>
+  </div>
+  <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
+</header>
+
+<section class="update-bar hidden" id="updateBar">
+  <div class="update-text">
+    <strong id="updateHeadline">Update available</strong>
+    <span class="muted" id="updateNotes"></span>
+  </div>
+  <div class="update-actions">
+    <span class="muted" id="updateProgress"></span>
+    <button id="updateSkip">Skip this version</button>
+    <button id="updateInstall" class="update-go">Install and restart</button>
+  </div>
+</section>
+
+<section class="monitors">
+  <div class="monitor-col">
+    <span class="monitor-label preview-label">Preview</span>
+    <div class="monitor preview-mon"><iframe src="/monitor/?mode=preview" title="Preview monitor"></iframe></div>
+  </div>
+  <div class="transition-col">
+    <button id="takeBtn" class="take">TAKE</button>
+    <button id="clearBtn" class="clear">CLEAR</button>
+    <p class="transition-hint">TAKE puts preview on air. CLEAR hides every graphic on air, scores stay.</p>
+  </div>
+  <div class="monitor-col">
+    <span class="monitor-label program-label">Program</span>
+    <div class="monitor program-mon"><iframe src="/monitor/?mode=program" title="Program monitor"></iframe></div>
+  </div>
+</section>
+
+<main class="controls">
+  <section class="card">
+    <h2>Match</h2>
+    <div class="player-col">
+      <h3 class="side-label green">Player 1</h3>
+      <label>Name <input id="lname" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Legend <input id="llegend" class="legend-input" data-side="left" placeholder="Search legends…" autocomplete="off"></label>
+        <ul class="results" id="llegendResults"></ul>
+      </div>
+      <div class="picker-wrap">
+        <label>Battlefield <input id="lbf" placeholder="Search battlefields…" autocomplete="off"></label>
+        <ul class="results" id="lbfResults"></ul>
+      </div>
+      <div class="counter-row">
+        <span class="counter-label">Points</span>
+        <div class="counter">
+          <button data-step="-1" data-side="left" data-field="score">−</button>
+          <output id="lscoreOut">0</output>
+          <button data-step="1" data-side="left" data-field="score">+</button>
+        </div>
+      </div>
+      <div class="counter-row">
+        <span class="counter-label">Game wins</span>
+        <div class="counter">
+          <button data-step="-1" data-side="left" data-field="gameWins">−</button>
+          <output id="lwinsOut">0</output>
+          <button data-step="1" data-side="left" data-field="gameWins">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="player-col">
+      <h3 class="side-label blue">Player 2</h3>
+      <label>Name <input id="rname" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Legend <input id="rlegend" class="legend-input" data-side="right" placeholder="Search legends…" autocomplete="off"></label>
+        <ul class="results" id="rlegendResults"></ul>
+      </div>
+      <div class="picker-wrap">
+        <label>Battlefield <input id="rbf" placeholder="Search battlefields…" autocomplete="off"></label>
+        <ul class="results" id="rbfResults"></ul>
+      </div>
+      <div class="counter-row">
+        <span class="counter-label">Points</span>
+        <div class="counter">
+          <button data-step="-1" data-side="right" data-field="score">−</button>
+          <output id="rscoreOut">0</output>
+          <button data-step="1" data-side="right" data-field="score">+</button>
+        </div>
+      </div>
+      <div class="counter-row">
+        <span class="counter-label">Game wins</span>
+        <div class="counter">
+          <button data-step="-1" data-side="right" data-field="gameWins">−</button>
+          <output id="rwinsOut">0</output>
+          <button data-step="1" data-side="right" data-field="gameWins">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <label class="inline">Series
+        <select id="seriesLength">
+          <option value="1">Best of 1</option>
+          <option value="3">Best of 3</option>
+          <option value="5">Best of 5</option>
+        </select>
+      </label>
+      <button id="resetMatch" class="danger-ghost">Reset match</button>
+    </div>
+    <h3 class="side-label twos-head">2v2: teams and second players</h3>
+    <div class="player-col">
+      <label>Team 1 name <input id="lteam" maxlength="40" autocomplete="off"></label>
+      <label>Player 1B name <input id="lname2" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Player 1B legend <input id="llegend2" placeholder="Search legends…" autocomplete="off"></label>
+        <ul class="results" id="llegend2Results"></ul>
+      </div>
+      <div class="picker-wrap">
+        <label>Player 1B battlefield <input id="lbf2" placeholder="Search battlefields…" autocomplete="off"></label>
+        <ul class="results" id="lbf2Results"></ul>
+      </div>
+    </div>
+    <div class="player-col">
+      <label>Team 2 name <input id="rteam" maxlength="40" autocomplete="off"></label>
+      <label>Player 2B name <input id="rname2" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Player 2B legend <input id="rlegend2" placeholder="Search legends…" autocomplete="off"></label>
+        <ul class="results" id="rlegend2Results"></ul>
+      </div>
+      <div class="picker-wrap">
+        <label>Player 2B battlefield <input id="rbf2" placeholder="Search battlefields…" autocomplete="off"></label>
+        <ul class="results" id="rbf2Results"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Graphics</h2>
+    <div class="scene-row">
+      <div class="scene-name">Score bug <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
+      <button id="toggleScorebug" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row">
+      <div class="scene-name">In-game overlay 1v1 <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
+      <div class="scene-controls">
+        <select id="igoMode">
+          <option value="legend">Legend art</option>
+          <option value="webcam">Webcam cutouts</option>
+        </select>
+        <button id="toggleIgo" class="scene-toggle">OFF</button>
+      </div>
+    </div>
+    <div class="scene-row">
+      <div class="scene-name">In-game overlay 2v2 <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
+      <div class="scene-controls">
+        <select id="igo2Mode">
+          <option value="legend">Legend art</option>
+          <option value="webcam">Webcam cutouts</option>
+        </select>
+        <button id="toggleIgo2" class="scene-toggle">OFF</button>
+      </div>
+    </div>
+    <div class="scene-row">
+      <div class="scene-name">POV overlay <span class="onair hidden" id="povOnAir">ON AIR</span></div>
+      <button id="togglePov" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row popup-row">
+      <div class="scene-name">Card popup <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
+      <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
+    </div>
+    <div class="search-wrap">
+      <label>Search a card by name
+        <input id="cardSearch" placeholder="Type at least 2 letters…" autocomplete="off">
+      </label>
+      <ul class="results" id="cardResults"></ul>
+    </div>
+    <div class="staged" id="stagedBox">
+      <img id="stagedThumb" alt="" class="hidden">
+      <div class="staged-meta">
+        <span class="staged-label">Staged card</span>
+        <strong id="stagedName">Nothing staged</strong>
+        <span class="muted" id="stagedType"></span>
+      </div>
+    </div>
+    <p class="hint">Staging a card switches the popup on in preview. TAKE airs it.</p>
+  </section>
+
+
+  <section class="card">
+    <h2>POV overlay</h2>
+    <div class="row">
+      <button id="povSwap" title="Swap every field between the two sides">Swap sides</button>
+      <button id="povReset" class="danger-ghost">Reset POV</button>
+    </div>
+    <p class="hint">Points, names, legends and battlefields are the same match data the score bug and the in-game overlays use.</p>
+    <div class="pov-side">
+      <div class="pov-side-head">
+        <h3 class="side-label green">Left column</h3>
+        <label class="inline"><input type="checkbox" id="povlShow" checked> Show this side</label>
+      </div>
+      <div class="counter-row">
+        <span class="counter-label">Points</span>
+        <div class="counter">
+          <button data-step="-1" data-side="left" data-field="score">&minus;</button>
+          <input class="score-entry" id="povlScore" data-side="left" inputmode="numeric" maxlength="1" autocomplete="off">
+          <button data-step="1" data-side="left" data-field="score">+</button>
+        </div>
+      </div>
+      <label>Player <input id="povlName" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Legend, pick from list <input id="povlLegend" placeholder="Search legends&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povlLegendResults"></ul>
+      </div>
+      <label>Legend name shown on air <input id="povlLegendText" maxlength="60" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Champion unit, pick from list <input id="povlChampion" placeholder="Search champion units&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povlChampionResults"></ul>
+      </div>
+      <label>Champion name shown on air <input id="povlChampionText" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Battlefield, pick from list <input id="povlBf" placeholder="Search battlefields&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povlBfResults"></ul>
+      </div>
+      <div class="picker-wrap">
+        <label>Featured card <input id="povlCard" placeholder="Search any card&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povlCardResults"></ul>
+      </div>
+      <div class="staged">
+        <img id="povlCardThumb" alt="" class="hidden">
+        <div class="staged-meta">
+          <span class="staged-label">Featured card</span>
+          <strong id="povlCardName">Nothing staged</strong>
+        </div>
+        <button id="povlCardClear" class="clear-mini">Clear</button>
+      </div>
+    </div>
+    <div class="pov-side">
+      <div class="pov-side-head">
+        <h3 class="side-label blue">Right column</h3>
+        <label class="inline"><input type="checkbox" id="povrShow" checked> Show this side</label>
+      </div>
+      <div class="counter-row">
+        <span class="counter-label">Points</span>
+        <div class="counter">
+          <button data-step="-1" data-side="right" data-field="score">&minus;</button>
+          <input class="score-entry" id="povrScore" data-side="right" inputmode="numeric" maxlength="1" autocomplete="off">
+          <button data-step="1" data-side="right" data-field="score">+</button>
+        </div>
+      </div>
+      <label>Player <input id="povrName" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Legend, pick from list <input id="povrLegend" placeholder="Search legends&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povrLegendResults"></ul>
+      </div>
+      <label>Legend name shown on air <input id="povrLegendText" maxlength="60" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Champion unit, pick from list <input id="povrChampion" placeholder="Search champion units&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povrChampionResults"></ul>
+      </div>
+      <label>Champion name shown on air <input id="povrChampionText" maxlength="40" autocomplete="off"></label>
+      <div class="picker-wrap">
+        <label>Battlefield, pick from list <input id="povrBf" placeholder="Search battlefields&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povrBfResults"></ul>
+      </div>
+      <div class="picker-wrap">
+        <label>Featured card <input id="povrCard" placeholder="Search any card&hellip;" autocomplete="off"></label>
+        <ul class="results" id="povrCardResults"></ul>
+      </div>
+      <div class="staged">
+        <img id="povrCardThumb" alt="" class="hidden">
+        <div class="staged-meta">
+          <span class="staged-label">Featured card</span>
+          <strong id="povrCardName">Nothing staged</strong>
+        </div>
+        <button id="povrCardClear" class="clear-mini">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Theme</h2>
+    <div class="theme-colors">
+      <label class="inline">Accent 1 <input type="color" id="accentA" value="#11b6fb"></label>
+      <label class="inline">Accent 2 <input type="color" id="accentB" value="#1bef19"></label>
+    </div>
+    <label>Display font
+      <select id="fontSelect"><option value="">TES default</option></select>
+    </label>
+    <p class="hint" id="fontStatus">Fonts download once, then work offline.</p>
+    <div class="logo-row">
+      <div class="logo-preview" id="logoPreview"><span class="muted">No logo</span></div>
+      <div class="logo-actions">
+        <label class="file-btn">Upload logo<input type="file" id="logoFile" accept=".png,.jpg,.jpeg,.webp,.svg" hidden></label>
+        <button id="logoRemove">Remove</button>
+      </div>
+    </div>
+    <div class="row"><button id="themeReset">Reset to TES look</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Setup</h2>
+    <p id="dbStatus">Checking…</p>
+    <div class="progress hidden" id="dbProgressWrap"><div class="progress-bar" id="dbProgress"></div></div>
+    <div class="row">
+      <button id="dbSync">Download card database</button>
+      <button id="dbPrefetchFull">Download all card art for offline use</button>
+    </div>
+    <div class="url-row">
+      <span class="url-label">All graphics in one source, 1920 × 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="outputUrl" readonly>
+        <button data-copy="outputUrl">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Score bug source, 1920 × 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="scorebugUrl" readonly>
+        <button data-copy="scorebugUrl">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Card popup source, 1920 × 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="cardpopupUrl" readonly>
+        <button data-copy="cardpopupUrl">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">In-game overlay 1v1 source, 1920 × 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="igoUrl" readonly>
+        <button data-copy="igoUrl">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">In-game overlay 2v2 source, 1920 × 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="igo2Url" readonly>
+        <button data-copy="igo2Url">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">POV overlay source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="povUrl" readonly>
+        <button data-copy="povUrl">Copy</button>
+      </div>
+    </div>
+    <div class="row version-row">
+      <span class="muted" id="versionLine">Sideways Studio</span>
+      <button id="updateCheck">Check for updates</button>
+    </div>
+    <p class="hint">Card data and art come from Rift Registry, saved on this computer: no venue internet needed once downloaded. Add <code>&amp;side=left</code> to the popup URL to mirror it. vMix: add each URL as a Web Browser input at 1920 × 1080, tick "Use Transparent Background", and set FPS to 60.</p>
+  </section>
+</main>
+
+<footer>
+  <p>Edits land in PREVIEW; TAKE puts them on air. · Sideways Studio, built by <strong>Sam Morris</strong> · Turn'em Sideways</p>
+</footer>
+
+<script type="module" src="./panel.js"></script>
+</body>
+</html>

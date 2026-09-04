@@ -1,0 +1,204 @@
+/* POV overlay — two edge columns from POV-Overlay-1.psd. The gold frame
+   chrome is a baked plate; the featured card, the legend and battlefield art
+   and all five text lines render live on top at the PSD's coordinates.
+
+   Every column coordinate below is the PSD's LEFT group. RIGHT is LEFT
+   translated by exactly +1623px (measured off the file), so each side sets
+   --x0 and every horizontal metric is calc((N + var(--x0, 0)) * var(--u)).
+
+   Motion contract: --t is the in/out seek clock. Each column fades and
+   slides in from its own screen edge; every read is var(--t, 1) so a clock
+   that never started renders settled on air, never invisible. */
+
+.pov {
+  position: absolute;
+  inset: 0;
+}
+.pov.off { display: none; }
+
+.side {
+  position: absolute;
+  inset: 0;
+  opacity: var(--t, 1);
+}
+.side.left { --x0: 0; transform: translateX(calc((1 - var(--t, 1)) * -44 * var(--u))); }
+.side.right { --x0: 1623; transform: translateX(calc((1 - var(--t, 1)) * 44 * var(--u))); }
+/* A POV stream often airs only the featured player's column. */
+.side.gone { display: none; }
+
+/* --- art slots (bottom of the stack) --- */
+
+.slot {
+  position: absolute;
+  left: calc((23 + var(--x0, 0)) * var(--u));
+  width: calc(255 * var(--u));
+  overflow: hidden;
+}
+/* The card slot has no fill: with nothing staged the frame stands empty and
+   the gameplay capture behind it shows through (never a purple placeholder,
+   never a broken image). The legend and battlefield slots always carry navy,
+   because the design puts art there. */
+.slot.card { top: calc(425 * var(--u)); height: calc(356 * var(--u)); }
+.slot.legend {
+  top: calc(864 * var(--u));
+  height: calc(128 * var(--u));
+  background: #11263c;
+}
+.slot.battlefield {
+  top: calc(1001 * var(--u));
+  height: calc(65 * var(--u));
+  background: #11263c;
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* border-box so the contain-tier padding stays inside the slot instead of
+     pushing the image off-centre against the frame. */
+  box-sizing: border-box;
+}
+.art.hidden { display: none; }
+
+/* The two strips show the PAINTING, not the card: no frame, no badges, no
+   name bar, no rules text. Each oversizes the card image and offsets it so
+   that one measured window of the card template lands on the slot, and the
+   slot's overflow clips the rest. Both boxes keep the source's 0.7161 ratio,
+   so object-fit never has anything to distort.
+
+   Legend window: x 250..700, y 30..615 of the 744x1039 source. The left
+   bound clears the gold bracket and the two domain badges that hang off it,
+   the bottom bound sits above the LEGEND name bar. Cover puts 15% of the
+   spare height above the visible band, which lands on the character. */
+.art.crop-legend {
+  inset: auto;
+  left: calc(-141.67 * var(--u));
+  top: calc(-47.52 * var(--u));
+  width: calc(421.6 * var(--u));
+  height: calc(588.77 * var(--u));
+}
+
+/* Battlefield window: x 150..515, y 60..975 of the same source, which is the
+   painting between the two vertical rules-text panels and inside the border
+   and the type badge. Battlefield art is stored portrait (handoff rule), so
+   this is the rotated case only; a landscape file would not match these
+   coordinates and falls through to the plain cover fill above. */
+.art.crop-battlefield {
+  inset: auto;
+  left: calc(23.27 * var(--u));
+  top: calc(-101.27 * var(--u));
+  width: calc(207.34 * var(--u));
+  height: calc(289.56 * var(--u));
+  transform: rotate(90deg);
+}
+
+/* Hero and icon cutouts are alpha portraits: letterbox them on the navy
+   instead of stretching a 261x242 or 256px image into a 2:1 strip. */
+.art.fit-contain {
+  object-fit: contain;
+  padding: calc(4 * var(--u));
+}
+
+/* --- cover gradients: above the art, below the plate --- */
+
+.cover {
+  position: absolute;
+  pointer-events: none;
+}
+.cover.legend {
+  left: calc((23 + var(--x0, 0)) * var(--u));
+  top: calc(864 * var(--u));
+  width: calc(255 * var(--u));
+  height: calc(128 * var(--u));
+}
+.cover.battlefield {
+  left: calc((26 + var(--x0, 0)) * var(--u));
+  top: calc(1001 * var(--u));
+  width: calc(250 * var(--u));
+  height: calc(65 * var(--u));
+}
+
+/* --- plate: above the art so the gold frames clip the slot edges --- */
+
+/* One plate file holds both columns; each side windows its own out of it, so
+   hiding a side removes its chrome too. Window = the PSD's ART layer bbox. */
+.plate-win {
+  position: absolute;
+  left: calc((17 + var(--x0, 0)) * var(--u));
+  top: calc(755 * var(--u));
+  width: calc(264 * var(--u));
+  height: calc(311 * var(--u));
+  overflow: hidden;
+}
+.plate {
+  position: absolute;
+  left: calc((-17 - var(--x0, 0)) * var(--u));
+  top: calc(-755 * var(--u));
+  width: calc(1920 * var(--u));
+  height: calc(1080 * var(--u));
+}
+
+/* --- text lines (top of the stack) --- */
+
+.line {
+  position: absolute;
+  /* Every type layer is centered on x 150.5 (the score on 151.5). The usable
+     run inside the 255px frame is 200px: the rune glyphs and the diamond
+     ornaments own the rest. */
+  left: calc((50.5 + var(--x0, 0)) * var(--u));
+  width: calc(200 * var(--u));
+  text-align: center;
+  color: #fff;
+  /* If the bundled face never loads, fall through to the theme face. An
+     unresolvable var() would invalidate the declaration and inherit the
+     browser's default serif, which is not the fallback the SPEC allows. */
+  font-family: var(--pov-font, var(--tes-font, sans-serif));
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  line-height: 1.4;
+  /* PSD-true sizes (Sam, Loop 5): 16px for the four name lines, 32.06 for
+     the score. scene.js writes --fs down to 11 when a name will not fit. */
+  font-size: calc(var(--fs, 16) * var(--u));
+  /* Baseline placement. With line-height L the glyph baseline sits at
+     top + (L + A - D)/2 em, so top = baseline - that. A and D are the used
+     face's ascent and descent, measured in Chromium for the bundled Beaufort
+     for LOL Bold: A = 1.01em, D = 0.26em, L = 1.4 -> 1.075em. Expressed in
+     em so the baseline holds still when a long name shrinks --fs. */
+  --shift: 1.075em;
+}
+.line.score {
+  left: calc((51.5 + var(--x0, 0)) * var(--u));
+  --fs: 32.06;
+  top: calc(791.72 * var(--u) - var(--shift, 1.075em));
+}
+.line.player { top: calc(828.85 * var(--u) - var(--shift, 1.075em)); }
+.line.legend { top: calc(950.85 * var(--u) - var(--shift, 1.075em)); }
+.line.champion { top: calc(979.85 * var(--u) - var(--shift, 1.075em)); }
+.line.battlefield { top: calc(1039.85 * var(--u) - var(--shift, 1.075em)); }
+
+/* --bump is a JS-shaped 0->1->0 pulse on a score change, same as the bug. */
+.line.score .digit {
+  display: inline-block;
+  transform: scale(calc(1 + 0.22 * var(--bump, 0)));
+}
+
+/* --- ?debug=psd: the PSD composite over the scene, for placement checks.
+   The reference PNG is gitignored, so scene.js drops this element when the
+   file is absent (a distributed build never ships it). --- */
+.psd-ref {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+.psd-ref.on {
+  display: block;
+  opacity: 0.5;
+}

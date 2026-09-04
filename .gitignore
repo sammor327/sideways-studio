@@ -1,0 +1,7 @@
+node_modules/
+data/
+*.log
+# PSD composite used only by a scene's ?debug=psd placement check.
+_psd-reference.png
+build/
+dist/
