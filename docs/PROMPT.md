@@ -40,7 +40,11 @@ lines on the PSD baselines with an auto-fit down to 11px, per-side show flags,
 a fifth panel card, `/api/champions`, and Beaufort for LOL bundled; Sam's Loop
 5 calls: PSD-true 16px with no text-scale knob, the POV score is the match
 score, CHAMPION is a champion unit picker that stages the card, legend art is
-the legend card cropped; verified end-to-end 2026-09-02, Loop 5). Next
+the legend card cropped; verified end-to-end 2026-09-02, Loop 5). Out of
+band on 2026-09-11: the panel's single match-data column, and the decklist
+rebuilt to FlipDeck's plate brief (pixel-matched plate with its build-in,
+`/decklist/` deck editor, saved decks as panel chips, PNG export through the
+machine's Edge, `npm run decklist:batch`, and `npm test`). Next
 roadmap part, now that packaging (Part 14) was pulled forward and shipped:
 **Part 6 — Head-to-Head** (auto cards from the legend
 assignment, round titles; it needs the event name and round title panel fields

@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sideways Studio: Deck editor</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/panel/panel.css">
+<link rel="stylesheet" href="./editor.css">
+</head>
+<body class="editor">
+<header>
+  <div class="brand">
+    <h1>SIDEWAYS <span>STUDIO</span></h1>
+    <p>Deck editor: paste, check and save decklists, then load them from the control panel</p>
+  </div>
+  <div class="head-right">
+    <a class="link-btn" href="/panel/">Control panel</a>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
+  </div>
+</header>
+
+<section class="card lib-bar">
+  <div class="lib-top">
+    <h2>Saved decks <span class="muted" id="libCount"></span></h2>
+    <input id="libFilter" placeholder="Filter by deck or player…" autocomplete="off">
+    <div class="lib-actions">
+      <label class="file-btn" title="A co-stream control panel's Deck List Database sheet, saved as CSV: one deck per column">Import deck sheet (CSV)<input type="file" id="csvFile" accept=".csv,text/csv" hidden></label>
+      <button id="exportAll" title="Renders every saved deck (or every deck the filter shows) to PNG, using each deck's own settings">Export all as PNG</button>
+      <button id="exportCancel" class="hidden">Stop export</button>
+    </div>
+  </div>
+  <div class="lib-chips" id="libChips"></div>
+  <p class="hint" id="libHint">Nothing saved yet. Paste a list below and press SAVE, or import a deck sheet.</p>
+  <p class="hint" id="libStatus"></p>
+  <div class="report hidden" id="report">
+    <div class="report-head">
+      <strong id="reportTitle">Import report</strong>
+      <button id="reportClose" class="clear-mini">Close</button>
+    </div>
+    <ul id="reportList"></ul>
+  </div>
+</section>
+
+<main class="editor-main">
+  <section class="card input-col">
+    <div class="col-head">
+      <h2>Decklist</h2>
+      <div class="row">
+        <button id="loadExample" class="clear-mini">Load example</button>
+        <button id="newDeck" class="clear-mini">New</button>
+      </div>
+    </div>
+    <textarea id="text" spellcheck="false" placeholder="Legend: Diana, Scorn of the Moon&#10;Champion: Diana, Lunari&#10;&#10;Battlefields:&#10;Rockfall Path&#10;&#10;Runes:&#10;7 Chaos&#10;5 Mind&#10;&#10;Main:&#10;3 Stupefy&#10;…&#10;&#10;Sideboard:&#10;2 Abandon"></textarea>
+    <p class="resolve-status" id="resolveStatus">Waiting for a list.</p>
+    <div class="structured hidden" id="structured"></div>
+    <ul class="warnings" id="warnings"></ul>
+  </section>
+
+  <section class="card preview-col">
+    <div class="col-head">
+      <h2>Preview <span class="muted">1920 &times; 1080, the plate exactly as it airs</span></h2>
+      <div class="row">
+        <label class="inline"><input type="checkbox" id="transparent"> Transparent background</label>
+        <label class="inline"><input type="checkbox" id="hideSideboard"> Hide sideboard</label>
+        <button id="playIntro" class="clear-mini" title="Plays the build-in the plate does when it goes on air">Play build-in</button>
+      </div>
+    </div>
+    <div class="preview-frame" id="previewFrame">
+      <iframe id="preview" title="Decklist preview" allowtransparency="true"></iframe>
+    </div>
+    <div class="actions">
+      <button id="generate" class="go">GENERATE PNG</button>
+      <button id="toPreview" class="send">SEND TO PREVIEW</button>
+      <input id="saveName" maxlength="60" placeholder="Save as…" autocomplete="off">
+      <button id="save">SAVE</button>
+      <button id="copyUrl">COPY STREAM URL</button>
+    </div>
+    <p class="hint" id="actionStatus"></p>
+    <p class="hint">SEND TO PREVIEW loads this list into the control panel's preview; TAKE there airs it. COPY STREAM URL gives a browser source that always shows this one deck, no panel needed. PNGs are drawn by the same scene the stream uses, in a hidden copy of Edge or Chrome, and saved in the app's <code>data/decklist</code> folder as well as downloaded.</p>
+  </section>
+</main>
+
+<script type="module" src="./editor.js"></script>
+</body>
+</html>

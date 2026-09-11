@@ -35,6 +35,13 @@ truth, all 1920x1080; composite previews were verified 2026-08-09):
    tournament name text. Manual card override was explicitly NOT chosen.
 4. **Decklist** — text paste input, reusing FlipDeck's `/tools/decklist`
    parser + renderer (port from `flipdeck/src/lib/decks`).
+   **Amendment 2026-09-11 (Sam):** the plate follows FlipDeck's decklist-plate
+   brief: `src/remotion/decks/Plate.tsx` geometry and its build-in, a deck
+   editor page, saved decks, PNG export and a batch CLI. One scene page is the
+   only renderer for every surface (the brief's "same component" rule, in this
+   app's terms). PNG export uses the machine's own Edge or Chrome headlessly
+   and bundles no browser. The saved-deck library is setup data kept outside
+   the bussed state, like the theme.
 5. **IGO 1v1** (in-game overlay) — right sidebar. The two large holder boxes
    are a per-show toggle: transparent webcam cutout OR auto-filled legend art.
 6. **IGO 2v2** — four players, two team names, legend portraits.

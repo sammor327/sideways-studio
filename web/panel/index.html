@@ -29,6 +29,200 @@
   </div>
 </section>
 
+<div class="workspace">
+
+<!-- Every piece of match data, once. The graphics share it (the score bug and
+     the POV print the same points, the IGOs and the POV the same legend), so
+     there is one field per fact and the focus chips dim whatever the chosen
+     graphic does not draw. -->
+<aside class="card data-panel" id="dataPanel">
+  <div class="data-head">
+    <h2>Match data</h2>
+    <div class="row">
+      <button id="swapSides" title="Swap every field between Player 1 and Player 2">Swap sides</button>
+      <button id="resetMatch" class="danger-ghost">Reset match</button>
+    </div>
+  </div>
+
+  <div class="focus-bar">
+    <span class="focus-label">Light up the fields used by</span>
+    <div class="focus-chips" role="group" aria-label="Light up the fields a graphic uses">
+      <button class="focus-chip" data-focus="preview" aria-pressed="true">In preview</button>
+      <button class="focus-chip" data-focus="scorebug" aria-pressed="false">Score bug</button>
+      <button class="focus-chip" data-focus="igo1v1" aria-pressed="false">1v1 overlay</button>
+      <button class="focus-chip" data-focus="igo2v2" aria-pressed="false">2v2 overlay</button>
+      <button class="focus-chip" data-focus="pov" aria-pressed="false">POV</button>
+    </div>
+    <p class="hint" id="focusHint"></p>
+  </div>
+
+  <div class="field-grid">
+    <div class="grid-head">
+      <span></span>
+      <h3 class="side-label green" data-side="left">Player 1</h3>
+      <h3 class="side-label blue" data-side="right">Player 2</h3>
+    </div>
+
+    <div class="field-row" data-field="seriesLength">
+      <span class="row-label">Series</span>
+      <div class="cell span2">
+        <select id="seriesLength" aria-label="Series length">
+          <option value="1">Best of 1</option>
+          <option value="3">Best of 3</option>
+          <option value="5">Best of 5</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row" data-field="name">
+      <span class="row-label">Player</span>
+      <div class="cell" data-side="left"><input id="lname" maxlength="40" autocomplete="off" aria-label="Player 1 name"></div>
+      <div class="cell" data-side="right"><input id="rname" maxlength="40" autocomplete="off" aria-label="Player 2 name"></div>
+    </div>
+
+    <div class="field-row" data-field="score">
+      <span class="row-label">Points</span>
+      <div class="cell" data-side="left">
+        <div class="counter">
+          <button data-step="-1" data-side="left" data-field="score" aria-label="Player 1 points down">&minus;</button>
+          <input class="score-entry" id="lscore" data-side="left" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Player 1 points">
+          <button data-step="1" data-side="left" data-field="score" aria-label="Player 1 points up">+</button>
+        </div>
+      </div>
+      <div class="cell" data-side="right">
+        <div class="counter">
+          <button data-step="-1" data-side="right" data-field="score" aria-label="Player 2 points down">&minus;</button>
+          <input class="score-entry" id="rscore" data-side="right" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Player 2 points">
+          <button data-step="1" data-side="right" data-field="score" aria-label="Player 2 points up">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row" data-field="gameWins">
+      <span class="row-label">Game wins</span>
+      <div class="cell" data-side="left">
+        <div class="counter">
+          <button data-step="-1" data-side="left" data-field="gameWins" aria-label="Player 1 game wins down">&minus;</button>
+          <output id="lwinsOut">0</output>
+          <button data-step="1" data-side="left" data-field="gameWins" aria-label="Player 1 game wins up">+</button>
+        </div>
+      </div>
+      <div class="cell" data-side="right">
+        <div class="counter">
+          <button data-step="-1" data-side="right" data-field="gameWins" aria-label="Player 2 game wins down">&minus;</button>
+          <output id="rwinsOut">0</output>
+          <button data-step="1" data-side="right" data-field="gameWins" aria-label="Player 2 game wins up">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row" data-field="legend">
+      <span class="row-label">Legend</span>
+      <div class="cell picker-wrap" data-side="left">
+        <input id="llegend" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 1 legend">
+        <ul class="results" id="llegendResults"></ul>
+      </div>
+      <div class="cell picker-wrap" data-side="right">
+        <input id="rlegend" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 2 legend">
+        <ul class="results" id="rlegendResults"></ul>
+      </div>
+    </div>
+
+    <div class="field-row" data-field="legendText">
+      <span class="row-label sub" title="The legend name the POV overlay prints. Picking a legend fills it in; edit it to shorten a long name.">Shown as</span>
+      <div class="cell" data-side="left"><input id="llegendText" maxlength="60" autocomplete="off" aria-label="Player 1 legend name shown on air"></div>
+      <div class="cell" data-side="right"><input id="rlegendText" maxlength="60" autocomplete="off" aria-label="Player 2 legend name shown on air"></div>
+    </div>
+
+    <div class="field-row" data-field="battlefield">
+      <span class="row-label">Battlefield</span>
+      <div class="cell picker-wrap" data-side="left">
+        <input id="lbf" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 battlefield">
+        <ul class="results" id="lbfResults"></ul>
+      </div>
+      <div class="cell picker-wrap" data-side="right">
+        <input id="rbf" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 battlefield">
+        <ul class="results" id="rbfResults"></ul>
+      </div>
+    </div>
+
+    <div class="field-row" data-field="champion">
+      <span class="row-label">Champion</span>
+      <div class="cell picker-wrap" data-side="left">
+        <input id="lchampion" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 1 champion unit">
+        <ul class="results" id="lchampionResults"></ul>
+      </div>
+      <div class="cell picker-wrap" data-side="right">
+        <input id="rchampion" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 2 champion unit">
+        <ul class="results" id="rchampionResults"></ul>
+      </div>
+    </div>
+
+    <div class="field-row" data-field="championText">
+      <span class="row-label sub" title="The champion name the POV overlay prints. Picking a champion fills it in.">Shown as</span>
+      <div class="cell" data-side="left"><input id="lchampionText" maxlength="40" autocomplete="off" aria-label="Player 1 champion name shown on air"></div>
+      <div class="cell" data-side="right"><input id="rchampionText" maxlength="40" autocomplete="off" aria-label="Player 2 champion name shown on air"></div>
+    </div>
+
+    <div class="field-row" data-field="card">
+      <span class="row-label">Featured card</span>
+      <div class="cell picker-wrap card-cell" data-side="left">
+        <img id="lcardThumb" class="card-thumb hidden" alt="">
+        <input id="lcard" placeholder="Search any card&hellip;" autocomplete="off" aria-label="Player 1 featured card">
+        <button id="lcardClear" class="clear-x" title="Clear the featured card" aria-label="Clear Player 1 featured card">&times;</button>
+        <ul class="results" id="lcardResults"></ul>
+      </div>
+      <div class="cell picker-wrap card-cell" data-side="right">
+        <img id="rcardThumb" class="card-thumb hidden" alt="">
+        <input id="rcard" placeholder="Search any card&hellip;" autocomplete="off" aria-label="Player 2 featured card">
+        <button id="rcardClear" class="clear-x" title="Clear the featured card" aria-label="Clear Player 2 featured card">&times;</button>
+        <ul class="results" id="rcardResults"></ul>
+      </div>
+    </div>
+
+    <div class="field-section">
+      <h4 class="section-label">2v2 teams</h4>
+
+      <div class="field-row" data-field="teamName">
+        <span class="row-label">Team name</span>
+        <div class="cell" data-side="left"><input id="lteam" maxlength="40" autocomplete="off" aria-label="Team 1 name"></div>
+        <div class="cell" data-side="right"><input id="rteam" maxlength="40" autocomplete="off" aria-label="Team 2 name"></div>
+      </div>
+
+      <div class="field-row" data-field="name2">
+        <span class="row-label">Teammate</span>
+        <div class="cell" data-side="left"><input id="lname2" maxlength="40" autocomplete="off" aria-label="Player 1 teammate name"></div>
+        <div class="cell" data-side="right"><input id="rname2" maxlength="40" autocomplete="off" aria-label="Player 2 teammate name"></div>
+      </div>
+
+      <div class="field-row" data-field="legend2">
+        <span class="row-label sub">Legend</span>
+        <div class="cell picker-wrap" data-side="left">
+          <input id="llegend2" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 1 teammate legend">
+          <ul class="results" id="llegend2Results"></ul>
+        </div>
+        <div class="cell picker-wrap" data-side="right">
+          <input id="rlegend2" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 2 teammate legend">
+          <ul class="results" id="rlegend2Results"></ul>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="battlefield2">
+        <span class="row-label sub">Battlefield</span>
+        <div class="cell picker-wrap" data-side="left">
+          <input id="lbf2" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 teammate battlefield">
+          <ul class="results" id="lbf2Results"></ul>
+        </div>
+        <div class="cell picker-wrap" data-side="right">
+          <input id="rbf2" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 teammate battlefield">
+          <ul class="results" id="rbf2Results"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<div class="stage-side">
 <section class="monitors">
   <div class="monitor-col">
     <span class="monitor-label preview-label">Preview</span>
@@ -47,101 +241,6 @@
 
 <main class="controls">
   <section class="card">
-    <h2>Match</h2>
-    <div class="player-col">
-      <h3 class="side-label green">Player 1</h3>
-      <label>Name <input id="lname" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Legend <input id="llegend" class="legend-input" data-side="left" placeholder="Search legends…" autocomplete="off"></label>
-        <ul class="results" id="llegendResults"></ul>
-      </div>
-      <div class="picker-wrap">
-        <label>Battlefield <input id="lbf" placeholder="Search battlefields…" autocomplete="off"></label>
-        <ul class="results" id="lbfResults"></ul>
-      </div>
-      <div class="counter-row">
-        <span class="counter-label">Points</span>
-        <div class="counter">
-          <button data-step="-1" data-side="left" data-field="score">−</button>
-          <output id="lscoreOut">0</output>
-          <button data-step="1" data-side="left" data-field="score">+</button>
-        </div>
-      </div>
-      <div class="counter-row">
-        <span class="counter-label">Game wins</span>
-        <div class="counter">
-          <button data-step="-1" data-side="left" data-field="gameWins">−</button>
-          <output id="lwinsOut">0</output>
-          <button data-step="1" data-side="left" data-field="gameWins">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="player-col">
-      <h3 class="side-label blue">Player 2</h3>
-      <label>Name <input id="rname" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Legend <input id="rlegend" class="legend-input" data-side="right" placeholder="Search legends…" autocomplete="off"></label>
-        <ul class="results" id="rlegendResults"></ul>
-      </div>
-      <div class="picker-wrap">
-        <label>Battlefield <input id="rbf" placeholder="Search battlefields…" autocomplete="off"></label>
-        <ul class="results" id="rbfResults"></ul>
-      </div>
-      <div class="counter-row">
-        <span class="counter-label">Points</span>
-        <div class="counter">
-          <button data-step="-1" data-side="right" data-field="score">−</button>
-          <output id="rscoreOut">0</output>
-          <button data-step="1" data-side="right" data-field="score">+</button>
-        </div>
-      </div>
-      <div class="counter-row">
-        <span class="counter-label">Game wins</span>
-        <div class="counter">
-          <button data-step="-1" data-side="right" data-field="gameWins">−</button>
-          <output id="rwinsOut">0</output>
-          <button data-step="1" data-side="right" data-field="gameWins">+</button>
-        </div>
-      </div>
-    </div>
-    <div class="row">
-      <label class="inline">Series
-        <select id="seriesLength">
-          <option value="1">Best of 1</option>
-          <option value="3">Best of 3</option>
-          <option value="5">Best of 5</option>
-        </select>
-      </label>
-      <button id="resetMatch" class="danger-ghost">Reset match</button>
-    </div>
-    <h3 class="side-label twos-head">2v2: teams and second players</h3>
-    <div class="player-col">
-      <label>Team 1 name <input id="lteam" maxlength="40" autocomplete="off"></label>
-      <label>Player 1B name <input id="lname2" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Player 1B legend <input id="llegend2" placeholder="Search legends…" autocomplete="off"></label>
-        <ul class="results" id="llegend2Results"></ul>
-      </div>
-      <div class="picker-wrap">
-        <label>Player 1B battlefield <input id="lbf2" placeholder="Search battlefields…" autocomplete="off"></label>
-        <ul class="results" id="lbf2Results"></ul>
-      </div>
-    </div>
-    <div class="player-col">
-      <label>Team 2 name <input id="rteam" maxlength="40" autocomplete="off"></label>
-      <label>Player 2B name <input id="rname2" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Player 2B legend <input id="rlegend2" placeholder="Search legends…" autocomplete="off"></label>
-        <ul class="results" id="rlegend2Results"></ul>
-      </div>
-      <div class="picker-wrap">
-        <label>Player 2B battlefield <input id="rbf2" placeholder="Search battlefields…" autocomplete="off"></label>
-        <ul class="results" id="rbf2Results"></ul>
-      </div>
-    </div>
-  </section>
-
-  <section class="card">
     <h2>Graphics</h2>
     <div class="scene-row">
       <div class="scene-name">Score bug <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
@@ -149,27 +248,36 @@
     </div>
     <div class="scene-row">
       <div class="scene-name">In-game overlay 1v1 <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
-      <div class="scene-controls">
-        <select id="igoMode">
-          <option value="legend">Legend art</option>
-          <option value="webcam">Webcam cutouts</option>
-        </select>
-        <button id="toggleIgo" class="scene-toggle">OFF</button>
+      <button id="toggleIgo" class="scene-toggle">OFF</button>
+      <div class="scene-options">
+        <label class="inline">Holders
+          <select id="igoMode">
+            <option value="legend">Legend art</option>
+            <option value="webcam">Webcam cutouts</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="scene-row">
       <div class="scene-name">In-game overlay 2v2 <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
-      <div class="scene-controls">
-        <select id="igo2Mode">
-          <option value="legend">Legend art</option>
-          <option value="webcam">Webcam cutouts</option>
-        </select>
-        <button id="toggleIgo2" class="scene-toggle">OFF</button>
+      <button id="toggleIgo2" class="scene-toggle">OFF</button>
+      <div class="scene-options">
+        <label class="inline">Holders
+          <select id="igo2Mode">
+            <option value="legend">Legend art</option>
+            <option value="webcam">Webcam cutouts</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="scene-row">
       <div class="scene-name">POV overlay <span class="onair hidden" id="povOnAir">ON AIR</span></div>
       <button id="togglePov" class="scene-toggle">OFF</button>
+      <div class="scene-options">
+        <label class="inline"><input type="checkbox" id="povShowLeft" checked> Left column</label>
+        <label class="inline"><input type="checkbox" id="povShowRight" checked> Right column</label>
+        <button id="povReset" class="clear-mini" title="Clears the champion line and the featured card on both sides. Names, legends and points stay.">Clear POV cards</button>
+      </div>
     </div>
     <div class="scene-row">
       <div class="scene-name">Decklist <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
@@ -196,106 +304,34 @@
     <p class="hint">Staging a card switches the popup on in preview. TAKE airs it.</p>
   </section>
 
-
-  <section class="card">
-    <h2>POV overlay</h2>
-    <div class="row">
-      <button id="povSwap" title="Swap every field between the two sides">Swap sides</button>
-      <button id="povReset" class="danger-ghost">Reset POV</button>
+  <section class="card deck-card">
+    <div class="deck-head">
+      <h2>Decklist</h2>
+      <a class="link-btn" href="/decklist/" target="_blank" rel="noopener" title="Paste, check and save decklists, export PNGs, import a deck sheet">Open deck editor</a>
     </div>
-    <p class="hint">Points, names, legends and battlefields are the same match data the score bug and the in-game overlays use.</p>
-    <div class="pov-side">
-      <div class="pov-side-head">
-        <h3 class="side-label green">Left column</h3>
-        <label class="inline"><input type="checkbox" id="povlShow" checked> Show this side</label>
-      </div>
-      <div class="counter-row">
-        <span class="counter-label">Points</span>
-        <div class="counter">
-          <button data-step="-1" data-side="left" data-field="score">&minus;</button>
-          <input class="score-entry" id="povlScore" data-side="left" inputmode="numeric" maxlength="1" autocomplete="off">
-          <button data-step="1" data-side="left" data-field="score">+</button>
-        </div>
-      </div>
-      <label>Player <input id="povlName" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Legend, pick from list <input id="povlLegend" placeholder="Search legends&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povlLegendResults"></ul>
-      </div>
-      <label>Legend name shown on air <input id="povlLegendText" maxlength="60" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Champion unit, pick from list <input id="povlChampion" placeholder="Search champion units&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povlChampionResults"></ul>
-      </div>
-      <label>Champion name shown on air <input id="povlChampionText" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Battlefield, pick from list <input id="povlBf" placeholder="Search battlefields&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povlBfResults"></ul>
-      </div>
-      <div class="picker-wrap">
-        <label>Featured card <input id="povlCard" placeholder="Search any card&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povlCardResults"></ul>
-      </div>
-      <div class="staged">
-        <img id="povlCardThumb" alt="" class="hidden">
-        <div class="staged-meta">
-          <span class="staged-label">Featured card</span>
-          <strong id="povlCardName">Nothing staged</strong>
-        </div>
-        <button id="povlCardClear" class="clear-mini">Clear</button>
-      </div>
+    <div class="deck-now">
+      <span class="deck-now-label preview">Preview</span><strong id="deckPrevName">Nothing loaded</strong>
+      <span class="deck-now-label air">On air</span><strong id="deckAirName">Nothing on air</strong>
     </div>
-    <div class="pov-side">
-      <div class="pov-side-head">
-        <h3 class="side-label blue">Right column</h3>
-        <label class="inline"><input type="checkbox" id="povrShow" checked> Show this side</label>
-      </div>
-      <div class="counter-row">
-        <span class="counter-label">Points</span>
-        <div class="counter">
-          <button data-step="-1" data-side="right" data-field="score">&minus;</button>
-          <input class="score-entry" id="povrScore" data-side="right" inputmode="numeric" maxlength="1" autocomplete="off">
-          <button data-step="1" data-side="right" data-field="score">+</button>
-        </div>
-      </div>
-      <label>Player <input id="povrName" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Legend, pick from list <input id="povrLegend" placeholder="Search legends&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povrLegendResults"></ul>
-      </div>
-      <label>Legend name shown on air <input id="povrLegendText" maxlength="60" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Champion unit, pick from list <input id="povrChampion" placeholder="Search champion units&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povrChampionResults"></ul>
-      </div>
-      <label>Champion name shown on air <input id="povrChampionText" maxlength="40" autocomplete="off"></label>
-      <div class="picker-wrap">
-        <label>Battlefield, pick from list <input id="povrBf" placeholder="Search battlefields&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povrBfResults"></ul>
-      </div>
-      <div class="picker-wrap">
-        <label>Featured card <input id="povrCard" placeholder="Search any card&hellip;" autocomplete="off"></label>
-        <ul class="results" id="povrCardResults"></ul>
-      </div>
-      <div class="staged">
-        <img id="povrCardThumb" alt="" class="hidden">
-        <div class="staged-meta">
-          <span class="staged-label">Featured card</span>
-          <strong id="povrCardName">Nothing staged</strong>
-        </div>
-        <button id="povrCardClear" class="clear-mini">Clear</button>
-      </div>
+    <div class="deck-lib-head">
+      <span class="url-label">Saved decks</span>
+      <input id="deckFilter" class="hidden" placeholder="Filter…" autocomplete="off">
     </div>
-  </section>
-
-  <section class="card">
-    <h2>Decklist</h2>
-    <label>Paste a decklist
-      <textarea id="deckList" rows="12" spellcheck="false" placeholder="Legend: Ahri, Nine-Tailed Fox&#10;Champion: Ahri, Alluring&#10;Battlefields:&#10;Sunken Temple&#10;Runes:&#10;6 Calm&#10;6 Mind&#10;Main:&#10;3 Stupefy"></textarea>
-    </label>
-    <label class="inline"><input type="checkbox" id="deckSideboard" checked> Show the sideboard rack</label>
+    <div class="deck-chips" id="deckChips"></div>
+    <p class="hint" id="deckLibHint">No saved decks yet. Paste, check and save them in the deck editor, then click one here to load it into preview.</p>
+    <div class="deck-opts">
+      <label class="inline"><input type="checkbox" id="deckBackground" checked> Plate background</label>
+      <label class="inline"><input type="checkbox" id="deckSideboard" checked> Sideboard rack</label>
+    </div>
+    <details class="deck-paste">
+      <summary>Paste a list straight into preview</summary>
+      <textarea id="deckList" rows="8" spellcheck="false" placeholder="Legend: Ahri, Nine-Tailed Fox&#10;Champion: Ahri, Alluring&#10;Battlefields:&#10;Sunken Temple&#10;Runes:&#10;6 Calm&#10;6 Mind&#10;Main:&#10;3 Stupefy"></textarea>
+    </details>
     <p class="hint" id="deckSummary">Nothing pasted yet.</p>
-    <div class="row"><button id="deckClear" class="danger-ghost">Clear decklist</button></div>
+    <div class="row">
+      <button id="deckReplay" title="Plays the build-in again on the program output">Replay intro on air</button>
+      <button id="deckClear" class="danger-ghost">Clear</button>
+    </div>
   </section>
 
   <section class="card">
@@ -382,6 +418,8 @@
     <p class="hint">Card data and art come from Rift Registry, saved on this computer: no venue internet needed once downloaded. Add <code>&amp;side=left</code> to the popup URL to mirror it. vMix: add each URL as a Web Browser input at 1920 × 1080, tick "Use Transparent Background", and set FPS to 60.</p>
   </section>
 </main>
+</div>
+</div>
 
 <footer>
   <p>Edits land in PREVIEW; TAKE puts them on air. · Sideways Studio, built by <strong>Sam Morris</strong> · Turn'em Sideways</p>

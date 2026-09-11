@@ -74,9 +74,10 @@ enough that persona 1 sees a different product.
 - [x] **Part 9 — Decklist**: FlipDeck's `src/lib/decks/parse.ts` ported to
   `server/decklist.js`, names resolved against the local card index, and a
   card-grid plate scene. Shipped 2026-09-04, out of roadmap order on Sam's
-  ask. The plate reproduces FlipDeck's grammar, not `Plate.tsx` pixel for
-  pixel: no build-in cascade, and the exact video-deck-plate design is a
-  separate pass.
+  ask. Revamped 2026-09-11 to FlipDeck's plate brief: the plate now matches
+  `Plate.tsx` to the pixel (measured against the reference render), with its
+  build-in, a deck editor page, a saved-deck library, PNG export and a batch
+  CLI.
 - [ ] Part 10 — Timers (start/pause/reset, panel + overlay element).
 - [x] Part 11 — Theming: pulled forward to Loop 2 on Sam's feedback (accent
   color pickers, logo upload, curated Google Fonts downloaded + cached for
@@ -104,10 +105,14 @@ enough that persona 1 sees a different product.
 - Per-URL `?theme=` override (Part 11 leftover; state theme is global now).
 - TAKE is a hard cut; consider fade/wipe transition styles on the bus later
   (vMix parity, Geoff/Priya loops may ask).
-- Vendetta CARDS are not in the popup search until the RR index adds the
-  set (legends are covered by the supplemental list in server/legends.js;
-  prune that list when RR catches up). A tcgcsv merge is the fallback if RR
-  stays behind.
+- Vendetta CARDS: Rift Registry's live index carries the set as of
+  2026-09-11 (936 cards, 169 of them VEN), so "Check for new sets" brings
+  them into the popup search, the decklist and the POV champion picker. An
+  install that has not re-synced still lacks them. The supplemental legends
+  list in server/legends.js can be pruned once a synced index is confirmed to
+  cover all nine. A tcgcsv merge (FlipDeck's catalog.ts) stays the fallback
+  for a future set RR is slow to add; tcgcsv had no singles yet for the
+  Radiance or Legacy groups on 2026-09-11.
 - Vendetta hero art: all 9 champions fall back to their existing 1-suffix
   PNGs; champions gaining a second legend want proper 2-suffix variants in
   IGO-LEGENDS when the art exists.
@@ -116,7 +121,6 @@ enough that persona 1 sees a different product.
   runtime recolor of the WebP plates.
 - Card popup default side collides with the IGO sidebar; /output/ supports
   ?popupside=left. Consider auto-mirroring the popup when the IGO is on.
-- "Swap sides" button on the match card.
 - Two open panels can fight over optimistic counter state (each panel now
   mutates its local copy before posting). Single operator is v1 scope; the
   staff-engineer persona loop should decide whether to version-stamp posts.
@@ -130,9 +134,11 @@ enough that persona 1 sees a different product.
   just fixed: `padding: 14px` on a `width: 100%` element pushes the icon cutout
   28px past the 261px holder. One line (`box-sizing: border-box`), but it only
   shows for a legend with no hero PNG, so it wants its own verification pass.
-- Vendetta champion units are not in the Rift Registry card index, so the POV
-  champion picker finds none for those legends (same root cause as the card
-  search entry above). The "champion name shown on air" field is the workaround.
+- Vendetta champion units were missing from the Rift Registry card index, so
+  the POV champion picker found none for those legends. The live index has
+  them as of 2026-09-11 (see the Vendetta CARDS entry): a re-synced install
+  should find them; the "champion name shown on air" field remains the
+  workaround for one that has not.
 - A Battlefield card staged into the POV featured card slot renders portrait,
   because battlefield art is stored rotated and that slot is a fixed portrait
   frame. Correct, but it can read as a bug from the caster's chair.
@@ -157,19 +163,175 @@ enough that persona 1 sees a different product.
 - The build hardcodes the same hero-art path as `server/legends.js`. Anyone
   building on another machine needs `SIDEWAYS_HERO_DIR` set, or the exe ships
   without hero cutouts (it warns and carries on).
-- The decklist plate approximates FlipDeck's card grid rather than porting
-  `src/remotion/decks/Plate.tsx` (404 lines of Remotion, with a legend-slide
-  and card-cascade build-in). Worth a pass if the plate has to match the
-  video deck plates exactly.
 - A Battlefield card listed in the decklist MAIN deck renders portrait in the
-  grid; only the header pills rotate. Correct for the stored art, odd to read.
-- Long legend names on the decklist plate ellipsise at a fixed 620px rather
-  than auto-fitting the way the POV lines do.
+  grid; only the battlefield pills rotate. Correct for the stored art, odd to
+  read.
+- The decklist backdrop (`web/assets/decklist/background.jpg`) is the TES
+  plate background with its green arrow shards. The label rails and pill
+  borders follow the theme accent, the backdrop does not. A rival-TO persona
+  will want a per-event backdrop upload next to the logo upload.
+- The saved-deck library lives in `data/decklists.json`, outside event.json.
+  Part 12 (named event files) must save and load it with the event, or a TO
+  who preps two events loses one set of lists.
+- PNG export drives the machine's own Edge or Chrome headlessly (every
+  Windows 10/11 install has Edge; `SIDEWAYS_BROWSER` points at another
+  Chromium). If neither exists the editor says so and the rest works.
+- /output/ and the monitors stack the decklist under the IGOs and the POV. A
+  full-frame plate with its backdrop on arguably belongs above the overlays;
+  today an operator who leaves an IGO up gets its sidebar over the deck.
+- A deck swap on air waits up to 1.5s for art that has never been downloaded
+  (the old plate stays up meanwhile). Lists saved in the deck editor are
+  already warm; a list pasted straight into the panel may not be.
+- FlipDeck's own live decklist page holds frame 89 with the build-in still
+  switched on, so on a list of about 20 or more distinct names the rune
+  counts freeze part-faded, and past about 29 the last one never appears.
+  Sideways Studio computes the intro length from the latest delay instead.
+  Worth porting back to FlipDeck.
 - Monitor iframes add 4 WS clients per open panel; interplay with OBS
   "shutdown source when not visible" on the real scene URLs is untested until
   the Priya (OBS power user) loop.
 
 ## Loop log
+
+### 2026-09-11b (out of band: the decklist plate, rebuilt to FlipDeck's brief)
+Sam handed over the FlipDeck agent's implementation brief for its decklist
+plate tool and asked for the Sideways Studio graphic to be revamped to it.
+The brief is written for a React + Remotion copy; this app is vanilla scenes
+with a wall-clock seek clock, and the SPEC's animation rule forbids the rAF
+playback Remotion uses. So the brief's non-negotiable, "the preview, the
+stream page and the PNG are the same component", became "the same scene
+page": the broadcast source, both panel monitors, the new editor's live
+preview, a standalone `?list=` source and PNG export all load
+`web/scenes/decklist/`, and nothing else draws a plate.
+
+The plate is `Plate.tsx` at its own design pixels: the 1920x1080 TES
+backdrop (its own toggle, `scenes.decklist.background`, since /output/ is a
+transparent page), a 600px floating legend, the main deck as a grid of card
+scans with 0.4-width white quantities (six columns, more past 18 names), and
+the strip of vertical labels, three battlefield pills, the champion, the
+ten-slot sideboard rack and rune counts. The labels are the template's own
+pixel slices turned into alpha masks, so the green follows the theme accent
+while the letterforms stay the template's. Measured in the browser against
+the reference render: pills at x 76 to 406, label rails at x 32, 422 and 586,
+legend 600 by 837.9, grid cards 193.8 by 270.7. Two things only measuring
+showed: the reference is border-box throughout, and its 4px and 26px strip
+spacers collapse to zero on a two-domain deck because the strip overflows.
+The scene copies both. Type prefers a locally installed Akzidenz-Grotesk Next
+(never bundled, it is not redistributable), yields to an organizer's theme
+font, and falls back to the theme stack.
+
+Build-in: legend slide, card cascade, strip rise, runes last, each on
+Remotion's damping-200 spring. Remotion takes the critically damped branch
+for any damping ratio of 1 or more, so the curve is the closed form
+1 - e^(-10t)(1 + 10t), and the scene writes it per element to `--s` on a 16ms
+interval. It plays on an entrance, on a new deck while on air, and on a new
+"Replay intro on air" cue, a program-direct action like CLEAR that moves both
+banks' counter so TAKE does not light up. The preview monitor settles instead
+of cascading on every keystroke, first loads snap settled as before, and at
+the end every animated property is removed, so the settled plate carries no
+transform and is identical to the still. The length is computed from the
+latest delay rather than fixed at 90 frames; see the backlog for why FlipDeck
+needs the same fix.
+
+Resolution matches on a key that ignores case, accents, punctuation and
+spacing, strips bracketed printings and " - Starter", keeps the unique-prefix
+rule, and adds FlipDeck's did-you-mean (Levenshtein, substring hits first).
+Being space-blind, it finds "Thermobeam" as Thermo Beam, one of the six typos
+FlipDeck's own run reported. The parser moved to `web/shared/` so the editor
+runs it in the browser and serialize round-trips. Parsing a list warms its
+full art in the background, and art downloads are de-duplicated in flight.
+
+New surfaces: `/decklist/`, the deck editor (textarea as source of truth,
+structured view with quantity steppers and fix chips that rewrite the text,
+warn-only legality, GENERATE PNG blocked on any unresolved name, SEND TO
+PREVIEW, SAVE, COPY STREAM URL, CSV import with a per-deck report, export all
+as PNG). A saved-deck library in `data/decklists.json` with its own endpoint
+and a version-only WS announcement, kept out of the bussed state because
+every state push goes to every scene. The panel's Decklist card gains chips
+(click loads into preview, TAKE airs it), preview and on-air labels, the
+background toggle and the replay cue. PNG export is headless Edge over the
+DevTools protocol with the `ws` client the app already has: nothing bundled,
+true alpha, about a second a plate. `npm run decklist:batch` renders a Deck
+List Database sheet through the same route, starting a private copy of the
+app when none is running. `npm test` is new: 42 node:test cases over the
+parser, the layout and timing maths, the CSV reader and the resolver.
+
+Verified against a server on port 4711 with its own data folder
+(`--data-dir=`, added for this) so the other session's live server and its
+autosave were never touched. The Diana reference list resolves 25 of 25,
+Vendetta included, once the index is re-synced. A typo'd pair blocks GENERATE
+and the chips rewrite the textarea canonically. The PNG with backdrop and
+the true-alpha PNG were checked by pixel and over magenta. Hide-sideboard
+keeps the runes flush right at x 1887. Build-in timing was sampled on air, and
+a swap, the replay cue, a fade-out, `?anim=0`, and a server kill and restart
+all behaved: the plate held through the outage and did not replay after it.
+Theme accent and theme font both reach the plate. The panel still fits
+1920x1080 with no page scroll. The real 102-deck Chinese co-stream sheet
+rendered 102 of 102 in 69 seconds with four genuine typos reported, each with
+the right closest match, and Unicode file names. `--strict`, `--resume`,
+`--transparent --no-sideboard` and the private-server path all work. The
+packaged exe was not rebuilt; the esbuild bundle compiles clean.
+
+An independent review of the diff found two real bugs, both fixed and
+re-verified. (1) A headless browser that spawned but never finished starting
+was referenced by nothing, so the process and its temp profile were orphaned;
+launch now cleans both up on any failure (checked by pointing
+`SIDEWAYS_BROWSER` at a program that exits at once: clean rejection, no
+profile left), the socket wait has a timeout too, and a sweep removes
+profiles over an hour old. (2) Pre-existing: emptying the panel's paste box
+by hand left the decklist `visible` with no list, which showed a disabled ON
+toggle and, after TAKE, an ON AIR pill over a blank graphic. The sanitizer
+now switches a listless decklist off, the same rule the card popup has for a
+missing card.
+
+### 2026-09-11 (out of band: one data column, dimmed per graphic)
+Sam's ask: the graphics share most of their data with small variants, so keep
+all of it in one place on the left and grey out what a graphic does not use.
+The Match card and the POV card had grown separate inputs for the same fields
+(name, legend, battlefield, points each existed twice, bound to one state
+value). Both are gone. A full-height Match data column on the left holds every
+fact once, one row per field with Player 1 and Player 2 side by side:
+series, player, points (stepper plus direct entry), game wins, legend with its
+POV "shown as" line, battlefield, champion with its "shown as" line, featured
+card (thumb, search and clear on one line), then a 2v2 block with team name
+and the teammate's name, legend and battlefield. Swap sides and Reset match
+sit in its header, which clears the old "Swap sides on the match card"
+backlog item. Monitors and TAKE/CLEAR moved top right over four cards
+(Graphics, Decklist, Theme, Setup); the POV column checkboxes and "Clear POV
+cards" moved under the POV row in Graphics, the IGO holder modes under theirs.
+Panel only: server, state shape and every scene are untouched.
+
+Dimming: chips at the top of the column pick what to light up. "In preview"
+(the default) is the union of the match-data graphics switched on in preview,
+lighting everything when none is; the others pin one graphic. `SCENE_FIELDS`
+in panel.js is the single map of which graphic draws which field, read off
+each scene's render code, plus two setup rules: webcam holders draw no
+legend art, and a hidden POV column draws nothing on that side, so both dim
+per cell rather than per row. Dimmed means "not on this graphic", not
+locked: fields stay editable, lift on hover, and go fully opaque while typing
+(a picker's list inherits the cell's opacity). Decklist and card popup use no
+match data, so they are not chips; their inputs stay with their own cards.
+Row labels carry a "Shown on ..." tooltip generated from the same map.
+
+Found and fixed while testing, pre-existing: a text field posts 300ms after
+the last keystroke and reads its value when the timer fires, so typing a name
+and clicking a points button inside that window let the counter's state echo
+repaint the now-idle name box from the old value, and the timer then posted
+the old name. Text fields now also flush on blur, which fires before the
+click. Pickers now put back the assigned value when left without a pick, so a
+half-typed search never reads as the data that will air, and lists near the
+bottom of the column open upward.
+
+Verified at 1920x1080 (no page scroll, data column needs no internal scroll),
+1440x900 (column scrolls on its own) and 960 wide (stacks, page scrolls, no
+overlap): chip dimming for all four graphics, webcam mode dimming the legend,
+a hidden POV column dimming only its side, the "In preview" union with the
+bug plus 1v1 on; name plus immediate +1 both landing; legend pick setting
+name, slug and card id with "shown as" following; champion pick staging the
+featured card; featured card search and clear; Swap sides moving all 14
+fields and the card. Sam's preview bank was snapshotted first and restored
+byte-identical afterwards; program was never touched. The packaged exe embeds
+`web/` at build time, so the installed copy needs a rebuild to get this.
 
 ### 2026-09-04b (v0.2.1: the launch prompt could consent without a keystroke)
 A packaged 0.1.0 installed a NON-required 0.2.0 twice with nobody at the

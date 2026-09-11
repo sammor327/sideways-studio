@@ -34,6 +34,13 @@ export class SeekClock {
     this.el.style.setProperty(this.prop, String(v));
   }
 
+  // Abandon a running play() where it stands. Its promise never resolves, so
+  // a completion handler written for the cancelled move cannot fire late.
+  stop() {
+    clearInterval(this.timer);
+    this.timer = null;
+  }
+
   play({ from = 0, to = 1 } = {}) {
     clearInterval(this.timer);
     if (!animEnabled()) {

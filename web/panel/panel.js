@@ -1,5 +1,6 @@
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
+const SIDES = [['l', 'left'], ['r', 'right']];
 
 let state = null;
 
@@ -19,6 +20,132 @@ function setStatus(ok) {
   $('statusDot').classList.toggle('ok', ok);
   $('statusText').textContent = ok ? 'connected' : 'disconnected';
 }
+
+// --- field focus: light up what a graphic draws, dim the rest ---
+//
+// Every graphic reads the same match data (the score bug and the POV print the
+// same points, the IGOs and the POV the same legend), so the panel keeps one
+// field per fact and this map says which graphic draws which. Dimmed fields
+// stay editable: the next graphic's data can go in while another one is up.
+const SCENE_FIELDS = {
+  scorebug: ['seriesLength', 'name', 'score', 'gameWins'],
+  igo1v1: ['seriesLength', 'name', 'gameWins', 'legend', 'battlefield'],
+  igo2v2: ['seriesLength', 'teamName', 'name', 'name2', 'gameWins',
+    'legend', 'legend2', 'battlefield', 'battlefield2'],
+  pov: ['name', 'score', 'legend', 'legendText', 'battlefield',
+    'champion', 'championText', 'card'],
+};
+const SCENE_NAMES = {
+  scorebug: 'the score bug',
+  igo1v1: 'the 1v1 overlay',
+  igo2v2: 'the 2v2 overlay',
+  pov: 'the POV overlay',
+};
+const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
+
+// 'preview' follows whatever is switched on in the preview bank; a scene key
+// pins one graphic. Per-browser convenience only, so storage may be missing.
+let focus = 'preview';
+try {
+  const saved = localStorage.getItem(FOCUS_KEY);
+  if (saved === 'preview' || Object.hasOwn(SCENE_FIELDS, saved)) focus = saved;
+} catch { /* storage blocked: start on 'preview' */ }
+
+// Whether one graphic, set up the way preview has it, draws one field on one
+// side. Webcam holders are windows for camera sources, so they draw no legend
+// art, and a hidden POV column takes all of its text and art with it.
+function sceneDraws(scene, field, side, bank) {
+  if (!SCENE_FIELDS[scene].includes(field)) return false;
+  const cfg = bank.scenes[scene];
+  if (cfg.mode === 'webcam' && (field === 'legend' || field === 'legend2')) return false;
+  if (scene === 'pov' && side && !(side === 'left' ? cfg.showLeft : cfg.showRight)) return false;
+  return true;
+}
+
+function focusScenes(bank) {
+  if (focus !== 'preview') return [focus];
+  return Object.keys(SCENE_FIELDS).filter((key) => bank.scenes[key].visible);
+}
+
+function listNames(keys) {
+  const names = keys.map((key) => SCENE_NAMES[key]);
+  if (names.length < 2) return names.join('');
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
+
+const capitalise = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+function focusHint(bank, scenes) {
+  if (!scenes.length) {
+    return 'Nothing switched on in preview uses match data, so every field is lit.';
+  }
+  const lines = [focus === 'preview'
+    ? `Lit fields show on ${listNames(scenes)}, switched on in preview. Dimmed ones still edit.`
+    : `Lit fields show on ${SCENE_NAMES[focus]}. Dimmed ones still edit.`];
+  for (const key of scenes) {
+    const cfg = bank.scenes[key];
+    if (cfg.mode === 'webcam') {
+      lines.push(`${capitalise(SCENE_NAMES[key])} is on webcam cutouts, so it shows no legend art.`);
+    }
+    if (key === 'pov' && !cfg.showLeft && !cfg.showRight) lines.push('Both POV columns are hidden.');
+    else if (key === 'pov' && !cfg.showLeft) lines.push('The POV left column is hidden.');
+    else if (key === 'pov' && !cfg.showRight) lines.push('The POV right column is hidden.');
+  }
+  return lines.join(' ');
+}
+
+function applyFocus() {
+  if (!state) return;
+  const bank = state.preview;
+  const scenes = focusScenes(bank);
+  // Nothing to measure against: preview has no match-data graphic on.
+  const lightAll = scenes.length === 0;
+  const sideLit = { left: false, right: false };
+  for (const row of document.querySelectorAll('.field-row')) {
+    const { field } = row.dataset;
+    let rowLit = false;
+    for (const cell of row.querySelectorAll('.cell')) {
+      const side = cell.dataset.side || null;
+      const lit = lightAll || scenes.some((key) => sceneDraws(key, field, side, bank));
+      cell.classList.toggle('dim', !lit);
+      rowLit = rowLit || lit;
+      if (lit && side) sideLit[side] = true;
+    }
+    row.classList.toggle('dim-row', !rowLit);
+  }
+  for (const section of document.querySelectorAll('.field-section')) {
+    const anyLit = section.querySelector('.field-row:not(.dim-row)');
+    section.querySelector('.section-label').classList.toggle('dim', !anyLit);
+  }
+  for (const head of document.querySelectorAll('.grid-head .side-label')) {
+    head.classList.toggle('dim', !lightAll && !sideLit[head.dataset.side]);
+  }
+  for (const chip of document.querySelectorAll('.focus-chip')) {
+    const on = chip.dataset.focus === focus;
+    chip.classList.toggle('on', on);
+    chip.setAttribute('aria-pressed', String(on));
+  }
+  $('focusHint').textContent = focusHint(bank, scenes);
+}
+
+for (const chip of document.querySelectorAll('.focus-chip')) {
+  chip.addEventListener('click', () => {
+    focus = chip.dataset.focus;
+    try { localStorage.setItem(FOCUS_KEY, focus); } catch { /* per-session only */ }
+    applyFocus();
+  });
+}
+
+// The label column says which graphics draw each row, so the map above is
+// readable without picking every chip in turn.
+for (const row of document.querySelectorAll('.field-row')) {
+  const users = Object.keys(SCENE_FIELDS).filter((key) => SCENE_FIELDS[key].includes(row.dataset.field));
+  const label = row.querySelector('.row-label');
+  const drawn = `Shown on ${listNames(users)}.`;
+  label.title = label.title ? `${label.title} ${drawn}` : drawn;
+}
+
+// --- rendering ---
 
 function renderScenes(s) {
   const sbPrev = s.preview.scenes.scorebug.visible;
@@ -47,10 +174,8 @@ function renderScenes(s) {
   povBtn.textContent = povPrev.visible ? 'ON' : 'OFF';
   povBtn.classList.toggle('on', povPrev.visible);
   $('povOnAir').classList.toggle('hidden', !s.program.scenes.pov.visible);
-  for (const [P, side, flag] of [['povl', 'left', povPrev.showLeft], ['povr', 'right', povPrev.showRight]]) {
-    const box = $(`${P}Show`);
-    if (document.activeElement !== box) box.checked = flag;
-    renderFeaturedCard(P, s.preview.match[side].card);
+  for (const [id, flag] of [['povShowLeft', povPrev.showLeft], ['povShowRight', povPrev.showRight]]) {
+    if (document.activeElement !== $(id)) $(id).checked = flag;
   }
 
   const dk = s.preview.scenes.decklist;
@@ -67,6 +192,8 @@ function renderScenes(s) {
     summariseDeck(dk.list);
   }
   if (document.activeElement !== $('deckSideboard')) $('deckSideboard').checked = dk.showSideboard;
+  if (document.activeElement !== $('deckBackground')) $('deckBackground').checked = dk.background !== false;
+  renderDeckLibrary();
 
   const cp = s.preview.scenes.cardpopup;
   const cpAir = s.program.scenes.cardpopup.visible;
@@ -94,12 +221,11 @@ function renderScenes(s) {
   }
 }
 
-// The POV featured card box: thumbnail, name, and a Clear that is only live
-// when there is something to clear.
-function renderFeaturedCard(P, card) {
-  const thumb = $(`${P}CardThumb`);
-  $(`${P}CardName`).textContent = card.cardId ? (card.cardName || card.cardId) : 'Nothing staged';
-  $(`${P}CardClear`).disabled = !card.cardId;
+// A side's featured card: thumbnail beside the search box, and a Clear that is
+// only live when there is something to clear.
+function renderFeaturedCard(p, card) {
+  const thumb = $(`${p}cardThumb`);
+  $(`${p}cardClear`).disabled = !card.cardId;
   if (!card.cardId) {
     thumb.classList.add('hidden');
     thumb.removeAttribute('src');
@@ -141,39 +267,30 @@ const setIfIdle = (id, value) => {
 function render(s) {
   state = s;
   const m = s.preview.match;
-  // Never clobber a field the operator is typing in.
-  if (document.activeElement !== $('lname')) $('lname').value = m.left.name;
-  if (document.activeElement !== $('rname')) $('rname').value = m.right.name;
-  if (document.activeElement !== $('llegend')) $('llegend').value = m.left.legend || '';
-  if (document.activeElement !== $('rlegend')) $('rlegend').value = m.right.legend || '';
-  if (document.activeElement !== $('lbf')) $('lbf').value = m.left.battlefield || '';
-  if (document.activeElement !== $('rbf')) $('rbf').value = m.right.battlefield || '';
-  if (document.activeElement !== $('lteam')) $('lteam').value = m.left.teamName || '';
-  if (document.activeElement !== $('rteam')) $('rteam').value = m.right.teamName || '';
-  if (document.activeElement !== $('lname2')) $('lname2').value = m.left.name2 || '';
-  if (document.activeElement !== $('rname2')) $('rname2').value = m.right.name2 || '';
-  if (document.activeElement !== $('llegend2')) $('llegend2').value = m.left.legend2 || '';
-  if (document.activeElement !== $('rlegend2')) $('rlegend2').value = m.right.legend2 || '';
-  if (document.activeElement !== $('lbf2')) $('lbf2').value = m.left.battlefield2 || '';
-  if (document.activeElement !== $('rbf2')) $('rbf2').value = m.right.battlefield2 || '';
-  for (const [P, side] of [['povl', 'left'], ['povr', 'right']]) {
+  for (const [p, side] of SIDES) {
     const sd = m[side];
-    setIfIdle(`${P}Name`, sd.name);
-    setIfIdle(`${P}Legend`, sd.legend || '');
-    setIfIdle(`${P}LegendText`, sd.legend || '');
-    setIfIdle(`${P}Champion`, sd.champion || '');
-    setIfIdle(`${P}ChampionText`, sd.champion || '');
-    setIfIdle(`${P}Bf`, sd.battlefield || '');
-    setIfIdle(`${P}Score`, String(sd.score));
+    setIfIdle(`${p}name`, sd.name);
+    setIfIdle(`${p}score`, String(sd.score));
+    $(`${p}winsOut`).textContent = sd.gameWins;
+    // The legend picker and its "shown as" line are one field: the picker
+    // fills it, the line edits the text without moving the art.
+    setIfIdle(`${p}legend`, sd.legend || '');
+    setIfIdle(`${p}legendText`, sd.legend || '');
+    setIfIdle(`${p}bf`, sd.battlefield || '');
+    setIfIdle(`${p}champion`, sd.champion || '');
+    setIfIdle(`${p}championText`, sd.champion || '');
+    setIfIdle(`${p}card`, sd.card.cardName || '');
+    renderFeaturedCard(p, sd.card);
+    setIfIdle(`${p}team`, sd.teamName || '');
+    setIfIdle(`${p}name2`, sd.name2 || '');
+    setIfIdle(`${p}legend2`, sd.legend2 || '');
+    setIfIdle(`${p}bf2`, sd.battlefield2 || '');
   }
-  $('lscoreOut').textContent = m.left.score;
-  $('rscoreOut').textContent = m.right.score;
-  $('lwinsOut').textContent = m.left.gameWins;
-  $('rwinsOut').textContent = m.right.gameWins;
   $('seriesLength').value = String(m.seriesLength);
 
   renderScenes(s);
   renderTheme(s.theme);
+  applyFocus();
 
   // The TAKE button lights up whenever preview differs from what is on air.
   const pending = JSON.stringify(s.preview) !== JSON.stringify(s.program);
@@ -185,15 +302,12 @@ function render(s) {
 $('takeBtn').addEventListener('click', () => post({ action: 'take' }));
 $('clearBtn').addEventListener('click', () => post({ action: 'clear' }));
 
-// --- match controls (all edits land in the preview bank) ---
+// --- match data (all edits land in the preview bank) ---
 
-// Points and game wins each appear in more than one card now, so an
-// optimistic click has to repaint every display bound to that number.
 function paintCounter(side, field, value) {
-  $((side === 'left' ? 'l' : 'r') + (field === 'score' ? 'scoreOut' : 'winsOut')).textContent = value;
-  if (field !== 'score') return;
-  const el = $(side === 'left' ? 'povlScore' : 'povrScore');
-  if (document.activeElement !== el) el.value = String(value);
+  const p = side === 'left' ? 'l' : 'r';
+  if (field === 'score') setIfIdle(`${p}score`, String(value));
+  else $(`${p}winsOut`).textContent = value;
 }
 
 for (const btn of document.querySelectorAll('.counter button')) {
@@ -211,23 +325,50 @@ for (const btn of document.querySelectorAll('.counter button')) {
   });
 }
 
+// Direct score entry, for jumping to a number instead of stepping to it.
+for (const [p, side] of SIDES) {
+  const el = $(`${p}score`);
+  const commit = () => {
+    const raw = el.value.trim();
+    const parsed = Math.trunc(Number(raw));
+    // Unparseable input puts back the number that is on the graphic. Zeroing a
+    // live score because someone fat-fingered a letter is not a recovery.
+    const current = state ? state.preview.match[side].score : 0;
+    const next = raw !== '' && Number.isFinite(parsed)
+      ? Math.min(8, Math.max(0, parsed))
+      : current;
+    el.value = String(next);
+    if (state) state.preview.match[side].score = next;
+    post({ match: { [side]: { score: next } } });
+  };
+  el.addEventListener('change', commit);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commit(); el.blur(); } });
+}
+
 // Debounced text fields, one timer per input so parallel edits never cancel
-// each other. Battlefields are pickers now, not free text.
-for (const [id, side, field] of [
-  ['lname', 'left', 'name'], ['rname', 'right', 'name'],
-  ['lname2', 'left', 'name2'], ['rname2', 'right', 'name2'],
-  ['lteam', 'left', 'teamName'], ['rteam', 'right', 'teamName'],
-  ['povlName', 'left', 'name'], ['povrName', 'right', 'name'],
-  ['povlLegendText', 'left', 'legend'], ['povrLegendText', 'right', 'legend'],
-  ['povlChampionText', 'left', 'champion'], ['povrChampionText', 'right', 'champion'],
-]) {
-  let timer = null;
-  $(id).addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      post({ match: { [side]: { [field]: $(id).value } } });
-    }, 300);
-  });
+// each other. The two "shown as" lines write the same field their picker does.
+for (const [p, side] of SIDES) {
+  for (const [id, field] of [
+    [`${p}name`, 'name'], [`${p}name2`, 'name2'], [`${p}team`, 'teamName'],
+    [`${p}legendText`, 'legend'], [`${p}championText`, 'champion'],
+  ]) {
+    const el = $(id);
+    let timer = null;
+    const flush = () => {
+      if (timer === null) return;
+      clearTimeout(timer);
+      timer = null;
+      post({ match: { [side]: { [field]: el.value } } });
+    };
+    el.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(flush, 300);
+    });
+    // Leaving the field sends the edit at once. Otherwise a counter click
+    // inside the debounce window repaints this now-idle field from the older
+    // state, and the timer then posts that instead of what was typed.
+    el.addEventListener('blur', flush);
+  }
 }
 
 $('seriesLength').addEventListener('change', () => {
@@ -246,6 +387,24 @@ $('resetMatch').addEventListener('click', () => {
       igo1v1: { visible: false }, igo2v2: { visible: false }, pov: { visible: false },
     },
   });
+});
+
+// Swap sides moves the whole side, so every graphic follows at once instead
+// of one disagreeing with another.
+const SWAP_FIELDS = [
+  'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
+  'champion', 'name2', 'legend2', 'legendSlug2', 'battlefield2', 'teamName',
+  'score', 'gameWins',
+];
+$('swapSides').addEventListener('click', () => {
+  if (!state) return;
+  const m = state.preview.match;
+  const copy = (side) => {
+    const out = { card: { ...m[side].card } };
+    for (const field of SWAP_FIELDS) out[field] = m[side][field];
+    return out;
+  };
+  post({ match: { left: copy('right'), right: copy('left') } });
 });
 
 // --- scene toggles (preview bank; TAKE commits) ---
@@ -287,6 +446,19 @@ $('igo2Mode').addEventListener('change', () => {
   post({ scenes: { igo2v2: { mode: $('igo2Mode').value } } });
 });
 
+$('povShowLeft').addEventListener('change', () => post({ scenes: { pov: { showLeft: $('povShowLeft').checked } } }));
+$('povShowRight').addEventListener('change', () => post({ scenes: { pov: { showRight: $('povShowRight').checked } } }));
+
+$('povReset').addEventListener('click', () => {
+  post({
+    match: {
+      left: { champion: '', card: { cardId: '', cardName: '' } },
+      right: { champion: '', card: { cardId: '', cardName: '' } },
+    },
+  });
+  for (const id of ['lcard', 'rcard', 'lchampion', 'rchampion', 'lchampionText', 'rchampionText']) $(id).value = '';
+});
+
 // --- catalog pickers: type-ahead dropdowns over legends and battlefields ---
 
 let legendCatalog = [];
@@ -311,9 +483,22 @@ async function loadCatalogs() {
 }
 loadCatalogs();
 
+// The data panel scrolls, and its lowest pickers sit near the bottom of the
+// window: a list with no room below opens upward instead of off the card.
+function placeList(input, list) {
+  const box = input.closest('.card');
+  if (!box) return;
+  const frame = box.getBoundingClientRect();
+  const at = input.getBoundingClientRect();
+  const below = frame.bottom - at.bottom;
+  list.classList.toggle('up', below < 270 && at.top - frame.top > below);
+}
+
 // Generic wiring: filter a catalog as the operator types, click or Enter
-// picks, clearing the field clears the assignment.
-function wirePicker(inputId, listId, { search, renderItem, onPick, onClear }) {
+// picks, clearing the field clears the assignment. Leaving the field without
+// picking puts back what is actually assigned, so a half-typed search never
+// reads as the data that will air.
+function wirePicker(inputId, listId, { search, renderItem, onPick, onClear, current }) {
   const input = $(inputId);
   const list = $(listId);
   const close = () => { list.classList.remove('open'); list.replaceChildren(); };
@@ -344,6 +529,7 @@ function wirePicker(inputId, listId, { search, renderItem, onPick, onClear }) {
       li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(item); });
       return li;
     }));
+    placeList(input, list);
     list.classList.toggle('open', hits.length > 0);
   });
   input.addEventListener('keydown', (e) => {
@@ -359,65 +545,59 @@ function wirePicker(inputId, listId, { search, renderItem, onPick, onClear }) {
     }
     if (e.key === 'Escape') close();
   });
-  input.addEventListener('blur', () => setTimeout(close, 150));
+  input.addEventListener('blur', () => setTimeout(() => {
+    close();
+    if (document.activeElement !== input && state) input.value = current();
+  }, 150));
 }
 
 // idField is the card id the POV legend art resolves against. The 2v2
-// second-player pickers have none: that overlay draws hero cutouts only.
-for (const [inputId, listId, side, nameField, slugField, idField] of [
-  ['llegend', 'llegendResults', 'left', 'legend', 'legendSlug', 'legendCardId'],
-  ['rlegend', 'rlegendResults', 'right', 'legend', 'legendSlug', 'legendCardId'],
-  ['llegend2', 'llegend2Results', 'left', 'legend2', 'legendSlug2', null],
-  ['rlegend2', 'rlegend2Results', 'right', 'legend2', 'legendSlug2', null],
-  ['povlLegend', 'povlLegendResults', 'left', 'legend', 'legendSlug', 'legendCardId'],
-  ['povrLegend', 'povrLegendResults', 'right', 'legend', 'legendSlug', 'legendCardId'],
-]) {
-  wirePicker(inputId, listId, {
-    search: (q) => legendCatalog.filter((l) => l.name.toLowerCase().includes(q)),
-    renderItem: (l) => ({ label: l.name, icon: `/legendart/icon/${l.slug}.webp` }),
-    onPick: (l) => post({ match: { [side]: {
-      [nameField]: l.name,
-      [slugField]: l.slug,
-      ...(idField ? { [idField]: l.cardId || '' } : {}),
-    } } }),
-    onClear: () => post({ match: { [side]: {
-      [nameField]: '',
-      [slugField]: '',
-      ...(idField ? { [idField]: '' } : {}),
-    } } }),
-  });
-}
+// teammate pickers have none: that overlay draws hero cutouts only.
+for (const [p, side] of SIDES) {
+  for (const [inputId, nameField, slugField, idField] of [
+    [`${p}legend`, 'legend', 'legendSlug', 'legendCardId'],
+    [`${p}legend2`, 'legend2', 'legendSlug2', null],
+  ]) {
+    wirePicker(inputId, `${inputId}Results`, {
+      search: (q) => legendCatalog.filter((l) => l.name.toLowerCase().includes(q)),
+      renderItem: (l) => ({ label: l.name, icon: `/legendart/icon/${l.slug}.webp` }),
+      onPick: (l) => post({ match: { [side]: {
+        [nameField]: l.name,
+        [slugField]: l.slug,
+        ...(idField ? { [idField]: l.cardId || '' } : {}),
+      } } }),
+      onClear: () => post({ match: { [side]: {
+        [nameField]: '',
+        [slugField]: '',
+        ...(idField ? { [idField]: '' } : {}),
+      } } }),
+      current: () => state.preview.match[side][nameField] || '',
+    });
+  }
 
-for (const [inputId, listId, side, field, idField] of [
-  ['lbf', 'lbfResults', 'left', 'battlefield', 'battlefieldCardId'],
-  ['rbf', 'rbfResults', 'right', 'battlefield', 'battlefieldCardId'],
-  ['lbf2', 'lbf2Results', 'left', 'battlefield2', null],
-  ['rbf2', 'rbf2Results', 'right', 'battlefield2', null],
-  ['povlBf', 'povlBfResults', 'left', 'battlefield', 'battlefieldCardId'],
-  ['povrBf', 'povrBfResults', 'right', 'battlefield', 'battlefieldCardId'],
-]) {
-  wirePicker(inputId, listId, {
-    search: (q) => battlefieldCatalog.filter((b) => b.cardName.toLowerCase().includes(q)),
-    renderItem: (b) => ({ label: b.cardName, icon: `/cardart/thumb/${b.cardId}.webp` }),
-    onPick: (b) => post({ match: { [side]: {
-      [field]: b.cardName,
-      ...(idField ? { [idField]: b.cardId } : {}),
-    } } }),
-    onClear: () => post({ match: { [side]: {
-      [field]: '',
-      ...(idField ? { [idField]: '' } : {}),
-    } } }),
-  });
-}
+  for (const [inputId, field, idField] of [
+    [`${p}bf`, 'battlefield', 'battlefieldCardId'],
+    [`${p}bf2`, 'battlefield2', null],
+  ]) {
+    wirePicker(inputId, `${inputId}Results`, {
+      search: (q) => battlefieldCatalog.filter((b) => b.cardName.toLowerCase().includes(q)),
+      renderItem: (b) => ({ label: b.cardName, icon: `/cardart/thumb/${b.cardId}.webp` }),
+      onPick: (b) => post({ match: { [side]: {
+        [field]: b.cardName,
+        ...(idField ? { [idField]: b.cardId } : {}),
+      } } }),
+      onClear: () => post({ match: { [side]: {
+        [field]: '',
+        ...(idField ? { [idField]: '' } : {}),
+      } } }),
+      current: () => state.preview.match[side][field] || '',
+    });
+  }
 
-// Champion unit picker. The POV overlay's CHAMPION line carries Riftbound's
-// Champion Unit glyph in the designer file, so it names a champion unit card;
-// picking one also stages it in that side's featured card slot (Sam, Loop 5).
-for (const [inputId, listId, side] of [
-  ['povlChampion', 'povlChampionResults', 'left'],
-  ['povrChampion', 'povrChampionResults', 'right'],
-]) {
-  wirePicker(inputId, listId, {
+  // Champion unit picker. The POV overlay's CHAMPION line carries Riftbound's
+  // Champion Unit glyph in the designer file, so it names a champion unit
+  // card; picking one also stages it as that side's featured card (Sam, Loop 5).
+  wirePicker(`${p}champion`, `${p}championResults`, {
     search: (q) => championCatalog.filter((c) => c.cardName.toLowerCase().includes(q)),
     renderItem: (c) => ({ label: c.cardName, icon: `/cardart/thumb/${c.cardId}.webp` }),
     onPick: (c) => post({ match: { [side]: {
@@ -427,15 +607,16 @@ for (const [inputId, listId, side] of [
     // Clearing the search clears the line only: a card the operator picked by
     // hand is never wiped by a stray backspace here.
     onClear: () => post({ match: { [side]: { champion: '' } } }),
+    current: () => state.preview.match[side].champion || '',
   });
 }
 
 // Featured card search: any card, one independent search per side. The card
 // catalog is too big to ship to the panel, so this goes through the server's
 // ranked search, like the card popup does.
-function wireCardSearch(inputId, listId, side) {
-  const input = $(inputId);
-  const list = $(listId);
+function wireCardSearch(p, side) {
+  const input = $(`${p}card`);
+  const list = $(`${p}cardResults`);
   let timer = null;
   let hits = [];
   const close = () => { list.classList.remove('open'); list.replaceChildren(); };
@@ -456,12 +637,13 @@ function wireCardSearch(inputId, listId, side) {
       const name = document.createElement('strong');
       name.textContent = card.cardName;
       const sub = document.createElement('span');
-      sub.textContent = [card.cardType, card.cardId].filter(Boolean).join(' \u00b7 ');
+      sub.textContent = [card.cardType, card.cardId].filter(Boolean).join(' · ');
       meta.append(name, sub);
       li.append(img, meta);
       li.addEventListener('mousedown', (e) => { e.preventDefault(); stage(card); });
       return li;
     }));
+    placeList(input, list);
     list.classList.toggle('open', hits.length > 0);
   };
   input.addEventListener('input', () => {
@@ -480,71 +662,17 @@ function wireCardSearch(inputId, listId, side) {
     if (e.key === 'Enter' && hits.length) stage(hits[0]);
     if (e.key === 'Escape') { hits = []; draw(); }
   });
-  input.addEventListener('blur', () => setTimeout(close, 150));
-}
-wireCardSearch('povlCard', 'povlCardResults', 'left');
-wireCardSearch('povrCard', 'povrCardResults', 'right');
+  input.addEventListener('blur', () => setTimeout(() => {
+    close();
+    if (document.activeElement !== input && state) input.value = state.preview.match[side].card.cardName || '';
+  }, 150));
 
-// --- POV overlay controls ---
-
-for (const [id, side] of [['povlCardClear', 'left'], ['povrCardClear', 'right']]) {
-  $(id).addEventListener('click', () => {
+  $(`${p}cardClear`).addEventListener('click', () => {
     post({ match: { [side]: { card: { cardId: '', cardName: '' } } } });
-    $(side === 'left' ? 'povlCard' : 'povrCard').value = '';
+    input.value = '';
   });
 }
-
-// Direct score entry, for jumping to a number instead of stepping to it.
-for (const [id, side] of [['povlScore', 'left'], ['povrScore', 'right']]) {
-  const el = $(id);
-  const commit = () => {
-    const raw = el.value.trim();
-    const parsed = Math.trunc(Number(raw));
-    // Unparseable input puts back the number that is on the graphic. Zeroing a
-    // live score because someone fat-fingered a letter is not a recovery.
-    const current = state ? state.preview.match[side].score : 0;
-    const next = raw !== '' && Number.isFinite(parsed)
-      ? Math.min(8, Math.max(0, parsed))
-      : current;
-    el.value = String(next);
-    if (state) state.preview.match[side].score = next;
-    $(`${side === 'left' ? 'l' : 'r'}scoreOut`).textContent = next;
-    post({ match: { [side]: { score: next } } });
-  };
-  el.addEventListener('change', commit);
-  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commit(); el.blur(); } });
-}
-
-$('povlShow').addEventListener('change', () => post({ scenes: { pov: { showLeft: $('povlShow').checked } } }));
-$('povrShow').addEventListener('change', () => post({ scenes: { pov: { showRight: $('povrShow').checked } } }));
-
-// Swap sides moves the whole side, so the score bug and the in-game overlays
-// follow the POV instead of disagreeing with it.
-const SWAP_FIELDS = [
-  'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
-  'champion', 'name2', 'legend2', 'legendSlug2', 'battlefield2', 'teamName',
-  'score', 'gameWins',
-];
-$('povSwap').addEventListener('click', () => {
-  if (!state) return;
-  const m = state.preview.match;
-  const copy = (side) => {
-    const out = { card: { ...m[side].card } };
-    for (const field of SWAP_FIELDS) out[field] = m[side][field];
-    return out;
-  };
-  post({ match: { left: copy('right'), right: copy('left') } });
-});
-
-$('povReset').addEventListener('click', () => {
-  post({
-    match: {
-      left: { champion: '', card: { cardId: '', cardName: '' } },
-      right: { champion: '', card: { cardId: '', cardName: '' } },
-    },
-  });
-  for (const id of ['povlCard', 'povrCard', 'povlChampion', 'povrChampion']) $(id).value = '';
-});
+for (const [p, side] of SIDES) wireCardSearch(p, side);
 
 // --- browser source URLs: always visible, copy failure never silent ---
 
@@ -794,7 +922,8 @@ $('deckList').addEventListener('input', () => {
   clearTimeout(deckTimer);
   const list = $('deckList').value;
   deckTimer = setTimeout(() => {
-    post({ scenes: { decklist: { list } } });
+    // A hand-edited list is no longer the saved deck it may have started as.
+    post({ scenes: { decklist: { list, deckName: '' } } });
     summariseDeck(list);
   }, 400);
 });
@@ -803,12 +932,96 @@ $('deckSideboard').addEventListener('change', () => {
   post({ scenes: { decklist: { showSideboard: $('deckSideboard').checked } } });
 });
 
+$('deckBackground').addEventListener('change', () => {
+  post({ scenes: { decklist: { background: $('deckBackground').checked } } });
+});
+
 $('deckClear').addEventListener('click', () => {
   if (!confirm('Clear the decklist in preview?')) return;
   $('deckList').value = '';
-  post({ scenes: { decklist: { list: '', visible: false } } });
+  post({ scenes: { decklist: { list: '', visible: false, deckName: '' } } });
   summariseDeck('');
 });
+
+$('deckReplay').addEventListener('click', () => {
+  post({ action: 'replay', scene: 'decklist' });
+});
+
+// --- saved decks ---
+//
+// The library is prepared in the deck editor; here each saved deck is one
+// click away from preview. Loading never touches program: TAKE airs it, and
+// the plate builds in on the swap. The library is not part of the bussed
+// state, so it is fetched on its own and refetched when the server announces
+// a change.
+
+let library = { version: null, decks: [] };
+
+async function loadDeckLibrary() {
+  try {
+    const res = await fetch('/api/decklist/library', { cache: 'no-store' });
+    if (res.ok) library = await res.json();
+    renderDeckLibrary();
+  } catch { /* the next announcement or reconnect retries */ }
+}
+
+// What a bank's decklist is called: the saved deck it came from, else the
+// legend line of the list itself, else a plain description.
+function deckLabel(sc) {
+  if (!sc.list.trim()) return null;
+  if (sc.deckName) return sc.deckName;
+  const legend = sc.list.match(/^\s*legend\s*:\s*(.+)$/im);
+  return legend ? legend[1].trim() : 'Pasted list';
+}
+
+function renderDeckLibrary() {
+  if (!state) return;
+  const prev = state.preview.scenes.decklist;
+  const air = state.program.scenes.decklist;
+  $('deckPrevName').textContent = deckLabel(prev) || 'Nothing loaded';
+  $('deckAirName').textContent = air.visible && air.list.trim() ? deckLabel(air) : 'Nothing on air';
+
+  const filter = $('deckFilter').value.trim().toLowerCase();
+  $('deckFilter').classList.toggle('hidden', library.decks.length < 10);
+  const shown = library.decks.filter((d) => !filter || d.name.toLowerCase().includes(filter)
+    || (d.player || '').toLowerCase().includes(filter));
+  $('deckLibHint').classList.toggle('hidden', library.decks.length > 0);
+  $('deckChips').replaceChildren(...shown.map((d) => {
+    const chip = document.createElement('span');
+    chip.className = 'deck-chip';
+    // Matched on the list itself, so an edited copy no longer claims the name.
+    chip.classList.toggle('in-preview', prev.list === d.list);
+    chip.classList.toggle('on-air', air.visible && air.list === d.list);
+    const load = document.createElement('button');
+    load.className = 'chip-load';
+    load.textContent = d.name;
+    load.title = [d.player && `Player: ${d.player}`, d.event && `Event: ${d.event}`, 'Click to load into preview']
+      .filter(Boolean).join('\n');
+    load.addEventListener('click', () => {
+      post({ scenes: { decklist: {
+        list: d.list, background: d.background, showSideboard: d.showSideboard, deckName: d.name,
+      } } });
+    });
+    const del = document.createElement('button');
+    del.className = 'chip-del';
+    del.textContent = '×';
+    del.title = `Delete "${d.name}" from the saved decks`;
+    del.addEventListener('click', async () => {
+      if (!confirm(`Delete the saved deck "${d.name}"? Preview and program keep what they show.`)) return;
+      await fetch('/api/decklist/library', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ remove: d.name }),
+      }).catch(() => {});
+      loadDeckLibrary();
+    });
+    chip.append(load, del);
+    return chip;
+  }));
+}
+
+$('deckFilter').addEventListener('input', renderDeckLibrary);
+loadDeckLibrary();
 
 $('toggleDeck').addEventListener('click', () => {
   if (!state) return;
@@ -924,9 +1137,10 @@ function connect() {
     try {
       const msg = JSON.parse(e.data);
       if (msg.type === 'state') apply(msg.state);
+      else if (msg.type === 'library' && msg.version !== library.version) loadDeckLibrary();
     } catch { /* ignore */ }
   };
-  ws.onopen = () => { setStatus(true); fullFetch(); };
+  ws.onopen = () => { setStatus(true); fullFetch(); loadDeckLibrary(); };
   ws.onclose = () => { setStatus(false); setTimeout(connect, 1500); };
   ws.onerror = () => ws.close();
 }

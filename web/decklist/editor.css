@@ -1,0 +1,119 @@
+/* Deck editor: prep work, not a live surface, so unlike the control panel it
+   scrolls like a normal page. Shares the panel's controls and colours. */
+body.editor {
+  display: block;
+  overflow: auto;
+  min-height: 100%;
+}
+.editor header { position: sticky; top: 0; z-index: 5; background: #0c0f12; }
+.head-right { display: flex; align-items: center; gap: 16px; }
+
+.editor .card { overflow: visible; }
+
+/* --- saved decks --- */
+.lib-bar { margin: 12px 20px 0; }
+.lib-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lib-top h2 { margin-right: 4px; }
+.lib-top #libFilter { width: 240px; padding: 5px 9px; font-size: 13px; }
+.lib-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.lib-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 190px; overflow-y: auto; }
+.lib-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #2a323b;
+  border-radius: 999px;
+  background: #1a2027;
+}
+.lib-chip button {
+  border: none;
+  background: none;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+.lib-chip .chip-name { padding-left: 12px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-chip .chip-send { color: var(--tes-green); font-weight: 800; }
+.lib-chip .chip-del { color: #8b98a5; padding-right: 11px; }
+.lib-chip .chip-del:hover { color: #e08b8b; }
+.lib-chip.editing { border-color: var(--tes-blue); }
+.lib-chip.in-preview { box-shadow: inset 0 0 0 1px var(--tes-green); }
+.lib-chip.on-air { border-color: #e33; }
+
+.report { border: 1px solid #2a323b; background: #0c0f12; padding: 8px 12px; }
+.report-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.report ul { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; font-size: 12px; }
+.report li { padding: 4px 0; border-bottom: 1px solid #1a2027; }
+.report li .ok { color: var(--tes-green); }
+.report li .bad { color: #ff6b6b; }
+.report li .warn { color: #f0b429; }
+
+/* --- editor columns --- */
+.editor-main {
+  display: grid;
+  grid-template-columns: 480px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 20px 20px;
+  align-items: start;
+}
+.col-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.col-head h2 .muted { text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 6px; }
+.col-head input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--tes-blue); }
+#text { width: 100%; min-height: 300px; height: 38vh; }
+.resolve-status { font-size: 12px; margin: 0; color: #8b98a5; }
+.resolve-status.bad { color: #ff6b6b; }
+.resolve-status.good { color: var(--tes-green); }
+
+.structured { border: 1px solid #1e242b; background: #0c0f12; padding: 10px 12px; font-size: 14px; }
+.structured.hidden { display: none; }
+.s-section { margin-top: 8px; }
+.s-section:first-child { margin-top: 0; }
+.s-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8b98a5; text-transform: uppercase; }
+.s-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.s-row .tag { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8b98a5; width: 78px; flex: none; }
+.s-name.pending { color: #8b98a5; }
+.s-name.bad { color: #ff6b6b; }
+.s-name.renamed { color: #e8edf1; }
+.s-name .as-typed { color: #8b98a5; font-size: 11px; margin-left: 6px; }
+.step { display: flex; align-items: center; gap: 3px; flex: none; }
+.step button { width: 22px; height: 22px; padding: 0; font-size: 13px; line-height: 1; }
+.step output { width: 20px; text-align: center; font-weight: 700; }
+.fixes { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 4px 30px; }
+.fixes button {
+  border-radius: 999px;
+  border-color: var(--tes-blue);
+  color: var(--tes-blue);
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.fixes .none { font-size: 12px; color: #8b98a5; }
+.runes-line { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.runes-line .bad { color: #ff6b6b; }
+.warnings { list-style: none; margin: 0; padding: 0; font-size: 12px; color: #f0b429; }
+.warnings li { padding: 2px 0; }
+.warnings li::before { content: '\26A0\00a0'; }
+
+.preview-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid #2a323b;
+  overflow: hidden;
+  background: #000;
+}
+/* The alpha grid shows wherever the plate is transparent. */
+.preview-frame.alpha {
+  background: repeating-conic-gradient(#2a2a28 0% 25%, #1c1c1b 0% 50%) 0 0 / 24px 24px;
+}
+.preview-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.actions button { font-weight: 800; letter-spacing: 1.5px; padding: 10px 16px; }
+.actions button.go { background: var(--tes-grad); color: #06110a; border: none; }
+.actions button.send { border-color: var(--tes-green); color: var(--tes-green); }
+.actions #saveName { width: 200px; }
+#actionStatus { min-height: 1.4em; }
+#actionStatus.bad { color: #ff6b6b; }
+#actionStatus.good { color: var(--tes-green); }
+
+@media (max-width: 1200px) {
+  .editor-main { grid-template-columns: minmax(0, 1fr); }
+}

@@ -104,18 +104,51 @@ function artSourceUrl(card, tier) {
   return allowRrUrl(u);
 }
 
-async function downloadArt(card, tier) {
-  const src = artSourceUrl(card, tier);
-  if (!src) throw new Error('no source url');
-  const buf = await rrFetch(src, 20_000);
-  // Write via temp + rename so a crashed download never leaves a truncated
-  // file that would then be served forever as "cached".
-  const dest = path.join(TIER_DIR[tier], `${card.cardId}.webp`);
-  const tmp = dest + '.part';
-  await writeFile(tmp, buf);
-  await rename(tmp, dest);
-  cached[tier].add(card.cardId);
-  return dest;
+// One download per file at a time: the decklist warms art in the background
+// while a scene may be asking for the same card, and two writers sharing one
+// .part file could leave a corrupt image behind.
+const inflight = new Map();
+
+function downloadArt(card, tier) {
+  const key = `${tier}/${card.cardId}`;
+  if (inflight.has(key)) return inflight.get(key);
+  const job = (async () => {
+    const src = artSourceUrl(card, tier);
+    if (!src) throw new Error('no source url');
+    const buf = await rrFetch(src, 20_000);
+    // Write via temp + rename so a crashed download never leaves a truncated
+    // file that would then be served forever as "cached".
+    const dest = path.join(TIER_DIR[tier], `${card.cardId}.webp`);
+    const tmp = dest + '.part';
+    await writeFile(tmp, buf);
+    await rename(tmp, dest);
+    cached[tier].add(card.cardId);
+    return dest;
+  })().finally(() => inflight.delete(key));
+  inflight.set(key, job);
+  return job;
+}
+
+// Background fetch of full art for cards about to be shown (a pasted
+// decklist), a few at a time so a 40-card paste does not open 40 sockets.
+// Failures are silent: the scene's fallback chain still renders the card.
+const warmQueue = [];
+let warmActive = 0;
+export function warmFullArt(cardIds) {
+  for (const id of cardIds) {
+    const card = byId.get(id);
+    if (!card || cached.full.has(id) || inflight.has(`full/${id}`) || warmQueue.includes(id)) continue;
+    if (!artSourceUrl(card, 'full')) continue;
+    warmQueue.push(id);
+  }
+  while (warmActive < 4 && warmQueue.length) {
+    const card = byId.get(warmQueue.shift());
+    if (!card || cached.full.has(card.cardId)) continue;
+    warmActive += 1;
+    downloadArt(card, 'full')
+      .catch(() => {})
+      .finally(() => { warmActive -= 1; warmFullArt([]); });
+  }
 }
 
 async function prefetchTier(tier, phase) {

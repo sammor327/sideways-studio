@@ -21,8 +21,16 @@ export const isPackaged = Boolean(sea && sea.isSea && sea.isSea());
 const sourceRoot = () => path.resolve(path.dirname(process.argv[1] || '.'), '..');
 
 // The exe writes beside itself; the source tree writes into the repo.
+// SIDEWAYS_DATA_DIR (or --data-dir=) moves it, which is what lets a second
+// copy run beside a live one without the two overwriting each other's
+// autosave.
 export const APP_ROOT = isPackaged ? path.dirname(process.execPath) : sourceRoot();
-export const DATA_DIR = path.join(APP_ROOT, 'data');
+const dataArg = process.argv.find((a) => a.startsWith('--data-dir='));
+export const DATA_DIR = dataArg
+  ? path.resolve(dataArg.slice('--data-dir='.length))
+  : process.env.SIDEWAYS_DATA_DIR
+    ? path.resolve(process.env.SIDEWAYS_DATA_DIR)
+    : path.join(APP_ROOT, 'data');
 // Only meaningful from source: the packaged build serves web/ from assets.
 export const WEB_DIR = isPackaged ? '' : path.join(sourceRoot(), 'web');
 

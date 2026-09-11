@@ -9,17 +9,35 @@ import { WebSocketServer } from 'ws';
 import { APP_ROOT, APP_VERSION, DATA_DIR, WEB_DIR, isPackaged, readAsset } from './runtime.js';
 import { runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest } from './updater.js';
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
-import { getState, applyUpdate, onChange, setThemeLogo, initState } from './state.js';
+import { getState, applyUpdate, onChange, setThemeLogo, initState, cleanMultiline } from './state.js';
 import { initCardDb, cardDbStatus, syncCardDb, prefetchFullArt, searchCards, getArtFile } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
+import { decksFromCsv, fileSlug } from './decklist-csv.js';
+import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
+import { findBrowser, renderStill } from './still.js';
+import { legendSlug } from '../web/scenes/decklist/layout.js';
 
 const DATA_DIR_THEME = path.join(DATA_DIR, 'theme');
 const LOGO_EXT = ['png', 'jpg', 'webp', 'svg'];
 const LOGO_MIME = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', svg: 'image/svg+xml' };
 let logoFile = null;
 
-const PORT = Number(process.env.SIDEWAYS_PORT || 4700);
+const portArg = process.argv.find((a) => a.startsWith('--port='));
+const PORT = Number((portArg && portArg.slice('--port='.length)) || process.env.SIDEWAYS_PORT || 4700);
+
+const sendJson = (res, status, body) => {
+  res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+  res.end(JSON.stringify(body));
+};
+
+// "20260911-142233", local time: keeps repeat exports of one deck from
+// overwriting each other.
+const stamp = () => {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+};
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -157,6 +175,99 @@ const server = http.createServer(async (req, res) => {
     } catch {
       res.writeHead(400, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: false, error: 'invalid JSON' }));
+    }
+    return;
+  }
+
+  // Saved decklists (the event's prep). Kept out of the bussed state; see
+  // server/decklibrary.js for why.
+  if (url.pathname === '/api/decklist/library' && req.method === 'GET') {
+    sendJson(res, 200, getLibrary());
+    return;
+  }
+  if (url.pathname === '/api/decklist/library' && req.method === 'POST') {
+    try {
+      const result = applyLibrary(JSON.parse((await readBody(req, 4 * 1024 * 1024)).toString('utf8')));
+      sendJson(res, result.ok ? 200 : 400, result);
+    } catch {
+      sendJson(res, 400, { ok: false, error: 'invalid JSON' });
+    }
+    return;
+  }
+
+  // A co-stream "Deck List Database" sheet, read into one entry per deck
+  // column with the same resolution report the editor shows for a paste.
+  if (url.pathname === '/api/decklist/csv' && req.method === 'POST') {
+    try {
+      const text = (await readBody(req, 8 * 1024 * 1024)).toString('utf8');
+      const decks = decksFromCsv(text).map((d) => {
+        const built = buildDeck(d.list);
+        return {
+          ...d,
+          counts: built.counts,
+          legend: built.legend ? built.legend.name : null,
+          unresolved: built.unresolved.map((name) => ({ name, closest: (built.suggestions[name] || [])[0] || null })),
+          warnings: built.warnings,
+        };
+      });
+      sendJson(res, 200, { ok: true, decks });
+    } catch (err) {
+      sendJson(res, 400, { ok: false, error: err.message });
+    }
+    return;
+  }
+
+  if (url.pathname === '/api/decklist/export' && req.method === 'GET') {
+    const browser = findBrowser();
+    sendJson(res, 200, { available: Boolean(browser), browser: browser ? path.basename(browser) : null });
+    return;
+  }
+
+  // PNG export. The still is the decklist scene itself, loaded by a headless
+  // browser in still mode, so it is the broadcast plate pixel for pixel.
+  if (url.pathname === '/api/decklist/render' && req.method === 'POST') {
+    let body;
+    try {
+      body = JSON.parse((await readBody(req)).toString('utf8'));
+    } catch {
+      sendJson(res, 400, { ok: false, error: 'invalid JSON' });
+      return;
+    }
+    const list = typeof body.list === 'string' ? cleanMultiline(body.list, 6000) : '';
+    if (!list.trim()) {
+      sendJson(res, 400, { ok: false, error: 'paste a decklist first' });
+      return;
+    }
+    const background = body.background !== false;
+    const showSideboard = body.showSideboard !== false;
+    const params = new URLSearchParams({
+      still: '1', transparent: '1', bg: background ? '1' : '0', sideboard: showSideboard ? '1' : '0', list,
+    });
+    try {
+      const png = await renderStill(`http://127.0.0.1:${PORT}/scenes/decklist/?${params}`);
+      const deck = buildDeck(list);
+      const stem = (typeof body.name === 'string' && body.name.trim() ? fileSlug(body.name) : legendSlug(deck.legend && deck.legend.name))
+        + (background ? '' : '-transparent') + (showSideboard ? '' : '-mainboard');
+      let saved = '';
+      if (body.save !== false) {
+        // One-off exports are timestamped so a second Viktor never replaces
+        // the first; "export all" overwrites, since re-running it is a refresh.
+        const dir = path.join(DATA_DIR, 'decklist', body.batch ? 'batch' : '');
+        const file = path.join(dir, body.batch ? `${stem}.png` : `${stem}-${stamp()}.png`);
+        await mkdir(dir, { recursive: true });
+        await writeFile(file, png);
+        saved = file;
+      }
+      res.writeHead(200, {
+        'content-type': 'image/png',
+        'cache-control': 'no-store',
+        'content-disposition': `attachment; filename="decklist-1920x1080.png"; filename*=UTF-8''${encodeURIComponent(`${stem}-1920x1080.png`)}`,
+        'x-output-path': encodeURIComponent(saved),
+      });
+      res.end(png);
+    } catch (err) {
+      console.warn('decklist PNG export failed:', err.message);
+      sendJson(res, 500, { ok: false, error: err.message });
     }
     return;
   }
@@ -345,6 +456,14 @@ onChange((state) => {
     if (client.readyState === 1) client.send(msg);
   }
 });
+// Library changes go out as a version number only; the panel and the deck
+// editor fetch the list itself, and scenes ignore the message.
+onLibraryChange((library) => {
+  const msg = JSON.stringify({ type: 'library', version: library.version });
+  for (const client of wss.clients) {
+    if (client.readyState === 1) client.send(msg);
+  }
+});
 
 // Everything that has to happen before the first request, then listen. Kept
 // as one function rather than top-level await so the same source compiles to
@@ -357,6 +476,7 @@ async function start() {
   await initCardDb();
   await initLegends();
   await initState();
+  await initLibrary();
   try {
     logoFile = (await readdir(DATA_DIR_THEME)).find((f) => LOGO_EXT.includes(f.split('.').pop()) && f.startsWith('logo.')) || null;
   } catch { /* no theme dir yet */ }
@@ -368,6 +488,7 @@ async function start() {
     console.log('  Built by Sam Morris / Turn\'em Sideways');
     console.log('');
     console.log(`  Control panel:    ${base}/panel/`);
+    console.log(`  Deck editor:      ${base}/decklist/`);
     console.log('');
     console.log('  Browser sources, all 1920x1080 @ 60fps:');
     console.log(`    All graphics:   ${base}/output/`);

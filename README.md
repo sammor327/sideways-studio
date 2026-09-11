@@ -92,7 +92,37 @@ Every graphic also has its own browser-source URL, listed with a Copy button
 in the panel's Setup card and printed when the server starts.
 
 `npm start -- --open` also opens the panel in your default browser.
-`SIDEWAYS_PORT` overrides the port.
+`SIDEWAYS_PORT` (or `--port=4711`) overrides the port, and
+`SIDEWAYS_DATA_DIR` (or `--data-dir=...`) moves the data folder, so a second
+copy can run beside a live one without sharing its autosave.
+
+`npm test` runs the unit tests (Node's built-in runner, no dependencies).
+
+## Decklists
+
+The deck editor at http://localhost:4700/decklist/ is where decklists are
+prepared: paste a list, fix any name the card database does not know (it
+offers the closest matches), save it, and it appears as a one-click chip in
+the control panel's Decklist card. Clicking a chip loads that deck into
+preview; TAKE airs it, and the plate builds in on every swap.
+
+- **PNG export**: GENERATE PNG in the editor, with or without the plate's
+  background (the transparent version has true alpha). Drawn by the same
+  scene the stream uses, in a hidden copy of Edge or Chrome, and saved in
+  `data/decklist/` as well as downloaded.
+- **A fixed-deck browser source**: COPY STREAM URL gives a URL with the whole
+  list inside it (`/scenes/decklist/?list=...`), no panel needed.
+- **A whole event's sheet**: Import deck sheet (CSV) takes a co-stream "Deck
+  List Database" export, one deck per column, and saves every deck with a
+  report of names it could not find. From source, the same sheet renders to
+  PNGs in one go:
+
+```
+npm run decklist:batch -- --csv="C:\path\to\Deck List Database.csv"
+npm run decklist:batch -- --csv=... --list          (inventory only)
+npm run decklist:batch -- --csv=... --only=Viktor,Lux --transparent --no-sideboard
+npm run decklist:batch -- --csv=... --strict --resume
+```
 
 ## Layout
 
@@ -103,6 +133,9 @@ in the panel's Setup card and printed when the server starts.
   geometry.
 - `web/scenes/<name>/` — one folder per broadcast graphic.
 - `web/panel/` — the operator control panel.
+- `web/decklist/` — the deck editor. `web/shared/` — code the server and the
+  browser both run (the decklist text format).
+- `test/` — unit tests (`npm test`).
 - `docs/SPEC.md` — locked product spec. `docs/LOOP.md` — build protocol and
   roadmap. `docs/PROMPT.md` — session prompt for the next build loop.
 - `data/` — runtime autosave (gitignored).

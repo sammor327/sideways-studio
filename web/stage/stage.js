@@ -32,6 +32,9 @@ function applyTheme(theme) {
   if (theme.accentB) root.setProperty('--tes-green', theme.accentB);
   if (theme.font) root.setProperty('--tes-font', `'${theme.font}', ${FONT_FALLBACK}`);
   else root.removeProperty('--tes-font');
+  // Lets a scene prefer a locally installed brand face under the default
+  // theme while still yielding to a font the organizer picked.
+  document.documentElement.classList.toggle('theme-font', Boolean(theme.font));
 }
 
 export function initStage({ onState }) {

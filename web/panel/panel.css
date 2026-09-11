@@ -1,7 +1,8 @@
-/* vMix-style operator surface (locked Loop 2): monitors up top with the
-   transition column between PREVIEW and PROGRAM, control cards in a
-   full-width band below. Designed to fill 1920x1080 with no page scroll;
-   individual cards scroll internally if a small window squeezes them. */
+/* vMix-style operator surface (Loop 2), with every piece of match data in one
+   column down the left (2026-09-11, Sam): monitors and the transition column
+   top right, graphics, decklist, theme and setup cards below them. Designed
+   to fill 1920x1080 with no page scroll; cards scroll internally if a small
+   window squeezes them. */
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -61,16 +62,35 @@ header {
 button.update-go { background: var(--tes-grad); color: #06110a; border: none; font-weight: 700; }
 .version-row { justify-content: space-between; }
 
+/* --- workspace: data column left, monitors and cards right --- */
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 540px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 20px;
+}
+.stage-side {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* --- monitors row --- */
 .monitors {
   flex: 0 0 auto;
-  display: flex;
+  display: grid;
+  /* Width-led: the monitors share what the data column leaves, capped at the
+     height the old full-width layout gave them. */
+  grid-template-columns: minmax(0, calc(34vh * 16 / 9)) 150px minmax(0, calc(34vh * 16 / 9));
   justify-content: center;
   align-items: stretch;
   gap: 18px;
-  padding: 12px 20px 10px;
 }
-.monitor-col { display: flex; flex-direction: column; gap: 6px; }
+.monitor-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .monitor-label {
   font-size: 12px;
   font-weight: 700;
@@ -81,7 +101,7 @@ button.update-go { background: var(--tes-grad); color: #06110a; border: none; fo
 .program-label { color: #e33; }
 .monitor {
   position: relative;
-  height: clamp(200px, 34vh, 380px);
+  width: 100%;
   aspect-ratio: 16 / 9;
   border: 1px solid #2a323b;
   overflow: hidden;
@@ -103,8 +123,6 @@ button.update-go { background: var(--tes-grad); color: #06110a; border: none; fo
   flex-direction: column;
   justify-content: center;
   gap: 12px;
-  width: 150px;
-  flex: 0 0 auto;
 }
 button.take {
   font-size: 22px;
@@ -140,9 +158,8 @@ button.clear:hover { border-color: #e33; }
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  padding: 0 20px 10px;
 }
 .card {
   background: #12161b;
@@ -162,7 +179,6 @@ button.clear:hover { border-color: #e33; }
   color: #8b98a5;
 }
 
-.player-col { display: flex; flex-direction: column; gap: 8px; }
 .side-label { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 .side-label.green { color: var(--tes-green); }
 .side-label.blue { color: var(--tes-blue); }
@@ -219,12 +235,6 @@ a { color: var(--tes-blue); font-size: 13px; }
 code { background: #0c0f12; padding: 1px 5px; }
 
 /* --- graphics card --- */
-.scene-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-}
 .scene-name { font-size: 14px; display: flex; align-items: center; gap: 8px; }
 .onair {
   font-size: 10px;
@@ -238,8 +248,6 @@ code { background: #0c0f12; padding: 1px 5px; }
 .scene-toggle.on { background: var(--tes-grad); color: #06110a; border: none; }
 
 .search-wrap, .picker-wrap { position: relative; }
-.scene-controls { display: flex; gap: 8px; align-items: center; }
-.twos-head { margin: 6px 0 0; padding-top: 10px; border-top: 1px solid #1e242b; color: #8b98a5; }
 .results {
   list-style: none;
   margin: 0;
@@ -284,19 +292,6 @@ code { background: #0c0f12; padding: 1px 5px; }
 .staged-meta strong { font-size: 15px; }
 .staged-meta .muted { font-size: 11px; }
 
-/* --- POV card: one block per screen column, stacked so a narrow card
-   column still holds a full set of controls. --- */
-.pov-side {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding-top: 9px;
-  border-top: 1px solid #1e242b;
-}
-.pov-side-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.pov-side-head .side-label { margin: 0; }
-.pov-side-head label.inline { font-size: 11px; }
-.pov-side-head input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--tes-blue); }
 .score-entry {
   width: 46px;
   text-align: center;
@@ -304,17 +299,167 @@ code { background: #0c0f12; padding: 1px 5px; }
   font-weight: 700;
   padding: 5px 0;
 }
-.pov-side .staged { padding: 6px 8px; gap: 8px; }
-.pov-side .staged img { width: 32px; height: 45px; }
-.pov-side .staged-meta { flex: 1; min-width: 0; }
-.pov-side .staged-meta strong {
+.clear-mini { padding: 4px 8px; font-size: 12px; }
+
+/* --- match data column: one row per fact, Player 1 and Player 2 side by
+   side, so each row can be lit or dimmed as a unit. --- */
+.data-panel { gap: 10px; }
+.data-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.data-head .row { flex-wrap: nowrap; }
+.data-head .danger-ghost { margin-left: 0; }
+
+.focus-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #0c0f12;
+  border: 1px solid #1e242b;
+}
+.focus-label { font-size: 11px; color: #8b98a5; text-transform: uppercase; letter-spacing: 1px; }
+.focus-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.focus-chip {
+  padding: 5px 11px;
   font-size: 13px;
-  display: block;
+  border-radius: 999px;
+  color: #b8c4cf;
+}
+.focus-chip.on {
+  background: var(--tes-grad);
+  color: #06110a;
+  border-color: transparent;
+  font-weight: 700;
+}
+#focusHint { min-height: 1.35em; line-height: 1.35; }
+
+.field-grid { display: flex; flex-direction: column; gap: 7px; }
+.grid-head, .field-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+.row-label { font-size: 12px; color: #8b98a5; line-height: 1.2; }
+.row-label.sub { padding-left: 12px; font-size: 11px; }
+.cell { position: relative; min-width: 0; }
+.cell > input, .cell > select { width: 100%; }
+.cell.span2 { grid-column: 2 / 4; }
+
+.field-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 3px;
+  padding-top: 9px;
+  border-top: 1px solid #1e242b;
+}
+.section-label {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #8b98a5;
+}
+
+/* Dimmed means "this graphic does not draw it", not "locked": the field still
+   edits, and comes back up under the pointer or the keyboard so what is being
+   typed is readable. */
+.cell, .row-label, .side-label, .section-label { transition: opacity 0.15s linear; }
+.cell.dim, .dim-row .row-label, .side-label.dim, .section-label.dim { opacity: 0.28; }
+.cell.dim:hover { opacity: 0.8; }
+/* Fully up while typing: a picker's list inherits the cell's opacity. */
+.cell.dim:focus-within { opacity: 1; }
+
+/* Featured card: thumb, search, clear, all on one line. */
+.card-cell { display: flex; align-items: center; gap: 6px; }
+.card-cell input { flex: 1; min-width: 0; }
+.card-thumb { width: 24px; height: 34px; object-fit: cover; flex: 0 0 auto; background: #1a2027; }
+.clear-x { flex: 0 0 auto; width: 30px; height: 34px; padding: 0; font-size: 16px; line-height: 1; }
+
+/* Picker lists in the data column: a little wider than a cell, anchored to
+   the outside edge so they never run off the column. */
+.data-panel .results { min-width: 260px; }
+.data-panel .cell[data-side="right"] .results { left: auto; right: 0; }
+.results.up { top: auto; bottom: 100%; box-shadow: 0 -10px 26px rgba(0, 0, 0, 0.6); }
+
+/* --- graphics card: each graphic's own options sit under its name --- */
+.scene-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
+}
+.scene-options {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding-left: 10px;
+}
+.scene-options label.inline { font-size: 12px; }
+.scene-options select { padding: 4px 8px; font-size: 13px; }
+.scene-options input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--tes-blue); }
+
+/* --- decklist card: saved-deck chips load into preview, TAKE airs them --- */
+.deck-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.link-btn {
+  font-size: 13px;
+  color: #e8edf1;
+  text-decoration: none;
+  background: #1a2027;
+  border: 1px solid #2a323b;
+  padding: 5px 10px;
+}
+.link-btn:hover { border-color: var(--tes-blue); }
+.deck-now {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 7px 10px;
+  background: #0c0f12;
+  border: 1px solid #1e242b;
+}
+.deck-now strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deck-now-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; }
+.deck-now-label.preview { color: var(--tes-green); }
+.deck-now-label.air { color: #e33; }
+.deck-lib-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.deck-lib-head input { width: 120px; padding: 4px 8px; font-size: 12px; }
+.deck-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.deck-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #2a323b;
+  border-radius: 999px;
+  background: #1a2027;
+  max-width: 100%;
+}
+.deck-chip .chip-load {
+  border: none;
+  background: none;
+  padding: 5px 4px 5px 11px;
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 190px;
 }
-.clear-mini { padding: 4px 8px; font-size: 12px; }
+.deck-chip .chip-del {
+  border: none;
+  background: none;
+  padding: 5px 9px 5px 4px;
+  font-size: 14px;
+  color: #8b98a5;
+}
+.deck-chip .chip-del:hover { color: #e08b8b; }
+.deck-chip.in-preview { border-color: var(--tes-green); }
+.deck-chip.on-air { border-color: #e33; box-shadow: inset 0 0 0 1px #e33; }
+.deck-chip.on-air .chip-load::before { content: '\25CF\00a0'; color: #e33; }
+.deck-opts { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.deck-opts input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--tes-blue); }
+.deck-paste summary { font-size: 12px; color: #8b98a5; cursor: pointer; }
+.deck-paste textarea { width: 100%; margin-top: 6px; min-height: 120px; }
 
 textarea {
   background: #0c0f12;
@@ -387,6 +532,12 @@ footer p { margin: 0; }
 /* Small windows: let the page scroll rather than crush the cards. */
 @media (max-width: 1500px) {
   body { overflow: auto; }
-  .controls { grid-template-columns: repeat(2, 1fr); }
-  .monitor { height: clamp(160px, 26vh, 300px); }
+  .workspace { grid-template-columns: 480px minmax(0, 1fr); }
+  .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .controls .card { max-height: 560px; }
+}
+/* Half a 1080p screen and narrower: data on top, everything else below, and
+   the page grows and scrolls instead of squeezing the columns. */
+@media (max-width: 1100px) {
+  .workspace { flex: none; grid-template-columns: minmax(0, 1fr); }
 }
