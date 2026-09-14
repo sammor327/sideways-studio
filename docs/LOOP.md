@@ -67,6 +67,11 @@ enough that persona 1 sees a different product.
 - [x] **Part 5 — POV overlay**: PSD-baked gold columns, live card, legend and
   battlefield art, five text lines placed on the PSD baselines, per-side show
   flags. Shipped Loop 5, verified 2026-09-02.
+- [x] **Part 6b — IGO dual columns** (2026-09-14, out of roadmap order on
+  Sam's ask, from the RQ overlay teardown): the Regional Qualifier grammar
+  as a live HTML scene with seed badges, the round clock, the docked card
+  and the mirrored point track. Event name and round title got their panel
+  rows with it.
 - [ ] Part 6 — Head-to-Head (auto cards from legend assignment, round titles).
 - [ ] Part 7 — Bracket (Top 8 / Top 4, legend portraits, series scores).
 - [ ] Part 8 — Standings (manual pages, CSV/paste import, dropped-player
@@ -78,11 +83,15 @@ enough that persona 1 sees a different product.
   `Plate.tsx` to the pixel (measured against the reference render), with its
   build-in, a deck editor page, a saved-deck library, PNG export and a batch
   CLI.
-- [ ] Part 10 — Timers (start/pause/reset, panel + overlay element).
+- [~] Part 10 — Timers: the round clock shipped with Part 6b (start /
+  pause / reset / set, a cue on both banks, drawn by the dual overlay).
+  Still open: a clock element for the other overlays and the score bug.
 - [x] Part 11 — Theming: pulled forward to Loop 2 on Sam's feedback (accent
   color pickers, logo upload, curated Google Fonts downloaded + cached for
   offline). Leftovers moved to backlog: event name/round title fields,
-  per-URL `?theme=` override.
+  per-URL `?theme=` override. **Extended 2026-09-14 into the look model**:
+  every graphic's colours and background, globally or per graphic, with
+  presets, image uploads and the PSD chrome re-baked into recolorable masks.
 - [ ] Part 12 — Event files (save/load named events, New Event flow).
 - [ ] Part 13 — OBS/vMix illustrated setup guide page + onboarding polish.
 - [x] **Part 14 — Packaging**: `npm run build:exe` produces a self-contained
@@ -116,9 +125,21 @@ enough that persona 1 sees a different product.
 - Vendetta hero art: all 9 champions fall back to their existing 1-suffix
   PNGs; champions gaining a second legend want proper 2-suffix variants in
   IGO-LEGENDS when the art exists.
-- Theme accents recolor live elements (ticks, gradients) but baked plate
-  chrome keeps the designed green/blue; full plate re-theming would need
-  runtime recolor of the WebP plates.
+- (Done 2026-09-14) Plate chrome now repaints from the look: the PSD layers
+  are alpha masks per role, see `scripts/bake-looks.py`. The older
+  `bake-igo.py` / `bake-igo2v2.py` write a `plate.webp` nothing loads any
+  more; `bake-pov.py` still produces the cover gradients and the
+  `?debug=psd` reference.
+- Headless Edge 152 exits at once with code 0 on this machine (2026-09-14),
+  so the decklist PNG export and the still renderer fail with "the headless
+  browser exited (0)" until `SIDEWAYS_BROWSER` points at Chrome. Worth a
+  Chrome-first fallback in `server/still.js` (try the next candidate when
+  one exits before answering), and a panel message that names the fix.
+- The dual overlay's image background is one photo per column, cover-fit
+  to 350x1080, so a landscape photo shows a narrow slice. A per-column
+  focal-point control, or a "span both columns" mode, would help.
+- The dual overlay docks the card popup's card; the popup's own position
+  still collides with the 1v1 sidebar (below).
 - Card popup default side collides with the IGO sidebar; /output/ supports
   ?popupside=left. Consider auto-mirroring the popup when the IGO is on.
 - Two open panels can fight over optimistic counter state (each panel now
@@ -192,6 +213,63 @@ enough that persona 1 sees a different product.
   the Priya (OBS power user) loop.
 
 ## Loop log
+
+### 2026-09-14 (out of band: the look model and the dual-column overlay)
+Sam asked for the dual-column in-game overlay from the RQ overlay teardown,
+built to be highly customizable in colours and backgrounds, and for every
+existing overlay to be as customizable. The teardown measured Riot's 2026
+Regional Qualifier template off the Singapore quarter-final frame (350px
+columns, a 1214px near-square feed, name banner, legend tile, 280x302 cam
+window with a seed badge, battlefield band, pips, event block with the
+round clock bottom left, docked card bottom right, mirrored 1-8-1 track).
+
+**The look model** (`web/shared/look.js`, shared by server and scenes):
+each graphic has designed colours (`DESIGNED`), the organizer's global look
+overlays only its set fields, and a per-graphic override applies while
+enabled. Colours: accents, ground, panels, frame, text, secondary text,
+trim (empty trim = the accent gradient). Background: kind (shards, solid,
+gradient, image, plate photo, transparent), colours, angle, grain, darken,
+image. The stage client resolves the look per scene into `--ss-*` custom
+properties and stamps `data-bg` on the root; `web/stage/ground.css` is the
+shared ground-layer stack every scene mounts where its ground goes.
+Presets are look patches; the sanitizer keeps them whole (tests).
+
+**Masks instead of plates.** `scripts/bake-looks.py` classifies each PSD
+chrome layer's pixels by role with soft membership (saturated colour, white
+glint, dark) and per-class shade and glint modulation, and writes one
+full-canvas alpha mask per role. Two lessons: highlights on a saturated
+colour are found by desaturation, not brightness (a pure bright cyan has
+V = 1 and is not a glint); and a deep navy needs its own brightness band or
+it splits between "navy" and "dark" and greys out. The 2v2's shards live
+inside its BG layer, so its ground mask must be the whole BG silhouette or
+the shard layers clip. Reconstructions were checked against the old plates
+before the scenes moved over. Grain is procedural now: the PSD's own grain
+is coarse enough to read as speckle at 1080p.
+
+**Scenes.** igo1v1, igo2v2 and pov render their chrome from the masks; the
+score bug, card popup and decklist take the tokens (the decklist backdrop
+is the shared ground stack, so it can be a solid, a gradient, an upload or
+the TES photo). New `igodual` scene: everything measured above, name fit on
+a canvas gauge, legend and battlefield art crops scaled from the POV's
+measured windows, webcam holes cut with an even-odd clip-path, the card
+popup's card docked (the popup stands down while docked), and the round
+clock. `match.timer` plus a `timer` cue action ships Part 10 early.
+`stage.js` sets `data-ready` once a scene's images settle so
+`server/still.js` can capture any scene, not only the decklist.
+
+**Panel.** The Theme card is the Look card: a scope select (all graphics or
+one), an "own look" switch per graphic, presets, colour rows with clear
+buttons that show the value that airs, background kind with colours, angle,
+grain and darken, an image upload per scope, and a scope-aware reset. Match
+data gains Seed, Event name, Round and the Clock row; the Graphics card the
+dual row with its four extras; the focus map and chips know the new scene.
+
+Verified on a second server (`--port=4711`, own data folder) with stills
+rendered through Chrome (Edge 152 headless exits at once here, see backlog)
+in the TES default and the Regional gold preset, plus an uploaded image
+background with darkening on the dual overlay's own look. `npm test`: 55
+cases. Suggested commit: `Out of band: the look model and the dual-column
+in-game overlay`.
 
 ### 2026-09-11b (out of band: the decklist plate, rebuilt to FlipDeck's brief)
 Sam handed over the FlipDeck agent's implementation brief for its decklist

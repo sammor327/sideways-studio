@@ -169,6 +169,7 @@ function renderSide(p, side, animate) {
 let visibleNow = null;
 
 const params = initStage({
+  scene: 'pov',
   onState(state, first) {
     $('diag').classList.remove('on');
     const bank = sceneBank(state, params);

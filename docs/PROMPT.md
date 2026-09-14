@@ -34,7 +34,13 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **Part 5 complete** (POV overlay: baked gold columns from
+Current status: **Part 6b and the look model shipped 2026-09-14** (the
+dual-column in-game overlay on the Regional Qualifier geometry, with the
+round clock, seed badges, docked card and mirrored track; every graphic's
+colours and background customizable globally or per graphic through the
+Look card, with presets and image uploads; the PSD chrome re-baked into
+recolorable masks by `scripts/bake-looks.py`; see LOOP.md 2026-09-14).
+Before that: **Part 5 complete** (POV overlay: baked gold columns from
 `POV-Overlay-1.psd`, live featured card / legend / battlefield art, five text
 lines on the PSD baselines with an auto-fit down to 11px, per-side show flags,
 a fifth panel card, `/api/champions`, and Beaufort for LOL bundled; Sam's Loop

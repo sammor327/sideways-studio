@@ -6,12 +6,17 @@
 <link rel="stylesheet" href="/assets/brand.css">
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
 <link rel="stylesheet" href="./scene.css">
 </head>
 <body>
 <div class="stage">
   <div class="deck off" id="deck">
-    <img class="backdrop hidden" id="backdrop" src="/assets/decklist/background.jpg" alt="" draggable="false">
+    <div class="ground backdrop hidden" id="backdrop">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
     <div class="plate-host" id="plateHost"></div>
   </div>
   <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>

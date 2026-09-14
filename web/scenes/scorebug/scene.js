@@ -35,6 +35,7 @@ function renderSide(prefix, side, seriesLength, animate) {
 }
 
 const params = initStage({
+  scene: 'scorebug',
   onState(state, first) {
     $('diag').classList.remove('on');
     const bank = sceneBank(state, params);

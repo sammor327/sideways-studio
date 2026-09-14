@@ -6,12 +6,25 @@
 <link rel="stylesheet" href="/assets/brand.css">
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
 <link rel="stylesheet" href="./scene.css">
 </head>
 <body>
 <div class="stage">
   <div class="igo off mode-legend" id="igo">
-    <img class="plate" src="./plate.webp" alt="" draggable="false">
+    <!-- The chrome: the PSD's layers as alpha masks, each painted by the
+         look (scripts/bake-looks.py). Ground first, then the shards inside
+         it, then the frame and the holder bodies and edges on top. -->
+    <div class="ground m-ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="layer m-frame"></div>
+    <div class="layer m-holder-a"></div>
+    <div class="layer m-holder-b"></div>
+    <div class="layer m-edge-a"></div>
+    <div class="layer m-edge-b"></div>
 
     <div class="holder green" id="gholder">
       <div class="holder-fill"></div>

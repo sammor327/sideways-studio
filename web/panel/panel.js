@@ -1,3 +1,7 @@
+import {
+  COLOR_HELP, COLOR_KEYS, COLOR_LABELS, DESIGNED, LOOK_SCENES, PRESETS, SCENE_LABELS, resolveLook,
+} from '../shared/look.js';
+
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 const SIDES = [['l', 'left'], ['r', 'right']];
@@ -32,6 +36,8 @@ const SCENE_FIELDS = {
   igo1v1: ['seriesLength', 'name', 'gameWins', 'legend', 'battlefield'],
   igo2v2: ['seriesLength', 'teamName', 'name', 'name2', 'gameWins',
     'legend', 'legend2', 'battlefield', 'battlefield2'],
+  igodual: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'legend', 'legendText',
+    'battlefield', 'champion', 'championText', 'eventName', 'roundTitle', 'timer'],
   pov: ['name', 'score', 'legend', 'legendText', 'battlefield',
     'champion', 'championText', 'card'],
 };
@@ -39,6 +45,7 @@ const SCENE_NAMES = {
   scorebug: 'the score bug',
   igo1v1: 'the 1v1 overlay',
   igo2v2: 'the 2v2 overlay',
+  igodual: 'the dual-column overlay',
   pov: 'the POV overlay',
 };
 const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
@@ -57,8 +64,14 @@ try {
 function sceneDraws(scene, field, side, bank) {
   if (!SCENE_FIELDS[scene].includes(field)) return false;
   const cfg = bank.scenes[scene];
-  if (cfg.mode === 'webcam' && (field === 'legend' || field === 'legend2')) return false;
+  // The dual overlay still names the legend on its tile in webcam mode; the
+  // sidebars draw nothing for it then.
+  if (cfg.mode === 'webcam' && scene !== 'igodual' && (field === 'legend' || field === 'legend2')) return false;
   if (scene === 'pov' && side && !(side === 'left' ? cfg.showLeft : cfg.showRight)) return false;
+  if (scene === 'igodual') {
+    if (!cfg.eventBlock && ['eventName', 'roundTitle', 'timer'].includes(field)) return false;
+    if (!cfg.clock && field === 'timer') return false;
+  }
   return true;
 }
 
@@ -169,6 +182,16 @@ function renderScenes(s) {
   $('igo2OnAir').classList.toggle('hidden', !s.program.scenes.igo2v2.visible);
   if (document.activeElement !== $('igo2Mode')) $('igo2Mode').value = igo2Prev.mode;
 
+  const dualPrev = s.preview.scenes.igodual;
+  const dualBtn = $('toggleIgoDual');
+  dualBtn.textContent = dualPrev.visible ? 'ON' : 'OFF';
+  dualBtn.classList.toggle('on', dualPrev.visible);
+  $('igoDualOnAir').classList.toggle('hidden', !s.program.scenes.igodual.visible);
+  if (document.activeElement !== $('igoDualMode')) $('igoDualMode').value = dualPrev.mode;
+  for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot']]) {
+    if (document.activeElement !== $(id)) $(id).checked = dualPrev[flag];
+  }
+
   const povPrev = s.preview.scenes.pov;
   const povBtn = $('togglePov');
   povBtn.textContent = povPrev.visible ? 'ON' : 'OFF';
@@ -239,9 +262,210 @@ function renderFeaturedCard(p, card) {
   }
 }
 
-function renderTheme(t) {
-  if (document.activeElement !== $('accentA')) $('accentA').value = t.accentA;
-  if (document.activeElement !== $('accentB')) $('accentB').value = t.accentB;
+// --- the look: colours and backgrounds, global or per graphic ---
+//
+// Scope 'global' edits theme.look (and the top-level accents); a scene key
+// edits that graphic's own override, which only counts while "own look" is
+// on. Every colour control shows the value that would air for the scope and
+// a clear button that drops it back to the designed colour. Nothing here is
+// cued: the look is setup, like the logo, and airs as it is edited.
+
+let lookScope = 'global';
+const LOOK_KEY = 'sidewaysStudio.lookScope';
+try {
+  const saved = localStorage.getItem(LOOK_KEY);
+  if (saved === 'global' || LOOK_SCENES.includes(saved)) lookScope = saved;
+} catch { /* per-session only */ }
+
+$('lookScope').replaceChildren(
+  Object.assign(document.createElement('option'), { value: 'global', textContent: 'All graphics' }),
+  ...LOOK_SCENES.map((key) => Object.assign(document.createElement('option'), { value: key, textContent: SCENE_LABELS[key] })),
+);
+$('lookScope').value = lookScope;
+$('lookScope').addEventListener('change', () => {
+  lookScope = $('lookScope').value;
+  try { localStorage.setItem(LOOK_KEY, lookScope); } catch { /* ignore */ }
+  if (state) renderLook(state.theme);
+});
+
+// Where a patch for the current scope lands.
+function lookPatch(fields) {
+  if (lookScope === 'global') {
+    const { accentA, accentB, ...rest } = fields;
+    const theme = { look: rest };
+    if (accentA !== undefined) theme.accentA = accentA;
+    if (accentB !== undefined) theme.accentB = accentB;
+    return { theme };
+  }
+  return { theme: { scenes: { [lookScope]: fields } } };
+}
+
+// The stored (possibly empty) fields for the scope, and the values that air.
+function scopeStored(t) {
+  return lookScope === 'global' ? t.look : t.scenes[lookScope];
+}
+function scopeEffective(t) {
+  // For "all graphics" the preview colour is what an unthemed graphic shows:
+  // the dual overlay's designed set, since it is the most complete.
+  return resolveLook(t, lookScope === 'global' ? 'igodual' : lookScope);
+}
+
+const COLOR_ROWS = [
+  ['accentA', 'Accent 1', 'Player 1 side, the first colour of the accent gradient.'],
+  ['accentB', 'Accent 2', 'Player 2 side, the second colour of the accent gradient.'],
+  ...COLOR_KEYS.map((key) => [key, COLOR_LABELS[key], COLOR_HELP[key]]),
+];
+$('lookColors').replaceChildren(...COLOR_ROWS.map(([key, label, help]) => {
+  const row = document.createElement('div');
+  row.className = 'look-color';
+  row.dataset.key = key;
+  row.title = help;
+  const name = document.createElement('span');
+  name.textContent = label;
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.id = `look-${key}`;
+  input.setAttribute('aria-label', label);
+  const clear = document.createElement('button');
+  clear.className = 'clear-x';
+  clear.textContent = '\u00d7';
+  clear.title = 'Back to the designed colour';
+  clear.setAttribute('aria-label', `Clear ${label}`);
+  row.append(name, input, clear);
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => post(lookPatch(colorField(key, input.value))), 120);
+  });
+  clear.addEventListener('click', () => post(lookPatch(colorField(key, ''))));
+  return row;
+}));
+function colorField(key, value) {
+  return key === 'accentA' || key === 'accentB' ? { [key]: value } : { colors: { [key]: value } };
+}
+
+$('presetRow').replaceChildren(...PRESETS.map((preset) => {
+  const btn = document.createElement('button');
+  btn.className = 'preset';
+  btn.textContent = preset.name;
+  btn.title = preset.hint;
+  btn.addEventListener('click', () => {
+    // A preset restates every colour it names and clears the rest, so two
+    // presets in a row never blend.
+    const fields = {
+      accentA: preset.look.accentA || '',
+      accentB: preset.look.accentB || '',
+      colors: Object.fromEntries(COLOR_KEYS.map((k) => [k, (preset.look.colors || {})[k] || ''])),
+      background: {
+        kind: '', color: '', color2: '', angle: '', grain: '', dim: '',
+        ...(preset.look.background || {}),
+      },
+    };
+    if (lookScope !== 'global') fields.enabled = true;
+    post(lookPatch(fields));
+  });
+  return btn;
+}));
+
+$('lookOwn').addEventListener('change', () => {
+  if (lookScope === 'global') return;
+  const on = $('lookOwn').checked;
+  const fields = { enabled: on };
+  // Switching a graphic to its own look starts it from what it shows now, so
+  // nothing jumps on air.
+  if (on && state) {
+    const eff = resolveLook(state.theme, lookScope);
+    fields.accentA = eff.accentA;
+    fields.accentB = eff.accentB;
+    fields.colors = { ...eff.colors };
+    // The image stays whatever this graphic's own upload is; a copied URL
+    // would be refused by the sanitizer anyway.
+    const { image, ...background } = eff.background;
+    fields.background = background;
+  }
+  post(lookPatch(fields));
+});
+
+$('bgKind').addEventListener('change', () => post(lookPatch({ background: { kind: $('bgKind').value } })));
+for (const [id, key] of [['bgColor', 'color'], ['bgColor2', 'color2']]) {
+  let timer = null;
+  $(id).addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => post(lookPatch({ background: { [key]: $(id).value } })), 120);
+  });
+}
+for (const [id, key] of [['bgAngle', 'angle'], ['bgGrain', 'grain'], ['bgDim', 'dim']]) {
+  let timer = null;
+  $(id).addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => post(lookPatch({ background: { [key]: Number($(id).value) } })), 100);
+  });
+}
+
+$('bgFile').addEventListener('change', async () => {
+  const file = $('bgFile').files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase().replace('jpeg', 'jpg');
+  const res = await fetch(`/api/theme/image?slot=${encodeURIComponent(lookScope)}&ext=${encodeURIComponent(ext)}`, {
+    method: 'POST',
+    body: await file.arrayBuffer(),
+  }).then((r) => r.json()).catch(() => ({ ok: false, error: 'upload failed' }));
+  if (!res.ok) alert(`Background upload failed: ${res.error}`);
+  else if (lookScope !== 'global') post(lookPatch({ enabled: true }));
+  $('bgFile').value = '';
+});
+$('bgRemove').addEventListener('click', () => post(lookPatch({ background: { image: '', kind: '' } })));
+
+function renderLook(t) {
+  const stored = scopeStored(t);
+  const eff = scopeEffective(t);
+  const global = lookScope === 'global';
+  $('lookOwnRow').classList.toggle('hidden', global);
+  $('lookGlobalOnly').classList.toggle('hidden', !global);
+  if (!global && document.activeElement !== $('lookOwn')) $('lookOwn').checked = Boolean(stored.enabled);
+  // A scene without its own look shows the inherited values, dimmed, so the
+  // operator sees what it airs and where the values come from.
+  const inert = !global && !stored.enabled;
+  $('lookColors').classList.toggle('inert', inert);
+  $('presetRow').classList.toggle('inert', false);
+  document.querySelector('.look-bg').classList.toggle('inert', inert);
+
+  for (const row of document.querySelectorAll('.look-color')) {
+    const key = row.dataset.key;
+    const input = row.querySelector('input');
+    const isAccent = key === 'accentA' || key === 'accentB';
+    const storedValue = isAccent ? (global ? t[key] : stored[key]) : stored.colors[key];
+    const effective = isAccent ? eff[key] : (eff.colors[key] || eff.accentA);
+    if (document.activeElement !== input) input.value = effective;
+    row.classList.toggle('is-set', Boolean(storedValue));
+    row.querySelector('button').disabled = !storedValue || (global && isAccent);
+  }
+
+  const b = stored.background;
+  const ebg = eff.background;
+  if (document.activeElement !== $('bgKind')) $('bgKind').value = b.kind || '';
+  const kind = ebg.kind;
+  $('bgColorRow').classList.toggle('hidden', kind === 'transparent');
+  $('bgColor2Row').classList.toggle('hidden', kind !== 'gradient');
+  $('bgAngleRow').classList.toggle('hidden', kind !== 'gradient');
+  $('bgImageRow').classList.toggle('hidden', !(b.kind === 'image' || b.image));
+  for (const [id, key] of [['bgColor', 'color'], ['bgColor2', 'color2']]) {
+    if (document.activeElement !== $(id)) $(id).value = ebg[key];
+  }
+  for (const [id, key] of [['bgAngle', 'angle'], ['bgGrain', 'grain'], ['bgDim', 'dim']]) {
+    if (document.activeElement !== $(id)) $(id).value = String(ebg[key]);
+  }
+  const bgPreview = $('bgPreview');
+  if (b.image) {
+    let img = bgPreview.querySelector('img');
+    if (!img) { bgPreview.replaceChildren(); img = document.createElement('img'); bgPreview.appendChild(img); }
+    if (img.getAttribute('src') !== b.image) img.src = b.image;
+  } else {
+    bgPreview.replaceChildren(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'No image' }));
+  }
+  $('bgRemove').disabled = !b.image;
+  $('themeReset').textContent = global ? 'Reset to designed look' : `Reset ${SCENE_LABELS[lookScope]}`;
+
   $('fontSelect').value = t.font || '';
   const preview = $('logoPreview');
   if (t.logo) {
@@ -285,11 +509,15 @@ function render(s) {
     setIfIdle(`${p}name2`, sd.name2 || '');
     setIfIdle(`${p}legend2`, sd.legend2 || '');
     setIfIdle(`${p}bf2`, sd.battlefield2 || '');
+    setIfIdle(`${p}seed`, sd.seed || '');
   }
   $('seriesLength').value = String(m.seriesLength);
+  setIfIdle('eventName', s.preview.event.name || '');
+  setIfIdle('roundTitle', s.preview.event.roundTitle || '');
+  renderClock(m.timer);
 
   renderScenes(s);
-  renderTheme(s.theme);
+  renderLook(s.theme);
   applyFocus();
 
   // The TAKE button lights up whenever preview differs from what is on air.
@@ -350,7 +578,7 @@ for (const [p, side] of SIDES) {
 for (const [p, side] of SIDES) {
   for (const [id, field] of [
     [`${p}name`, 'name'], [`${p}name2`, 'name2'], [`${p}team`, 'teamName'],
-    [`${p}legendText`, 'legend'], [`${p}championText`, 'champion'],
+    [`${p}legendText`, 'legend'], [`${p}championText`, 'champion'], [`${p}seed`, 'seed'],
   ]) {
     const el = $(id);
     let timer = null;
@@ -384,7 +612,7 @@ $('resetMatch').addEventListener('click', () => {
     },
     scenes: {
       scorebug: { visible: false }, cardpopup: { visible: false },
-      igo1v1: { visible: false }, igo2v2: { visible: false }, pov: { visible: false },
+      igo1v1: { visible: false }, igo2v2: { visible: false }, igodual: { visible: false }, pov: { visible: false },
     },
   });
 });
@@ -394,7 +622,7 @@ $('resetMatch').addEventListener('click', () => {
 const SWAP_FIELDS = [
   'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
   'champion', 'name2', 'legend2', 'legendSlug2', 'battlefield2', 'teamName',
-  'score', 'gameWins',
+  'score', 'gameWins', 'seed',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -420,10 +648,9 @@ $('toggleCard').addEventListener('click', () => {
   if (cp.card.cardId) post({ scenes: { cardpopup: { visible: !cp.visible } } });
 });
 
-// The two IGOs and the POV overlay all live on the screen edges and would
-// draw over each other, so switching one on switches the others off in
-// preview.
-const EDGE_SCENES = ['igo1v1', 'igo2v2', 'pov'];
+// The IGOs and the POV overlay all live on the screen edges and would draw
+// over each other, so switching one on switches the others off in preview.
+const EDGE_SCENES = ['igo1v1', 'igo2v2', 'igodual', 'pov'];
 function toggleEdgeScene(key) {
   if (!state) return;
   const next = !state.preview.scenes[key].visible;
@@ -437,7 +664,58 @@ function toggleEdgeScene(key) {
 }
 $('toggleIgo').addEventListener('click', () => toggleEdgeScene('igo1v1'));
 $('toggleIgo2').addEventListener('click', () => toggleEdgeScene('igo2v2'));
+$('toggleIgoDual').addEventListener('click', () => toggleEdgeScene('igodual'));
 $('togglePov').addEventListener('click', () => toggleEdgeScene('pov'));
+
+$('igoDualMode').addEventListener('change', () => {
+  post({ scenes: { igodual: { mode: $('igoDualMode').value } } });
+});
+for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot']]) {
+  $(id).addEventListener('change', () => post({ scenes: { igodual: { [flag]: $(id).checked } } }));
+}
+
+// --- event fields and the round clock ---
+
+for (const [id, field] of [['eventName', 'name'], ['roundTitle', 'roundTitle']]) {
+  const el = $(id);
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    post({ event: { [field]: el.value } });
+  };
+  el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  el.addEventListener('blur', flush);
+}
+
+// The clock is a cue: start, pause, reset and set act on both banks, so the
+// overlay on air follows without a TAKE. The panel shows the same arithmetic
+// the scene draws.
+let clockState = { running: false, startedAt: 0, elapsed: 0, countdown: 0 };
+function clockText(t) {
+  const total = t.elapsed + (t.running ? Date.now() - t.startedAt : 0);
+  const ms = t.countdown > 0 ? Math.max(0, t.countdown - total) : total;
+  const s = Math.floor(ms / 1000);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
+}
+function renderClock(t) {
+  if (!t) return;
+  clockState = t;
+  $('clockOut').textContent = clockText(t);
+  $('clockStart').textContent = t.running ? 'Pause' : 'Start';
+  $('clockStart').classList.toggle('on', t.running);
+  if (document.activeElement !== $('clockMinutes')) $('clockMinutes').value = String(Math.round(t.countdown / 60000));
+}
+setInterval(() => { if (clockState.running) $('clockOut').textContent = clockText(clockState); }, 500);
+$('clockStart').addEventListener('click', () => post({ action: 'timer', op: clockState.running ? 'pause' : 'start' }));
+$('clockReset').addEventListener('click', () => post({ action: 'timer', op: 'reset' }));
+$('clockSet').addEventListener('click', () => {
+  const minutes = Math.max(0, Math.min(600, Math.trunc(Number($('clockMinutes').value)) || 0));
+  post({ action: 'timer', op: 'set', minutes });
+});
+$('clockMinutes').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('clockSet').click(); });
 
 $('igoMode').addEventListener('change', () => {
   post({ scenes: { igo1v1: { mode: $('igoMode').value } } });
@@ -681,6 +959,7 @@ $('scorebugUrl').value = `${location.origin}/scenes/scorebug/?transparent=1`;
 $('cardpopupUrl').value = `${location.origin}/scenes/cardpopup/?transparent=1`;
 $('igoUrl').value = `${location.origin}/scenes/igo1v1/?transparent=1`;
 $('igo2Url').value = `${location.origin}/scenes/igo2v2/?transparent=1`;
+$('igoDualUrl').value = `${location.origin}/scenes/igodual/?transparent=1`;
 $('povUrl').value = `${location.origin}/scenes/pov/?transparent=1`;
 $('decklistUrl').value = `${location.origin}/scenes/decklist/?transparent=1`;
 
@@ -770,16 +1049,6 @@ $('cardSearch').addEventListener('keydown', (e) => {
 
 // --- theme controls ---
 
-let accentTimer = null;
-for (const id of ['accentA', 'accentB']) {
-  $(id).addEventListener('input', () => {
-    clearTimeout(accentTimer);
-    accentTimer = setTimeout(() => {
-      post({ theme: { accentA: $('accentA').value, accentB: $('accentB').value } });
-    }, 150);
-  });
-}
-
 async function loadFontList() {
   try {
     const data = await (await fetch('/api/fonts', { cache: 'no-store' })).json();
@@ -837,7 +1106,16 @@ $('logoFile').addEventListener('change', async () => {
 $('logoRemove').addEventListener('click', () => post({ theme: { logo: '' } }));
 
 $('themeReset').addEventListener('click', () => {
-  post({ theme: { accentA: '#11b6fb', accentB: '#1bef19', font: '', logo: '' } });
+  const cleared = {
+    accentA: '', accentB: '',
+    colors: Object.fromEntries(COLOR_KEYS.map((k) => [k, ''])),
+    background: { kind: '', color: '', color2: '', angle: '', grain: '', dim: '', image: '' },
+  };
+  if (lookScope === 'global') {
+    post({ theme: { accentA: '#11b6fb', accentB: '#1bef19', font: '', logo: '', look: cleared } });
+  } else {
+    post({ theme: { scenes: { [lookScope]: { ...cleared, enabled: false } } } });
+  }
 });
 
 // --- card database status and downloads ---

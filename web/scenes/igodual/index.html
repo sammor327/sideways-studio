@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: In-Game Overlay, Dual Columns</title>
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="dual off mode-legend" id="dual">
+
+    <!-- Left column: player 1, event block at the bottom. -->
+    <div class="col left" id="lcol">
+      <div class="col-bg">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+      </div>
+      <div class="banner"><span class="pname" id="lname"></span></div>
+      <div class="rule"></div>
+      <div class="tile legend">
+        <img class="art hidden" id="llegendImg" alt="" draggable="false">
+        <div class="tile-cap">
+          <span class="cap-legend" id="llegend"></span>
+          <span class="cap-champ" id="lchampion"></span>
+        </div>
+      </div>
+      <div class="cam" id="lcam">
+        <div class="cam-fill"></div>
+        <img class="art hidden hero" id="lhero" alt="" draggable="false">
+        <div class="cam-chip" id="lchip"></div>
+      </div>
+      <div class="cam-edge"></div>
+      <div class="seed" id="lseed"></div>
+      <div class="tile bf">
+        <img class="art hidden" id="lbfImg" alt="" draggable="false">
+        <div class="bf-name" id="lbf"></div>
+      </div>
+      <div class="pips" id="lpips"></div>
+
+      <div class="event" id="eventBlock">
+        <img class="event-logo hidden" id="eventLogo" alt="" draggable="false">
+        <div class="event-name" id="eventName"></div>
+        <div class="round" id="roundTitle"></div>
+        <div class="clock" id="clock">00:00</div>
+      </div>
+    </div>
+
+    <!-- Right column: player 2, the docked featured card at the bottom. -->
+    <div class="col right" id="rcol">
+      <div class="col-bg">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+      </div>
+      <div class="banner"><span class="pname" id="rname"></span></div>
+      <div class="rule"></div>
+      <div class="tile legend">
+        <img class="art hidden" id="rlegendImg" alt="" draggable="false">
+        <div class="tile-cap">
+          <span class="cap-legend" id="rlegend"></span>
+          <span class="cap-champ" id="rchampion"></span>
+        </div>
+      </div>
+      <div class="cam" id="rcam">
+        <div class="cam-fill"></div>
+        <img class="art hidden hero" id="rhero" alt="" draggable="false">
+        <div class="cam-chip" id="rchip"></div>
+      </div>
+      <div class="cam-edge"></div>
+      <div class="seed" id="rseed"></div>
+      <div class="tile bf">
+        <img class="art hidden" id="rbfImg" alt="" draggable="false">
+        <div class="bf-name" id="rbf"></div>
+      </div>
+      <div class="pips" id="rpips"></div>
+
+      <div class="card-slot" id="cardSlot">
+        <img class="art hidden slot-art" id="slotImg" alt="" draggable="false">
+        <div class="slot-empty" id="slotEmpty">
+          <img class="slot-logo hidden" id="slotLogo" alt="" draggable="false">
+          <span class="slot-mark" id="slotMark"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Point track, top centre: 1 to 8 to 1, one lit pip per player. -->
+    <div class="track" id="track"></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The dual-column overlay is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

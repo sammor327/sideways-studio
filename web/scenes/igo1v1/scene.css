@@ -1,6 +1,9 @@
-/* IGO 1v1 — right-sidebar in-game overlay. Chrome is a baked plate from
-   IGO-V2-PREPPED.psd; everything data-bearing renders live on top at the
-   PSD's design coordinates (all metrics in --u).
+/* IGO 1v1 — right-sidebar in-game overlay. The chrome is IGO-V2-PREPPED.psd
+   split into alpha masks (scripts/bake-looks.py) and painted by the look:
+   the grained ground, the game-window frame, the holder bodies and their
+   coloured edges, and the arrow-shard art in the accent gradient. Everything
+   data-bearing renders live on top at the PSD's design coordinates (all
+   metrics in --u).
 
    Motion contract: --t drives a whole-overlay fade (a persistent in-game
    overlay wants a calm fade, not a slide that would drag the game frame).
@@ -13,12 +16,27 @@
 }
 .igo.off { display: none; }
 
-.plate {
+/* --- chrome masks --- */
+
+.layer, .ground {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
 }
+.ground.m-ground { -webkit-mask-image: url(./m-ground.webp); mask-image: url(./m-ground.webp); }
+.layer.m-frame { -webkit-mask-image: url(./m-frame.webp); mask-image: url(./m-frame.webp); background: var(--ss-frame, #000); }
+.layer.m-holder-a { -webkit-mask-image: url(./m-holder-a.webp); mask-image: url(./m-holder-a.webp); background: var(--ss-plate, #000); }
+.layer.m-holder-b { -webkit-mask-image: url(./m-holder-b.webp); mask-image: url(./m-holder-b.webp); background: var(--ss-plate, #000); }
+.layer.m-edge-a { -webkit-mask-image: url(./m-edge-a.webp); mask-image: url(./m-edge-a.webp); background: var(--ss-accent-b, var(--tes-green)); }
+.layer.m-edge-b { -webkit-mask-image: url(./m-edge-b.webp); mask-image: url(./m-edge-b.webp); background: var(--ss-accent-a, var(--tes-blue)); }
+/* The shard art at its designed place, from the scene's own baked masks
+   rather than the standalone pattern. */
+.m-ground .g-shards { -webkit-mask-image: url(./m-shards.webp); mask-image: url(./m-shards.webp); }
+.m-ground .g-shade { -webkit-mask-image: url(./m-shards-shade.webp); mask-image: url(./m-shards-shade.webp); }
+.m-ground .g-glint { -webkit-mask-image: url(./m-shards-glint.webp); mask-image: url(./m-shards-glint.webp); }
 
 /* Holder image windows (261x242 at the PSD's GREEN/BLUEIMAGE bboxes).
    Legend mode: dark backdrop + hero art. Webcam mode: fully transparent so
@@ -37,7 +55,7 @@
 .holder-fill {
   position: absolute;
   inset: 0;
-  background: linear-gradient(170deg, #10151b, #080b0e);
+  background: linear-gradient(170deg, var(--ss-ink, #10151b), var(--ss-plate, #080b0e));
 }
 .hero {
   position: absolute;
@@ -49,6 +67,7 @@
 .hero.icon-tier {
   /* RR cutouts are 256px alpha portraits: center them instead of stretching. */
   object-fit: contain;
+  box-sizing: border-box;
   padding: calc(14 * var(--u));
 }
 .hero.hidden { display: none; }
@@ -59,7 +78,8 @@
   align-items: center;
   justify-content: center;
   font: italic 800 calc(84 * var(--u))/1 var(--tes-font);
-  color: #2a323b;
+  color: var(--ss-text-muted, #2a323b);
+  opacity: 0.35;
 }
 .holder-chip.on { display: flex; }
 
@@ -72,8 +92,8 @@
   flex-direction: column;
   gap: calc(1 * var(--u));
 }
-.ticks.green { top: calc(267 * var(--u)); --tick-color: var(--tes-green); }
-.ticks.blue { top: calc(763 * var(--u)); --tick-color: var(--tes-blue); }
+.ticks.green { top: calc(267 * var(--u)); --tick-color: var(--ss-accent-b, var(--tes-green)); }
+.ticks.blue { top: calc(763 * var(--u)); --tick-color: var(--ss-accent-a, var(--tes-blue)); }
 .tick {
   /* border-box: the ring lives inside the 25px design size, so the stack
      matches the PSD slot pitch exactly and stays centered on the text
@@ -83,7 +103,7 @@
   height: calc(25 * var(--u));
   border-radius: 50%;
   border: calc(2 * var(--u)) solid var(--tick-color);
-  background: #0a0a0a;
+  background: var(--ss-plate, #0a0a0a);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,12 +123,12 @@
 }
 .tick.won::after { opacity: 1; }
 
-/* Name and battlefield lines, white italic on the baked black bar. */
+/* Name and battlefield lines on the holder body bar. */
 .pname, .bf {
   position: absolute;
   left: calc(1680 * var(--u));
   width: calc(235 * var(--u));
-  color: #fff;
+  color: var(--ss-text, #fff);
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -117,7 +137,7 @@
 /* Sizes come from the PSD type layers (24px names, 18px battlefields);
    tops place the cap height at the PSD ink positions. */
 .pname { font: italic 800 calc(24 * var(--u))/1 var(--tes-font); }
-.bf { font: italic 500 calc(18 * var(--u))/1 var(--tes-font); color: #d8dee4; }
+.bf { font: italic 500 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #d8dee4); }
 .pname.green { top: calc(270 * var(--u)); }
 .bf.green { top: calc(296 * var(--u)); }
 .pname.blue { top: calc(767 * var(--u)); }
@@ -132,9 +152,9 @@
   width: calc(272 * var(--u));
   height: calc(152 * var(--u));
   border-radius: calc(10 * var(--u));
-  background: #050505;
+  background: var(--ss-plate, #050505);
   border-bottom: calc(3 * var(--u)) solid transparent;
-  border-image: var(--tes-grad) 1;
+  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
   display: flex;
   align-items: center;
   justify-content: center;

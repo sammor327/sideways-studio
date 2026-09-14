@@ -30,14 +30,24 @@
   transform: translateY(calc((1 - var(--seg)) * -60 * var(--u)));
 }
 
+/* Plates take the look's ground: a flat colour, a gradient, or an image
+   (the score plate stays the ink colour so the digits always sit on a
+   quiet field). Trim edges follow the trim colour or the accent gradient. */
 .plate {
-  background: var(--tes-plate);
-  color: #fff;
+  background: var(--ss-bg-color, var(--tes-plate));
+  color: var(--ss-text, #fff);
   display: flex;
   align-items: center;
   border-bottom: calc(4 * var(--u)) solid transparent;
-  border-image: var(--tes-grad) 1;
+  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
 }
+html[data-bg="gradient"] .name-plate {
+  background: linear-gradient(var(--ss-bg-angle, 160deg), var(--ss-bg-color), var(--ss-bg-color2));
+}
+html[data-bg="image"] .name-plate, html[data-bg="plate"] .name-plate {
+  background: var(--ss-bg-image) center / cover no-repeat, var(--ss-bg-color);
+}
+html[data-bg="transparent"] .name-plate { background: transparent; }
 
 .name-plate {
   padding: 0 calc(26 * var(--u));
@@ -46,7 +56,10 @@
   font: italic 700 calc(30 * var(--u))/1 var(--tes-font);
   text-transform: uppercase;
   letter-spacing: calc(1.5 * var(--u));
+  max-width: calc(520 * var(--u));
+  white-space: nowrap;
 }
+.name-plate span { overflow: hidden; text-overflow: ellipsis; }
 .left .name-plate { justify-content: flex-end; }
 .right .name-plate { justify-content: flex-start; }
 
@@ -54,11 +67,11 @@
   width: calc(78 * var(--u));
   height: calc(64 * var(--u));
   justify-content: center;
-  background: var(--tes-ink);
+  background: var(--ss-ink, var(--tes-ink));
 }
 .score {
   font: 800 calc(42 * var(--u))/1 var(--tes-font);
-  color: #fff;
+  color: var(--ss-text, #fff);
   /* --bump is a JS-shaped 0->1->0 pulse on score change. */
   transform: scale(calc(1 + 0.22 * var(--bump, 0)));
   display: inline-block;
@@ -76,13 +89,15 @@
   box-sizing: border-box;
   width: calc(16 * var(--u));
   height: calc(16 * var(--u));
-  background: #1c2126;
-  border: calc(2 * var(--u)) solid #2c3238;
+  background: var(--ss-plate, #1c2126);
+  border: calc(2 * var(--u)) solid var(--ss-text-muted, #2c3238);
+  opacity: 0.9;
   transform: rotate(45deg) scale(calc(1 + 0.35 * var(--bump, 0)));
 }
 .tick.won {
-  background: var(--tes-grad);
+  background: var(--ss-trim-grad, var(--tes-grad));
   border-color: transparent;
+  opacity: 1;
 }
 
 .mid {
@@ -91,7 +106,7 @@
 }
 .mid-bar {
   width: 100%;
-  background: var(--tes-grad);
+  background: var(--ss-trim-grad, var(--tes-grad));
   /* Ambient shimmer: --loop cycles 0..1 from the loop clock. */
   filter: brightness(calc(0.9 + 0.45 * var(--loop, 0)));
 }

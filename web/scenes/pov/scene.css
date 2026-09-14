@@ -42,12 +42,12 @@
 .slot.legend {
   top: calc(864 * var(--u));
   height: calc(128 * var(--u));
-  background: #11263c;
+  background: var(--ss-ink, #11263c);
 }
 .slot.battlefield {
   top: calc(1001 * var(--u));
   height: calc(65 * var(--u));
-  background: #11263c;
+  background: var(--ss-ink, #11263c);
 }
 
 .art {
@@ -122,8 +122,13 @@
 
 /* --- plate: above the art so the gold frames clip the slot edges --- */
 
-/* One plate file holds both columns; each side windows its own out of it, so
-   hiding a side removes its chrome too. Window = the PSD's ART layer bbox. */
+/* The chrome is the PSD's ART layers split into full-canvas alpha masks
+   (scripts/bake-looks.py): the navy bars take the look's ground (a colour,
+   gradient, image or shards, plus grain), the gold line art takes the trim
+   colour, and the art's own shading and glints lie back over both so a flat
+   fill still reads as the designed metal. Each side windows its own column
+   out of the canvas-sized masks, so hiding a side removes its chrome too.
+   Window = the PSD's ART layer bbox. */
 .plate-win {
   position: absolute;
   left: calc((17 + var(--x0, 0)) * var(--u));
@@ -138,6 +143,24 @@
   top: calc(-755 * var(--u));
   width: calc(1920 * var(--u));
   height: calc(1080 * var(--u));
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.ground.plate { inset: auto; }
+.plate.m-panel { -webkit-mask-image: url(./m-panel.webp); mask-image: url(./m-panel.webp); }
+.plate.m-panel-shade { -webkit-mask-image: url(./m-panel-shade.webp); mask-image: url(./m-panel-shade.webp); background: #000; opacity: 0.5; }
+.plate.m-dark { -webkit-mask-image: url(./m-dark.webp); mask-image: url(./m-dark.webp); background: var(--ss-plate, #0f0f0f); }
+.plate.m-trim { -webkit-mask-image: url(./m-trim.webp); mask-image: url(./m-trim.webp); background: var(--ss-trim-grad, #c99c3e); }
+.plate.m-trim-shade { -webkit-mask-image: url(./m-trim-shade.webp); mask-image: url(./m-trim-shade.webp); background: #000; opacity: 0.6; }
+.plate.m-trim-light { -webkit-mask-image: url(./m-trim-light.webp); mask-image: url(./m-trim-light.webp); background: #fff; opacity: 0.8; }
+/* The shard pattern, when the look asks for it, is scaled to one column. */
+.plate .g-shards, .plate .g-shade, .plate .g-glint {
+  -webkit-mask-size: auto 100%;
+  mask-size: auto 100%;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 /* --- text lines (top of the stack) --- */
@@ -150,7 +173,7 @@
   left: calc((50.5 + var(--x0, 0)) * var(--u));
   width: calc(200 * var(--u));
   text-align: center;
-  color: #fff;
+  color: var(--ss-text, #fff);
   /* If the bundled face never loads, fall through to the theme face. An
      unresolvable var() would invalidate the declaration and inherit the
      browser's default serif, which is not the fallback the SPEC allows. */

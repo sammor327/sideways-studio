@@ -2,6 +2,7 @@
 // Contract (broadcast-line-handoff §3.5): version-gated repaints, full-state
 // fetch on load and on every reconnect, keep the last good frame on any
 // failure, 60s belt-and-braces resync. URL params own presentation only.
+import { resolveLook, lookVars } from '../shared/look.js';
 
 export function stageParams() {
   const p = new URLSearchParams(location.search);
@@ -21,15 +22,27 @@ export function sceneBank(state, params) {
   return params.preview ? state.preview : state.program;
 }
 
-// Event theme (accent colors, display font) applies to every scene; inline
-// root properties override the brand.css defaults, and clearing them falls
-// back to TES. Fonts arrive via /theme/fonts.css (cached Google Fonts).
+// The event look (accents, colours, background, display font) applies to
+// every scene as root custom properties over the brand.css defaults. Each
+// scene names itself so its own designed colours and any per-graphic
+// override resolve (web/shared/look.js); the background kind is stamped on
+// the root as data-bg for the shared ground layers (stage/ground.css).
+// Fonts arrive via /theme/fonts.css (cached Google Fonts).
 const FONT_FALLBACK = "'Segoe UI', 'Arial Narrow', Arial, sans-serif";
-function applyTheme(theme) {
+let lastVars = '';
+function applyTheme(theme, scene) {
   if (!theme) return;
   const root = document.documentElement.style;
-  if (theme.accentA) root.setProperty('--tes-blue', theme.accentA);
-  if (theme.accentB) root.setProperty('--tes-green', theme.accentB);
+  const look = resolveLook(theme, scene);
+  const vars = lookVars(look);
+  const key = JSON.stringify(vars);
+  // A style write per property per state push is not free in a browser
+  // source; skip the lot when nothing about the look changed.
+  if (key !== lastVars) {
+    lastVars = key;
+    for (const [name, value] of Object.entries(vars)) root.setProperty(name, value);
+    document.documentElement.dataset.bg = look.background.kind;
+  }
   if (theme.font) root.setProperty('--tes-font', `'${theme.font}', ${FONT_FALLBACK}`);
   else root.removeProperty('--tes-font');
   // Lets a scene prefer a locally installed brand face under the default
@@ -37,7 +50,13 @@ function applyTheme(theme) {
   document.documentElement.classList.toggle('theme-font', Boolean(theme.font));
 }
 
-export function initStage({ onState }) {
+// The look one scene renders right now, for scenes that need more than the
+// custom properties (the decklist waits on its backdrop image, for one).
+export function currentLook(state, scene) {
+  return resolveLook(state.theme, scene);
+}
+
+export function initStage({ scene = 'igodual', onState }) {
   const params = stageParams();
   if (params.transparent) document.documentElement.classList.add('transparent');
   document.documentElement.dataset.theme = params.theme;
@@ -50,8 +69,28 @@ export function initStage({ onState }) {
     version = state.version;
     const wasFirst = first;
     first = false;
-    applyTheme(state.theme);
+    applyTheme(state.theme, scene);
     onState(state, wasFirst);
+    if (wasFirst && scene !== 'decklist') markReadyWhenLoaded();
+  }
+
+  // A still renderer (server/still.js) waits for data-ready on the root.
+  // The decklist sets its own once its plate is built; every other scene is
+  // ready once its images have loaded or given up, capped so a missing art
+  // file never holds a capture. Harmless on air: nothing reads it there.
+  function markReadyWhenLoaded() {
+    const deadline = Date.now() + 4000;
+    const poll = () => {
+      const imgs = [...document.images].filter((i) => i.getAttribute('src'));
+      const settled = imgs.every((i) => i.complete);
+      if (settled || Date.now() > deadline) {
+        // One more beat so a fallback chain that just advanced can load.
+        setTimeout(() => { document.documentElement.dataset.ready = '1'; }, 350);
+        return;
+      }
+      setTimeout(poll, 100);
+    };
+    setTimeout(poll, 200);
   }
 
   async function fullFetch() {

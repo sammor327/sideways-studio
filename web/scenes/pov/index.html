@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="/assets/fonts/beaufort.css">
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
 <link rel="stylesheet" href="./scene.css">
 </head>
 <body>
@@ -19,7 +20,18 @@
       <div class="slot battlefield"><img class="art" id="lbfImg" alt="" draggable="false"></div>
       <img class="cover legend" src="./cover-legend-left.webp" alt="" draggable="false">
       <img class="cover battlefield" src="./cover-battlefield-left.webp" alt="" draggable="false">
-      <div class="plate-win"><img class="plate" src="./plate.webp" alt="" draggable="false"></div>
+      <div class="plate-win">
+        <div class="ground plate m-panel">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+        <div class="plate mask m-panel-shade"></div>
+        <div class="plate mask m-dark"></div>
+        <div class="plate mask m-trim"></div>
+        <div class="plate mask m-trim-shade"></div>
+        <div class="plate mask m-trim-light"></div>
+      </div>
       <div class="line score" id="lscore"><span class="digit">0</span></div>
       <div class="line player" id="lplayer"></div>
       <div class="line legend" id="llegend"></div>
@@ -33,7 +45,18 @@
       <div class="slot battlefield"><img class="art" id="rbfImg" alt="" draggable="false"></div>
       <img class="cover legend" src="./cover-legend-right.webp" alt="" draggable="false">
       <img class="cover battlefield" src="./cover-battlefield-right.webp" alt="" draggable="false">
-      <div class="plate-win"><img class="plate" src="./plate.webp" alt="" draggable="false"></div>
+      <div class="plate-win">
+        <div class="ground plate m-panel">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+        <div class="plate mask m-panel-shade"></div>
+        <div class="plate mask m-dark"></div>
+        <div class="plate mask m-trim"></div>
+        <div class="plate mask m-trim-shade"></div>
+        <div class="plate mask m-trim-light"></div>
+      </div>
       <div class="line score" id="rscore"><span class="digit">0</span></div>
       <div class="line player" id="rplayer"></div>
       <div class="line legend" id="rlegend"></div>

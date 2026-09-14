@@ -36,9 +36,9 @@
   position: relative;
   width: calc(460 * var(--u));
   height: calc(644 * var(--u));
-  background: var(--tes-ink);
+  background: var(--ss-ink, var(--tes-ink));
   border-bottom: calc(5 * var(--u)) solid transparent;
-  border-image: var(--tes-grad) 1;
+  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
   box-shadow: 0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.55);
 }
 /* Battlefields are landscape cards stored portrait: the scene swaps the box
@@ -72,17 +72,18 @@
   justify-content: center;
   text-align: center;
   padding: calc(30 * var(--u));
-  background: linear-gradient(160deg, #10151b, #0a0d10);
-  color: #e8edf1;
+  background: linear-gradient(160deg, var(--ss-ink, #10151b), var(--ss-plate, #0a0d10));
+  color: var(--ss-text, #e8edf1);
   font: italic 700 calc(40 * var(--u))/1.25 var(--tes-font);
   text-transform: uppercase;
   letter-spacing: calc(1.5 * var(--u));
 }
 .card-fallback.on { display: flex; }
 
+/* The name plate takes the look's ground like the score bug's plates. */
 .name-plate {
-  background: var(--tes-plate);
-  color: #fff;
+  background: var(--ss-bg-color, var(--tes-plate));
+  color: var(--ss-text, #fff);
   min-width: calc(300 * var(--u));
   max-width: calc(620 * var(--u));
   padding: calc(12 * var(--u)) calc(28 * var(--u));
@@ -91,8 +92,15 @@
   align-items: center;
   gap: calc(3 * var(--u));
   border-bottom: calc(4 * var(--u)) solid transparent;
-  border-image: var(--tes-grad) 1;
+  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
 }
+html[data-bg="gradient"] .name-plate {
+  background: linear-gradient(var(--ss-bg-angle, 160deg), var(--ss-bg-color), var(--ss-bg-color2));
+}
+html[data-bg="image"] .name-plate, html[data-bg="plate"] .name-plate {
+  background: var(--ss-bg-image) center / cover no-repeat, var(--ss-bg-color);
+}
+html[data-bg="transparent"] .name-plate { background: transparent; }
 .card-name {
   font: italic 700 calc(28 * var(--u))/1.15 var(--tes-font);
   text-transform: uppercase;
@@ -105,7 +113,7 @@
 }
 .card-type {
   font: 500 calc(15 * var(--u))/1 var(--tes-font);
-  color: #8b98a5;
+  color: var(--ss-text-muted, #8b98a5);
   text-transform: uppercase;
   letter-spacing: calc(2 * var(--u));
 }

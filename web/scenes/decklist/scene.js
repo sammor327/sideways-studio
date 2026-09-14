@@ -239,11 +239,19 @@ function buildPlate(deck, content) {
   return { plate, pending };
 }
 
+// The backdrop is painted by CSS from the look, so "loaded" means the image
+// the look names (if any) has arrived. Read it off the resolved custom
+// property rather than the state, so URL mode and state mode agree.
 function backdropSettled() {
-  if (backdrop.complete) return Promise.resolve();
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--ss-bg-image').trim();
+  const m = raw.match(/^url\(["']?(.+?)["']?\)$/);
+  if (!m) return Promise.resolve();
   return new Promise((resolve) => {
-    backdrop.addEventListener('load', resolve, { once: true });
-    backdrop.addEventListener('error', resolve, { once: true });
+    const img = new Image();
+    img.onload = resolve;
+    img.onerror = resolve;
+    img.src = m[1];
+    if (img.complete) resolve();
   });
 }
 
@@ -443,7 +451,7 @@ function runUrlMode() {
   // Theme (accent colour, font) still comes from the server; the deck does not.
   let themed;
   const themeReady = new Promise((resolve) => { themed = resolve; });
-  initStage({ onState: () => themed() });
+  initStage({ scene: 'decklist', onState: () => themed() });
   setTimeout(themed, 3000);
 
   if (!content.list.trim()) {
@@ -472,7 +480,7 @@ function runUrlMode() {
 // --- mode: the deck editor's live preview ------------------------------------
 
 function runEmbedMode() {
-  initStage({ onState: () => {} });
+  initStage({ scene: 'decklist', onState: () => {} });
   fade.seek(1);
   window.addEventListener('message', (e) => {
     if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;

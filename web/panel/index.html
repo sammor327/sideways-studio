@@ -51,6 +51,7 @@
       <button class="focus-chip" data-focus="scorebug" aria-pressed="false">Score bug</button>
       <button class="focus-chip" data-focus="igo1v1" aria-pressed="false">1v1 overlay</button>
       <button class="focus-chip" data-focus="igo2v2" aria-pressed="false">2v2 overlay</button>
+      <button class="focus-chip" data-focus="igodual" aria-pressed="false">Dual columns</button>
       <button class="focus-chip" data-focus="pov" aria-pressed="false">POV</button>
     </div>
     <p class="hint" id="focusHint"></p>
@@ -114,6 +115,12 @@
           <button data-step="1" data-side="right" data-field="gameWins" aria-label="Player 2 game wins up">+</button>
         </div>
       </div>
+    </div>
+
+    <div class="field-row" data-field="seed">
+      <span class="row-label" title="The Swiss seed into the cut, shown as a badge on the dual-column overlay: 1ST, 8TH.">Seed</span>
+      <div class="cell" data-side="left"><input id="lseed" maxlength="8" autocomplete="off" placeholder="1ST" aria-label="Player 1 seed"></div>
+      <div class="cell" data-side="right"><input id="rseed" maxlength="8" autocomplete="off" placeholder="8TH" aria-label="Player 2 seed"></div>
     </div>
 
     <div class="field-row" data-field="legend">
@@ -219,6 +226,33 @@
         </div>
       </div>
     </div>
+
+    <div class="field-section">
+      <h4 class="section-label">Event</h4>
+
+      <div class="field-row" data-field="eventName">
+        <span class="row-label">Event name</span>
+        <div class="cell span2"><input id="eventName" maxlength="80" autocomplete="off" placeholder="Regional Qualifier Singapore" aria-label="Event name"></div>
+      </div>
+
+      <div class="field-row" data-field="roundTitle">
+        <span class="row-label">Round</span>
+        <div class="cell span2"><input id="roundTitle" maxlength="60" autocomplete="off" placeholder="Quarter finals" aria-label="Round title"></div>
+      </div>
+
+      <div class="field-row" data-field="timer">
+        <span class="row-label" title="The round clock on the dual-column overlay. Start, pause and reset act on air at once, no TAKE needed.">Clock</span>
+        <div class="cell span2 clock-cell">
+          <output class="clock-out" id="clockOut">00:00</output>
+          <button id="clockStart" title="Start or pause the clock">Start</button>
+          <button id="clockReset" title="Back to the round length, stopped">Reset</button>
+          <label class="inline clock-len">
+            <input id="clockMinutes" inputmode="numeric" maxlength="3" value="0" aria-label="Round length in minutes"> min
+            <button id="clockSet" class="clear-mini" title="Count down from this many minutes; 0 counts up">Set</button>
+          </label>
+        </div>
+      </div>
+    </div>
   </div>
 </aside>
 
@@ -268,6 +302,22 @@
             <option value="webcam">Webcam cutouts</option>
           </select>
         </label>
+      </div>
+    </div>
+    <div class="scene-row">
+      <div class="scene-name">In-game overlay, dual columns <span class="onair hidden" id="igoDualOnAir">ON AIR</span></div>
+      <button id="toggleIgoDual" class="scene-toggle">OFF</button>
+      <div class="scene-options">
+        <label class="inline">Cam windows
+          <select id="igoDualMode">
+            <option value="legend">Legend art</option>
+            <option value="webcam">Webcam cutouts</option>
+          </select>
+        </label>
+        <label class="inline"><input type="checkbox" id="igoDualTrack" checked> Point track</label>
+        <label class="inline"><input type="checkbox" id="igoDualEvent" checked> Event block</label>
+        <label class="inline"><input type="checkbox" id="igoDualClock" checked> Clock</label>
+        <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
       </div>
     </div>
     <div class="scene-row">
@@ -334,24 +384,60 @@
     </div>
   </section>
 
-  <section class="card">
-    <h2>Theme</h2>
-    <div class="theme-colors">
-      <label class="inline">Accent 1 <input type="color" id="accentA" value="#11b6fb"></label>
-      <label class="inline">Accent 2 <input type="color" id="accentB" value="#1bef19"></label>
+  <section class="card look-card">
+    <div class="deck-head">
+      <h2>Look</h2>
+      <select id="lookScope" aria-label="Which graphics this look applies to"></select>
     </div>
-    <label>Display font
-      <select id="fontSelect"><option value="">TES default</option></select>
+    <label class="inline hidden" id="lookOwnRow" title="Off: this graphic follows the look for all graphics. On: it keeps its own colours and background.">
+      <input type="checkbox" id="lookOwn"> Own look for this graphic
     </label>
-    <p class="hint" id="fontStatus">Fonts download once, then work offline.</p>
-    <div class="logo-row">
-      <div class="logo-preview" id="logoPreview"><span class="muted">No logo</span></div>
-      <div class="logo-actions">
-        <label class="file-btn">Upload logo<input type="file" id="logoFile" accept=".png,.jpg,.jpeg,.webp,.svg" hidden></label>
-        <button id="logoRemove">Remove</button>
+    <div class="preset-row" id="presetRow"></div>
+    <div class="look-grid" id="lookColors"></div>
+    <div class="look-bg">
+      <label>Background
+        <select id="bgKind">
+          <option value="">Designed</option>
+          <option value="shards">Arrow shards</option>
+          <option value="solid">Solid colour</option>
+          <option value="gradient">Gradient</option>
+          <option value="image">Image</option>
+          <option value="plate">TES plate photo</option>
+          <option value="transparent">Transparent</option>
+        </select>
+      </label>
+      <div class="look-row" id="bgColorRow">
+        <label class="inline">Colour <input type="color" id="bgColor"></label>
+        <label class="inline" id="bgColor2Row">to <input type="color" id="bgColor2"></label>
+        <label class="inline" id="bgAngleRow">Angle <input type="range" id="bgAngle" min="0" max="360" step="5"></label>
+      </div>
+      <div class="look-row" id="bgImageRow">
+        <div class="logo-preview bg-preview" id="bgPreview"><span class="muted">No image</span></div>
+        <div class="logo-actions">
+          <label class="file-btn">Upload image<input type="file" id="bgFile" accept=".png,.jpg,.jpeg,.webp" hidden></label>
+          <button id="bgRemove">Remove</button>
+        </div>
+      </div>
+      <div class="look-row">
+        <label class="inline slider">Grain <input type="range" id="bgGrain" min="0" max="100"></label>
+        <label class="inline slider">Darken <input type="range" id="bgDim" min="0" max="100"></label>
       </div>
     </div>
-    <div class="row"><button id="themeReset">Reset to TES look</button></div>
+    <div id="lookGlobalOnly">
+      <label>Display font
+        <select id="fontSelect"><option value="">TES default</option></select>
+      </label>
+      <p class="hint" id="fontStatus">Fonts download once, then work offline.</p>
+      <div class="logo-row">
+        <div class="logo-preview" id="logoPreview"><span class="muted">No logo</span></div>
+        <div class="logo-actions">
+          <label class="file-btn">Upload logo<input type="file" id="logoFile" accept=".png,.jpg,.jpeg,.webp,.svg" hidden></label>
+          <button id="logoRemove">Remove</button>
+        </div>
+      </div>
+    </div>
+    <div class="row"><button id="themeReset">Reset to designed look</button></div>
+    <p class="hint">Cleared colours fall back to each graphic's designed look. The look is not cued: changes air at once.</p>
   </section>
 
   <section class="card">
@@ -395,6 +481,13 @@
       <div class="url-line">
         <input class="url-input" id="igo2Url" readonly>
         <button data-copy="igo2Url">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">In-game overlay dual columns source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="igoDualUrl" readonly>
+        <button data-copy="igoDualUrl">Copy</button>
       </div>
     </div>
     <div class="url-row">

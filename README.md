@@ -98,6 +98,23 @@ copy can run beside a live one without sharing its autosave.
 
 `npm test` runs the unit tests (Node's built-in runner, no dependencies).
 
+## Looks
+
+The Look card in the control panel recolours every graphic: pick a preset
+(Turn'em Sideways, Regional gold, Ember, Arctic, Mono) or set the accents,
+ground, panels, frame, text and trim colours and a background (the arrow
+shards, a solid, a gradient, an uploaded image, the TES plate photo, or
+transparent) with grain and darkening. "All graphics" sets the look every
+graphic inherits; pick one graphic and switch on "Own look" to give it its
+own. Cleared colours fall back to each graphic's designed look. Changes air
+at once, like the logo.
+
+The dual-column in-game overlay (`/scenes/igodual/`) follows the Regional
+Qualifier broadcast layout: two player columns around a near-square table
+camera, with the round clock, seed badges, the docked featured card and a
+mirrored point track. Crop the table camera to roughly 1214 x 1080 between
+the columns.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are

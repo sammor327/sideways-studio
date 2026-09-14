@@ -28,17 +28,19 @@ html.theme-font .deck { font-family: var(--tes-font); }
 .deck.off { display: none; }
 .deck, .deck *, .deck *::before, .deck *::after { box-sizing: border-box; }
 
-/* The plate's own full-bleed backdrop, drawn only when the background is on.
+/* The plate's own full-bleed backdrop, drawn only when the background is on:
+   the shared ground layers (stage/ground.css) painted by the look, so the
+   TES plate photo, a solid, a gradient or an uploaded image all land here.
    The flat fill under it means a failed image is a dark frame, not a hole. */
-.deck.with-bg { background: #0d0d0d; }
-.backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+.deck.with-bg { background: var(--ss-ink, #0d0d0d); }
 .backdrop.hidden { display: none; }
+/* Full-frame: the shard pattern spans the whole plate here. */
+.backdrop .g-shards, .backdrop .g-shade, .backdrop .g-glint {
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: right center;
+  mask-position: right center;
+}
 .plate-host, .plate { position: absolute; inset: 0; }
 
 /* --- card scans --- */

@@ -58,11 +58,17 @@ function renderCard(card) {
 }
 
 const params = initStage({
+  scene: 'cardpopup',
   onState(state, first) {
     $('diag').classList.remove('on');
-    const cp = sceneBank(state, params).scenes.cardpopup;
+    const bank = sceneBank(state, params);
+    const cp = bank.scenes.cardpopup;
     const card = cp.card;
-    const visible = cp.visible;
+    // The dual-column overlay docks this same card bottom right while it is
+    // on with its card slot enabled, so the popup stands down rather than
+    // airing the card twice.
+    const docked = Boolean(bank.scenes.igodual && bank.scenes.igodual.visible && bank.scenes.igodual.cardSlot);
+    const visible = cp.visible && !docked;
     $('hiddenHint').classList.toggle('on',
       !params.transparent && !params.preview && !visible);
 

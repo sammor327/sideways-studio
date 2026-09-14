@@ -1,0 +1,95 @@
+/* Shared ground layers: what paints behind a graphic's chrome.
+   A scene puts one `.ground` container where its designed ground goes (the
+   sidebar, the columns, a plate) with this markup inside:
+
+     <div class="ground">
+       <div class="g-fill"></div>    solid colour or gradient
+       <div class="g-image"></div>   uploaded image or the TES plate photo
+       <div class="g-shards"></div>  TES arrow shards, accent gradient
+       <div class="g-shade"></div>   the shards' own folds (black)
+       <div class="g-glint"></div>   the shards' own glints (white)
+       <div class="g-grain"></div>   film grain, two tiles
+       <div class="g-dim"></div>     darkening over an image
+     </div>
+
+   stage.js resolves the look into the --ss-* properties and stamps the
+   background kind on the root as data-bg. The container may carry a mask
+   (a baked sidebar shape) so every layer clips to the designed silhouette.
+   The shard layers use the standalone pattern by default; a scene with its
+   own baked shard masks points them at its files instead. */
+
+.ground {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ground > div {
+  position: absolute;
+  inset: 0;
+}
+
+.g-fill {
+  background: var(--ss-bg-color, #1c1c1c);
+}
+html[data-bg="gradient"] .g-fill {
+  background: linear-gradient(var(--ss-bg-angle, 160deg), var(--ss-bg-color, #1c1c1c), var(--ss-bg-color2, #000));
+}
+html[data-bg="transparent"] .g-fill { display: none; }
+
+.g-image {
+  display: none;
+  background-image: var(--ss-bg-image, none);
+  background-size: cover;
+  background-position: center;
+}
+html[data-bg="image"] .g-image, html[data-bg="plate"] .g-image { display: block; }
+
+/* The shards: fill the pattern silhouette with the accent gradient, then lay
+   the art's own shading and glints back over it. */
+.g-shards, .g-shade, .g-glint {
+  display: none;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+html[data-bg="shards"] .g-shards, html[data-bg="shards"] .g-shade, html[data-bg="shards"] .g-glint { display: block; }
+.g-shards {
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  -webkit-mask-image: url(/assets/patterns/shards.webp);
+  mask-image: url(/assets/patterns/shards.webp);
+}
+.g-shade {
+  background: #000;
+  opacity: 0.55;
+  -webkit-mask-image: url(/assets/patterns/shards-shade.webp);
+  mask-image: url(/assets/patterns/shards-shade.webp);
+}
+.g-glint {
+  background: #fff;
+  -webkit-mask-image: url(/assets/patterns/shards-glint.webp);
+  mask-image: url(/assets/patterns/shards-glint.webp);
+}
+
+/* Grain: a light tile and a dark tile lifted from the TES plate texture, so
+   no blend modes are needed (older browser-source builds composite those
+   unreliably over transparency). */
+.g-grain {
+  opacity: var(--ss-grain, 0.6);
+}
+.g-grain::before, .g-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  background-size: calc(256 * var(--u)) calc(256 * var(--u));
+}
+.g-grain::before { background-image: url(/assets/textures/grain-light.png); }
+.g-grain::after { background-image: url(/assets/textures/grain-dark.png); }
+html[data-bg="transparent"] .g-grain { display: none; }
+
+.g-dim {
+  background: #000;
+  opacity: var(--ss-dim, 0);
+}

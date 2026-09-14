@@ -60,6 +60,7 @@ function renderTicks(el, seriesLength, gameWins, animate) {
 }
 
 const params = initStage({
+  scene: 'igo1v1',
   onState(state, first) {
     $('diag').classList.remove('on');
     const bank = sceneBank(state, params);

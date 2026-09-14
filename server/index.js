@@ -9,7 +9,8 @@ import { WebSocketServer } from 'ws';
 import { APP_ROOT, APP_VERSION, DATA_DIR, WEB_DIR, isPackaged, readAsset } from './runtime.js';
 import { runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest } from './updater.js';
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
-import { getState, applyUpdate, onChange, setThemeLogo, initState, cleanMultiline } from './state.js';
+import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
+import { LOOK_SCENES } from '../web/shared/look.js';
 import { initCardDb, cardDbStatus, syncCardDb, prefetchFullArt, searchCards, getArtFile } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
@@ -22,6 +23,9 @@ const DATA_DIR_THEME = path.join(DATA_DIR, 'theme');
 const LOGO_EXT = ['png', 'jpg', 'webp', 'svg'];
 const LOGO_MIME = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', svg: 'image/svg+xml' };
 let logoFile = null;
+// Background images for the look, one per slot: 'global' or a scene key.
+const BG_SLOTS = ['global', ...LOOK_SCENES];
+const bgFiles = new Map();
 
 const portArg = process.argv.find((a) => a.startsWith('--port='));
 const PORT = Number((portArg && portArg.slice('--port='.length)) || process.env.SIDEWAYS_PORT || 4700);
@@ -160,6 +164,47 @@ const server = http.createServer(async (req, res) => {
       res.end(data);
     } catch {
       res.writeHead(404); res.end('no logo');
+    }
+    return;
+  }
+
+  // Background image upload for the look: one file per slot ('global' or a
+  // scene key), same shape as the logo upload but 6MB, since a 1920x1080
+  // photo is the point. The stored look points at the served URL and its
+  // kind flips to image.
+  if (url.pathname === '/api/theme/image' && req.method === 'POST') {
+    const ext = String(url.searchParams.get('ext') || '').toLowerCase();
+    const slot = String(url.searchParams.get('slot') || 'global');
+    if (!LOGO_EXT.includes(ext) || !BG_SLOTS.includes(slot)) {
+      sendJson(res, 400, { ok: false, error: 'background must be png, jpg, webp or svg, for a known graphic' });
+      return;
+    }
+    try {
+      const body = await readBody(req, 6 * 1024 * 1024);
+      if (!body.length) throw new Error('empty upload');
+      await mkdir(DATA_DIR_THEME, { recursive: true });
+      const prev = bgFiles.get(slot);
+      if (prev && prev !== `bg-${slot}.${ext}`) await rm(path.join(DATA_DIR_THEME, prev), { force: true });
+      bgFiles.set(slot, `bg-${slot}.${ext}`);
+      await writeFile(path.join(DATA_DIR_THEME, `bg-${slot}.${ext}`), body);
+      setThemeImage(slot, `/theme/bg/${slot}?v=${Date.now()}`);
+      sendJson(res, 200, { ok: true });
+    } catch (err) {
+      sendJson(res, 400, { ok: false, error: err.message });
+    }
+    return;
+  }
+
+  const bgReq = url.pathname.match(/^\/theme\/bg\/([a-z0-9]{1,20})$/);
+  if (bgReq && req.method === 'GET') {
+    const file = bgFiles.get(bgReq[1]);
+    if (!file) { res.writeHead(404); res.end('no background'); return; }
+    try {
+      const data = await readFile(path.join(DATA_DIR_THEME, file));
+      res.writeHead(200, { 'content-type': LOGO_MIME[file.split('.').pop()], 'cache-control': 'no-store' });
+      res.end(data);
+    } catch {
+      res.writeHead(404); res.end('no background');
     }
     return;
   }
@@ -478,7 +523,12 @@ async function start() {
   await initState();
   await initLibrary();
   try {
-    logoFile = (await readdir(DATA_DIR_THEME)).find((f) => LOGO_EXT.includes(f.split('.').pop()) && f.startsWith('logo.')) || null;
+    const files = (await readdir(DATA_DIR_THEME)).filter((f) => LOGO_EXT.includes(f.split('.').pop()));
+    logoFile = files.find((f) => f.startsWith('logo.')) || null;
+    for (const f of files) {
+      const m = f.match(/^bg-([a-z0-9]{1,20})\./);
+      if (m && BG_SLOTS.includes(m[1])) bgFiles.set(m[1], f);
+    }
   } catch { /* no theme dir yet */ }
 
   server.listen(PORT, '127.0.0.1', () => {
@@ -496,6 +546,7 @@ async function start() {
     console.log(`    Card popup:     ${base}/scenes/cardpopup/?transparent=1`);
     console.log(`    In-game 1v1:    ${base}/scenes/igo1v1/?transparent=1`);
     console.log(`    In-game 2v2:    ${base}/scenes/igo2v2/?transparent=1`);
+    console.log(`    In-game dual:   ${base}/scenes/igodual/?transparent=1`);
     console.log(`    POV overlay:    ${base}/scenes/pov/?transparent=1`);
     console.log(`    Decklist:       ${base}/scenes/decklist/?transparent=1`);
     if (isPackaged) {

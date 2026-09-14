@@ -16,7 +16,17 @@ Sam; do not re-litigate them without Sam explicitly reopening one.
 - Continuous auto-save plus named event files (save/load) so a TO can prep an
   event days early. Crash must lose nothing meaningful.
 - **Themable**: TOs set event name, logo, accent colors. TES is the default
-  theme. Credit "Built by Sam Morris / Turn'em Sideways" appears in the app
+  theme. **Amendment 2026-09-14 (Sam):** every graphic is fully customizable
+  in colour and background. The look model (`web/shared/look.js`) resolves
+  each graphic's designed colours, then the organizer's global look, then an
+  optional per-graphic override: accents, ground, panels, frame, text,
+  secondary text and trim, plus a background (arrow shards, solid, gradient,
+  uploaded image, the TES plate photo, or transparent) with grain and
+  darkening. The PSD plates are no longer baked flat: `scripts/bake-looks.py`
+  splits each PSD's chrome into alpha masks by role, so the sidebars, the POV
+  frames and the shard art repaint from the look. Presets ship for one-click
+  looks (TES, Regional gold, Ember, Arctic, Mono). The look is setup, not a
+  cued graphic: it airs as it is edited, like the logo. Credit "Built by Sam Morris / Turn'em Sideways" appears in the app
   (header/About) only, never watermarked on broadcast output.
 - Per-scene **Copy URL** buttons (noting 1920x1080 @ 60fps) plus an illustrated
   OBS and vMix setup guide inside the app.
@@ -47,6 +57,16 @@ truth, all 1920x1080; composite previews were verified 2026-08-09):
 6. **IGO 2v2** — four players, two team names, legend portraits.
 7. **POV overlay** — per side: featured card slot, numeric score, player /
    legend / champion / battlefield text, legend + battlefield art.
+7b. **IGO dual columns** (added 2026-09-14, no PSD: live HTML on the
+   Regional Qualifier broadcast geometry measured in the RQ overlay
+   teardown) — two 350px player columns framing a near-square table camera.
+   Per side: name banner, legend tile with legend and champion lines, a
+   280x302 camera window (webcam cutout or legend art) with a Swiss-seed
+   badge, battlefield art band, series pips. Bottom left: event logo, event
+   name, round title and the round clock. Bottom right: the card popup's
+   card, docked (the popup stands down while docked). Top centre: a mirrored
+   1-8-1 point track lighting each player's current points. Each extra
+   (track, clock, event block, card slot) switches off on its own.
 
 Two standalone transparent sources beyond the PSDs:
 
@@ -54,6 +74,12 @@ Two standalone transparent sources beyond the PSDs:
    URL, positionable anywhere in OBS. Deliberately NOT baked into the IGOs.
 9. **Card popup** — operator searches any card by name, it animates in. Same
    engine feeds the POV card slots.
+
+Timers (Part 10) shipped early with the dual overlay: one round clock in
+`match.timer`, driven by a `timer` action (start / pause / reset / set
+minutes) that acts on both banks at once, so the clock on air never waits
+for a TAKE. Countdown when a length is set, count-up otherwise, always
+printed as minutes:seconds.
 
 ## Overlay semantics
 

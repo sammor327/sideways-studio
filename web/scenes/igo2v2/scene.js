@@ -68,6 +68,7 @@ function renderTeam(prefix, side, seriesLength, animate) {
 }
 
 const params = initStage({
+  scene: 'igo2v2',
   onState(state, first) {
     $('diag').classList.remove('on');
     const bank = sceneBank(state, params);
