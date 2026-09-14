@@ -32,6 +32,15 @@ function defaultSide(name) {
     // The Swiss seed into the cut ("1ST", "8TH"): the dual-column overlay
     // badges it under the webcam, the way the Regional Qualifier feed does.
     seed: '',
+    // Identity lines every other TCG production prints (2026-09-14 overlay
+    // scouting) and the experimental overlays draw: record "8-2-0", a
+    // country code chip, pronouns, and the archetype string.
+    record: '', country: '', pronouns: '', archetype: '',
+    // Hidden information for the rows overlay: a list of cards in hand
+    // (resolved cards, so the scene draws costs without a catalog), a plain
+    // count for a TO who counts but cannot spot, and a "holds" line naming
+    // the battlefields a side controls.
+    handCount: 0, hand: [], holds: '',
     score: 0, gameWins: 0,
   };
 }
@@ -47,9 +56,19 @@ function defaultTimer() {
 
 function defaultBank() {
   return {
-    event: { name: '', roundTitle: '' },
+    event: {
+      name: '', roundTitle: '',
+      // Experimental graphics: rounds left in the Swiss (0 = not shown), a
+      // second clock for the slate's "stream resumes in", the feature tables
+      // the up-next board lists, the caster desk, and a seeds paste.
+      roundsRemaining: 0, countdown: defaultTimer(), tables: [], casters: [], seeds: '',
+    },
     match: {
       seriesLength: 3,
+      // Whose turn it is (chevron by the points on the experimental
+      // overlays) and the turn counter; both are cues, so they act on air
+      // without a TAKE like the clock does.
+      activeSide: '', turn: 0,
       left: defaultSide('PLAYER ONE'),
       right: defaultSide('PLAYER TWO'),
       timer: defaultTimer(),
@@ -81,6 +100,21 @@ function defaultBank() {
       // keying over the feed). deckName labels a list loaded from the saved
       // library. replay is a counter the "replay intro" cue bumps.
       decklist: { visible: false, list: '', showSideboard: true, background: true, deckName: '', replay: 0 },
+      // --- experimental (Setup > Experimental switches them on in the panel) ---
+      // Portrait pillars: a pillarboxed portrait table cam with a compact
+      // game-state bar over it (the Yu-Gi-Oh grammar). handCam opens a
+      // second transparent window on the left; cardWell docks the popup's
+      // card on the right.
+      igoportrait: { visible: false, mode: 'legend', topBar: true, handCam: false, cardWell: true },
+      // Rows: slim bars top and bottom and a left column with both cameras
+      // and the cards-in-hand list (the Magic grammar).
+      igorows: { visible: false, mode: 'legend', hand: true },
+      // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
+      // stage and player cameras. Exclusive with the score bug in the panel.
+      arenabug: { visible: false, clock: true },
+      // Slate: full-frame hold screens. upnext lists event.tables; the
+      // others print a message and, when on, the countdown clock.
+      slate: { visible: false, mode: 'upnext', text: '', countdown: true },
     },
   };
 }
@@ -92,7 +126,9 @@ function defaultBank() {
 function defaultTheme() {
   const scenes = {};
   for (const key of LOOK_SCENES) scenes[key] = emptySceneLook();
-  return { accentA: '#11b6fb', accentB: '#1bef19', font: '', logo: '', look: emptyLook(), scenes };
+  // experimental is setup, not a cue: it decides which graphics the panel
+  // lists, so it lives with the theme rather than in a bank.
+  return { accentA: '#11b6fb', accentB: '#1bef19', font: '', logo: '', experimental: false, look: emptyLook(), scenes };
 }
 
 function mergeTheme(raw) {
@@ -101,6 +137,7 @@ function mergeTheme(raw) {
   for (const key of ['accentA', 'accentB', 'font', 'logo']) {
     if (typeof raw[key] === 'string') theme[key] = raw[key];
   }
+  theme.experimental = Boolean(raw.experimental);
   theme.look = mergeLook(raw.look);
   if (raw.scenes && typeof raw.scenes === 'object') {
     for (const key of LOOK_SCENES) theme.scenes[key] = mergeLook(raw.scenes[key], true);
@@ -137,6 +174,17 @@ function mergeBank(bank, raw) {
     side.card = { ...fresh.match.left.card, ...(side.card || {}) };
   }
   bank.match.timer = { ...fresh.match.timer, ...(bank.match.timer || {}) };
+  bank.match = { ...fresh.match, ...bank.match };
+  // Event fields grew with the experimental graphics; older saves carry only
+  // the name and round title, and a hand or table list must be an array.
+  bank.event = { ...fresh.event, ...bank.event };
+  bank.event.countdown = { ...fresh.event.countdown, ...(bank.event.countdown || {}) };
+  for (const key of ['tables', 'casters']) {
+    if (!Array.isArray(bank.event[key])) bank.event[key] = [];
+  }
+  for (const side of [bank.match.left, bank.match.right]) {
+    if (!Array.isArray(side.hand)) side.hand = [];
+  }
   for (const key of Object.keys(fresh.scenes)) {
     bank.scenes[key] = { ...fresh.scenes[key], ...bank.scenes[key] };
   }
@@ -206,8 +254,60 @@ const cleanHex = (v, fallback) => {
   return /^#[0-9a-fA-F]{6}$/.test(s) ? s.toLowerCase() : fallback;
 };
 
+// The card list a spotter builds for the rows overlay: each entry is a card
+// the panel resolved through the search, carried with the cost the scene
+// draws. Anything malformed drops rather than airing as a blank row.
+const DOMAINS = ['Body', 'Calm', 'Chaos', 'Fury', 'Mind', 'Order'];
+function cleanHandCard(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const cardId = cleanCardId(raw.cardId);
+  const cardName = cleanStr(raw.cardName || '', 80);
+  if (!cardId && !cardName) return null;
+  const domains = Array.isArray(raw.domains) ? raw.domains.filter((d) => DOMAINS.includes(d)).slice(0, 2) : [];
+  const energy = raw.energy === '' || raw.energy === null || raw.energy === undefined ? null : clampInt(raw.energy, 0, 20);
+  return { cardId, cardName, energy, domains };
+}
+
+const COUNTRY = /^[A-Z]{0,3}$/;
+// The identity block one player carries on an up-next table card. Its
+// fields are a subset of a side's, cleaned by the same rules.
+function cleanTableSide(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const country = cleanStr(r.country || '', 3).toUpperCase();
+  const legendSlug = cleanStr(r.legendSlug || '', 60);
+  return {
+    name: cleanStr(r.name || '', 40),
+    country: COUNTRY.test(country) ? country : '',
+    record: cleanStr(r.record || '', 12),
+    seed: cleanStr(r.seed || '', 8),
+    legend: cleanStr(r.legend || '', 60),
+    legendSlug: /^[a-z0-9-]*$/.test(legendSlug) ? legendSlug : '',
+    legendCardId: cleanCardId(r.legendCardId || ''),
+  };
+}
+function cleanTable(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  return { label: cleanStr(r.label || '', 24), left: cleanTableSide(r.left), right: cleanTableSide(r.right) };
+}
+function cleanCaster(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const name = cleanStr(raw.name || '', 40);
+  if (!name) return null;
+  return { name, role: cleanStr(raw.role || '', 30) };
+}
+
 function applySide(side, patch) {
   if (patch.name !== undefined) side.name = cleanStr(patch.name, 40);
+  if (patch.record !== undefined) side.record = cleanStr(patch.record, 12);
+  if (patch.country !== undefined) {
+    const c = cleanStr(patch.country, 3).toUpperCase();
+    if (COUNTRY.test(c)) side.country = c;
+  }
+  if (patch.pronouns !== undefined) side.pronouns = cleanStr(patch.pronouns, 16);
+  if (patch.archetype !== undefined) side.archetype = cleanStr(patch.archetype, 40);
+  if (patch.handCount !== undefined) side.handCount = clampInt(patch.handCount, 0, 20);
+  if (patch.holds !== undefined) side.holds = cleanStr(patch.holds, 80);
+  if (Array.isArray(patch.hand)) side.hand = patch.hand.map(cleanHandCard).filter(Boolean).slice(0, 12);
   if (patch.legend !== undefined) side.legend = cleanStr(patch.legend, 60);
   if (patch.legendSlug !== undefined) {
     const s = cleanStr(patch.legendSlug, 60);
@@ -255,6 +355,10 @@ function applyBankPatch(bank, patch) {
   if (patch.event && typeof patch.event === 'object') {
     if (patch.event.name !== undefined) bank.event.name = cleanStr(patch.event.name, 80);
     if (patch.event.roundTitle !== undefined) bank.event.roundTitle = cleanStr(patch.event.roundTitle, 60);
+    if (patch.event.roundsRemaining !== undefined) bank.event.roundsRemaining = clampInt(patch.event.roundsRemaining, 0, 99);
+    if (patch.event.seeds !== undefined) bank.event.seeds = cleanMultiline(patch.event.seeds, 800);
+    if (Array.isArray(patch.event.tables)) bank.event.tables = patch.event.tables.slice(0, 4).map(cleanTable);
+    if (Array.isArray(patch.event.casters)) bank.event.casters = patch.event.casters.slice(0, 4).map(cleanCaster).filter(Boolean);
   }
 
   if (patch.match && typeof patch.match === 'object') {
@@ -262,6 +366,8 @@ function applyBankPatch(bank, patch) {
       const sl = Number(patch.match.seriesLength);
       if ([1, 3, 5].includes(sl)) bank.match.seriesLength = sl;
     }
+    if (['', 'left', 'right'].includes(patch.match.activeSide)) bank.match.activeSide = patch.match.activeSide;
+    if (patch.match.turn !== undefined) bank.match.turn = clampInt(patch.match.turn, 0, 99);
     if (patch.match.left && typeof patch.match.left === 'object') applySide(bank.match.left, patch.match.left);
     if (patch.match.right && typeof patch.match.right === 'object') applySide(bank.match.right, patch.match.right);
   }
@@ -302,22 +408,39 @@ function applyBankPatch(bank, patch) {
       if (p.showLeft !== undefined) bank.scenes.pov.showLeft = Boolean(p.showLeft);
       if (p.showRight !== undefined) bank.scenes.pov.showRight = Boolean(p.showRight);
     }
-    for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars']) {
+    const IGO_FLAGS = {
+      igodual: ['track', 'clock', 'eventBlock', 'cardSlot'],
+      igoportrait: ['topBar', 'handCam', 'cardWell'],
+      igorows: ['hand'],
+    };
+    for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {
         const igo = patch.scenes[key];
         if (igo.visible !== undefined) bank.scenes[key].visible = Boolean(igo.visible);
         if (igo.mode !== undefined && ['legend', 'webcam'].includes(igo.mode)) {
           bank.scenes[key].mode = igo.mode;
         }
-        if (key === 'igodual') {
-          for (const flag of ['track', 'clock', 'eventBlock', 'cardSlot']) {
-            if (igo[flag] !== undefined) bank.scenes[key][flag] = Boolean(igo[flag]);
-          }
+        for (const flag of IGO_FLAGS[key] || []) {
+          if (igo[flag] !== undefined) bank.scenes[key][flag] = Boolean(igo[flag]);
         }
       }
     }
+    if (patch.scenes.arenabug && typeof patch.scenes.arenabug === 'object') {
+      const a = patch.scenes.arenabug;
+      if (a.visible !== undefined) bank.scenes.arenabug.visible = Boolean(a.visible);
+      if (a.clock !== undefined) bank.scenes.arenabug.clock = Boolean(a.clock);
+    }
+    if (patch.scenes.slate && typeof patch.scenes.slate === 'object') {
+      const s = patch.scenes.slate;
+      if (s.visible !== undefined) bank.scenes.slate.visible = Boolean(s.visible);
+      if (SLATE_MODES.includes(s.mode)) bank.scenes.slate.mode = s.mode;
+      if (s.text !== undefined) bank.scenes.slate.text = cleanStr(s.text, 120);
+      if (s.countdown !== undefined) bank.scenes.slate.countdown = Boolean(s.countdown);
+    }
   }
 }
+
+export const SLATE_MODES = ['upnext', 'starting', 'brb', 'thanks', 'custom'];
 
 function applyThemePatch(patch) {
   if (patch.accentA !== undefined) state.theme.accentA = cleanHex(patch.accentA, state.theme.accentA);
@@ -328,6 +451,7 @@ function applyThemePatch(patch) {
   }
   // Clients may only clear the logo; the upload route sets the real value.
   if (patch.logo === '') state.theme.logo = '';
+  if (patch.experimental !== undefined) state.theme.experimental = Boolean(patch.experimental);
   // The look: same rule for background images (clients clear, the upload
   // route sets). Everything else is hex, enum or clamped integer.
   if (patch.look && typeof patch.look === 'object') cleanLookPatch(state.theme.look, patch.look);
@@ -359,10 +483,12 @@ export function setThemeImage(slot, urlPath) {
 
 // The timer is a cue like CLEAR: it acts on both banks so the clock never
 // waits for a TAKE. Every op is idempotent enough to survive a double click.
+// which: 'round' (the match clock, default) or 'countdown' (the slate's
+// "stream resumes in" clock). Same arithmetic, separate numbers.
 function applyTimer(patch) {
   const now = Date.now();
   for (const bank of [state.preview, state.program]) {
-    const t = bank.match.timer;
+    const t = patch.which === 'countdown' ? bank.event.countdown : bank.match.timer;
     switch (patch.op) {
       case 'start':
         if (!t.running) { t.running = true; t.startedAt = now; }
@@ -431,6 +557,30 @@ export function applyUpdate(patch) {
   }
   if (patch.action === 'timer') {
     if (!applyTimer(patch)) return { ok: false, error: 'unknown timer op' };
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // The turn counter and the active side are cues like the clock: a spotter
+  // clicks "next turn" and the overlay on air follows at once.
+  if (patch.action === 'turn') {
+    for (const bank of [state.preview, state.program]) {
+      const m = bank.match;
+      switch (patch.op) {
+        case 'next':
+          m.turn = Math.min(99, m.turn + 1);
+          // A turn passes to the other player; an unset side starts with left.
+          m.activeSide = m.activeSide === 'left' ? 'right' : 'left';
+          break;
+        case 'prev': m.turn = Math.max(0, m.turn - 1); break;
+        case 'reset': m.turn = 0; m.activeSide = ''; break;
+        case 'set': m.turn = clampInt(patch.turn, 0, 99); break;
+        case 'side':
+          if (['', 'left', 'right'].includes(patch.side)) m.activeSide = patch.side;
+          break;
+        default:
+          return { ok: false, error: 'unknown turn op' };
+      }
+    }
     bump();
     return { ok: true, version: state.version };
   }

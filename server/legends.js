@@ -79,11 +79,11 @@ export function listLegends() {
   const indexed = allCards()
     .filter((c) => c.type === 'Legend')
     .sort((a, b) => a.cardId.localeCompare(b.cardId))
-    .map((c) => ({ name: c.cardName, cardId: c.cardId }));
+    .map((c) => ({ name: c.cardName, cardId: c.cardId, domains: c.domains || [] }));
   const seen = new Set(indexed.map((l) => slugify(l.name)));
   const extras = SUPPLEMENTAL_LEGENDS
     .filter((name) => !seen.has(slugify(name)))
-    .map((name) => ({ name, cardId: null }));
+    .map((name) => ({ name, cardId: null, domains: [] }));
   const variantIndex = new Map();
   return [...indexed, ...extras].map((l) => {
     const champion = champKey(l.name.split(',')[0]);
@@ -94,6 +94,7 @@ export function listLegends() {
       slug: slugify(l.name),
       name: l.name,
       cardId: l.cardId,
+      domains: l.domains || [],
       champion,
       heroFile: heroFiles[idx] || heroFiles[0] || null,
     };

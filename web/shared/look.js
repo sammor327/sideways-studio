@@ -17,7 +17,13 @@
 // Accent A and B keep living at theme.accentA/B (they predate this module and
 // every scene reads them); a scene override may replace them.
 
-export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist'];
+export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
+  'igoportrait', 'igorows', 'arenabug', 'slate'];
+
+// The experimental graphics (2026-09-14, from the five-game overlay
+// scouting): listed in the panel only while Setup's Experimental switch is
+// on, so a TO who wants the shipped set never sees them.
+export const EXPERIMENTAL_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate'];
 
 export const SCENE_LABELS = {
   scorebug: 'Score bug',
@@ -28,6 +34,10 @@ export const SCENE_LABELS = {
   igobars: 'In-game overlay, 2v2 bars',
   pov: 'POV overlay',
   decklist: 'Decklist',
+  igoportrait: 'In-game overlay, portrait pillars',
+  igorows: 'In-game overlay, rows',
+  arenabug: 'Arena score bug',
+  slate: 'Slate',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -108,6 +118,24 @@ export const DESIGNED = {
   decklist: {
     colors: { ink: '#0d0d0d', plate: '#1c1c1c', frame: '#000000', text: '#ffffff', textMuted: '#d8dee4', trim: '' },
     background: { kind: 'plate', color: '#0d0d0d', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  // The experimental set shares one cool near-black ground with the dual
+  // columns so the four read as one family beside the score bug.
+  igoportrait: {
+    colors: { ink: '#10151d', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 40, dim: 0 },
+  },
+  igorows: {
+    colors: { ink: '#10151d', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 40, dim: 0 },
+  },
+  arenabug: {
+    colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  slate: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
   },
 };
 

@@ -88,7 +88,7 @@ const params = initStage({
       else custom.removeAttribute('src');
     }
 
-    const visible = igoState.visible;
+    const visible = params.force || igoState.visible;
     $('hiddenHint').classList.toggle('on',
       !params.transparent && !params.preview && !visible);
     if (visible === shown) return;

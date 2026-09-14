@@ -55,6 +55,10 @@
       <button class="focus-chip" data-focus="igodual" aria-pressed="false">Dual columns</button>
       <button class="focus-chip" data-focus="igobars" aria-pressed="false">2v2 bars</button>
       <button class="focus-chip" data-focus="pov" aria-pressed="false">POV</button>
+      <button class="focus-chip exp-only hidden" data-focus="igoportrait" aria-pressed="false">Portrait pillars</button>
+      <button class="focus-chip exp-only hidden" data-focus="igorows" aria-pressed="false">Rows</button>
+      <button class="focus-chip exp-only hidden" data-focus="arenabug" aria-pressed="false">Arena bug</button>
+      <button class="focus-chip exp-only hidden" data-focus="slate" aria-pressed="false">Slate</button>
     </div>
     <p class="hint" id="focusHint"></p>
   </div>
@@ -241,6 +245,120 @@
       </div>
     </div>
 
+    <div class="field-section exp-only hidden" id="expFields">
+      <h4 class="section-label">Experimental overlays</h4>
+
+      <div class="field-row" data-field="record">
+        <span class="row-label" title="Swiss record, printed as typed: 8-2-0.">Record</span>
+        <div class="cell" data-side="left"><input id="lrecord" maxlength="12" autocomplete="off" placeholder="8-2-0" aria-label="Player 1 record"></div>
+        <div class="cell" data-side="right"><input id="rrecord" maxlength="12" autocomplete="off" placeholder="7-3-0" aria-label="Player 2 record"></div>
+      </div>
+
+      <div class="field-row" data-field="country">
+        <span class="row-label" title="Two or three letters, shown as a chip beside the name.">Country</span>
+        <div class="cell" data-side="left"><input id="lcountry" maxlength="3" autocomplete="off" placeholder="KR" aria-label="Player 1 country code"></div>
+        <div class="cell" data-side="right"><input id="rcountry" maxlength="3" autocomplete="off" placeholder="FR" aria-label="Player 2 country code"></div>
+      </div>
+
+      <div class="field-row" data-field="pronouns">
+        <span class="row-label">Pronouns</span>
+        <div class="cell" data-side="left"><input id="lpronouns" maxlength="16" autocomplete="off" placeholder="he/him" aria-label="Player 1 pronouns"></div>
+        <div class="cell" data-side="right"><input id="rpronouns" maxlength="16" autocomplete="off" placeholder="she/her" aria-label="Player 2 pronouns"></div>
+      </div>
+
+      <div class="field-row" data-field="archetype">
+        <span class="row-label" title="A free-text deck name, printed after the champion line.">Archetype</span>
+        <div class="cell" data-side="left"><input id="larchetype" maxlength="40" autocomplete="off" placeholder="Yasuo Tempo" aria-label="Player 1 archetype"></div>
+        <div class="cell" data-side="right"><input id="rarchetype" maxlength="40" autocomplete="off" placeholder="Jinx Burn" aria-label="Player 2 archetype"></div>
+      </div>
+
+      <div class="field-row" data-field="handCount">
+        <span class="row-label" title="Cards in hand as a number, for a TO who counts but cannot spot. 0 hides it.">Hand count</span>
+        <div class="cell" data-side="left">
+          <div class="counter">
+            <button data-step="-1" data-side="left" data-field="handCount" aria-label="Player 1 hand count down">&minus;</button>
+            <output id="lhandOut">0</output>
+            <button data-step="1" data-side="left" data-field="handCount" aria-label="Player 1 hand count up">+</button>
+          </div>
+        </div>
+        <div class="cell" data-side="right">
+          <div class="counter">
+            <button data-step="-1" data-side="right" data-field="handCount" aria-label="Player 2 hand count down">&minus;</button>
+            <output id="rhandOut">0</output>
+            <button data-step="1" data-side="right" data-field="handCount" aria-label="Player 2 hand count up">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="hand">
+        <span class="row-label" title="The rows overlay lists these cards with their costs. Search a card and press Enter to add it; click a chip to remove it.">Cards in hand</span>
+        <div class="cell picker-wrap hand-cell" data-side="left">
+          <input id="lhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card in hand">
+          <ul class="results" id="lhandResults"></ul>
+          <div class="hand-chips" id="lhandChips"></div>
+        </div>
+        <div class="cell picker-wrap hand-cell" data-side="right">
+          <input id="rhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 2 add a card in hand">
+          <ul class="results" id="rhandResults"></ul>
+          <div class="hand-chips" id="rhandChips"></div>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="holds">
+        <span class="row-label" title="One line naming the battlefields this side holds, printed under the hand list.">Holds</span>
+        <div class="cell" data-side="left"><input id="lholds" maxlength="80" autocomplete="off" placeholder="Altar to Unity · 3 units" aria-label="Player 1 holds"></div>
+        <div class="cell" data-side="right"><input id="rholds" maxlength="80" autocomplete="off" placeholder="Back-Alley Bar · 1 unit" aria-label="Player 2 holds"></div>
+      </div>
+
+      <div class="field-row" data-field="turn">
+        <span class="row-label" title="The turn counter and whose turn it is. Cues: they act on air at once, no TAKE needed.">Turn</span>
+        <div class="cell span2 turn-cell">
+          <output class="clock-out" id="turnOut">0</output>
+          <button id="turnNext" title="Next turn: counts up and passes the active side">Next turn</button>
+          <button id="turnBack" class="clear-mini" title="One turn back">&minus;1</button>
+          <select id="activeSide" aria-label="Active side">
+            <option value="">No active side</option>
+            <option value="left">Player 1 active</option>
+            <option value="right">Player 2 active</option>
+          </select>
+          <button id="turnReset" class="clear-mini" title="Turn 0, no active side">Reset</button>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="roundsRemaining">
+        <span class="row-label" title="Rounds left after this one; 0 hides the line.">Rounds left</span>
+        <div class="cell span2"><input id="roundsRemaining" inputmode="numeric" maxlength="2" value="0" aria-label="Rounds remaining"></div>
+      </div>
+
+      <div class="field-row" data-field="countdown">
+        <span class="row-label" title="The slate's break clock. Start, pause and reset act on air at once.">Break clock</span>
+        <div class="cell span2 clock-cell">
+          <output class="clock-out" id="cdOut">00:00</output>
+          <button id="cdStart" title="Start or pause the break clock">Start</button>
+          <button id="cdReset" title="Back to the set length, stopped">Reset</button>
+          <label class="inline clock-len">
+            <input id="cdMinutes" inputmode="numeric" maxlength="3" value="0" aria-label="Break length in minutes"> min
+            <button id="cdSet" class="clear-mini" title="Count down from this many minutes; 0 counts up">Set</button>
+          </label>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="tables">
+        <span class="row-label" title="One feature table per line for the up-next slate. Format: Table 1: Shoji (KR, 8-2-0, 3rd) [Yasuo, Unforgiven] vs Margaux (FR, 7-3-0, 6th) [Jinx, Loose Cannon]. Every part except the two names is optional; the legend in brackets resolves against the catalog.">Up next</span>
+        <div class="cell span2"><textarea id="tablesText" rows="4" spellcheck="false" placeholder="Table 1: Shoji (KR, 8-2-0, 3rd) [Yasuo, Unforgiven] vs Margaux (FR, 7-3-0, 6th) [Jinx, Loose Cannon]"></textarea><p class="hint" id="tablesHint"></p></div>
+      </div>
+
+      <div class="field-row" data-field="casters">
+        <span class="row-label" title="One caster per line: Name - Role.">Casters</span>
+        <div class="cell span2"><textarea id="castersText" rows="2" spellcheck="false" placeholder="Lena - Play-by-play&#10;Marcus - Analyst"></textarea></div>
+      </div>
+
+      <div class="field-row" data-field="seeds">
+        <span class="row-label" title="One line per seed for the slate's standings strip: Name · 9-1-0 · Irelia. Up to eight.">Seeds</span>
+        <div class="cell span2"><textarea id="seedsText" rows="3" spellcheck="false" placeholder="Guubums · 9-1-0 · Irelia&#10;Dax · 8-2-0 · Viktor"></textarea></div>
+      </div>
+    </div>
+
     <div class="field-section">
       <h4 class="section-label">Event</h4>
 
@@ -288,13 +406,14 @@
 </section>
 
 <main class="controls">
-  <section class="card">
+  <section class="card graphics-card">
     <h2>Graphics</h2>
-    <div class="scene-row">
+    <p class="hint">Each graphic shows the preview data as it stands. Click a picture to put that graphic in preview; the switch beside it turns it off again.</p>
+    <div class="scene-row" data-scene="scorebug">
       <div class="scene-name">Score bug <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
       <button id="toggleScorebug" class="scene-toggle">OFF</button>
     </div>
-    <div class="scene-row">
+    <div class="scene-row" data-scene="igo1v1">
       <div class="scene-name">In-game overlay 1v1 <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
       <button id="toggleIgo" class="scene-toggle">OFF</button>
       <div class="scene-options">
@@ -306,7 +425,7 @@
         </label>
       </div>
     </div>
-    <div class="scene-row">
+    <div class="scene-row" data-scene="igo2v2">
       <div class="scene-name">In-game overlay 2v2 <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
       <button id="toggleIgo2" class="scene-toggle">OFF</button>
       <div class="scene-options">
@@ -318,7 +437,7 @@
         </label>
       </div>
     </div>
-    <div class="scene-row">
+    <div class="scene-row" data-scene="igodual">
       <div class="scene-name">In-game overlay, dual columns <span class="onair hidden" id="igoDualOnAir">ON AIR</span></div>
       <button id="toggleIgoDual" class="scene-toggle">OFF</button>
       <div class="scene-options">
@@ -334,7 +453,7 @@
         <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
       </div>
     </div>
-    <div class="scene-row">
+    <div class="scene-row" data-scene="igobars">
       <div class="scene-name">In-game overlay, 2v2 bars <span class="onair hidden" id="igoBarsOnAir">ON AIR</span></div>
       <button id="toggleIgoBars" class="scene-toggle">OFF</button>
       <div class="scene-options">
@@ -346,7 +465,7 @@
         </label>
       </div>
     </div>
-    <div class="scene-row">
+    <div class="scene-row" data-scene="pov">
       <div class="scene-name">POV overlay <span class="onair hidden" id="povOnAir">ON AIR</span></div>
       <button id="togglePov" class="scene-toggle">OFF</button>
       <div class="scene-options">
@@ -355,11 +474,68 @@
         <button id="povReset" class="clear-mini" title="Clears the champion line and the featured card on both sides. Names, legends and points stay.">Clear POV cards</button>
       </div>
     </div>
-    <div class="scene-row">
+    <div class="scene-row" data-scene="decklist">
       <div class="scene-name">Decklist <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
       <button id="toggleDeck" class="scene-toggle">OFF</button>
     </div>
-    <div class="scene-row popup-row">
+
+    <div class="exp-only hidden" id="experimentalScenes">
+      <h4 class="section-label exp-label">Experimental <span class="muted">(Setup &rsaquo; Experimental)</span></h4>
+      <div class="scene-row" data-scene="igoportrait" data-exp="1">
+        <div class="scene-name">In-game overlay, portrait pillars <span class="onair hidden" id="igoPortraitOnAir">ON AIR</span></div>
+        <button id="toggleIgoPortrait" class="scene-toggle">OFF</button>
+        <div class="scene-options">
+          <label class="inline" title="Portrait table camera in the middle; the pillars carry the players.">Cam wells
+            <select id="igoPortraitMode">
+              <option value="legend">Legend art</option>
+              <option value="webcam">Webcam cutouts</option>
+            </select>
+          </label>
+          <label class="inline"><input type="checkbox" id="igoPortraitTop" checked> Game-state bar</label>
+          <label class="inline" title="A second window under player 1's camera, for a camera on their hand"><input type="checkbox" id="igoPortraitHand"> Hand cam</label>
+          <label class="inline" title="Shows the card popup's card in the right pillar instead of the popup flying in"><input type="checkbox" id="igoPortraitCard" checked> Dock featured card</label>
+        </div>
+      </div>
+      <div class="scene-row" data-scene="igorows" data-exp="1">
+        <div class="scene-name">In-game overlay, rows <span class="onair hidden" id="igoRowsOnAir">ON AIR</span></div>
+        <button id="toggleIgoRows" class="scene-toggle">OFF</button>
+        <div class="scene-options">
+          <label class="inline" title="Both cameras stack in the left column; the bars carry the players.">Cameras
+            <select id="igoRowsMode">
+              <option value="legend">Legend art</option>
+              <option value="webcam">Webcam cutouts</option>
+            </select>
+          </label>
+          <label class="inline" title="The cards-in-hand list and the holds line from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
+        </div>
+      </div>
+      <div class="scene-row" data-scene="arenabug" data-exp="1">
+        <div class="scene-name">Arena score bug <span class="onair hidden" id="arenaOnAir">ON AIR</span></div>
+        <button id="toggleArena" class="scene-toggle">OFF</button>
+        <div class="scene-options">
+          <label class="inline" title="The event and round clock lozenge top left"><input type="checkbox" id="arenaClock" checked> Clock lozenge</label>
+        </div>
+      </div>
+      <div class="scene-row" data-scene="slate" data-exp="1">
+        <div class="scene-name">Slate <span class="onair hidden" id="slateOnAir">ON AIR</span></div>
+        <button id="toggleSlate" class="scene-toggle">OFF</button>
+        <div class="scene-options">
+          <label class="inline">Screen
+            <select id="slateMode">
+              <option value="upnext">Up next (tables)</option>
+              <option value="starting">Starting soon</option>
+              <option value="brb">Be right back</option>
+              <option value="thanks">Thanks for watching</option>
+              <option value="custom">Custom line</option>
+            </select>
+          </label>
+          <input id="slateText" class="slate-text hidden" maxlength="120" autocomplete="off" placeholder="Custom line" aria-label="Custom slate line">
+          <label class="inline"><input type="checkbox" id="slateCountdown" checked> Break clock</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene-row popup-row" data-scene="cardpopup">
       <div class="scene-name">Card popup <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
       <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
     </div>
@@ -468,7 +644,7 @@
     <p class="hint">Cleared colours fall back to each graphic's designed look. The look is not cued: changes air at once.</p>
   </section>
 
-  <section class="card">
+  <section class="card setup-card">
     <h2>Setup</h2>
     <p id="dbStatus">Checking…</p>
     <div class="progress hidden" id="dbProgressWrap"><div class="progress-bar" id="dbProgress"></div></div>
@@ -476,6 +652,9 @@
       <button id="dbSync">Download card database</button>
       <button id="dbPrefetchFull">Download all card art for offline use</button>
     </div>
+
+    <details class="setup-sec" data-sec="links" open>
+    <summary>Browser source links</summary>
     <div class="url-row">
       <span class="url-label">All graphics in one source, 1920 × 1080, 60 fps</span>
       <div class="url-line">
@@ -539,11 +718,42 @@
         <button data-copy="decklistUrl">Copy</button>
       </div>
     </div>
+    <p class="hint">Card data and art come from Rift Registry, saved on this computer: no venue internet needed once downloaded. Add <code>&amp;side=left</code> to the popup URL to mirror it. vMix: add each URL as a Web Browser input at 1920 × 1080, tick "Use Transparent Background", and set FPS to 60.</p>
+    </details>
+
+    <details class="setup-sec" data-sec="updates">
+    <summary>Updates</summary>
     <div class="row version-row">
       <span class="muted" id="versionLine">Sideways Studio</span>
       <button id="updateCheck">Check for updates</button>
     </div>
-    <p class="hint">Card data and art come from Rift Registry, saved on this computer: no venue internet needed once downloaded. Add <code>&amp;side=left</code> to the popup URL to mirror it. vMix: add each URL as a Web Browser input at 1920 × 1080, tick "Use Transparent Background", and set FPS to 60.</p>
+    <p class="hint">The app also checks on launch. A required release installs itself; an optional one waits for you here.</p>
+    </details>
+
+    <details class="setup-sec" data-sec="experimental">
+    <summary>Experimental</summary>
+    <label class="inline exp-toggle"><input type="checkbox" id="experimentalToggle"> Show experimental graphics</label>
+    <p class="hint">Four overlays from the September 2026 broadcast scouting: portrait pillars, rows with a cards-in-hand list, the arena score bug and the slate. Switching this on lists them under Graphics and adds their fields to Match data. Off again hides them in preview; anything already on air stays until TAKE or CLEAR.</p>
+    <div class="exp-only hidden" id="experimentalUrls">
+      <div class="url-row">
+        <span class="url-label">Portrait pillars source, 1920 &times; 1080, 60 fps</span>
+        <div class="url-line"><input class="url-input" id="igoPortraitUrl" readonly><button data-copy="igoPortraitUrl">Copy</button></div>
+      </div>
+      <div class="url-row">
+        <span class="url-label">Rows source, 1920 &times; 1080, 60 fps</span>
+        <div class="url-line"><input class="url-input" id="igoRowsUrl" readonly><button data-copy="igoRowsUrl">Copy</button></div>
+      </div>
+      <div class="url-row">
+        <span class="url-label">Arena score bug source, 1920 &times; 1080, 60 fps</span>
+        <div class="url-line"><input class="url-input" id="arenaUrl" readonly><button data-copy="arenaUrl">Copy</button></div>
+      </div>
+      <div class="url-row">
+        <span class="url-label">Slate source, 1920 &times; 1080, 60 fps</span>
+        <div class="url-line"><input class="url-input" id="slateUrl" readonly><button data-copy="slateUrl">Copy</button></div>
+      </div>
+      <p class="hint">The combined source already includes all four.</p>
+    </div>
+    </details>
   </section>
 </main>
 </div>

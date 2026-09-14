@@ -47,6 +47,13 @@ const SCENE_FIELDS = {
     'champion', 'championText', 'champion2'],
   pov: ['name', 'score', 'legend', 'legendText', 'battlefield',
     'champion', 'championText', 'card'],
+  // Experimental (2026-09-14): listed only while Setup > Experimental is on.
+  igoportrait: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'record', 'country', 'legend', 'legendText',
+    'champion', 'championText', 'archetype', 'handCount', 'turn', 'eventName', 'roundTitle', 'roundsRemaining', 'timer', 'card'],
+  igorows: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'pronouns', 'legend', 'legendText',
+    'champion', 'championText', 'archetype', 'handCount', 'hand', 'holds', 'turn', 'roundTitle'],
+  arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
+  slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds'],
 };
 const SCENE_NAMES = {
   scorebug: 'the score bug',
@@ -55,6 +62,10 @@ const SCENE_NAMES = {
   igodual: 'the dual-column overlay',
   igobars: 'the 2v2 bars overlay',
   pov: 'the POV overlay',
+  igoportrait: 'the portrait pillars overlay',
+  igorows: 'the rows overlay',
+  arenabug: 'the arena score bug',
+  slate: 'the slate',
 };
 const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
 
@@ -74,11 +85,21 @@ function sceneDraws(scene, field, side, bank) {
   const cfg = bank.scenes[scene];
   // The dual overlay and the 2v2 bars still name the legend on their tiles
   // in webcam mode; the sidebars draw nothing for it then.
-  if (cfg.mode === 'webcam' && !['igodual', 'igobars'].includes(scene) && (field === 'legend' || field === 'legend2')) return false;
+  if (cfg.mode === 'webcam' && !['igodual', 'igobars', 'igoportrait', 'igorows'].includes(scene) && (field === 'legend' || field === 'legend2')) return false;
   if (scene === 'pov' && side && !(side === 'left' ? cfg.showLeft : cfg.showRight)) return false;
   if (scene === 'igodual') {
     if (!cfg.eventBlock && ['eventName', 'roundTitle', 'timer'].includes(field)) return false;
     if (!cfg.clock && field === 'timer') return false;
+  }
+  if (scene === 'igoportrait') {
+    if (!cfg.topBar && ['seriesLength', 'score', 'gameWins', 'timer', 'turn'].includes(field)) return false;
+    if (!cfg.cardWell && field === 'card') return false;
+  }
+  if (scene === 'igorows' && !cfg.hand && ['hand', 'handCount', 'holds'].includes(field)) return false;
+  if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
+  if (scene === 'slate') {
+    if (cfg.mode !== 'upnext' && ['tables', 'seeds'].includes(field)) return false;
+    if (!cfg.countdown && field === 'countdown') return false;
   }
   return true;
 }
@@ -595,6 +616,7 @@ function render(s) {
 
   renderScenes(s);
   renderLook(s.theme);
+  renderExtras(s);
   applyFocus();
 
   // The TAKE button lights up whenever preview differs from what is on air.
@@ -612,6 +634,7 @@ $('clearBtn').addEventListener('click', () => post({ action: 'clear' }));
 function paintCounter(side, field, value) {
   const p = side === 'left' ? 'l' : 'r';
   if (field === 'score') setIfIdle(`${p}score`, String(value));
+  else if (field === 'handCount') $(`${p}handOut`).textContent = value;
   else $(`${p}winsOut`).textContent = value;
 }
 
@@ -622,7 +645,7 @@ for (const btn of document.querySelectorAll('.counter button')) {
     // Optimistic: mutate the local copy immediately so rapid clicks stack
     // instead of re-sending the same stale value.
     const m = state.preview.match;
-    const max = field === 'score' ? 8 : winsNeeded(m.seriesLength);
+    const max = field === 'score' ? 8 : (field === 'handCount' ? 20 : winsNeeded(m.seriesLength));
     const next = Math.min(max, Math.max(0, m[side][field] + Number(step)));
     m[side][field] = next;
     paintCounter(side, field, next);
@@ -691,8 +714,10 @@ $('resetMatch').addEventListener('click', () => {
       scorebug: { visible: false }, cardpopup: { visible: false },
       igo1v1: { visible: false }, igo2v2: { visible: false }, igodual: { visible: false }, igobars: { visible: false },
       pov: { visible: false },
+      igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
     },
   });
+  post({ action: 'turn', op: 'reset' });
 });
 
 // Swap sides moves the whole side, so every graphic follows at once instead
@@ -701,6 +726,7 @@ const SWAP_FIELDS = [
   'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
   'champion', 'name2', 'legend2', 'legendSlug2', 'legendCardId2', 'battlefield2', 'teamName',
   'champion2', 'score', 'gameWins', 'seed',
+  'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'holds',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -728,10 +754,8 @@ $('toggleCard').addEventListener('click', () => {
 
 // The IGOs and the POV overlay all live on the screen edges and would draw
 // over each other, so switching one on switches the others off in preview.
-const EDGE_SCENES = ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov'];
-function toggleEdgeScene(key) {
-  if (!state) return;
-  const next = !state.preview.scenes[key].visible;
+const EDGE_SCENES = ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'igoportrait', 'igorows'];
+function setEdgeScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) {
     for (const other of EDGE_SCENES) {
@@ -739,6 +763,10 @@ function toggleEdgeScene(key) {
     }
   }
   post({ scenes });
+}
+function toggleEdgeScene(key) {
+  if (!state) return;
+  setEdgeScene(key, !state.preview.scenes[key].visible);
 }
 $('toggleIgo').addEventListener('click', () => toggleEdgeScene('igo1v1'));
 $('toggleIgo2').addEventListener('click', () => toggleEdgeScene('igo2v2'));
@@ -1055,6 +1083,10 @@ $('igoDualUrl').value = `${location.origin}/scenes/igodual/?transparent=1`;
 $('igoBarsUrl').value = `${location.origin}/scenes/igobars/?transparent=1`;
 $('povUrl').value = `${location.origin}/scenes/pov/?transparent=1`;
 $('decklistUrl').value = `${location.origin}/scenes/decklist/?transparent=1`;
+$('igoPortraitUrl').value = `${location.origin}/scenes/igoportrait/?transparent=1`;
+$('igoRowsUrl').value = `${location.origin}/scenes/igorows/?transparent=1`;
+$('arenaUrl').value = `${location.origin}/scenes/arenabug/?transparent=1`;
+$('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 
 for (const input of document.querySelectorAll('.url-input')) {
   input.addEventListener('focus', () => input.select());
@@ -1490,6 +1522,414 @@ $('updateSkip').addEventListener('click', async () => {
 });
 
 pollUpdate();
+
+// --- experimental graphics (2026-09-14, from the five-game overlay scouting) ---
+//
+// Four scenes behind Setup > Experimental: portrait pillars, rows with the
+// cards-in-hand list, the arena score bug and the slate. The switch is setup
+// data (theme.experimental): on, their rows, focus chips, match-data fields
+// and source URLs appear; off, they hide and anything on in preview goes off.
+
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate'];
+const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate' };
+const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir' };
+let experimental = false;
+
+function applyExperimental(on) {
+  const changed = on !== experimental;
+  experimental = on;
+  for (const el of document.querySelectorAll('.exp-only')) el.classList.toggle('hidden', !on);
+  if (document.activeElement !== $('experimentalToggle')) $('experimentalToggle').checked = on;
+  if (changed && !on && EXP_SCENES.includes(focus)) {
+    focus = 'preview';
+    try { localStorage.setItem(FOCUS_KEY, focus); } catch { /* per-session only */ }
+  }
+}
+
+$('experimentalToggle').addEventListener('change', () => {
+  const on = $('experimentalToggle').checked;
+  const patch = { theme: { experimental: on } };
+  // Off hides them in preview too; program keeps what it shows until TAKE or
+  // CLEAR, and the ON AIR pill under Setup says so while it does.
+  if (!on) patch.scenes = Object.fromEntries(EXP_SCENES.map((k) => [k, { visible: false }]));
+  post(patch);
+});
+
+$('toggleIgoPortrait').addEventListener('click', () => toggleEdgeScene('igoportrait'));
+$('toggleIgoRows').addEventListener('click', () => toggleEdgeScene('igorows'));
+// The arena bug sits where the score bug sits, so one replaces the other.
+$('toggleArena').addEventListener('click', () => {
+  if (!state) return;
+  const next = !state.preview.scenes.arenabug.visible;
+  post({ scenes: { arenabug: { visible: next }, ...(next ? { scorebug: { visible: false } } : {}) } });
+});
+$('toggleSlate').addEventListener('click', () => {
+  if (!state) return;
+  post({ scenes: { slate: { visible: !state.preview.scenes.slate.visible } } });
+});
+$('igoPortraitMode').addEventListener('change', () => post({ scenes: { igoportrait: { mode: $('igoPortraitMode').value } } }));
+for (const [id, flag] of [['igoPortraitTop', 'topBar'], ['igoPortraitHand', 'handCam'], ['igoPortraitCard', 'cardWell']]) {
+  $(id).addEventListener('change', () => post({ scenes: { igoportrait: { [flag]: $(id).checked } } }));
+}
+$('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mode: $('igoRowsMode').value } } }));
+$('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
+$('arenaClock').addEventListener('change', () => post({ scenes: { arenabug: { clock: $('arenaClock').checked } } }));
+$('slateMode').addEventListener('change', () => post({ scenes: { slate: { mode: $('slateMode').value } } }));
+$('slateCountdown').addEventListener('change', () => post({ scenes: { slate: { countdown: $('slateCountdown').checked } } }));
+{
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { slate: { text: $('slateText').value } } }); };
+  $('slateText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  $('slateText').addEventListener('blur', flush);
+}
+
+// Per-side text fields the experimental overlays print. The country code is
+// uppercased as typed so the chip on air matches the field.
+for (const [p, side] of SIDES) {
+  for (const [id, field] of [[`${p}record`, 'record'], [`${p}country`, 'country'], [`${p}pronouns`, 'pronouns'], [`${p}archetype`, 'archetype'], [`${p}holds`, 'holds']]) {
+    const el = $(id);
+    let timer = null;
+    const flush = () => {
+      if (timer === null) return;
+      clearTimeout(timer);
+      timer = null;
+      post({ match: { [side]: { [field]: el.value } } });
+    };
+    el.addEventListener('input', () => {
+      if (field === 'country') el.value = el.value.toUpperCase();
+      clearTimeout(timer);
+      timer = setTimeout(flush, 300);
+    });
+    el.addEventListener('blur', flush);
+  }
+}
+
+// Cards in hand: the server's ranked search, one chip per card, click to
+// remove. The list is posted whole so the sanitizer sees the same shape the
+// scene reads.
+function renderHandChips(p, hand) {
+  const box = $(`${p}handChips`);
+  const key = JSON.stringify(hand);
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  const side = p === 'l' ? 'left' : 'right';
+  box.replaceChildren(...hand.map((c, i) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'hand-chip';
+    chip.title = 'Remove from hand';
+    chip.textContent = c.cardName || c.cardId;
+    if (c.energy !== null && c.energy !== undefined) {
+      const small = document.createElement('small');
+      small.textContent = String(c.energy);
+      chip.append(small);
+    }
+    chip.addEventListener('click', () => {
+      if (!state) return;
+      const next = (state.preview.match[side].hand || []).filter((_, j) => j !== i);
+      post({ match: { [side]: { hand: next } } });
+    });
+    return chip;
+  }));
+}
+function wireHandSearch(p, side) {
+  const input = $(`${p}handSearch`);
+  const list = $(`${p}handResults`);
+  let timer = null;
+  let hits = [];
+  const close = () => { list.classList.remove('open'); list.replaceChildren(); };
+  const add = (card) => {
+    if (!state) return;
+    const current = state.preview.match[side].hand || [];
+    if (current.length >= 12) return;
+    post({ match: { [side]: { hand: [...current, { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [] }] } } });
+    input.value = '';
+    hits = [];
+    close();
+  };
+  const draw = () => {
+    list.replaceChildren(...hits.map((card) => {
+      const li = document.createElement('li');
+      const img = document.createElement('img');
+      img.src = `/cardart/thumb/${card.cardId}.webp`;
+      img.alt = '';
+      img.onerror = () => img.classList.add('hidden');
+      const meta = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = card.cardName;
+      const sub = document.createElement('span');
+      sub.textContent = [card.cardType, card.energy !== undefined && card.energy !== null ? `${card.energy} energy` : ''].filter(Boolean).join(' · ');
+      meta.append(name, sub);
+      li.append(img, meta);
+      li.addEventListener('mousedown', (e) => { e.preventDefault(); add(card); });
+      return li;
+    }));
+    placeList(input, list);
+    list.classList.toggle('open', hits.length > 0);
+  };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { hits = []; draw(); return; }
+    timer = setTimeout(async () => {
+      try {
+        const data = await (await fetch(`/api/cards/search?q=${encodeURIComponent(q)}`)).json();
+        hits = data.indexed ? data.results : [];
+        draw();
+      } catch { /* the next keystroke searches again */ }
+    }, 200);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && hits.length) add(hits[0]);
+    if (e.key === 'Escape') { hits = []; draw(); }
+  });
+  input.addEventListener('blur', () => setTimeout(close, 150));
+}
+for (const [p, side] of SIDES) wireHandSearch(p, side);
+
+// Turn counter and active side: cues, so they act on air at once.
+$('turnNext').addEventListener('click', () => post({ action: 'turn', op: 'next' }));
+$('turnBack').addEventListener('click', () => post({ action: 'turn', op: 'prev' }));
+$('turnReset').addEventListener('click', () => post({ action: 'turn', op: 'reset' }));
+$('activeSide').addEventListener('change', () => post({ action: 'turn', op: 'side', side: $('activeSide').value }));
+
+{
+  const el = $('roundsRemaining');
+  const commit = () => {
+    const n = Math.max(0, Math.min(99, Math.trunc(Number(el.value)) || 0));
+    el.value = String(n);
+    post({ event: { roundsRemaining: n } });
+  };
+  el.addEventListener('change', commit);
+  el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { commit(); el.blur(); } });
+}
+
+// The break clock: the same arithmetic as the round clock, its own numbers.
+let cdState = { running: false, startedAt: 0, elapsed: 0, countdown: 0 };
+function renderCountdown(t) {
+  if (!t) return;
+  cdState = t;
+  $('cdOut').textContent = clockText(t);
+  $('cdStart').textContent = t.running ? 'Pause' : 'Start';
+  $('cdStart').classList.toggle('on', t.running);
+  if (document.activeElement !== $('cdMinutes')) $('cdMinutes').value = String(Math.round(t.countdown / 60000));
+}
+setInterval(() => { if (cdState.running) $('cdOut').textContent = clockText(cdState); }, 500);
+$('cdStart').addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: cdState.running ? 'pause' : 'start' }));
+$('cdReset').addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: 'reset' }));
+$('cdSet').addEventListener('click', () => {
+  const minutes = Math.max(0, Math.min(600, Math.trunc(Number($('cdMinutes').value)) || 0));
+  post({ action: 'timer', which: 'countdown', op: 'set', minutes });
+});
+$('cdMinutes').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('cdSet').click(); });
+
+// Up-next tables as one line each. "Table 1: Shoji (KR, 8-2-0, 3rd) [Yasuo,
+// Unforgiven] vs Margaux (FR, 7-3-0, 6th) [Jinx, Loose Cannon]". Only the
+// two names are required; the legend in brackets resolves against the
+// catalog so the slate gets art, and the text is rewritten in this shape
+// once it lands so what resolved is visible.
+function parseTableSide(text) {
+  const m = String(text).trim().match(/^(.*?)(?:\s*\(([^)]*)\))?(?:\s*\[([^\]]*)\])?\s*$/);
+  const out = { name: '', country: '', record: '', seed: '', legend: '', legendSlug: '', legendCardId: '' };
+  if (!m) return out;
+  out.name = m[1].trim();
+  for (const part of (m[2] || '').split(',').map((s) => s.trim()).filter(Boolean)) {
+    if (/^[A-Za-z]{2,3}$/.test(part) && !out.country) out.country = part.toUpperCase();
+    else if (/^\d+-\d+(-\d+)?$/.test(part) && !out.record) out.record = part;
+    else if (!out.seed) out.seed = part;
+  }
+  const q = (m[3] || '').trim().toLowerCase();
+  if (q) {
+    const hit = legendCatalog.find((l) => l.name.toLowerCase() === q) || legendCatalog.find((l) => l.name.toLowerCase().includes(q));
+    if (hit) { out.legend = hit.name; out.legendSlug = hit.slug; out.legendCardId = hit.cardId || ''; } else out.legend = m[3].trim();
+  }
+  return out;
+}
+function parseTables(text) {
+  const tables = [];
+  const bad = [];
+  for (const raw of text.split('\n').map((l) => l.trim()).filter(Boolean)) {
+    let label = '';
+    let line = raw;
+    const colon = raw.indexOf(':');
+    if (colon > 0 && colon < raw.search(/\svs\.?\s/i)) { label = raw.slice(0, colon).trim(); line = raw.slice(colon + 1); }
+    const halves = line.split(/\s+vs\.?\s+/i);
+    if (halves.length !== 2) { bad.push(raw); continue; }
+    tables.push({ label, left: parseTableSide(halves[0]), right: parseTableSide(halves[1]) });
+  }
+  return { tables: tables.slice(0, 4), bad };
+}
+function tableSideText(s) {
+  const bits = [s.country, s.record, s.seed].filter(Boolean);
+  return `${s.name}${bits.length ? ` (${bits.join(', ')})` : ''}${s.legend ? ` [${s.legend}]` : ''}`;
+}
+function tablesToText(tables) {
+  return tables.map((t) => `${t.label ? `${t.label}: ` : ''}${tableSideText(t.left)} vs ${tableSideText(t.right)}`).join('\n');
+}
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    const { tables, bad } = parseTables($('tablesText').value);
+    $('tablesHint').textContent = bad.length ? `Could not read: ${bad[0]}. Each line needs "name vs name".` : (tables.length ? `${tables.length} table${tables.length === 1 ? '' : 's'}.` : '');
+    post({ event: { tables } });
+  };
+  $('tablesText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
+  $('tablesText').addEventListener('blur', flush);
+}
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    const casters = $('castersText').value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+      const [name, ...rest] = l.split(/\s+-\s+|\s+–\s+/);
+      return { name: name.trim(), role: rest.join(' ').trim() };
+    });
+    post({ event: { casters } });
+  };
+  $('castersText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
+  $('castersText').addEventListener('blur', flush);
+}
+{
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ event: { seeds: $('seedsText').value } }); };
+  $('seedsText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
+  $('seedsText').addEventListener('blur', flush);
+}
+const castersToText = (casters) => casters.map((c) => (c.role ? `${c.name} - ${c.role}` : c.name)).join('\n');
+
+function renderExtras(s) {
+  const prev = s.preview;
+  const prog = s.program;
+  for (const key of EXP_SCENES) {
+    const on = prev.scenes[key].visible;
+    const btn = $(EXP_TOGGLES[key]);
+    btn.textContent = on ? 'ON' : 'OFF';
+    btn.classList.toggle('on', on);
+    $(EXP_ON_AIR[key]).classList.toggle('hidden', !prog.scenes[key].visible);
+  }
+  const pp = prev.scenes.igoportrait;
+  if (document.activeElement !== $('igoPortraitMode')) $('igoPortraitMode').value = pp.mode;
+  for (const [id, flag] of [['igoPortraitTop', 'topBar'], ['igoPortraitHand', 'handCam'], ['igoPortraitCard', 'cardWell']]) {
+    if (document.activeElement !== $(id)) $(id).checked = pp[flag];
+  }
+  const rw = prev.scenes.igorows;
+  if (document.activeElement !== $('igoRowsMode')) $('igoRowsMode').value = rw.mode;
+  if (document.activeElement !== $('igoRowsHand')) $('igoRowsHand').checked = rw.hand;
+  if (document.activeElement !== $('arenaClock')) $('arenaClock').checked = prev.scenes.arenabug.clock;
+  const sl = prev.scenes.slate;
+  if (document.activeElement !== $('slateMode')) $('slateMode').value = sl.mode;
+  setIfIdle('slateText', sl.text || '');
+  $('slateText').classList.toggle('hidden', sl.mode !== 'custom');
+  if (document.activeElement !== $('slateCountdown')) $('slateCountdown').checked = sl.countdown;
+
+  for (const [p, side] of SIDES) {
+    const sd = prev.match[side];
+    setIfIdle(`${p}record`, sd.record || '');
+    setIfIdle(`${p}country`, sd.country || '');
+    setIfIdle(`${p}pronouns`, sd.pronouns || '');
+    setIfIdle(`${p}archetype`, sd.archetype || '');
+    setIfIdle(`${p}holds`, sd.holds || '');
+    $(`${p}handOut`).textContent = sd.handCount || 0;
+    renderHandChips(p, sd.hand || []);
+  }
+  $('turnOut').textContent = prev.match.turn || 0;
+  if (document.activeElement !== $('activeSide')) $('activeSide').value = prev.match.activeSide || '';
+  setIfIdle('roundsRemaining', String(prev.event.roundsRemaining || 0));
+  renderCountdown(prev.event.countdown);
+  setIfIdle('tablesText', tablesToText(prev.event.tables || []));
+  setIfIdle('castersText', castersToText(prev.event.casters || []));
+  setIfIdle('seedsText', prev.event.seeds || '');
+
+  applyExperimental(Boolean(s.theme.experimental));
+  renderThumbs(s);
+}
+
+// --- graphic thumbnails: click to put a graphic in preview ---
+//
+// Each row in the Graphics card carries its scene rendered small, from the
+// preview bank with ?force=1 so it draws whether or not it is switched on.
+// Experimental rows only load while the switch is on, so a hidden row costs
+// nothing.
+
+const THUMB_URL = (key) => `/scenes/${key}/?transparent=1&preview=1&force=1&anim=0`;
+
+function showScene(key) {
+  if (!state) return;
+  const prev = state.preview;
+  if (EDGE_SCENES.includes(key)) { setEdgeScene(key, true); return; }
+  if (key === 'scorebug') { post({ scenes: { scorebug: { visible: true }, arenabug: { visible: false } } }); return; }
+  if (key === 'arenabug') { post({ scenes: { arenabug: { visible: true }, scorebug: { visible: false } } }); return; }
+  if (key === 'cardpopup') {
+    if (prev.scenes.cardpopup.card.cardId) post({ scenes: { cardpopup: { visible: true } } });
+    else $('cardSearch').focus();
+    return;
+  }
+  if (key === 'decklist') {
+    if (prev.scenes.decklist.list.trim()) post({ scenes: { decklist: { visible: true } } });
+    return;
+  }
+  post({ scenes: { [key]: { visible: true } } });
+}
+
+for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
+  const key = row.dataset.scene;
+  const thumb = document.createElement('div');
+  thumb.className = 'scene-thumb';
+  thumb.tabIndex = 0;
+  thumb.setAttribute('role', 'button');
+  thumb.title = `Put ${SCENE_NAMES[key] || key} in preview`;
+  const frame = document.createElement('iframe');
+  frame.title = '';
+  frame.tabIndex = -1;
+  frame.setAttribute('allowtransparency', 'true');
+  const tag = document.createElement('span');
+  tag.className = 'thumb-tag';
+  tag.textContent = 'Preview';
+  thumb.append(frame, tag);
+  thumb.addEventListener('click', () => showScene(key));
+  thumb.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showScene(key); } });
+  row.prepend(thumb);
+}
+
+function renderThumbs(s) {
+  for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
+    const key = row.dataset.scene;
+    const thumb = row.querySelector('.scene-thumb');
+    const frame = thumb.querySelector('iframe');
+    const load = !row.dataset.exp || experimental;
+    const want = load ? THUMB_URL(key) : 'about:blank';
+    if (frame.getAttribute('src') !== want) frame.src = want;
+    const inPreview = Boolean(s.preview.scenes[key] && s.preview.scenes[key].visible);
+    const onAir = Boolean(s.program.scenes[key] && s.program.scenes[key].visible);
+    thumb.classList.toggle('in-preview', inPreview);
+    thumb.classList.toggle('on-air', onAir);
+    const cantShow = (key === 'cardpopup' && !s.preview.scenes.cardpopup.card.cardId)
+      || (key === 'decklist' && !s.preview.scenes.decklist.list.trim());
+    thumb.classList.toggle('disabled', cantShow);
+    thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : (cantShow ? 'Nothing staged' : 'Click to preview'));
+  }
+}
+
+// --- setup card: remember which sections are open ---
+
+const SETUP_KEY = 'sidewaysStudio.setupOpen';
+{
+  let open = null;
+  try { open = JSON.parse(localStorage.getItem(SETUP_KEY) || 'null'); } catch { open = null; }
+  for (const sec of document.querySelectorAll('.setup-sec')) {
+    if (open && typeof open === 'object' && sec.dataset.sec in open) sec.open = Boolean(open[sec.dataset.sec]);
+    sec.addEventListener('toggle', () => {
+      const next = {};
+      for (const s2 of document.querySelectorAll('.setup-sec')) next[s2.dataset.sec] = s2.open;
+      try { localStorage.setItem(SETUP_KEY, JSON.stringify(next)); } catch { /* per-session only */ }
+    });
+  }
+}
 
 // --- sync: same contract as the stage client ---
 

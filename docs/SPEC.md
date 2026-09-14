@@ -75,6 +75,36 @@ Two standalone transparent sources beyond the PSDs:
 9. **Card popup** — operator searches any card by name, it animates in. Same
    engine feeds the POV card slots.
 
+**Experimental outputs (2026-09-14, Sam's ask, not yet locked).** Behind
+Setup > Experimental (`theme.experimental`, setup data like the logo):
+
+10. **IGO portrait pillars** (`igoportrait`) — the Yu-Gi-Oh broadcast
+    grammar: portrait table camera x 545..1375, y 64..1080, a 64px game-state
+    bar over it (series pips · points · round and clock · points · pips, the
+    active side marked with a chevron and a trim line), 545px pillars with
+    record and seed, country chip and name, a 489x275 camera well, the legend
+    tile with domain runes, archetype and hand count; hand cam window (left,
+    optional) and the docked card with legible rules text (right).
+11. **IGO rows** (`igorows`) — the Magic Pro Tour grammar: 75px bars top and
+    bottom, one player each, a 330px left column with both cameras, series
+    dots, the active-turn mark and the CARDS IN HAND list (resolved cards
+    with energy and domain runes) plus a HOLDS line.
+12. **Arena score bug** (`arenabug`) — the Pokémon wide-shot bug on the
+    1-to-8 track: eight hexes per side, games box, name bar with legend
+    thumbs, records and the round title, an event and clock lozenge.
+    Exclusive with the score bug in the panel.
+13. **Slate** (`slate`) — full-frame holds: up next (event.tables, seeds
+    strip, casters, break clock) or a message line.
+
+New per-side fields: record, country (2-3 letters), pronouns, archetype,
+handCount, hand[] (cardId, cardName, energy, domains), holds. New match
+cues: `turn` (next / prev / reset / set / side) acting on both banks.
+Event: roundsRemaining, countdown (a second timer, `timer` with
+`which: 'countdown'`), tables[4], casters[4], seeds paste. The panel lists
+each graphic with a live thumbnail (`?force=1` renders a scene as if on)
+that puts the graphic in preview when clicked, and Setup is three
+collapsible sections: browser source links, updates, experimental.
+
 Timers (Part 10) shipped early with the dual overlay: one round clock in
 `match.timer`, driven by a `timer` action (start / pause / reset / set
 minutes) that acts on both banks at once, so the clock on air never waits

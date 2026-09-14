@@ -391,7 +391,7 @@ function runStateMode() {
       $('diag').classList.remove('on');
       const sc = sceneBank(state, params).scenes.decklist;
       const content = contentOf(sc);
-      const visible = Boolean(sc.visible) && content.list.trim() !== '';
+      const visible = (params.force || Boolean(sc.visible)) && content.list.trim() !== '';
       $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
 
       const listChanged = !target || content.list !== target.list;

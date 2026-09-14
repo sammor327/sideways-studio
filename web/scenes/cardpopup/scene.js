@@ -65,10 +65,13 @@ const params = initStage({
     const cp = bank.scenes.cardpopup;
     const card = cp.card;
     // The dual-column overlay docks this same card bottom right while it is
-    // on with its card slot enabled, so the popup stands down rather than
-    // airing the card twice.
-    const docked = Boolean(bank.scenes.igodual && bank.scenes.igodual.visible && bank.scenes.igodual.cardSlot);
-    const visible = cp.visible && !docked;
+    // on with its card slot enabled, and the portrait pillars dock it in the
+    // right pillar, so the popup stands down rather than airing the card
+    // twice.
+    const dual = bank.scenes.igodual;
+    const pillars = bank.scenes.igoportrait;
+    const docked = Boolean((dual && dual.visible && dual.cardSlot) || (pillars && pillars.visible && pillars.cardWell));
+    const visible = params.force || (cp.visible && !docked);
     $('hiddenHint').classList.toggle('on',
       !params.transparent && !params.preview && !visible);
 

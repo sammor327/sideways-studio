@@ -181,7 +181,7 @@ const params = initStage({
     $('lside').classList.toggle('gone', !scene.showLeft);
     $('rside').classList.toggle('gone', !scene.showRight);
 
-    const visible = scene.visible;
+    const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on',
       !params.transparent && !params.preview && !visible);
     if (visible === visibleNow) return;

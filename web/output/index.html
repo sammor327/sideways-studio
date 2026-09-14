@@ -28,14 +28,18 @@ iframe {
   // POV and the IGOs at the bottom of the stack, popup above them, score bug
   // on top.
   const SCENES = [
+    `/scenes/slate/?transparent=1${anim}`,
     `/scenes/pov/?transparent=1${anim}`,
     `/scenes/decklist/?transparent=1${anim}`,
     `/scenes/igo1v1/?transparent=1${anim}`,
     `/scenes/igo2v2/?transparent=1${anim}`,
     `/scenes/igodual/?transparent=1${anim}`,
     `/scenes/igobars/?transparent=1${anim}`,
+    `/scenes/igoportrait/?transparent=1${anim}`,
+    `/scenes/igorows/?transparent=1${anim}`,
     `/scenes/cardpopup/?transparent=1${popupSide}${anim}`,
     `/scenes/scorebug/?transparent=1${anim}`,
+    `/scenes/arenabug/?transparent=1${anim}`,
   ];
   for (const src of SCENES) {
     const f = document.createElement('iframe');

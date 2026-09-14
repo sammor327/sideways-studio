@@ -138,6 +138,43 @@ leaves the table camera full width; the tiles cover x 514 to 1406 for the
 top 145 px and bottom 145 px of the frame. Team cam "Webcam cutout" cuts
 the bar away behind the camera window for an OBS source.
 
+### Experimental graphics
+
+Setup > Experimental > "Show experimental graphics" lists four more overlays
+under Graphics, adds their fields to Match data, and shows their source
+URLs. They come from the September 2026 scouting of Pokémon, Yu-Gi-Oh, One
+Piece, Magic and Flesh and Blood broadcasts and are not part of the locked
+spec yet; the switch is remembered with the event.
+
+- **Portrait pillars** (`/scenes/igoportrait/`): a portrait table camera
+  in the middle (crop it to 830 x 1016 at x 545, y 64) with a game-state bar
+  over its top (series pips, points, round and clock, with a chevron and a
+  trim line on the active side) and a 545 px pillar per player: record and
+  seed, country chip and name, a 489 x 275 camera well, the legend tile with
+  the domain runes, archetype and hand count. The left pillar can open a
+  second window for a hand camera; the right pillar docks the card popup's
+  card at a size where the rules text reads.
+- **Rows** (`/scenes/igorows/`): slim bars along the top and bottom edges,
+  one player each (country chip, name, pronouns and record, a points box,
+  legend, champion, archetype and runes; the round title and turn on the
+  bottom bar), and a 330 px left column with both camera windows, the series
+  dots, an active-turn mark and the cards-in-hand list with each card's
+  cost, plus a "holds" line. The table camera gets x 330 to 1920, y 75 to
+  1005.
+- **Arena score bug** (`/scenes/arenabug/`): the wide-shot bug for stage and
+  player cameras: eight numbered hexes per side lit up to each player's
+  points, a games box, and a name bar with legend thumbnails, country chips,
+  records and the round title, plus an event and round-clock lozenge top
+  left. It replaces the score bug in preview when switched on.
+- **Slate** (`/scenes/slate/`): full-frame hold screens. "Up next" lists the
+  feature tables typed in Match data (one line each, see the field's
+  tooltip), a standings strip from the seeds paste, the caster desk and the
+  break clock; the other screens print a line (Starting soon, Be right back,
+  Thanks for watching, or your own) with the same clock.
+
+The turn counter, the active side and the break clock are cues like the
+round clock: Next turn, Reset and the clock buttons act on air at once.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are

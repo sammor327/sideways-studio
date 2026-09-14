@@ -28,7 +28,7 @@ iframe {
 </head>
 <body>
 <script>
-  const SCENES = ['pov', 'decklist', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'cardpopup', 'scorebug'];
+  const SCENES = ['slate', 'pov', 'decklist', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows', 'cardpopup', 'scorebug', 'arenabug'];
   const preview = new URLSearchParams(location.search).get('mode') === 'preview';
   for (const scene of SCENES) {
     const f = document.createElement('iframe');

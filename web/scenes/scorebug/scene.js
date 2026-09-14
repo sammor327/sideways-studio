@@ -46,7 +46,7 @@ const params = initStage({
 
     // A plain browser open (no transparent, no preview) explains a hidden bug
     // instead of showing an empty page. The broadcast URL stays clean.
-    const visible = bank.scenes.scorebug.visible;
+    const visible = params.force || bank.scenes.scorebug.visible;
     $('hiddenHint').classList.toggle('on',
       !params.transparent && !params.preview && !visible);
     if (visible === shown) return;

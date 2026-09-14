@@ -214,6 +214,79 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-14c (out of band: experimental graphics, graphic thumbnails, collapsible Setup)
+
+**Sam's asks.** (1) An "Experimental" switch under Setup that decides
+whether the four overlays from the broadcast scouting (report "Four Games,
+One Frame", mocks "Riftbound Overlay Mocks") are listed under Graphics.
+(2) A small live picture of every graphic in the Graphics card; clicking it
+puts that graphic in preview. (3) Setup split into collapsible sections:
+links, check for updates, experimental.
+
+**Experimental switch.** `theme.experimental` (setup data, saved with the
+event, never bussed). On: the four scene rows, their focus chips, the
+"Experimental overlays" block in Match data and their source URLs show.
+Off: they hide and the four go off in preview in the same patch; program
+keeps what it airs until TAKE or CLEAR (the Setup hint says so). A focus
+chip pinned to an experimental graphic falls back to "In preview" when the
+switch goes off.
+
+**Thumbnails.** Every `.scene-row[data-scene]` gets a 150x84 tile holding
+its scene at 1920x1080 scaled by CSS transform, loaded from
+`/scenes/<key>/?transparent=1&preview=1&force=1&anim=0`. `force` is a new
+stage param (stage.js) that renders a scene as if switched on, honoured by
+all twelve scenes (one line each) and never on a broadcast URL. The tile's
+border says in preview (green) or on air (red ring); the tag under it says
+which, or "Nothing staged" for a popup with no card and a decklist with no
+list, where a click focuses the search instead. Click = show in preview
+(the edge scenes still switch each other off; the arena bug and the score
+bug swap). Experimental tiles only load their iframe while the switch is
+on, so a hidden row costs no Chromium frame.
+
+**Four scenes, live HTML on the look model** (`LOOK_SCENES`, `DESIGNED`,
+`SCENE_LABELS`, monitor and output stacks): `igoportrait`, `igorows`,
+`arenabug`, `slate`, ported from the scratch mocks. Shared helpers in
+`web/stage/exp.js`: clock arithmetic, canvas-gauged text fit, rune glyphs
+from `/assets/runes/`, a legend-domains lookup (the legends API now carries
+`domains`), and the show/hide clock dance. Geometry is in each scene.css
+header. The rows scene's hand list draws costs from the stored card
+entries, so the scene needs no catalog; the panel's hand search stores
+energy and domains from the ranked search.
+
+**State.** Side: record, country (2-3 letters, uppercased), pronouns,
+archetype, handCount (0-20), hand[] (12 cleaned cards), holds. Match:
+activeSide, turn, driven by a `turn` cue (next alternates the side, prev,
+reset, set, side). Event: roundsRemaining (0-99), countdown (second timer,
+`timer` action with `which: 'countdown'`), tables[4] (label + two cleaned
+identity blocks), casters[4], seeds (multiline, 800). Scenes: igoportrait
+{mode, topBar, handCam, cardWell}, igorows {mode, hand}, arenabug {clock},
+slate {mode in SLATE_MODES, text, countdown}. mergeBank layers the new
+event and side shapes over older saves. 8 new tests
+(test/state-experimental.test.js); 63 pass.
+
+**Panel.** Match data gains the Experimental overlays block (record,
+country, pronouns, archetype, hand count counter, cards-in-hand search with
+chips, holds, the turn row with Next turn / active side / reset, rounds
+left, the break clock, and three pastes: up-next tables one line each
+("Table 1: Shoji (KR, 8-2-0, 3rd) [Yasuo, Unforgiven] vs Margaux (FR,
+7-3-0, 6th) [Jinx, Loose Cannon]", the legend resolving against the
+catalog; the text is rewritten in that shape once it lands so what
+resolved is visible), casters "Name - Role", and seeds). SCENE_FIELDS and
+sceneDraws cover the four so dimming stays honest. Swap sides and Reset
+match carry the new fields; reset also resets the turn cue.
+
+**Setup.** Three `<details>` sections (links, updates, experimental), open
+state remembered per browser in `sidewaysStudio.setupOpen`; the card
+database status and downloads stay above them.
+
+**Verification.** Second server on 4713 with a scratch data dir (the card
+index, thumbs and a few full-art files copied in; the flipdeck launch.json
+entry is `sideways-studio-exp`), seeded through `/api/update`, all four
+scenes captured through `server/still.js` (Chrome) with `?preview=1&force=1`
+and read: pillars, hand cam hole, docked card, runes, both clocks, turn
+label, hex track, tables with hero cutouts, seeds strip, casters. Panel
+captured headlessly at 1920x1700 to read every card.
+
 ### 2026-09-14b (out of band: the 2v2 bars overlay, offline curtain, favicon)
 
 **Sam's asks.** (1) When the app closes, the panel must say so: an

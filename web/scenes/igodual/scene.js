@@ -222,7 +222,7 @@ const params = initStage({
     $('cardSlot').classList.toggle('hidden', !scene.cardSlot);
     loadCard(bank, logo, animate);
 
-    const visible = scene.visible;
+    const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
     if (visible === shownVisible) return;
     shownVisible = visible;

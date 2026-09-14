@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Slate</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="slate off mode-upnext" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="shard s1"></div><div class="shard s2"></div>
+
+    <!-- Up next: the feature tables and the seeds strip. -->
+    <div class="left" id="upnext">
+      <span class="label eyebrow" id="eyebrow"></span>
+      <div class="trim"></div>
+      <div class="title">Up next</div>
+      <div class="sub" id="sub"></div>
+      <div class="grid" id="tables"></div>
+      <div class="seeds" id="seedsBlock">
+        <span class="label">Standings</span>
+        <div class="strip" id="seeds"></div>
+      </div>
+    </div>
+
+    <!-- Message slates: starting soon, be right back, thanks, custom. -->
+    <div class="message" id="message">
+      <span class="label eyebrow" id="msgEyebrow"></span>
+      <div class="trim"></div>
+      <div class="title big" id="msgTitle"></div>
+      <div class="sub" id="msgSub"></div>
+    </div>
+
+    <div class="right" id="right">
+      <div class="panel count" id="countBox"><span class="label">Stream resumes in</span><span class="num" id="countdown">00:00</span></div>
+      <div class="panel cast" id="castBox"><span class="label">On the desk</span><div id="casters"></div></div>
+    </div>
+
+    <div class="foot">
+      <span class="mark"><img class="logo hidden" id="footLogo" alt="" draggable="false"><span class="ev" id="footEvent"></span></span>
+      <span class="label">Riftbound is a trademark of Riot Games. Fan content, not endorsed by Riot.</span>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The slate is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

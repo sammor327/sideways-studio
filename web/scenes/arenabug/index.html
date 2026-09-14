@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Arena Score Bug</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="arena off" id="root">
+    <div class="corner" id="corner">
+      <img class="logo hidden" id="cornerLogo" alt="" draggable="false">
+      <span class="ev" id="cornerEvent"></span>
+      <span class="label">Round clock</span>
+      <span class="num clock" id="clock">00:00</span>
+    </div>
+    <div class="bug">
+      <div class="track">
+        <div class="hexes l" id="lhex"></div>
+        <div class="games"><small id="gamesLabel">Games</small><span class="num" id="lwins">0</span><span class="sep">:</span><span class="num" id="rwins">0</span></div>
+        <div class="hexes r" id="rhex"></div>
+      </div>
+      <div class="namebar">
+        <div class="trim"></div>
+        <div class="side l">
+          <div class="thumb"><img class="art hidden" id="lthumb" alt="" draggable="false"></div>
+          <span class="chip" id="lcountry"></span><span class="pname" id="lname"></span><span class="rec" id="lrec"></span>
+        </div>
+        <div class="round"><span class="t" id="roundTitle"></span><span class="s" id="roundSub"></span></div>
+        <div class="side r">
+          <div class="thumb"><img class="art hidden" id="rthumb" alt="" draggable="false"></div>
+          <span class="chip" id="rcountry"></span><span class="pname" id="rname"></span><span class="rec" id="rrec"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The arena score bug is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

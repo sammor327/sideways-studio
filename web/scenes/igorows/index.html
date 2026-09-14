@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: In-Game Overlay, Rows</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="rows off mode-legend" id="root">
+
+    <!-- Left column: both cameras, the hidden-information block between. -->
+    <div class="col" id="col">
+      <div class="col-bg">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+      </div>
+
+      <div class="well top" id="lcam">
+        <div class="well-fill"></div>
+        <img class="art hidden hero" id="lhero" alt="" draggable="false">
+        <div class="cam-chip" id="lchip"></div>
+      </div>
+      <div class="active-bar top" id="lbar"></div>
+      <div class="under top">
+        <span class="label active-label" id="lactive">Active turn</span>
+        <div class="dots" id="ldots"></div>
+      </div>
+      <div class="info top" id="linfo">
+        <div class="hand" id="lhandBlock">
+          <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="lhandCount"></span></div>
+          <div class="cards" id="lhand"></div>
+        </div>
+        <div class="holds" id="lholds"><span class="label">Holds</span><span class="bf" id="lholdsText"></span></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="info bot" id="rinfo">
+        <div class="hand" id="rhandBlock">
+          <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="rhandCount"></span></div>
+          <div class="cards" id="rhand"></div>
+        </div>
+        <div class="holds" id="rholds"><span class="label">Holds</span><span class="bf" id="rholdsText"></span></div>
+      </div>
+      <div class="under bot">
+        <div class="dots" id="rdots"></div>
+        <span class="label active-label" id="ractive">Active turn</span>
+      </div>
+      <div class="active-bar bot" id="rbar"></div>
+      <div class="well bot" id="rcam">
+        <div class="well-fill"></div>
+        <img class="art hidden hero" id="rhero" alt="" draggable="false">
+        <div class="cam-chip" id="rchip"></div>
+      </div>
+    </div>
+
+    <!-- Top bar: player 1. -->
+    <div class="bar top" id="tbar">
+      <div class="who"><span class="chip" id="lcountry"></span><span class="pname" id="lname"></span><span class="pro" id="lpro"></span></div>
+      <div class="box"><div class="in"><span class="num" id="lpts">0</span></div><small>Points</small></div>
+      <div class="deck">
+        <div class="deck-lines"><span class="lg" id="llegend"></span><span class="ch" id="lchampion"></span></div>
+        <span class="runes" id="lrunes"></span>
+      </div>
+    </div>
+    <!-- Bottom bar: player 2, plus the round title. -->
+    <div class="bar bot" id="bbar">
+      <div class="who"><span class="chip" id="rcountry"></span><span class="pname" id="rname"></span><span class="pro" id="rpro"></span></div>
+      <div class="box"><div class="in"><span class="num" id="rpts">0</span></div><small>Points</small></div>
+      <div class="deck">
+        <div class="deck-lines"><span class="lg" id="rlegend"></span><span class="ch" id="rchampion"></span></div>
+        <span class="runes" id="rrunes"></span>
+        <span class="round" id="round"></span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The rows overlay is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

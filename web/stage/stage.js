@@ -14,6 +14,11 @@ export function stageParams() {
     // on air); broadcast URLs render the PROGRAM bank. Never put ?preview=1
     // on a browser-source URL.
     preview: p.get('preview') === '1',
+    // ?force=1 renders the scene as if switched on, whatever the bank says:
+    // the panel's graphic thumbnails use it so an operator can see each
+    // graphic with the current data before switching it on. Never on a
+    // broadcast URL.
+    force: p.get('force') === '1',
   };
 }
 

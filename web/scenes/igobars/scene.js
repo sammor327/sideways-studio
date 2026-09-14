@@ -109,7 +109,7 @@ const params = initStage({
     renderBar('t', m.left, animate);
     renderBar('b', m.right, animate);
 
-    const visible = scene.visible;
+    const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
     if (visible === shownVisible) return;
     shownVisible = visible;

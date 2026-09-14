@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: In-Game Overlay, Portrait Pillars</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="portrait off mode-legend" id="root">
+
+    <!-- Left pillar: player 1, the hand cam, the event block. -->
+    <div class="pillar l" id="lpillar">
+      <div class="pillar-bg">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+      </div>
+      <div class="ident">
+        <div class="meta"><span class="label" id="lmeta"></span><span class="label active-label" id="lactive">Active turn</span></div>
+        <div class="name-row"><span class="chip" id="lcountry"></span><span class="pname" id="lname"></span><span class="chev" id="lchev"></span></div>
+      </div>
+      <div class="well cam" id="lcam">
+        <div class="well-fill"></div>
+        <img class="art hidden hero" id="lhero" alt="" draggable="false">
+        <div class="cam-chip" id="lchip"></div>
+      </div>
+      <div class="well-edge cam"></div>
+      <div class="tile legend">
+        <img class="art hidden" id="llegendImg" alt="" draggable="false">
+        <div class="shade"></div>
+        <div class="lines">
+          <span class="lg" id="llegend"></span>
+          <span class="ch" id="lchampion"></span>
+          <span class="runes" id="lrunes"></span>
+        </div>
+      </div>
+      <div class="arche"><span class="label" id="larche"></span><span class="label" id="lhand"></span></div>
+      <div class="well handcam" id="handCam"><div class="well-fill"></div><span class="label well-tag">Hand cam</span></div>
+      <div class="well-edge handcam" id="handCamEdge"></div>
+      <div class="event" id="eventBlock">
+        <div class="trim"></div>
+        <div class="row"><span class="mark"><img class="event-logo hidden" id="eventLogo" alt="" draggable="false"><span class="event-name" id="eventName"></span></span></div>
+        <div class="row"><span class="big" id="roundBig"></span><span class="label" id="roundsLeft"></span></div>
+      </div>
+    </div>
+
+    <!-- Right pillar: player 2 and the docked featured card. -->
+    <div class="pillar r" id="rpillar">
+      <div class="pillar-bg">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+      </div>
+      <div class="ident">
+        <div class="meta"><span class="label" id="rmeta"></span><span class="label active-label" id="ractive">Active turn</span></div>
+        <div class="name-row"><span class="chev" id="rchev"></span><span class="pname" id="rname"></span><span class="chip" id="rcountry"></span></div>
+      </div>
+      <div class="well cam" id="rcam">
+        <div class="well-fill"></div>
+        <img class="art hidden hero" id="rhero" alt="" draggable="false">
+        <div class="cam-chip" id="rchip"></div>
+      </div>
+      <div class="well-edge cam"></div>
+      <div class="tile legend">
+        <img class="art hidden" id="rlegendImg" alt="" draggable="false">
+        <div class="shade"></div>
+        <div class="lines">
+          <span class="lg" id="rlegend"></span>
+          <span class="ch" id="rchampion"></span>
+          <span class="runes" id="rrunes"></span>
+        </div>
+      </div>
+      <div class="arche"><span class="label" id="rhand"></span><span class="label" id="rarche"></span></div>
+      <div class="card-block" id="cardBlock">
+        <span class="label card-label">Featured card</span>
+        <div class="card-well">
+          <img class="art hidden" id="slotImg" alt="" draggable="false">
+          <div class="slot-empty" id="slotEmpty">
+            <img class="slot-logo hidden" id="slotLogo" alt="" draggable="false">
+            <span class="slot-mark" id="slotMark"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The game-state bar over the top of the table cam. -->
+    <div class="topbar" id="topBar">
+      <div class="side l">
+        <div class="pips" id="lpips"></div>
+        <div class="pts"><small>Points</small><span class="num" id="lpts">0</span></div>
+      </div>
+      <div class="clock-box"><span class="label" id="tbRound"></span><span class="num clock" id="tbClock">00:00</span></div>
+      <div class="side r">
+        <div class="pips" id="rpips"></div>
+        <div class="pts"><small>Points</small><span class="num" id="rpts">0</span></div>
+      </div>
+      <div class="lead" id="lead"></div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The portrait pillars overlay is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>
