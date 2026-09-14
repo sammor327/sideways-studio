@@ -200,6 +200,30 @@ async function refreshCardDb(button) {
   }
 }
 
+// The preview keeps 16:9 inside whatever height the column leaves it, so the
+// action row below it never drops off a 1080p window. A CSS aspect-ratio box
+// yields to width, not height, hence the measurement here. In the small
+// window layout (page scroll) the frame just runs full width.
+const previewWrap = $('previewWrap');
+const previewFrame = $('previewFrame');
+function fitPreview() {
+  const stacked = matchMedia('(max-width: 1200px), (max-height: 760px)').matches;
+  if (stacked) {
+    previewFrame.style.width = '';
+    previewFrame.style.height = '';
+    return;
+  }
+  const w = previewWrap.clientWidth;
+  const h = previewWrap.clientHeight;
+  if (!w || !h) return;
+  const fw = Math.floor(Math.min(w, (h * 16) / 9));
+  previewFrame.style.width = `${fw}px`;
+  previewFrame.style.height = `${Math.floor((fw * 9) / 16)}px`;
+}
+window.addEventListener('resize', fitPreview);
+if ('ResizeObserver' in window) new ResizeObserver(fitPreview).observe(previewWrap);
+fitPreview();
+
 async function resolveNow() {
   const seq = ++resolveSeq;
   const sent = text;

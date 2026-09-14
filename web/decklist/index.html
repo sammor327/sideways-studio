@@ -67,8 +67,10 @@
         <button id="playIntro" class="clear-mini" title="Plays the build-in the plate does when it goes on air">Play build-in</button>
       </div>
     </div>
-    <div class="preview-frame" id="previewFrame">
-      <iframe id="preview" title="Decklist preview" allowtransparency="true"></iframe>
+    <div class="preview-wrap" id="previewWrap">
+      <div class="preview-frame" id="previewFrame">
+        <iframe id="preview" title="Decklist preview" allowtransparency="true"></iframe>
+      </div>
     </div>
     <div class="actions">
       <button id="generate" class="go">GENERATE PNG</button>
@@ -78,7 +80,7 @@
       <button id="copyUrl">COPY STREAM URL</button>
     </div>
     <p class="hint" id="actionStatus"></p>
-    <p class="hint">SEND TO PREVIEW loads this list into the control panel's preview; TAKE there airs it. COPY STREAM URL gives a browser source that always shows this one deck, no panel needed. PNGs are drawn by the same scene the stream uses, in a hidden copy of Edge or Chrome, and saved in the app's <code>data/decklist</code> folder as well as downloaded.</p>
+    <p class="hint one-line" title="PNGs are drawn by the same scene the stream uses, in a hidden copy of Edge or Chrome, and saved in the app's data/decklist folder as well as downloaded.">SEND TO PREVIEW loads this list into the control panel's preview; TAKE there airs it. COPY STREAM URL gives a browser source that always shows this one deck. PNGs save to <code>data/decklist</code> and download.</p>
   </section>
 </main>
 
