@@ -10,6 +10,7 @@
 import {
   checkLegality, deckNames, parseDecklist, serializeDecklist, RUNE_DOMAINS,
 } from '/shared/decklist-format.js';
+import { setOffline } from '/shared/offline.js';
 
 const $ = (id) => document.getElementById(id);
 const DRAFT_KEY = 'sidewaysStudio.deckEditor.v1';
@@ -776,6 +777,9 @@ $('exportCancel').addEventListener('click', () => { if (exportRun) exportRun.can
 function setConnected(ok) {
   $('statusDot').classList.toggle('ok', ok);
   $('statusText').textContent = ok ? 'connected' : 'disconnected';
+  // The app is closed: saves, checks and exports all go through it, so the
+  // page says so until the reconnect loop gets through.
+  setOffline(!ok);
 }
 
 function connect() {

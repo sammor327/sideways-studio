@@ -214,6 +214,60 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-14b (out of band: the 2v2 bars overlay, offline curtain, favicon)
+
+**Sam's asks.** (1) When the app closes, the panel must say so: an
+"OFFLINE: RESTART THE APP TO CONTINUE USAGE" error instead of a page that
+keeps taking clicks into the void. (2) The app's icon as the browser tab
+favicon. (3) The 2v2 overlay from the Singapore Regional Qualifier
+showmatch stream (OfflineTV / Disguised Toast sealed 2v2), modelled on the
+frame Sam sent.
+
+**Offline curtain.** `web/shared/offline.js`, raised by the panel's and
+the deck editor's connection status (`setStatus` / `setConnected`), lowered
+by their reconnect loops, with the tab title prefixed OFFLINE meanwhile.
+An update restart (`update.phase === 'ready'`) gets a softer "Restarting
+for the update" line for 30 s before falling through to the hard error, so
+the planned outage never tells the operator to relaunch. Repeated
+disconnect calls are no-ops so the reconnect loop cannot reset that grace
+period. Verified on a live tab: kill the server, curtain up with the exact
+text; restart, the same page instance clears it and the title returns.
+Scenes deliberately show nothing: a browser source must never air an error.
+
+**Favicon.** `scripts/make-icon.py` now also writes `web/assets/favicon.ico`
+(48/32/16) from the same mark as the exe icon; committed so a source
+checkout has it, and under web/ so the packaged build bundles it. Every
+page under web/ links it.
+
+**2v2 bars, `igobars`.** Third in-game scene on the look model, live HTML,
+no PSD. Geometry from the reference frame at 1080p: bars y 0..54 and
+1026..1080 with the trim rule on their inner edges; a cluster hanging off
+each bar, centred on 960: legend tile x 514..796, team camera 820..1100,
+legend tile 1124..1406, all 145 tall (the bottom cluster at y 935..1080, so
+its caption block sits on the bar as in the reference). Tile = art band 92
+px (the legend card painting scaled to the tile width and shown from card
+y 160 so the face lands; hero and icon cutouts fill from the top) over a
+caption block: legend line, trim rule, bold champion line (the reference's
+flanking glyphs were tried as trim diamonds and removed at Sam's ask), a
+ring ornament on the outer bottom corner. Score =
+44 px badge on the camera's inner edge (y 145 / 935). Names at the bar
+corners, 26 px caps letter-spaced 3, canvas-gauged fit to 440 px, each
+nearest its own tile: P1 left with the left tile, the teammate right with
+the right tile. Team 1 (the P1 side) is the top bar, team 2 the bottom.
+Team cam mode: legend art fills the window with both cutouts half each;
+webcam cuts the bar (and its rule, which lives inside `.bar-bg` for that
+reason) away behind the window with the even-odd clip-path. No pips, track,
+battlefields or seed: the reference has none. Designed look is the
+reference's navy and gold; the global look recolours it like every scene.
+State: `legendCardId2` and `champion2` per side (the teammate pickers now
+carry the card id, plus a Champion picker in the 2v2 teams block that sets
+the line only, never the featured card); `scenes.igobars {visible, mode}`;
+`igobars` in LOOK_SCENES, DESIGNED, the edge-scene exclusion set, the focus
+chips, the combined output and monitor stacks, the URL list and README.
+Verified through `server/still.js` (Chrome, see the 09-14 gotcha) in legend
+mode, and in webcam mode with `?transparent=1` by reading the alpha behind
+the camera window and the bar beside it. 55 tests pass.
+
 ### 2026-09-14 (out of band: the look model and the dual-column overlay)
 Sam asked for the dual-column in-game overlay from the RQ overlay teardown,
 built to be highly customizable in colours and backgrounds, and for every

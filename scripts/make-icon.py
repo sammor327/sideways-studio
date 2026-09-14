@@ -7,8 +7,14 @@ import sys
 from pathlib import Path
 from PIL import Image, ImageDraw
 
-OUT = Path(__file__).resolve().parent.parent / "build" / "sideways-studio.ico"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "build" / "sideways-studio.ico"
 SIZES = [256, 128, 64, 48, 32, 16]
+# The same mark as the browser tab icon. It lives under web/ so the packaged
+# build bundles it with the pages, and is committed so a source checkout has
+# it without running this script.
+FAVICON = ROOT / "web" / "assets" / "favicon.ico"
+FAVICON_SIZES = [48, 32, 16]
 
 INK = (12, 15, 18, 255)        # --tes-ink
 BLUE = (17, 182, 251, 255)     # --tes-blue
@@ -59,6 +65,9 @@ def main():
     print("icon:", OUT, OUT.stat().st_size // 1024, "KB", SIZES)
     # A PNG preview so the mark can be eyeballed without opening the ico.
     render(256).save(OUT.with_suffix(".png"))
+    fav = [render(s) for s in FAVICON_SIZES]
+    fav[0].save(FAVICON, format="ICO", sizes=[(s, s) for s in FAVICON_SIZES])
+    print("favicon:", FAVICON, FAVICON.stat().st_size // 1024, "KB", FAVICON_SIZES)
 
 
 if __name__ == "__main__":

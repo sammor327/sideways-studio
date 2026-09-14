@@ -1,0 +1,277 @@
+/* IGO 2v2 bars — the showmatch grammar from the Singapore Regional
+   Qualifier Top 8 stream (OfflineTV / Disguised Toast sealed 2v2, measured
+   2026-09-14): the table camera runs full width and each team lives on a
+   horizontal bar, team 1 across the top (y 0..54), team 2 across the bottom
+   (y 1026..1080). A cluster hangs off each bar into the frame: a legend tile
+   (art over the legend and champion lines), the team camera with both
+   players in one window, and the teammate's legend tile. Player names sit
+   at the bar's corners, each nearest its own tile. The score is a numeric
+   badge on the camera's inner edge. No pips, no track, no battlefields.
+
+   Nothing here is a baked plate: every surface takes the look, so the
+   designed navy and gold recolour to a TO's accents like every other scene.
+
+   Motion contract: --t is the in/out seek clock. Each bar slides in from its
+   own screen edge with its cluster; every read is var(--t, 1) so a missing
+   clock renders settled on air. Bar-relative coordinates below: the top bar
+   hangs its cluster downward from y 0, the bottom bar upward from y 54. */
+
+.bars { position: absolute; inset: 0; }
+.bars.off { display: none; }
+.bars, .bars * { box-sizing: border-box; }
+
+.bar {
+  position: absolute;
+  left: 0;
+  width: calc(1920 * var(--u));
+  height: calc(54 * var(--u));
+  opacity: var(--t, 1);
+  --side-accent: var(--ss-accent-a, #11b6fb);
+  --hang: 1;                                   /* cluster grows downward */
+}
+.bar.top { top: 0; transform: translateY(calc((1 - var(--t, 1)) * -170 * var(--u))); }
+.bar.bottom {
+  top: calc(1026 * var(--u));
+  transform: translateY(calc((1 - var(--t, 1)) * 170 * var(--u)));
+  --side-accent: var(--ss-accent-b, #1bef19);
+  --hang: -1;                                  /* cluster grows upward */
+}
+
+/* --- ground: the bar itself --- */
+
+.bar-bg { position: absolute; inset: 0; }
+/* Webcam mode: the bar is cut away behind the camera window so the OBS
+   source behind shows through. Even-odd polygon: outer rect then the window. */
+.mode-webcam .bar-bg {
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    calc(820 * var(--u)) 0,
+    calc(820 * var(--u)) 100%,
+    calc(1100 * var(--u)) 100%,
+    calc(1100 * var(--u)) 0,
+    calc(820 * var(--u)) 0);
+}
+/* Shards, when the look asks for them, run along the bar and stay faint:
+   the bar carries names, the art is texture here. */
+.bar .g-shards, .bar .g-shade, .bar .g-glint {
+  -webkit-mask-size: auto 400%;
+  mask-size: auto 400%;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+.bar .g-shards { opacity: 0.35; }
+.bar .g-shade { opacity: 0.3; }
+.bar .g-glint { opacity: 0.3; }
+
+/* The gold rule along the bar's inner edge (bottom of the top bar, top of
+   the bottom bar), the way the reference frames the table camera. It lives
+   inside .bar-bg so the webcam cutout takes it away with the ground. */
+.rule {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: calc(2 * var(--u));
+  background: var(--ss-trim-grad, #c99c3e);
+}
+.bar.top .rule { bottom: 0; }
+.bar.bottom .rule { top: 0; }
+
+/* --- player names, at the bar's corners --- */
+
+.pname {
+  position: absolute;
+  top: 0;
+  height: calc(54 * var(--u));
+  line-height: calc(54 * var(--u));
+  max-width: calc(440 * var(--u));
+  font: 800 calc(26 * var(--u))/calc(54 * var(--u)) var(--tes-font);
+  letter-spacing: calc(3 * var(--u));
+  text-transform: uppercase;
+  color: var(--ss-text, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* --slide is a JS pulse on a name change: a nudge in from the bar's corner. */
+  opacity: calc(1 - 0.6 * var(--slide, 0));
+}
+.pname.p1 { left: calc(40 * var(--u)); transform: translateX(calc(var(--slide, 0) * -16 * var(--u))); }
+.pname.p2 { right: calc(40 * var(--u)); text-align: right; transform: translateX(calc(var(--slide, 0) * 16 * var(--u))); }
+
+/* --- the cluster: legend tile, team camera, legend tile --- */
+
+/* Tiles are 282 x 145; the camera 280 x 145; 24px between. Centred on 960:
+   tile A x 514..796, camera 820..1100, tile B 1124..1406. The top bar hangs
+   them from y 0 (its own top); the bottom bar from y 54 up, so top -91. */
+.tile, .cam, .cam-edge {
+  position: absolute;
+  height: calc(145 * var(--u));
+}
+.bar.top .tile, .bar.top .cam, .bar.top .cam-edge { top: 0; }
+.bar.bottom .tile, .bar.bottom .cam, .bar.bottom .cam-edge { top: calc(-91 * var(--u)); }
+
+.tile {
+  width: calc(282 * var(--u));
+  overflow: hidden;
+  background: var(--ss-plate, #0a1222);
+}
+.tile.a { left: calc(514 * var(--u)); }
+.tile.b { left: calc(1124 * var(--u)); }
+.tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: calc(1.5 * var(--u)) solid var(--ss-trim, #c99c3e);
+  pointer-events: none;
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.art.hidden { display: none; }
+/* The tile's art band is the upper 92px; the caption block covers the rest.
+   The legend card's painting (x 250..700 of the 744-wide card) is scaled to
+   the tile's width, and the band shows the painting from card y 160, where
+   a legend's face sits, so every tile reads as a portrait. */
+.tile .art.crop-legend {
+  inset: auto;
+  left: calc(-156.7 * var(--u));
+  top: calc(-100.3 * var(--u));
+  width: calc(466.2 * var(--u));
+  height: calc(651.1 * var(--u));
+}
+/* Hero and icon cutouts are portraits with the head at the top: fill the
+   band from the top so the face lands in it. */
+.tile .art.fit-contain {
+  inset: auto;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: calc(92 * var(--u));
+  object-fit: cover;
+  object-position: 50% 6%;
+}
+
+.tile-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(56 * var(--u));
+  padding: calc(6 * var(--u)) calc(10 * var(--u)) calc(5 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), var(--ss-plate, #0a1222) 30%);
+  text-align: center;
+}
+.cap-legend, .cap-champ {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+.cap-legend { font: 600 calc(11 * var(--u))/1.2 var(--tes-font); color: var(--ss-text-muted, #c8d0dc); letter-spacing: calc(0.8 * var(--u)); }
+.cap-champ { font: 800 calc(13 * var(--u))/1.2 var(--tes-font); color: var(--ss-text, #fff); letter-spacing: calc(0.6 * var(--u)); }
+.cap-rule {
+  width: calc(150 * var(--u));
+  height: calc(1 * var(--u));
+  background: var(--ss-trim-grad, #c99c3e);
+  opacity: 0.8;
+}
+/* No champion picked: the legend line takes the bold weight and the rule
+   drops, so the tile never shows an empty slot. */
+.cap-champ:empty { display: none; }
+.cap-rule:has(+ .cap-champ:empty) { display: none; }
+.tile-cap:has(.cap-champ:empty) .cap-legend { font-weight: 800; font-size: calc(13 * var(--u)); color: var(--ss-text, #fff); }
+.tile-cap:has(.cap-champ:empty) { justify-content: center; }
+
+/* The ring ornament on each tile's outer bottom corner, from the reference. */
+.orn {
+  position: absolute;
+  bottom: calc(6 * var(--u));
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+  border-radius: 50%;
+  border: calc(2 * var(--u)) solid var(--ss-trim, #c99c3e);
+}
+.orn::after {
+  content: '';
+  position: absolute;
+  inset: calc(3 * var(--u));
+  border-radius: 50%;
+  background: var(--ss-trim, #c99c3e);
+}
+.tile.a .orn { left: calc(6 * var(--u)); }
+.tile.b .orn { right: calc(6 * var(--u)); }
+
+/* --- team camera --- */
+
+.cam {
+  left: calc(820 * var(--u));
+  width: calc(280 * var(--u));
+  overflow: hidden;
+  display: flex;
+}
+.mode-webcam .cam { display: none; }
+.cam-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(170deg, var(--ss-ink, #0f1b30), var(--ss-plate, #0a1222));
+}
+/* Legend mode: both teammates' cutouts share the window, half each. */
+.hero-slot {
+  position: relative;
+  flex: 1 1 0;
+  height: 100%;
+  overflow: hidden;
+}
+.hero-slot .art { object-position: 50% 0; }
+.hero-slot .art.icon-tier {
+  object-fit: contain;
+  padding: calc(18 * var(--u));
+}
+.cam-chip {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font: 800 calc(64 * var(--u))/1 var(--tes-font);
+  color: var(--ss-text-muted, #c8d0dc);
+  opacity: 0.3;
+}
+.cam-chip.on { display: flex; }
+/* The edge light stays in both modes: it frames the camera source too. */
+.cam-edge {
+  left: calc(820 * var(--u));
+  width: calc(280 * var(--u));
+  border: calc(2 * var(--u)) solid var(--ss-trim, #c99c3e);
+  pointer-events: none;
+}
+
+/* --- score badge on the camera's inner edge --- */
+
+.score {
+  position: absolute;
+  left: calc(938 * var(--u));
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
+  border-radius: 50%;
+  border: calc(3 * var(--u)) solid var(--ss-trim, #c99c3e);
+  background: var(--ss-plate, #0a1222);
+  color: var(--ss-text, #fff);
+  font: 800 calc(24 * var(--u))/calc(38 * var(--u)) var(--tes-font);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  box-shadow: 0 0 calc(10 * var(--u)) rgba(0, 0, 0, 0.6);
+  transform: scale(calc(1 + 0.25 * var(--bump, 0)));
+}
+.bar.top .score { top: calc(123 * var(--u)); }
+.bar.bottom .score { top: calc(-113 * var(--u)); }

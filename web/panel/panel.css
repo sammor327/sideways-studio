@@ -572,3 +572,44 @@ footer p { margin: 0; }
 @media (max-width: 1100px) {
   .workspace { flex: none; grid-template-columns: minmax(0, 1fr); }
 }
+
+/* --- offline curtain: the app is closed, so nothing on the page can work.
+   Raised by shared/offline.js over the whole surface; the reconnect loop
+   lowers it. Also used by the deck editor, which shares this sheet. --- */
+.offline-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(6, 8, 10, 0.86);
+  backdrop-filter: blur(3px);
+}
+.offline-curtain.hidden { display: none; }
+.offline-box {
+  max-width: 560px;
+  padding: 28px 34px;
+  text-align: center;
+  background: var(--tes-ink);
+  border: 1px solid #2a3340;
+  border-top: 4px solid var(--tes-blue);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.offline-curtain.error .offline-box { border-top-color: #e33; }
+.offline-kicker {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #8b98a5;
+}
+.offline-headline {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 1px;
+  line-height: 1.25;
+}
+.offline-curtain.error .offline-headline { color: #ff5c5c; }
+.offline-hint { margin: 12px 0 0; font-size: 13px; color: #8b98a5; }

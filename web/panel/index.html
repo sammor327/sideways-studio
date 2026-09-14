@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sideways Studio</title>
+<link rel="icon" href="/assets/favicon.ico">
 <link rel="stylesheet" href="/assets/brand.css">
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="./panel.css">
@@ -52,6 +53,7 @@
       <button class="focus-chip" data-focus="igo1v1" aria-pressed="false">1v1 overlay</button>
       <button class="focus-chip" data-focus="igo2v2" aria-pressed="false">2v2 overlay</button>
       <button class="focus-chip" data-focus="igodual" aria-pressed="false">Dual columns</button>
+      <button class="focus-chip" data-focus="igobars" aria-pressed="false">2v2 bars</button>
       <button class="focus-chip" data-focus="pov" aria-pressed="false">POV</button>
     </div>
     <p class="hint" id="focusHint"></p>
@@ -214,6 +216,18 @@
         </div>
       </div>
 
+      <div class="field-row" data-field="champion2">
+        <span class="row-label sub" title="The teammate's champion unit, printed under their legend on the 2v2 bars overlay.">Champion</span>
+        <div class="cell picker-wrap" data-side="left">
+          <input id="lchampion2" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 1 teammate champion unit">
+          <ul class="results" id="lchampion2Results"></ul>
+        </div>
+        <div class="cell picker-wrap" data-side="right">
+          <input id="rchampion2" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 2 teammate champion unit">
+          <ul class="results" id="rchampion2Results"></ul>
+        </div>
+      </div>
+
       <div class="field-row" data-field="battlefield2">
         <span class="row-label sub">Battlefield</span>
         <div class="cell picker-wrap" data-side="left">
@@ -318,6 +332,18 @@
         <label class="inline"><input type="checkbox" id="igoDualEvent" checked> Event block</label>
         <label class="inline"><input type="checkbox" id="igoDualClock" checked> Clock</label>
         <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
+      </div>
+    </div>
+    <div class="scene-row">
+      <div class="scene-name">In-game overlay, 2v2 bars <span class="onair hidden" id="igoBarsOnAir">ON AIR</span></div>
+      <button id="toggleIgoBars" class="scene-toggle">OFF</button>
+      <div class="scene-options">
+        <label class="inline" title="Team 1 is the top bar, team 2 the bottom. Each bar shows both players' legends and champions from the 2v2 teams block.">Team cam
+          <select id="igoBarsMode">
+            <option value="legend">Legend art</option>
+            <option value="webcam">Webcam cutout</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="scene-row">
@@ -490,6 +516,13 @@
       <div class="url-line">
         <input class="url-input" id="igoDualUrl" readonly>
         <button data-copy="igoDualUrl">Copy</button>
+      </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">In-game overlay 2v2 bars source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line">
+        <input class="url-input" id="igoBarsUrl" readonly>
+        <button data-copy="igoBarsUrl">Copy</button>
       </div>
     </div>
     <div class="url-row">

@@ -1,6 +1,7 @@
 import {
   COLOR_HELP, COLOR_KEYS, COLOR_LABELS, DESIGNED, LOOK_SCENES, PRESETS, SCENE_LABELS, resolveLook,
 } from '../shared/look.js';
+import { setOffline } from '../shared/offline.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -23,6 +24,10 @@ async function post(patch) {
 function setStatus(ok) {
   $('statusDot').classList.toggle('ok', ok);
   $('statusText').textContent = ok ? 'connected' : 'disconnected';
+  // Disconnected means the app is closed: nothing here can work, so the page
+  // says so over the whole surface until the reconnect loop gets through. An
+  // update restart is the one planned outage, and gets the softer line.
+  setOffline(!ok, { restarting: !ok && updateInfo?.phase === 'ready' });
 }
 
 // --- field focus: light up what a graphic draws, dim the rest ---
@@ -38,6 +43,8 @@ const SCENE_FIELDS = {
     'legend', 'legend2', 'battlefield', 'battlefield2'],
   igodual: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'legend', 'legendText',
     'battlefield', 'champion', 'championText', 'eventName', 'roundTitle', 'timer'],
+  igobars: ['name', 'name2', 'score', 'legend', 'legendText', 'legend2',
+    'champion', 'championText', 'champion2'],
   pov: ['name', 'score', 'legend', 'legendText', 'battlefield',
     'champion', 'championText', 'card'],
 };
@@ -46,6 +53,7 @@ const SCENE_NAMES = {
   igo1v1: 'the 1v1 overlay',
   igo2v2: 'the 2v2 overlay',
   igodual: 'the dual-column overlay',
+  igobars: 'the 2v2 bars overlay',
   pov: 'the POV overlay',
 };
 const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
@@ -64,9 +72,9 @@ try {
 function sceneDraws(scene, field, side, bank) {
   if (!SCENE_FIELDS[scene].includes(field)) return false;
   const cfg = bank.scenes[scene];
-  // The dual overlay still names the legend on its tile in webcam mode; the
-  // sidebars draw nothing for it then.
-  if (cfg.mode === 'webcam' && scene !== 'igodual' && (field === 'legend' || field === 'legend2')) return false;
+  // The dual overlay and the 2v2 bars still name the legend on their tiles
+  // in webcam mode; the sidebars draw nothing for it then.
+  if (cfg.mode === 'webcam' && !['igodual', 'igobars'].includes(scene) && (field === 'legend' || field === 'legend2')) return false;
   if (scene === 'pov' && side && !(side === 'left' ? cfg.showLeft : cfg.showRight)) return false;
   if (scene === 'igodual') {
     if (!cfg.eventBlock && ['eventName', 'roundTitle', 'timer'].includes(field)) return false;
@@ -191,6 +199,13 @@ function renderScenes(s) {
   for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot']]) {
     if (document.activeElement !== $(id)) $(id).checked = dualPrev[flag];
   }
+
+  const barsPrev = s.preview.scenes.igobars;
+  const barsBtn = $('toggleIgoBars');
+  barsBtn.textContent = barsPrev.visible ? 'ON' : 'OFF';
+  barsBtn.classList.toggle('on', barsPrev.visible);
+  $('igoBarsOnAir').classList.toggle('hidden', !s.program.scenes.igobars.visible);
+  if (document.activeElement !== $('igoBarsMode')) $('igoBarsMode').value = barsPrev.mode;
 
   const povPrev = s.preview.scenes.pov;
   const povBtn = $('togglePov');
@@ -418,6 +433,7 @@ const BG_SURFACES = {
   decklist: { size: [1920, 1080], text: 'Full frame, 1920 × 1080.' },
   igodual: { size: [700, 1080], text: 'Each column is 350 × 1080 and shows the same image, scaled to fill and cropped, so a portrait image (about 700 × 1080) works best; a landscape photo shows only a narrow slice.' },
   igo1v1: { size: [610, 1080], text: 'The sidebar is a 305 × 1080 strip on the right; a portrait image (about 610 × 1080) works best. Landscape photos show their middle.' },
+  igobars: { size: [1920, 108], text: 'Paints the two bars, full-width strips 1920 × 54 along the top and bottom edges; a wide, quiet texture works best. The tiles hanging off them keep the Panels colour.' },
   igo2v2: { size: [820, 1080], text: 'The sidebar is a 412 × 1080 strip on the right; a portrait image (about 820 × 1080) works best. Landscape photos show their middle.' },
   pov: { size: [528, 622], text: 'Paints the navy panels inside each 264 × 311 column frame, so a small image (about 528 × 622) is enough; detail will not read at that size.' },
   scorebug: { size: [1040, 128], text: 'Paints the two name plates, wide strips about 520 × 64 each; a wide, quiet texture works best.' },
@@ -568,6 +584,7 @@ function render(s) {
     setIfIdle(`${p}team`, sd.teamName || '');
     setIfIdle(`${p}name2`, sd.name2 || '');
     setIfIdle(`${p}legend2`, sd.legend2 || '');
+    setIfIdle(`${p}champion2`, sd.champion2 || '');
     setIfIdle(`${p}bf2`, sd.battlefield2 || '');
     setIfIdle(`${p}seed`, sd.seed || '');
   }
@@ -672,7 +689,8 @@ $('resetMatch').addEventListener('click', () => {
     },
     scenes: {
       scorebug: { visible: false }, cardpopup: { visible: false },
-      igo1v1: { visible: false }, igo2v2: { visible: false }, igodual: { visible: false }, pov: { visible: false },
+      igo1v1: { visible: false }, igo2v2: { visible: false }, igodual: { visible: false }, igobars: { visible: false },
+      pov: { visible: false },
     },
   });
 });
@@ -681,8 +699,8 @@ $('resetMatch').addEventListener('click', () => {
 // of one disagreeing with another.
 const SWAP_FIELDS = [
   'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
-  'champion', 'name2', 'legend2', 'legendSlug2', 'battlefield2', 'teamName',
-  'score', 'gameWins', 'seed',
+  'champion', 'name2', 'legend2', 'legendSlug2', 'legendCardId2', 'battlefield2', 'teamName',
+  'champion2', 'score', 'gameWins', 'seed',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -710,7 +728,7 @@ $('toggleCard').addEventListener('click', () => {
 
 // The IGOs and the POV overlay all live on the screen edges and would draw
 // over each other, so switching one on switches the others off in preview.
-const EDGE_SCENES = ['igo1v1', 'igo2v2', 'igodual', 'pov'];
+const EDGE_SCENES = ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov'];
 function toggleEdgeScene(key) {
   if (!state) return;
   const next = !state.preview.scenes[key].visible;
@@ -725,6 +743,7 @@ function toggleEdgeScene(key) {
 $('toggleIgo').addEventListener('click', () => toggleEdgeScene('igo1v1'));
 $('toggleIgo2').addEventListener('click', () => toggleEdgeScene('igo2v2'));
 $('toggleIgoDual').addEventListener('click', () => toggleEdgeScene('igodual'));
+$('toggleIgoBars').addEventListener('click', () => toggleEdgeScene('igobars'));
 $('togglePov').addEventListener('click', () => toggleEdgeScene('pov'));
 
 $('igoDualMode').addEventListener('change', () => {
@@ -733,6 +752,9 @@ $('igoDualMode').addEventListener('change', () => {
 for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot']]) {
   $(id).addEventListener('change', () => post({ scenes: { igodual: { [flag]: $(id).checked } } }));
 }
+$('igoBarsMode').addEventListener('change', () => {
+  post({ scenes: { igobars: { mode: $('igoBarsMode').value } } });
+});
 
 // --- event fields and the round clock ---
 
@@ -889,12 +911,12 @@ function wirePicker(inputId, listId, { search, renderItem, onPick, onClear, curr
   }, 150));
 }
 
-// idField is the card id the POV legend art resolves against. The 2v2
-// teammate pickers have none: that overlay draws hero cutouts only.
+// idField is the card id the legend art resolves against on the POV, the
+// dual columns and the 2v2 bars (the sidebars draw hero cutouts by slug).
 for (const [p, side] of SIDES) {
   for (const [inputId, nameField, slugField, idField] of [
     [`${p}legend`, 'legend', 'legendSlug', 'legendCardId'],
-    [`${p}legend2`, 'legend2', 'legendSlug2', null],
+    [`${p}legend2`, 'legend2', 'legendSlug2', 'legendCardId2'],
   ]) {
     wirePicker(inputId, `${inputId}Results`, {
       search: (q) => legendCatalog.filter((l) => l.name.toLowerCase().includes(q)),
@@ -946,6 +968,16 @@ for (const [p, side] of SIDES) {
     // hand is never wiped by a stray backspace here.
     onClear: () => post({ match: { [side]: { champion: '' } } }),
     current: () => state.preview.match[side].champion || '',
+  });
+
+  // The teammate's champion line, for the 2v2 bars' second tile. A line
+  // only: the featured card stays the first player's.
+  wirePicker(`${p}champion2`, `${p}champion2Results`, {
+    search: (q) => championCatalog.filter((c) => c.cardName.toLowerCase().includes(q)),
+    renderItem: (c) => ({ label: c.cardName, icon: `/cardart/thumb/${c.cardId}.webp` }),
+    onPick: (c) => post({ match: { [side]: { champion2: c.cardName } } }),
+    onClear: () => post({ match: { [side]: { champion2: '' } } }),
+    current: () => state.preview.match[side].champion2 || '',
   });
 }
 
@@ -1020,6 +1052,7 @@ $('cardpopupUrl').value = `${location.origin}/scenes/cardpopup/?transparent=1`;
 $('igoUrl').value = `${location.origin}/scenes/igo1v1/?transparent=1`;
 $('igo2Url').value = `${location.origin}/scenes/igo2v2/?transparent=1`;
 $('igoDualUrl').value = `${location.origin}/scenes/igodual/?transparent=1`;
+$('igoBarsUrl').value = `${location.origin}/scenes/igobars/?transparent=1`;
 $('povUrl').value = `${location.origin}/scenes/pov/?transparent=1`;
 $('decklistUrl').value = `${location.origin}/scenes/decklist/?transparent=1`;
 

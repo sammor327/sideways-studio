@@ -550,6 +550,7 @@ async function start() {
     console.log(`    In-game 1v1:    ${base}/scenes/igo1v1/?transparent=1`);
     console.log(`    In-game 2v2:    ${base}/scenes/igo2v2/?transparent=1`);
     console.log(`    In-game dual:   ${base}/scenes/igodual/?transparent=1`);
+    console.log(`    In-game 2v2 bars: ${base}/scenes/igobars/?transparent=1`);
     console.log(`    POV overlay:    ${base}/scenes/pov/?transparent=1`);
     console.log(`    Decklist:       ${base}/scenes/decklist/?transparent=1`);
     if (isPackaged) {

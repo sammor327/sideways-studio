@@ -129,6 +129,15 @@ camera, with the round clock, seed badges, the docked featured card and a
 mirrored point track. Crop the table camera to roughly 1214 x 1080 between
 the columns.
 
+The 2v2 bars overlay (`/scenes/igobars/`) follows the Regional Qualifier
+showmatch layout: team 1 on a bar across the top edge, team 2 across the
+bottom, each with a legend tile, the team camera and the teammate's legend
+tile hanging off it and the score as a badge on the camera's inner edge.
+It reads the 2v2 teams block (teammate name, legend and champion) and
+leaves the table camera full width; the tiles cover x 514 to 1406 for the
+top 145 px and bottom 145 px of the frame. Team cam "Webcam cutout" cuts
+the bar away behind the camera window for an OBS source.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are

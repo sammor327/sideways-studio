@@ -17,7 +17,7 @@
 // Accent A and B keep living at theme.accentA/B (they predate this module and
 // every scene reads them); a scene override may replace them.
 
-export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'pov', 'decklist'];
+export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist'];
 
 export const SCENE_LABELS = {
   scorebug: 'Score bug',
@@ -25,6 +25,7 @@ export const SCENE_LABELS = {
   igo1v1: 'In-game overlay 1v1',
   igo2v2: 'In-game overlay 2v2',
   igodual: 'In-game overlay, dual columns',
+  igobars: 'In-game overlay, 2v2 bars',
   pov: 'POV overlay',
   decklist: 'Decklist',
 };
@@ -73,7 +74,9 @@ export function emptySceneLook() {
 // plates (near-black grain ground, black holder bodies, the accent gradient
 // as trim over the shard art). The POV is the designer's navy and gold. The
 // dual-column overlay is new and takes the TES palette on a slightly cooler
-// ground so the columns read as one piece with the score bug.
+// ground so the columns read as one piece with the score bug. The 2v2 bars
+// are modelled on the Singapore showmatch frame and keep its navy and gold,
+// like the POV keeps the designer's.
 const TES_GROUND = {
   colors: { ink: '#1c1c1c', plate: '#000000', frame: '#000000', text: '#ffffff', textMuted: '#d8dee4', trim: '' },
   background: { kind: 'shards', color: '#1c1c1c', color2: '#000000', angle: 160, image: '', grain: 60, dim: 0 },
@@ -85,6 +88,10 @@ export const DESIGNED = {
   igodual: {
     colors: { ink: '#12161b', plate: '#07090c', frame: '#000000', text: '#ffffff', textMuted: '#c9d2da', trim: '' },
     background: { kind: 'gradient', color: '#161b22', color2: '#07090c', angle: 170, image: '', grain: 45, dim: 0 },
+  },
+  igobars: {
+    colors: { ink: '#10203f', plate: '#0a1428', frame: '#0a1428', text: '#ffffff', textMuted: '#c8d0dc', trim: '#c99c3e' },
+    background: { kind: 'gradient', color: '#142a52', color2: '#0b1a36', angle: 180, image: '', grain: 30, dim: 0 },
   },
   pov: {
     colors: { ink: '#14273c', plate: '#0f0f0f', frame: '#000000', text: '#ffffff', textMuted: '#d8dee4', trim: '#c99c3e' },

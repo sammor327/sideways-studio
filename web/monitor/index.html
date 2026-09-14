@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Sideways Studio: Monitor</title>
+<link rel="icon" href="/assets/favicon.ico">
 <style>
 /* Monitor: stacks every scene the way they would sit on the program feed.
    ?mode=preview forces scenes visible (staged content included);
@@ -27,7 +28,7 @@ iframe {
 </head>
 <body>
 <script>
-  const SCENES = ['pov', 'decklist', 'igo1v1', 'igo2v2', 'igodual', 'cardpopup', 'scorebug'];
+  const SCENES = ['pov', 'decklist', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'cardpopup', 'scorebug'];
   const preview = new URLSearchParams(location.search).get('mode') === 'preview';
   for (const scene of SCENES) {
     const f = document.createElement('iframe');
