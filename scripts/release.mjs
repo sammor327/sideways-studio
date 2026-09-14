@@ -84,12 +84,28 @@ manifest.required = required;
 await writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + String.fromCharCode(10));
 console.log(`  manifest: ${manifest.version}, sha256 ${manifest.sha256.slice(0, 16)}...`);
 
-// 5. Publish. update.json must be an asset on the release, because
+// 5. Push the commit the exe was built from, and pin the tag to it. Without
+//    --target GitHub tags whatever main is on the server, which is the
+//    PREVIOUS release when the commit has not been pushed yet (v0.4.0 landed
+//    on the 0.3.0 commit that way and had to be re-pointed by hand). A dirty
+//    tree is refused for the same reason: the exe embeds the working files,
+//    so a tag would name code that is not in it.
+const git = (a) => (execFileSync('git', a, { encoding: 'utf8', cwd: ROOT }) || '').trim();
+if (git(['status', '--porcelain']) && !args.includes('--allow-dirty')) {
+  console.error('\n  The working tree has uncommitted changes. Commit them first (or pass --allow-dirty).');
+  process.exit(1);
+}
+const head = git(['rev-parse', 'HEAD']);
+const branch = git(['rev-parse', '--abbrev-ref', 'HEAD']);
+execFileSync('git', ['push', 'origin', branch], { stdio: 'inherit', cwd: ROOT });
+
+// 6. Publish. update.json must be an asset on the release, because
 //    /releases/latest/download/update.json is the URL every client polls.
 gh([
   'release', 'create', tag,
   EXE, MANIFEST, path.join(DIST, 'SidewaysStudio.exe.sha256'),
   '--repo', SLUG,
+  '--target', head,
   '--title', `Sideways Studio ${version}`,
   '--notes', notes || `Sideways Studio ${version}`,
 ], { stdio: 'inherit' });
