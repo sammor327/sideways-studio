@@ -402,9 +402,67 @@ for (const [id, key] of [['bgAngle', 'angle'], ['bgGrain', 'grain'], ['bgDim', '
   });
 }
 
+// --- upload guidance ---
+//
+// The server caps the logo at 2 MB and a background at 6 MB and refuses
+// anything else with a one-line error, so the checks here exist to say so
+// BEFORE a 40 MB photo is sent, and to warn (not block) when an image is
+// smaller than the surface it will be stretched over. Sizes below are the
+// design pixels each surface paints at on a 1920x1080 output.
+const MB = 1024 * 1024;
+const LOGO_RULE = { label: 'logo', maxBytes: 2 * MB, min: [720, 440] };
+// Backgrounds are cover-fit: scaled to fill the surface and cropped, so
+// the useful advice is the surface's shape, not just its size.
+const BG_SURFACES = {
+  global: { size: [1920, 1080], text: '1920 × 1080 covers everything: the decklist uses all of it, and the sidebars and columns show its middle. For a columns-only look use a portrait image, about 700 × 1080.' },
+  decklist: { size: [1920, 1080], text: 'Full frame, 1920 × 1080.' },
+  igodual: { size: [700, 1080], text: 'Each column is 350 × 1080 and shows the same image, scaled to fill and cropped, so a portrait image (about 700 × 1080) works best; a landscape photo shows only a narrow slice.' },
+  igo1v1: { size: [610, 1080], text: 'The sidebar is a 305 × 1080 strip on the right; a portrait image (about 610 × 1080) works best. Landscape photos show their middle.' },
+  igo2v2: { size: [820, 1080], text: 'The sidebar is a 412 × 1080 strip on the right; a portrait image (about 820 × 1080) works best. Landscape photos show their middle.' },
+  pov: { size: [528, 622], text: 'Paints the navy panels inside each 264 × 311 column frame, so a small image (about 528 × 622) is enough; detail will not read at that size.' },
+  scorebug: { size: [1040, 128], text: 'Paints the two name plates, wide strips about 520 × 64 each; a wide, quiet texture works best.' },
+  cardpopup: { size: [1240, 120], text: 'Paints the name plate under the card, a strip up to 620 × 60; a wide, quiet texture works best.' },
+};
+function bgAdvice(scope) {
+  const s = BG_SURFACES[scope] || BG_SURFACES.global;
+  return `PNG, JPG or WebP under 6 MB. ${s.text}`;
+}
+
+// Read the pixel size of an image file; null when it cannot be read (an
+// SVG, or a browser without createImageBitmap), which skips the warning.
+async function imageSize(file) {
+  if (!('createImageBitmap' in window) || /svg/i.test(file.type)) return null;
+  try {
+    const bmp = await createImageBitmap(file);
+    const size = [bmp.width, bmp.height];
+    bmp.close();
+    return size;
+  } catch {
+    return null;
+  }
+}
+
+// True when the upload should go ahead.
+async function checkUpload(file, rule) {
+  if (file.size > rule.maxBytes) {
+    alert(`That ${rule.label} is ${(file.size / MB).toFixed(1)} MB; the limit is ${rule.maxBytes / MB} MB. Export it smaller (a JPG or WebP at the recommended size is usually well under 1 MB).`);
+    return false;
+  }
+  const size = await imageSize(file);
+  if (size && (size[0] < rule.min[0] * 0.75 || size[1] < rule.min[1] * 0.75)) {
+    return confirm(`That ${rule.label} is ${size[0]} × ${size[1]}, smaller than the recommended ${rule.min[0]} × ${rule.min[1]}, so it may look soft on air. Upload it anyway?`);
+  }
+  return true;
+}
+
 $('bgFile').addEventListener('change', async () => {
   const file = $('bgFile').files[0];
   if (!file) return;
+  const surface = BG_SURFACES[lookScope] || BG_SURFACES.global;
+  if (!(await checkUpload(file, { label: 'background', maxBytes: 6 * MB, min: surface.size }))) {
+    $('bgFile').value = '';
+    return;
+  }
   const ext = file.name.split('.').pop().toLowerCase().replace('jpeg', 'jpg');
   const res = await fetch(`/api/theme/image?slot=${encodeURIComponent(lookScope)}&ext=${encodeURIComponent(ext)}`, {
     method: 'POST',
@@ -449,6 +507,7 @@ function renderLook(t) {
   $('bgColor2Row').classList.toggle('hidden', kind !== 'gradient');
   $('bgAngleRow').classList.toggle('hidden', kind !== 'gradient');
   $('bgImageRow').classList.toggle('hidden', !(b.kind === 'image' || b.image));
+  $('bgHint').classList.toggle('hidden', !(b.kind === 'image' || b.image));
   for (const [id, key] of [['bgColor', 'color'], ['bgColor2', 'color2']]) {
     if (document.activeElement !== $(id)) $(id).value = ebg[key];
   }
@@ -464,6 +523,7 @@ function renderLook(t) {
     bgPreview.replaceChildren(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'No image' }));
   }
   $('bgRemove').disabled = !b.image;
+  $('bgHint').textContent = bgAdvice(lookScope);
   $('themeReset').textContent = global ? 'Reset to designed look' : `Reset ${SCENE_LABELS[lookScope]}`;
 
   $('fontSelect').value = t.font || '';
@@ -1094,6 +1154,10 @@ $('fontSelect').addEventListener('change', async () => {
 $('logoFile').addEventListener('change', async () => {
   const file = $('logoFile').files[0];
   if (!file) return;
+  if (!(await checkUpload(file, LOGO_RULE))) {
+    $('logoFile').value = '';
+    return;
+  }
   const ext = file.name.split('.').pop().toLowerCase().replace('jpeg', 'jpg');
   const res = await fetch(`/api/theme/logo?ext=${encodeURIComponent(ext)}`, {
     method: 'POST',

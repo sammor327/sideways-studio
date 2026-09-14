@@ -109,6 +109,20 @@ graphic inherits; pick one graphic and switch on "Own look" to give it its
 own. Cleared colours fall back to each graphic's designed look. Changes air
 at once, like the logo.
 
+Image uploads, and where they are drawn:
+
+- **Logo**: PNG or SVG with a transparent background, landscape, about
+  720 × 440 or larger, under 2 MB. Scaled to fit, never cropped: 360 × 220
+  on the 2v2 sidebar, 272 × 152 on the 1v1, 120 × 110 in the dual-column
+  event block.
+- **Background**: PNG, JPG or WebP under 6 MB, scaled to fill the surface
+  and cropped. 1920 × 1080 for "All graphics" and the decklist; a portrait
+  image (about 700 × 1080) for the dual columns and the 1v1 / 2v2 sidebars,
+  since a landscape photo shows only its middle there; a wide strip for the
+  score bug and card popup name plates. The panel names the surface for the
+  scope you have picked, refuses files over the limit before uploading, and
+  warns when an image is smaller than the surface.
+
 The dual-column in-game overlay (`/scenes/igodual/`) follows the Regional
 Qualifier broadcast layout: two player columns around a near-square table
 camera, with the round clock, seed badges, the docked featured card and a
