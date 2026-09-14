@@ -11,7 +11,7 @@ import { runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLates
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
-import { initCardDb, cardDbStatus, syncCardDb, prefetchFullArt, searchCards, getArtFile } from './carddb.js';
+import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, searchCards, getArtFile } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
@@ -519,6 +519,9 @@ async function start() {
   if (await runLaunchCheck()) return;
   await initFonts();
   await initCardDb();
+  // Not awaited: a refresh must never hold up the graphics, and it fails
+  // silently when the venue has no internet.
+  if (autoRefreshCardDb()) console.log('  Checking Rift Registry for new sets in the background.');
   await initLegends();
   await initState();
   await initLibrary();

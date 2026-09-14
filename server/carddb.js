@@ -4,7 +4,7 @@
 // 403 non-browser user agents (broadcast-line-handoff §2), so every fetch
 // sends a browser UA + Referer. The local server is the proxy, which also
 // makes all art same-origin for the scenes.
-import { mkdir, readFile, writeFile, readdir, rename } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir, rename, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { DATA_DIR } from './runtime.js';
 
@@ -24,6 +24,9 @@ const FETCH_HEADERS = {
 let cards = [];
 const byId = new Map();
 let lastSync = null;
+// When the index file on disk was last written: the age the auto-refresh
+// and the panel reason about. Survives restarts, unlike lastSync.
+let indexUpdatedAt = null;
 
 // Art cache counts are tracked in memory so the status endpoint can be polled
 // cheaply during a sync; seeded from disk once at startup.
@@ -49,6 +52,7 @@ export async function initCardDb() {
   for (const dir of Object.values(TIER_DIR)) await mkdir(dir, { recursive: true });
   try {
     indexCards(JSON.parse(await readFile(INDEX_FILE, 'utf8')));
+    indexUpdatedAt = (await stat(INDEX_FILE)).mtime.toISOString();
   } catch {
     // No index yet: first-run state, the panel offers the download.
   }
@@ -72,8 +76,25 @@ export function cardDbStatus() {
     thumbsCached: cached.thumb.size,
     fullCached: cached.full.size,
     lastSync,
+    indexUpdatedAt,
     progress,
   };
+}
+
+// A new set reaches Rift Registry's index without anyone pressing "Check for
+// new sets", and an install that never presses it stays on the set list from
+// its first download (a packaged copy sat on 767 cards with no Vendetta
+// while the live index had 936). So: once the index exists, refresh it on
+// launch when it is more than a day old, in the background, silently when
+// offline. The first download stays the operator's call: it is the big one.
+const REFRESH_AFTER_MS = 24 * 60 * 60 * 1000;
+export function autoRefreshCardDb() {
+  if (!cards.length || !indexUpdatedAt) return false;
+  if (Date.now() - Date.parse(indexUpdatedAt) < REFRESH_AFTER_MS) return false;
+  syncCardDb().then((r) => {
+    if (r.ok) console.log(`  Card database refreshed: ${r.cardCount} cards.`);
+  }).catch(() => { /* offline at the venue: the index we have still works */ });
+  return true;
 }
 
 async function rrFetch(url, timeoutMs) {
@@ -188,6 +209,7 @@ export async function syncCardDb() {
     await mkdir(DB_DIR, { recursive: true });
     await writeFile(INDEX_FILE, buf);
     indexCards(list);
+    indexUpdatedAt = new Date().toISOString();
     progress.done = 1;
     await prefetchTier('thumb', 'thumbs');
     lastSync = new Date().toISOString();

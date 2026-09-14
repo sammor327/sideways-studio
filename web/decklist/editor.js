@@ -166,6 +166,40 @@ function scheduleResolve() {
   resolveTimer = setTimeout(resolveNow, 300);
 }
 
+// "Check for new sets" from inside the editor: the same sync the panel's
+// Setup card runs, then every name is looked up again. The button reports
+// progress in place so a slow venue connection is not mistaken for a hang.
+let refreshing = false;
+async function refreshCardDb(button) {
+  if (refreshing) return;
+  refreshing = true;
+  const label = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Checking…';
+  try {
+    const started = await (await fetch('/api/cards/sync', { method: 'POST' })).json();
+    if (!started.ok) throw new Error(started.error || 'could not start');
+    for (let i = 0; i < 600; i += 1) {
+      await new Promise((r) => setTimeout(r, 1000));
+      const s = await (await fetch('/api/cards/status', { cache: 'no-store' })).json();
+      if (s.progress.phase === 'idle') {
+        if (s.progress.lastError) throw new Error(s.progress.lastError);
+        break;
+      }
+      button.textContent = s.progress.total > 1 ? `Downloading ${s.progress.done} of ${s.progress.total}…` : 'Checking…';
+    }
+    known.clear();
+    fixes.clear();
+    await resolveNow();
+  } catch (err) {
+    alert(`Could not check for new sets: ${err.message}. Is the internet up?`);
+  } finally {
+    refreshing = false;
+    button.disabled = false;
+    button.textContent = label;
+  }
+}
+
 async function resolveNow() {
   const seq = ++resolveSeq;
   const sent = text;
@@ -225,8 +259,12 @@ function fixRow(raw) {
   if (!options.length) {
     const none = document.createElement('span');
     none.className = 'none';
-    none.textContent = 'No close match in the card database.';
-    row.append(none);
+    none.textContent = 'No close match in the card database. A card from a newer set?';
+    const refresh = document.createElement('button');
+    refresh.textContent = 'Check for new sets';
+    refresh.title = 'Download the latest card list from Rift Registry, then check this list again';
+    refresh.addEventListener('click', () => refreshCardDb(refresh));
+    row.append(none, refresh);
   }
   for (const option of options) {
     const b = document.createElement('button');

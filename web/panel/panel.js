@@ -1194,6 +1194,10 @@ function describeDb(s) {
   const bits = [`${s.cardCount} cards`, `${s.thumbsCached} thumbnails saved`];
   if (s.fullCached) bits.push(`${s.fullCached} full art files saved`);
   let text = bits.join(', ') + '.';
+  if (s.indexUpdatedAt) {
+    const days = Math.floor((Date.now() - Date.parse(s.indexUpdatedAt)) / 86400000);
+    text += days < 1 ? ' Card list checked today.' : ` Card list from ${days === 1 ? 'yesterday' : `${days} days ago`}; it refreshes on launch when online.`;
+  }
   if (s.progress.lastError) text += ` Last download problem: ${s.progress.lastError}`;
   else if (s.progress.errors) text += ` ${s.progress.errors} files failed last run, run the download again to retry.`;
   return text;
