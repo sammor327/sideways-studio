@@ -763,3 +763,16 @@ details.field-section > .field-row { margin-top: 7px; }
 
 /* Long names push the kind tag onto its own line rather than clipping it. */
 .graphics-card .scene-name { flex-wrap: wrap; row-gap: 4px; }
+
+/* A graphic just put in preview: the sections holding its fields open and
+   the rows it draws pulse once, so the operator sees where its data lives. */
+@keyframes row-flash {
+  0% { box-shadow: 0 0 0 0 rgba(27, 239, 25, 0); background: rgba(27, 239, 25, 0.28); }
+  100% { box-shadow: 0 0 0 0 rgba(27, 239, 25, 0); background: transparent; }
+}
+.field-row.flash > .cell > input, .field-row.flash > .cell > select, .field-row.flash > .cell > textarea,
+.field-row.flash > .cell > .counter, .field-row.flash > .cell.clock-cell, .field-row.flash > .cell.turn-cell,
+.field-row.flash > .cell.hand-cell, .field-row.flash > .cell.card-cell {
+  animation: row-flash 1.6s ease-out 1;
+}
+.field-row.flash > .row-label { color: var(--tes-green); transition: color 0.2s; }

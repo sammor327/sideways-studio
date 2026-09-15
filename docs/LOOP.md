@@ -214,6 +214,21 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-14e (out of band: folds start collapsed, a graphic opens its own)
+
+Sam: every collapsible section starts collapsed, and putting a graphic in
+preview should open the sections it needs and highlight the relevant data.
+The Match data folds and the Setup sections no longer remember their state
+(the localStorage keys are gone); all start closed on every load.
+`revealNewGraphics` runs after each render: it diffs the set of graphics
+visible in preview against the last render, and for the newly added ones
+collects the fields they draw (through `sceneDraws`, so a dual overlay with
+its event block off does not open Event), opens every fold holding one of
+them, flashes those rows for 1.6 s (rows outside the folds flash too, so
+the score bug lights points and names) and scrolls the first into view.
+The first render only records the set, so a reload never flashes. Manual
+toggles still work within the page's life.
+
 ### 2026-09-14d (out of band: panel layout after 0.6.0, Sam's five asks)
 
 1. **A picture toggles.** Clicking a graphic's thumbnail while it is in

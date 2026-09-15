@@ -618,6 +618,7 @@ function render(s) {
   renderLook(s.theme);
   renderExtras(s);
   applyFocus();
+  revealNewGraphics(s);
 
   // The TAKE button lights up whenever preview differs from what is on air.
   const pending = JSON.stringify(s.preview) !== JSON.stringify(s.program);
@@ -1936,36 +1937,58 @@ function renderFeatures(s) {
   $('featuresHint').classList.toggle('hidden', any);
 }
 
-// --- match data folds: remember which sections are open ---
+// --- folds: everything starts collapsed; a graphic opens what it needs ---
+//
+// Every collapsible section (the Match data folds and the Setup sections)
+// starts closed on every load. When a graphic is put in preview, the folds
+// holding fields it draws open and those rows flash once, so the operator
+// is taken to the data that graphic shows instead of hunting for it.
 
-const DATA_KEY = 'sidewaysStudio.dataOpen';
-{
-  let open = null;
-  try { open = JSON.parse(localStorage.getItem(DATA_KEY) || 'null'); } catch { open = null; }
+let previewedBefore = null;
+
+function sectionsFor(fields) {
+  const out = new Map();
   for (const sec of document.querySelectorAll('details.field-section')) {
-    if (open && typeof open === 'object' && sec.dataset.sec in open) sec.open = Boolean(open[sec.dataset.sec]);
-    sec.addEventListener('toggle', () => {
-      const next = {};
-      for (const s2 of document.querySelectorAll('details.field-section')) next[s2.dataset.sec] = s2.open;
-      try { localStorage.setItem(DATA_KEY, JSON.stringify(next)); } catch { /* per-session only */ }
-    });
+    const rows = [...sec.querySelectorAll('.field-row')].filter((row) => fields.has(row.dataset.field));
+    if (rows.length) out.set(sec, rows);
   }
+  return out;
 }
 
-// --- setup card: remember which sections are open ---
-
-const SETUP_KEY = 'sidewaysStudio.setupOpen';
-{
-  let open = null;
-  try { open = JSON.parse(localStorage.getItem(SETUP_KEY) || 'null'); } catch { open = null; }
-  for (const sec of document.querySelectorAll('.setup-sec')) {
-    if (open && typeof open === 'object' && sec.dataset.sec in open) sec.open = Boolean(open[sec.dataset.sec]);
-    sec.addEventListener('toggle', () => {
-      const next = {};
-      for (const s2 of document.querySelectorAll('.setup-sec')) next[s2.dataset.sec] = s2.open;
-      try { localStorage.setItem(SETUP_KEY, JSON.stringify(next)); } catch { /* per-session only */ }
-    });
+function revealNewGraphics(s) {
+  const now = new Set(Object.keys(SCENE_FIELDS).filter((key) => s.preview.scenes[key] && s.preview.scenes[key].visible));
+  if (previewedBefore === null) { previewedBefore = now; return; }
+  const fresh = [...now].filter((key) => !previewedBefore.has(key));
+  previewedBefore = now;
+  if (!fresh.length) return;
+  const fields = new Set();
+  for (const key of fresh) {
+    for (const field of SCENE_FIELDS[key]) {
+      if (sceneDraws(key, field, null, s.preview)) fields.add(field);
+    }
   }
+  let first = null;
+  for (const [sec, rows] of sectionsFor(fields)) {
+    if (sec.classList.contains('hidden')) continue;
+    sec.open = true;
+    for (const row of rows) {
+      row.classList.remove('flash');
+      // Restart the animation even if the row flashed a moment ago.
+      void row.offsetWidth;
+      row.classList.add('flash');
+      setTimeout(() => row.classList.remove('flash'), 1700);
+      first = first || row;
+    }
+  }
+  // Rows outside any fold flash too, so the score bug lights points and names.
+  for (const row of document.querySelectorAll('.field-grid > .field-row')) {
+    if (!fields.has(row.dataset.field)) continue;
+    row.classList.remove('flash');
+    void row.offsetWidth;
+    row.classList.add('flash');
+    setTimeout(() => row.classList.remove('flash'), 1700);
+  }
+  if (first) first.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 // --- sync: same contract as the stage client ---
