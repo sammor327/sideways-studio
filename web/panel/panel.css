@@ -689,6 +689,17 @@ footer p { margin: 0; }
 .scene-thumb.on-air .thumb-tag { color: #ff8a8a; }
 .scene-thumb.disabled { opacity: 0.5; cursor: default; }
 .graphics-card .scene-options { grid-column: 2 / -1; padding-left: 0; }
+/* A line under a graphic's name: what it is and when it airs. It turns into
+   a warning while the graphic is up with nothing to show. */
+.scene-note {
+  grid-column: 2 / -1;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #8b98a5;
+}
+.scene-note.warn { color: #ffb347; }
+.scene-note.warn::before { content: '\26A0\00a0'; }
 .scene-group { display: flex; flex-direction: column; gap: 10px; }
 .group-label { color: #b8c4cf; }
 .group-label .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }

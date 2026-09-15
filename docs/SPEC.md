@@ -107,7 +107,10 @@ data and unread:
     Strip mode docks into the on-air in-game overlay's camera window;
     takeover mode is the lower band over the battlefield art with cameras
     and hands. Driven by the `chain` cue (open / play / resolve / unplay /
-    priority / close) on `match.showdown`, both banks at once.
+    priority / close) on `match.showdown`, both banks at once. The scene
+    airs only while a showdown is open, so the panel's Open also switches
+    the graphic on in preview when it is off (0.10.1), and the graphic's
+    row warns while it is up with no showdown open.
 
 New per-side fields: record, country (2-3 letters), pronouns, archetype,
 handCount, hand[] (cardId, cardName, energy, domains), holds. New match

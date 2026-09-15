@@ -214,6 +214,21 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-15b (out of band: v0.10.1, Open switches the showdown on)
+
+Sam: "the showdown overlay is not popping up". Reproduced nothing: the
+scene drew through the API and through the panel on a clean 0.10.0. The
+trap is the scene's two gates (on air via TAKE, and a showdown open via
+the Open cue), and the preview monitor looks empty until Open. Sam's
+pick: Open also switches the Showdown graphic on in preview when it is
+off (`$('sdOpen')` posts `scenes.showdown.visible` before the `chain`
+cue; TAKE still airs it, a cue never takes a graphic to air), plus a
+`.scene-note` line under the graphic's name in the Graphics list that
+describes it and turns amber (`.warn`) while the graphic is in preview or
+on air with no showdown open in that bank (`renderShowdown`). The
+showdown hint under Match data says the same, and adds "TAKE airs it"
+while the graphic is in preview but not on air. Panel only; 65 tests.
+
 ### 2026-09-15 (out of band: v0.10.0, the panel round after 0.9.1)
 
 Sam's seven asks, all panel-side but one. **Transition column:** TAKE and

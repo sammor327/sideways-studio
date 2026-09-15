@@ -1567,6 +1567,10 @@ $('sdOpen').addEventListener('click', () => {
   if (!state) return;
   const typed = $('sdBattlefield').value.trim();
   const pick = sdPick || (typed ? { battlefield: typed, battlefieldCardId: '' } : {});
+  // The graphic airs only while a showdown is open, so opening one is the
+  // moment to want it: Open switches it on in preview when it is off. TAKE
+  // still airs it; a cue never puts a graphic on air by itself.
+  if (!state.preview.scenes.showdown.visible) post({ scenes: { showdown: { visible: true } } });
   post({ action: 'chain', op: 'open', ...pick });
 });
 $('sdClose').addEventListener('click', () => post({ action: 'chain', op: 'close' }));
@@ -1599,11 +1603,29 @@ function renderShowdown(s) {
       return row;
     }));
   }
-  $('sdHint').textContent = active
-    ? (chain.length ? 'Click a card in either Cards in hand to play it onto the chain.' : 'Open. Click a card in either Cards in hand to play it onto the chain.')
-    : 'Pick the battlefield and press Open when a showdown starts.';
+  const prevOn = s.preview.scenes.showdown.visible;
+  const airOn = s.program.scenes.showdown.visible;
+  let hint;
+  if (!active) {
+    hint = 'Pick the battlefield and press Open when a showdown starts. Open also switches the Showdown graphic on in preview.';
+  } else {
+    hint = chain.length ? 'Click a card in either Cards in hand to play it onto the chain.' : 'Open. Click a card in either Cards in hand to play it onto the chain.';
+    if (prevOn && !airOn) hint += ' The Showdown graphic is in preview: TAKE airs it.';
+  }
+  $('sdHint').textContent = hint;
   document.querySelector('.field-row[data-field="showdown"]').classList.toggle('sd-active', active);
+
+  // The line under the graphic's name warns while the graphic is up with no
+  // showdown open, since that is the one state where "on" shows nothing.
+  const note = $('showdownNote');
+  const airOpen = Boolean(s.program.match.showdown && s.program.match.showdown.active);
+  let warn = '';
+  if (airOn && !airOpen) warn = 'On air with no showdown open, so nothing shows yet. Press Open in Match data, under Hands and showdown.';
+  else if (prevOn && !active) warn = 'In preview with no showdown open, so nothing shows yet. Press Open in Match data, under Hands and showdown.';
+  note.classList.toggle('warn', Boolean(warn));
+  note.textContent = warn || SHOWDOWN_NOTE;
 }
+const SHOWDOWN_NOTE = $('showdownNote').textContent;
 $('arenaClock').addEventListener('change', () => post({ scenes: { arenabug: { clock: $('arenaClock').checked } } }));
 $('slateMode').addEventListener('change', () => post({ scenes: { slate: { mode: $('slateMode').value } } }));
 $('slateCountdown').addEventListener('change', () => post({ scenes: { slate: { countdown: $('slateCountdown').checked } } }));
