@@ -214,6 +214,26 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-14d (out of band: panel layout after 0.6.0, Sam's five asks)
+
+1. **A picture toggles.** Clicking a graphic's thumbnail while it is in
+   preview takes it out again (`toggleScene`); otherwise it goes in with the
+   same exclusivity rules as before. The tile's title says which.
+2. **Kind tags.** Every Graphics row carries OVERLAY or FULL FRAME after its
+   name (decklist and slate are the full-frame ones).
+3. **Graphic features card.** The per-graphic options left the Graphics
+   rows for a card of `.feature-group[data-scene]` blocks that show only
+   while that graphic is in preview (`renderFeatures`, from `renderThumbs`),
+   with a hint when nothing in preview has options. The option controls keep
+   their ids, so nothing else in panel.js changed.
+4. **Match data folds.** 2v2 teams, Experimental overlays and Event are
+   `<details class="field-section fold">` with the section label as the
+   summary; open state remembered per browser in `sidewaysStudio.dataOpen`.
+   The dimming code still finds `.section-label` inside the summary.
+5. **Staged card.** The card search and the staged box moved out of
+   Graphics into their own "Staged card" card. The middle column is now a
+   `.column-stack`: Graphic features, Decklist, Staged card.
+
 ### 2026-09-14c (out of band: experimental graphics, graphic thumbnails, collapsible Setup)
 
 **Sam's asks.** (1) An "Experimental" switch under Setup that decides

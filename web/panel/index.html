@@ -193,8 +193,8 @@
       </div>
     </div>
 
-    <div class="field-section">
-      <h4 class="section-label">2v2 teams</h4>
+    <details class="field-section fold" data-sec="teams" open>
+      <summary><h4 class="section-label">2v2 teams</h4></summary>
 
       <div class="field-row" data-field="teamName">
         <span class="row-label">Team name</span>
@@ -243,10 +243,10 @@
           <ul class="results" id="rbf2Results"></ul>
         </div>
       </div>
-    </div>
+    </details>
 
-    <div class="field-section exp-only hidden" id="expFields">
-      <h4 class="section-label">Experimental overlays</h4>
+    <details class="field-section fold exp-only hidden" id="expFields" data-sec="experimental" open>
+      <summary><h4 class="section-label">Experimental overlays</h4></summary>
 
       <div class="field-row" data-field="record">
         <span class="row-label" title="Swiss record, printed as typed: 8-2-0.">Record</span>
@@ -357,10 +357,10 @@
         <span class="row-label" title="One line per seed for the slate's standings strip: Name · 9-1-0 · Irelia. Up to eight.">Seeds</span>
         <div class="cell span2"><textarea id="seedsText" rows="3" spellcheck="false" placeholder="Guubums · 9-1-0 · Irelia&#10;Dax · 8-2-0 · Viktor"></textarea></div>
       </div>
-    </div>
+    </details>
 
-    <div class="field-section">
-      <h4 class="section-label">Event</h4>
+    <details class="field-section fold" data-sec="event" open>
+      <summary><h4 class="section-label">Event</h4></summary>
 
       <div class="field-row" data-field="eventName">
         <span class="row-label">Event name</span>
@@ -384,7 +384,7 @@
           </label>
         </div>
       </div>
-    </div>
+    </details>
   </div>
 </aside>
 
@@ -408,14 +408,68 @@
 <main class="controls">
   <section class="card graphics-card">
     <h2>Graphics</h2>
-    <p class="hint">Each graphic shows the preview data as it stands. Click a picture to put that graphic in preview; the switch beside it turns it off again.</p>
+    <p class="hint">Each picture shows the preview data as it stands. Click one to put that graphic in preview, click it again to take it out. Its options appear under Graphic features.</p>
     <div class="scene-row" data-scene="scorebug">
-      <div class="scene-name">Score bug <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
+      <div class="scene-name">Score bug <span class="kind">Overlay</span> <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
       <button id="toggleScorebug" class="scene-toggle">OFF</button>
     </div>
     <div class="scene-row" data-scene="igo1v1">
-      <div class="scene-name">In-game overlay 1v1 <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
+      <div class="scene-name">In-game overlay 1v1 <span class="kind">Overlay</span> <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
       <button id="toggleIgo" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row" data-scene="igo2v2">
+      <div class="scene-name">In-game overlay 2v2 <span class="kind">Overlay</span> <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
+      <button id="toggleIgo2" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row" data-scene="igodual">
+      <div class="scene-name">In-game overlay, dual columns <span class="kind">Overlay</span> <span class="onair hidden" id="igoDualOnAir">ON AIR</span></div>
+      <button id="toggleIgoDual" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row" data-scene="igobars">
+      <div class="scene-name">In-game overlay, 2v2 bars <span class="kind">Overlay</span> <span class="onair hidden" id="igoBarsOnAir">ON AIR</span></div>
+      <button id="toggleIgoBars" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row" data-scene="pov">
+      <div class="scene-name">POV overlay <span class="kind">Overlay</span> <span class="onair hidden" id="povOnAir">ON AIR</span></div>
+      <button id="togglePov" class="scene-toggle">OFF</button>
+    </div>
+    <div class="scene-row" data-scene="decklist">
+      <div class="scene-name">Decklist <span class="kind full">Full frame</span> <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
+      <button id="toggleDeck" class="scene-toggle">OFF</button>
+    </div>
+
+    <div class="exp-only hidden" id="experimentalScenes">
+      <h4 class="section-label exp-label">Experimental <span class="muted">(Setup &rsaquo; Experimental)</span></h4>
+      <div class="scene-row" data-scene="igoportrait" data-exp="1">
+        <div class="scene-name">In-game overlay, portrait pillars <span class="kind">Overlay</span> <span class="onair hidden" id="igoPortraitOnAir">ON AIR</span></div>
+        <button id="toggleIgoPortrait" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="igorows" data-exp="1">
+        <div class="scene-name">In-game overlay, rows <span class="kind">Overlay</span> <span class="onair hidden" id="igoRowsOnAir">ON AIR</span></div>
+        <button id="toggleIgoRows" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="arenabug" data-exp="1">
+        <div class="scene-name">Arena score bug <span class="kind">Overlay</span> <span class="onair hidden" id="arenaOnAir">ON AIR</span></div>
+        <button id="toggleArena" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="slate" data-exp="1">
+        <div class="scene-name">Slate <span class="kind full">Full frame</span> <span class="onair hidden" id="slateOnAir">ON AIR</span></div>
+        <button id="toggleSlate" class="scene-toggle">OFF</button>
+      </div>
+    </div>
+
+    <div class="scene-row popup-row" data-scene="cardpopup">
+      <div class="scene-name">Card popup <span class="kind">Overlay</span> <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
+      <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
+    </div>
+  </section>
+
+  <div class="column-stack">
+  <section class="card features-card" id="featuresCard">
+    <h2>Graphic features</h2>
+    <p class="hint" id="featuresHint">Put a graphic in preview to see its options here.</p>
+    <div class="feature-group hidden" data-scene="igo1v1">
+      <h3>In-game overlay 1v1</h3>
       <div class="scene-options">
         <label class="inline">Holders
           <select id="igoMode">
@@ -425,9 +479,8 @@
         </label>
       </div>
     </div>
-    <div class="scene-row" data-scene="igo2v2">
-      <div class="scene-name">In-game overlay 2v2 <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
-      <button id="toggleIgo2" class="scene-toggle">OFF</button>
+    <div class="feature-group hidden" data-scene="igo2v2">
+      <h3>In-game overlay 2v2</h3>
       <div class="scene-options">
         <label class="inline">Holders
           <select id="igo2Mode">
@@ -437,9 +490,8 @@
         </label>
       </div>
     </div>
-    <div class="scene-row" data-scene="igodual">
-      <div class="scene-name">In-game overlay, dual columns <span class="onair hidden" id="igoDualOnAir">ON AIR</span></div>
-      <button id="toggleIgoDual" class="scene-toggle">OFF</button>
+    <div class="feature-group hidden" data-scene="igodual">
+      <h3>In-game overlay, dual columns</h3>
       <div class="scene-options">
         <label class="inline">Cam windows
           <select id="igoDualMode">
@@ -453,9 +505,8 @@
         <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
       </div>
     </div>
-    <div class="scene-row" data-scene="igobars">
-      <div class="scene-name">In-game overlay, 2v2 bars <span class="onair hidden" id="igoBarsOnAir">ON AIR</span></div>
-      <button id="toggleIgoBars" class="scene-toggle">OFF</button>
+    <div class="feature-group hidden" data-scene="igobars">
+      <h3>In-game overlay, 2v2 bars</h3>
       <div class="scene-options">
         <label class="inline" title="Team 1 is the top bar, team 2 the bottom. Each bar shows both players' legends and champions from the 2v2 teams block.">Team cam
           <select id="igoBarsMode">
@@ -465,95 +516,62 @@
         </label>
       </div>
     </div>
-    <div class="scene-row" data-scene="pov">
-      <div class="scene-name">POV overlay <span class="onair hidden" id="povOnAir">ON AIR</span></div>
-      <button id="togglePov" class="scene-toggle">OFF</button>
+    <div class="feature-group hidden" data-scene="pov">
+      <h3>POV overlay</h3>
       <div class="scene-options">
         <label class="inline"><input type="checkbox" id="povShowLeft" checked> Left column</label>
         <label class="inline"><input type="checkbox" id="povShowRight" checked> Right column</label>
         <button id="povReset" class="clear-mini" title="Clears the champion line and the featured card on both sides. Names, legends and points stay.">Clear POV cards</button>
       </div>
     </div>
-    <div class="scene-row" data-scene="decklist">
-      <div class="scene-name">Decklist <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
-      <button id="toggleDeck" class="scene-toggle">OFF</button>
-    </div>
-
-    <div class="exp-only hidden" id="experimentalScenes">
-      <h4 class="section-label exp-label">Experimental <span class="muted">(Setup &rsaquo; Experimental)</span></h4>
-      <div class="scene-row" data-scene="igoportrait" data-exp="1">
-        <div class="scene-name">In-game overlay, portrait pillars <span class="onair hidden" id="igoPortraitOnAir">ON AIR</span></div>
-        <button id="toggleIgoPortrait" class="scene-toggle">OFF</button>
-        <div class="scene-options">
-          <label class="inline" title="Portrait table camera in the middle; the pillars carry the players.">Cam wells
-            <select id="igoPortraitMode">
-              <option value="legend">Legend art</option>
-              <option value="webcam">Webcam cutouts</option>
-            </select>
-          </label>
-          <label class="inline"><input type="checkbox" id="igoPortraitTop" checked> Game-state bar</label>
-          <label class="inline" title="A second window under player 1's camera, for a camera on their hand"><input type="checkbox" id="igoPortraitHand"> Hand cam</label>
-          <label class="inline" title="Shows the card popup's card in the right pillar instead of the popup flying in"><input type="checkbox" id="igoPortraitCard" checked> Dock featured card</label>
-        </div>
-      </div>
-      <div class="scene-row" data-scene="igorows" data-exp="1">
-        <div class="scene-name">In-game overlay, rows <span class="onair hidden" id="igoRowsOnAir">ON AIR</span></div>
-        <button id="toggleIgoRows" class="scene-toggle">OFF</button>
-        <div class="scene-options">
-          <label class="inline" title="Both cameras stack in the left column; the bars carry the players.">Cameras
-            <select id="igoRowsMode">
-              <option value="legend">Legend art</option>
-              <option value="webcam">Webcam cutouts</option>
-            </select>
-          </label>
-          <label class="inline" title="The cards-in-hand list and the holds line from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
-        </div>
-      </div>
-      <div class="scene-row" data-scene="arenabug" data-exp="1">
-        <div class="scene-name">Arena score bug <span class="onair hidden" id="arenaOnAir">ON AIR</span></div>
-        <button id="toggleArena" class="scene-toggle">OFF</button>
-        <div class="scene-options">
-          <label class="inline" title="The event and round clock lozenge top left"><input type="checkbox" id="arenaClock" checked> Clock lozenge</label>
-        </div>
-      </div>
-      <div class="scene-row" data-scene="slate" data-exp="1">
-        <div class="scene-name">Slate <span class="onair hidden" id="slateOnAir">ON AIR</span></div>
-        <button id="toggleSlate" class="scene-toggle">OFF</button>
-        <div class="scene-options">
-          <label class="inline">Screen
-            <select id="slateMode">
-              <option value="upnext">Up next (tables)</option>
-              <option value="starting">Starting soon</option>
-              <option value="brb">Be right back</option>
-              <option value="thanks">Thanks for watching</option>
-              <option value="custom">Custom line</option>
-            </select>
-          </label>
-          <input id="slateText" class="slate-text hidden" maxlength="120" autocomplete="off" placeholder="Custom line" aria-label="Custom slate line">
-          <label class="inline"><input type="checkbox" id="slateCountdown" checked> Break clock</label>
-        </div>
+    <div class="feature-group hidden" data-scene="igoportrait" data-exp="1">
+      <h3>In-game overlay, portrait pillars</h3>
+      <div class="scene-options">
+        <label class="inline" title="Portrait table camera in the middle; the pillars carry the players.">Cam wells
+          <select id="igoPortraitMode">
+            <option value="legend">Legend art</option>
+            <option value="webcam">Webcam cutouts</option>
+          </select>
+        </label>
+        <label class="inline"><input type="checkbox" id="igoPortraitTop" checked> Game-state bar</label>
+        <label class="inline" title="A second window under player 1's camera, for a camera on their hand"><input type="checkbox" id="igoPortraitHand"> Hand cam</label>
+        <label class="inline" title="Shows the card popup's card in the right pillar instead of the popup flying in"><input type="checkbox" id="igoPortraitCard" checked> Dock featured card</label>
       </div>
     </div>
-
-    <div class="scene-row popup-row" data-scene="cardpopup">
-      <div class="scene-name">Card popup <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
-      <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
-    </div>
-    <div class="search-wrap">
-      <label>Search a card by name
-        <input id="cardSearch" placeholder="Type at least 2 letters…" autocomplete="off">
-      </label>
-      <ul class="results" id="cardResults"></ul>
-    </div>
-    <div class="staged" id="stagedBox">
-      <img id="stagedThumb" alt="" class="hidden">
-      <div class="staged-meta">
-        <span class="staged-label">Staged card</span>
-        <strong id="stagedName">Nothing staged</strong>
-        <span class="muted" id="stagedType"></span>
+    <div class="feature-group hidden" data-scene="igorows" data-exp="1">
+      <h3>In-game overlay, rows</h3>
+      <div class="scene-options">
+        <label class="inline" title="Both cameras stack in the left column; the bars carry the players.">Cameras
+          <select id="igoRowsMode">
+            <option value="legend">Legend art</option>
+            <option value="webcam">Webcam cutouts</option>
+          </select>
+        </label>
+        <label class="inline" title="The cards-in-hand list and the holds line from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
       </div>
     </div>
-    <p class="hint">Staging a card switches the popup on in preview. TAKE airs it.</p>
+    <div class="feature-group hidden" data-scene="arenabug" data-exp="1">
+      <h3>Arena score bug</h3>
+      <div class="scene-options">
+        <label class="inline" title="The event and round clock lozenge top left"><input type="checkbox" id="arenaClock" checked> Clock lozenge</label>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="slate" data-exp="1">
+      <h3>Slate</h3>
+      <div class="scene-options">
+        <label class="inline">Screen
+          <select id="slateMode">
+            <option value="upnext">Up next (tables)</option>
+            <option value="starting">Starting soon</option>
+            <option value="brb">Be right back</option>
+            <option value="thanks">Thanks for watching</option>
+            <option value="custom">Custom line</option>
+          </select>
+        </label>
+        <input id="slateText" class="slate-text hidden" maxlength="120" autocomplete="off" placeholder="Custom line" aria-label="Custom slate line">
+        <label class="inline"><input type="checkbox" id="slateCountdown" checked> Break clock</label>
+      </div>
+    </div>
   </section>
 
   <section class="card deck-card">
@@ -585,6 +603,26 @@
       <button id="deckClear" class="danger-ghost">Clear</button>
     </div>
   </section>
+
+  <section class="card staged-card">
+    <h2>Staged card</h2>
+    <div class="search-wrap">
+      <label>Search a card by name
+        <input id="cardSearch" placeholder="Type at least 2 letters…" autocomplete="off">
+      </label>
+      <ul class="results" id="cardResults"></ul>
+    </div>
+    <div class="staged" id="stagedBox">
+      <img id="stagedThumb" alt="" class="hidden">
+      <div class="staged-meta">
+        <span class="staged-label">Staged card</span>
+        <strong id="stagedName">Nothing staged</strong>
+        <span class="muted" id="stagedType"></span>
+      </div>
+    </div>
+    <p class="hint">Staging a card switches the popup on in preview. TAKE airs it.</p>
+  </section>
+  </div>
 
   <section class="card look-card">
     <div class="deck-head">

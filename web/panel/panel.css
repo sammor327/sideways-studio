@@ -717,3 +717,49 @@ footer p { margin: 0; }
 .setup-sec > *:not(summary) { margin-top: 8px; }
 .exp-toggle { font-size: 13px; color: #e8edf1; }
 .exp-toggle input { width: 15px; height: 15px; accent-color: var(--tes-blue); }
+
+/* --- kind tags, feature card, staged card, column stack (2026-09-14) --- */
+.kind {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid #2a323b;
+  border-radius: 2px;
+  color: #8b98a5;
+}
+.kind.full { border-color: #3a4552; color: #b8c4cf; }
+.column-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  min-width: 0;
+}
+.column-stack .card { flex: 0 1 auto; }
+.column-stack .deck-card { flex: 1 1 auto; }
+.features-card h2, .staged-card h2 { margin-bottom: 0; }
+.feature-group { padding-top: 8px; border-top: 1px solid #1e242b; display: flex; flex-direction: column; gap: 6px; }
+.feature-group.hidden { display: none; }
+.feature-group h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.feature-group .scene-options { padding-left: 0; }
+
+/* Collapsible match-data sections: the summary is the section label. */
+details.field-section { display: block; }
+details.field-section > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+details.field-section > summary::-webkit-details-marker { display: none; }
+details.field-section > summary::before { content: '\25B8'; font-size: 11px; color: #8b98a5; transition: transform 0.15s linear; }
+details.field-section[open] > summary::before { transform: rotate(90deg); }
+details.field-section > summary:hover .section-label { color: #e8edf1; }
+details.field-section > .field-row { margin-top: 7px; }
+
+/* Long names push the kind tag onto its own line rather than clipping it. */
+.graphics-card .scene-name { flex-wrap: wrap; row-gap: 4px; }

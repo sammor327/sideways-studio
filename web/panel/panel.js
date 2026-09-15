@@ -1858,9 +1858,15 @@ function renderExtras(s) {
 
 const THUMB_URL = (key) => `/scenes/${key}/?transparent=1&preview=1&force=1&anim=0`;
 
-function showScene(key) {
+// A click on a picture: in preview already, take it out; otherwise put it in
+// (the edge scenes still switch each other off, the two bugs swap).
+function toggleScene(key) {
   if (!state) return;
   const prev = state.preview;
+  if (prev.scenes[key] && prev.scenes[key].visible) {
+    post({ scenes: { [key]: { visible: false } } });
+    return;
+  }
   if (EDGE_SCENES.includes(key)) { setEdgeScene(key, true); return; }
   if (key === 'scorebug') { post({ scenes: { scorebug: { visible: true }, arenabug: { visible: false } } }); return; }
   if (key === 'arenabug') { post({ scenes: { arenabug: { visible: true }, scorebug: { visible: false } } }); return; }
@@ -1891,8 +1897,8 @@ for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
   tag.className = 'thumb-tag';
   tag.textContent = 'Preview';
   thumb.append(frame, tag);
-  thumb.addEventListener('click', () => showScene(key));
-  thumb.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showScene(key); } });
+  thumb.addEventListener('click', () => toggleScene(key));
+  thumb.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleScene(key); } });
   row.prepend(thumb);
 }
 
@@ -1912,6 +1918,37 @@ function renderThumbs(s) {
       || (key === 'decklist' && !s.preview.scenes.decklist.list.trim());
     thumb.classList.toggle('disabled', cantShow);
     thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : (cantShow ? 'Nothing staged' : 'Click to preview'));
+    thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview` : `Put ${SCENE_NAMES[key] || key} in preview`;
+  }
+  renderFeatures(s);
+}
+
+// The Graphic features card shows the options of whatever is in preview,
+// so an operator edits the graphic they are looking at, not a list of all.
+function renderFeatures(s) {
+  let any = false;
+  for (const group of document.querySelectorAll('.feature-group')) {
+    const key = group.dataset.scene;
+    const on = Boolean(s.preview.scenes[key] && s.preview.scenes[key].visible) && (!group.dataset.exp || experimental);
+    group.classList.toggle('hidden', !on);
+    any = any || on;
+  }
+  $('featuresHint').classList.toggle('hidden', any);
+}
+
+// --- match data folds: remember which sections are open ---
+
+const DATA_KEY = 'sidewaysStudio.dataOpen';
+{
+  let open = null;
+  try { open = JSON.parse(localStorage.getItem(DATA_KEY) || 'null'); } catch { open = null; }
+  for (const sec of document.querySelectorAll('details.field-section')) {
+    if (open && typeof open === 'object' && sec.dataset.sec in open) sec.open = Boolean(open[sec.dataset.sec]);
+    sec.addEventListener('toggle', () => {
+      const next = {};
+      for (const s2 of document.querySelectorAll('details.field-section')) next[s2.dataset.sec] = s2.open;
+      try { localStorage.setItem(DATA_KEY, JSON.stringify(next)); } catch { /* per-session only */ }
+    });
   }
 }
 
