@@ -30,12 +30,12 @@ function setStatus(ok) {
   setOffline(!ok, { restarting: !ok && updateInfo?.phase === 'ready' });
 }
 
-// --- field focus: light up what a graphic draws, dim the rest ---
+// --- which graphic draws which field ---
 //
 // Every graphic reads the same match data (the score bug and the POV print the
 // same points, the IGOs and the POV the same legend), so the panel keeps one
-// field per fact and this map says which graphic draws which. Dimmed fields
-// stay editable: the next graphic's data can go in while another one is up.
+// field per fact and this map says which graphic draws which: each row label
+// names its graphics, and a graphic put in preview opens and flashes its rows.
 const SCENE_FIELDS = {
   scorebug: ['seriesLength', 'name', 'score', 'gameWins'],
   igo1v1: ['seriesLength', 'name', 'gameWins', 'legend', 'battlefield'],
@@ -47,7 +47,7 @@ const SCENE_FIELDS = {
     'champion', 'championText', 'champion2'],
   pov: ['name', 'score', 'legend', 'legendText', 'battlefield',
     'champion', 'championText', 'card'],
-  // Experimental (2026-09-14): listed only while Setup > Experimental is on.
+  // From the September 2026 broadcast scouting.
   igoportrait: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'record', 'country', 'legend', 'legendText',
     'champion', 'championText', 'archetype', 'handCount', 'turn', 'eventName', 'roundTitle', 'roundsRemaining', 'timer', 'card'],
   igorows: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'pronouns', 'legend', 'legendText',
@@ -82,16 +82,6 @@ const SCENE_SHORT = {
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
 };
-const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
-
-// 'preview' follows whatever is switched on in the preview bank; a scene key
-// pins one graphic. Per-browser convenience only, so storage may be missing.
-let focus = 'preview';
-try {
-  const saved = localStorage.getItem(FOCUS_KEY);
-  if (saved === 'preview' || Object.hasOwn(SCENE_FIELDS, saved)) focus = saved;
-} catch { /* storage blocked: start on 'preview' */ }
-
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
 // art, and a hidden POV column takes all of its text and art with it.
@@ -121,84 +111,17 @@ function sceneDraws(scene, field, side, bank) {
   return true;
 }
 
-function focusScenes(bank) {
-  if (focus !== 'preview') return [focus];
-  return Object.keys(SCENE_FIELDS).filter((key) => bank.scenes[key].visible);
-}
-
 function listNames(keys) {
   const names = keys.map((key) => SCENE_NAMES[key]);
   if (names.length < 2) return names.join('');
   return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
-const capitalise = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-
-function focusHint(bank, scenes) {
-  if (!scenes.length) {
-    return 'Nothing switched on in preview uses match data, so every field is lit.';
-  }
-  const lines = [focus === 'preview'
-    ? `Lit fields show on ${listNames(scenes)}, switched on in preview. Dimmed ones still edit.`
-    : `Lit fields show on ${SCENE_NAMES[focus]}. Dimmed ones still edit.`];
-  for (const key of scenes) {
-    const cfg = bank.scenes[key];
-    if (cfg.mode === 'webcam') {
-      lines.push(`${capitalise(SCENE_NAMES[key])} is on webcam cutouts, so it shows no legend art.`);
-    }
-    if (key === 'pov' && !cfg.showLeft && !cfg.showRight) lines.push('Both POV columns are hidden.');
-    else if (key === 'pov' && !cfg.showLeft) lines.push('The POV left column is hidden.');
-    else if (key === 'pov' && !cfg.showRight) lines.push('The POV right column is hidden.');
-  }
-  return lines.join(' ');
-}
-
-function applyFocus() {
-  if (!state) return;
-  const bank = state.preview;
-  const scenes = focusScenes(bank);
-  // Nothing to measure against: preview has no match-data graphic on.
-  const lightAll = scenes.length === 0;
-  const sideLit = { left: false, right: false };
-  for (const row of document.querySelectorAll('.field-row')) {
-    const { field } = row.dataset;
-    let rowLit = false;
-    for (const cell of row.querySelectorAll('.cell')) {
-      const side = cell.dataset.side || null;
-      const lit = lightAll || scenes.some((key) => sceneDraws(key, field, side, bank));
-      cell.classList.toggle('dim', !lit);
-      rowLit = rowLit || lit;
-      if (lit && side) sideLit[side] = true;
-    }
-    row.classList.toggle('dim-row', !rowLit);
-  }
-  for (const section of document.querySelectorAll('.field-section')) {
-    const anyLit = section.querySelector('.field-row:not(.dim-row)');
-    section.querySelector('.section-label').classList.toggle('dim', !anyLit);
-  }
-  for (const head of document.querySelectorAll('.grid-head .side-label')) {
-    head.classList.toggle('dim', !lightAll && !sideLit[head.dataset.side]);
-  }
-  for (const chip of document.querySelectorAll('.focus-chip')) {
-    const on = chip.dataset.focus === focus;
-    chip.classList.toggle('on', on);
-    chip.setAttribute('aria-pressed', String(on));
-  }
-  $('focusHint').textContent = focusHint(bank, scenes);
-}
-
-for (const chip of document.querySelectorAll('.focus-chip')) {
-  chip.addEventListener('click', () => {
-    focus = chip.dataset.focus;
-    try { localStorage.setItem(FOCUS_KEY, focus); } catch { /* per-session only */ }
-    applyFocus();
-  });
-}
-
 // The label column says which graphics draw each row, so the map above is
 // readable without picking every chip in turn.
 for (const row of document.querySelectorAll('.field-row')) {
   const users = Object.keys(SCENE_FIELDS).filter((key) => SCENE_FIELDS[key].includes(row.dataset.field));
+  if (!users.length) continue;
   const label = row.querySelector('.row-label');
   const drawn = `Shown on ${listNames(users)}.`;
   label.title = label.title ? `${label.title} ${drawn}` : drawn;
@@ -635,7 +558,6 @@ function render(s) {
   renderOnAir(s);
   renderLook(s.theme);
   renderExtras(s);
-  applyFocus();
   revealNewGraphics(s);
 
   // The TAKE button lights up whenever preview differs from what is on air.
@@ -767,6 +689,7 @@ $('resetMatch').addEventListener('click', () => {
       igo1v1: { visible: false }, igo2v2: { visible: false }, igodual: { visible: false }, igobars: { visible: false },
       pov: { visible: false },
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
+      handfan: { visible: false }, showdown: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -1187,6 +1110,9 @@ function renderResults() {
     li.addEventListener('keydown', (e) => { if (e.key === 'Enter') stageCard(i); });
     return li;
   }));
+  // The staged card sits at the foot of the data column, so its list opens
+  // upward when there is no room below.
+  placeList($('cardSearch'), list);
   list.classList.toggle('open', results.length > 0);
 }
 
@@ -1577,37 +1503,15 @@ $('updateSkip').addEventListener('click', async () => {
 
 pollUpdate();
 
-// --- experimental graphics (2026-09-14, from the five-game overlay scouting) ---
+// --- the September 2026 graphics (from the five-game overlay scouting) ---
 //
-// Four scenes behind Setup > Experimental: portrait pillars, rows with the
-// cards-in-hand list, the arena score bug and the slate. The switch is setup
-// data (theme.experimental): on, their rows, focus chips, match-data fields
-// and source URLs appear; off, they hide and anything on in preview goes off.
-
+// Portrait pillars, rows, the arena score bug, the slate, the hand fan and
+// the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
+// are listed with everything else in the Graphics folds. theme.experimental
+// is still saved for older events and no longer read here.
 const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir' };
-let experimental = false;
-
-function applyExperimental(on) {
-  const changed = on !== experimental;
-  experimental = on;
-  for (const el of document.querySelectorAll('.exp-only')) el.classList.toggle('hidden', !on);
-  if (document.activeElement !== $('experimentalToggle')) $('experimentalToggle').checked = on;
-  if (changed && !on && EXP_SCENES.includes(focus)) {
-    focus = 'preview';
-    try { localStorage.setItem(FOCUS_KEY, focus); } catch { /* per-session only */ }
-  }
-}
-
-$('experimentalToggle').addEventListener('change', () => {
-  const on = $('experimentalToggle').checked;
-  const patch = { theme: { experimental: on } };
-  // Off hides them in preview too; program keeps what it shows until TAKE or
-  // CLEAR, and the ON AIR pill under Setup says so while it does.
-  if (!on) patch.scenes = Object.fromEntries(EXP_SCENES.map((k) => [k, { visible: false }]));
-  post(patch);
-});
 
 $('toggleIgoPortrait').addEventListener('click', () => toggleEdgeScene('igoportrait'));
 $('toggleIgoRows').addEventListener('click', () => toggleEdgeScene('igorows'));
@@ -2005,7 +1909,6 @@ function renderExtras(s) {
   setIfIdle('castersText', castersToText(prev.event.casters || []));
   setIfIdle('seedsText', prev.event.seeds || '');
 
-  applyExperimental(Boolean(s.theme.experimental));
   renderThumbs(s);
 }
 
@@ -2013,8 +1916,6 @@ function renderExtras(s) {
 //
 // Each row in the Graphics card carries its scene rendered small, from the
 // preview bank with ?force=1 so it draws whether or not it is switched on.
-// Experimental rows only load while the switch is on, so a hidden row costs
-// nothing.
 
 const THUMB_URL = (key) => `/scenes/${key}/?transparent=1&preview=1&force=1&anim=0`;
 
@@ -2032,7 +1933,7 @@ function toggleScene(key) {
   if (key === 'arenabug') { post({ scenes: { arenabug: { visible: true }, scorebug: { visible: false } } }); return; }
   if (key === 'cardpopup') {
     if (prev.scenes.cardpopup.card.cardId) post({ scenes: { cardpopup: { visible: true } } });
-    else $('cardSearch').focus();
+    else { $('stagedSection').open = true; $('cardSearch').focus(); }
     return;
   }
   if (key === 'decklist') {
@@ -2070,8 +1971,7 @@ function renderThumbs(s) {
     const key = row.dataset.scene;
     const thumb = row.querySelector('.scene-thumb');
     const frame = thumb.querySelector('iframe');
-    const load = !row.dataset.exp || experimental;
-    const want = load ? THUMB_URL(key) : 'about:blank';
+    const want = THUMB_URL(key);
     if (frame.getAttribute('src') !== want) frame.src = want;
     const inPreview = Boolean(s.preview.scenes[key] && s.preview.scenes[key].visible);
     const onAir = Boolean(s.program.scenes[key] && s.program.scenes[key].visible);
@@ -2084,6 +1984,7 @@ function renderThumbs(s) {
     thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview` : `Put ${SCENE_NAMES[key] || key} in preview`;
   }
   renderFeatures(s);
+  renderSections(s);
 }
 
 // The Graphic features card shows the options of whatever is in preview,
@@ -2092,16 +1993,132 @@ function renderFeatures(s) {
   let any = false;
   for (const group of document.querySelectorAll('.feature-group')) {
     const key = group.dataset.scene;
-    const on = Boolean(s.preview.scenes[key] && s.preview.scenes[key].visible) && (!group.dataset.exp || experimental);
+    const on = Boolean(s.preview.scenes[key] && s.preview.scenes[key].visible);
     group.classList.toggle('hidden', !on);
     any = any || on;
   }
   $('featuresHint').classList.toggle('hidden', any);
 }
 
+// --- graphics folds: 1v1, 2v2 and Other ---
+//
+// The Graphics card lists its rows in three folds, so a 1v1 show never
+// scrolls past the 2v2 layouts. They start closed on every load; a fold's
+// heading counts what is in preview and on air inside it, and a graphic put
+// in preview opens its fold (revealNewGraphics).
+for (const sec of document.querySelectorAll('details.scene-section')) {
+  const n = sec.querySelectorAll('.scene-row[data-scene]').length;
+  sec.querySelector('.sec-count').textContent = `${n} graphic${n === 1 ? '' : 's'}`;
+}
+
+function renderSections(s) {
+  for (const sec of document.querySelectorAll('details.scene-section')) {
+    const keys = [...sec.querySelectorAll('.scene-row[data-scene]')].map((row) => row.dataset.scene);
+    const inPreview = keys.filter((key) => s.preview.scenes[key] && s.preview.scenes[key].visible).length;
+    const onAir = keys.filter((key) => s.program.scenes[key] && s.program.scenes[key].visible).length;
+    const prev = sec.querySelector('.sec-pill.prev');
+    prev.textContent = `${inPreview} in preview`;
+    prev.classList.toggle('hidden', !inPreview);
+    const air = sec.querySelector('.sec-pill.air');
+    air.textContent = `${onAir} on air`;
+    air.classList.toggle('hidden', !onAir);
+  }
+}
+
+// --- resizable cards: drag the bottom edge ---
+//
+// Every control card ends in a grip that sets the card's height, up or down
+// only: the columns stay where they are. Double-click on the grip lets the
+// card size itself again. Heights are one operator's convenience, kept in
+// this browser like the folds, never in match state.
+const CARD_SIZE_KEY = 'sidewaysStudio.cardHeights';
+const MIN_CARD_HEIGHT = 72;
+
+let cardHeights = {};
+try {
+  const saved = JSON.parse(localStorage.getItem(CARD_SIZE_KEY) || '{}');
+  if (saved && typeof saved === 'object' && !Array.isArray(saved)) {
+    for (const [key, px] of Object.entries(saved)) {
+      if (Number.isFinite(px) && px >= MIN_CARD_HEIGHT) cardHeights[key] = Math.round(px);
+    }
+  }
+} catch { /* storage blocked or corrupt: every card sizes itself */ }
+
+function saveCardHeights() {
+  try { localStorage.setItem(CARD_SIZE_KEY, JSON.stringify(cardHeights)); } catch { /* this session only */ }
+}
+
+// A set height also stops the card growing or shrinking with its stack.
+function sizeCard(card, px) {
+  if (px) {
+    card.style.height = `${px}px`;
+    card.style.flex = '0 0 auto';
+  } else {
+    card.style.height = '';
+    card.style.flex = '';
+  }
+}
+
+for (const card of document.querySelectorAll('.card[data-size]')) {
+  const key = card.dataset.size;
+  const grip = document.createElement('div');
+  grip.className = 'card-resizer';
+  grip.title = 'Drag to change the height of this card. Double-click to let it size itself.';
+  grip.setAttribute('role', 'separator');
+  grip.setAttribute('aria-orientation', 'horizontal');
+  grip.setAttribute('aria-label', `Resize the ${card.querySelector('h2').textContent.trim()} card`);
+  grip.tabIndex = 0;
+  card.append(grip);
+  if (cardHeights[key]) sizeCard(card, cardHeights[key]);
+  // Keyboard: the arrows step the height, Backspace lets the card size itself.
+  grip.addEventListener('keydown', (e) => {
+    const step = e.key === 'ArrowDown' ? 16 : (e.key === 'ArrowUp' ? -16 : 0);
+    if (!step && e.key !== 'Backspace') return;
+    e.preventDefault();
+    if (step) cardHeights[key] = Math.max(MIN_CARD_HEIGHT, Math.round(card.getBoundingClientRect().height + step));
+    else delete cardHeights[key];
+    sizeCard(card, cardHeights[key] || 0);
+    saveCardHeights();
+  });
+  grip.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    // preventDefault keeps the drag from selecting text, and also keeps the
+    // grip from taking focus, so focus it by hand for the arrow keys.
+    e.preventDefault();
+    grip.focus();
+    const startY = e.clientY;
+    const startH = card.getBoundingClientRect().height;
+    let moved = false;
+    grip.setPointerCapture(e.pointerId);
+    document.body.classList.add('resizing');
+    const move = (ev) => {
+      moved = true;
+      sizeCard(card, Math.max(MIN_CARD_HEIGHT, Math.round(startH + ev.clientY - startY)));
+    };
+    const done = () => {
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', done);
+      grip.removeEventListener('pointercancel', done);
+      document.body.classList.remove('resizing');
+      // A click that never moved pins nothing: the card keeps sizing itself.
+      if (!moved) return;
+      cardHeights[key] = Math.round(card.getBoundingClientRect().height);
+      saveCardHeights();
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', done);
+    grip.addEventListener('pointercancel', done);
+  });
+  grip.addEventListener('dblclick', () => {
+    sizeCard(card, 0);
+    delete cardHeights[key];
+    saveCardHeights();
+  });
+}
+
 // --- foldable control cards ---
 //
-// Four cards in the control band fold from their heading, so an operator on
+// Five cards in the control band fold from their heading, so an operator on
 // a short screen keeps the ones a show actually uses open. Which are folded
 // is a per-browser convenience, not match state: it never reaches the wire.
 const CARD_FOLD_KEY = 'sidewaysStudio.foldedCards';
@@ -2115,6 +2132,9 @@ try {
 function foldCard(card, open, { remember = true } = {}) {
   card.classList.toggle('collapsed', !open);
   card.querySelector('.fold-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  // A folded card is only its heading tall; a set height comes back with it.
+  if (!open) sizeCard(card, 0);
+  else if (card.dataset.size && cardHeights[card.dataset.size]) sizeCard(card, cardHeights[card.dataset.size]);
   if (!remember) return;
   if (open) foldedCards.delete(card.dataset.fold);
   else foldedCards.add(card.dataset.fold);
@@ -2146,15 +2166,42 @@ function sectionsFor(fields) {
   return out;
 }
 
+// The Graphics fold holding each of these graphics opens.
+function openSectionsFor(keys) {
+  for (const key of keys) {
+    const row = document.querySelector(`.scene-row[data-scene="${key}"]`);
+    const sec = row && row.closest('details.scene-section');
+    if (sec) sec.open = true;
+  }
+}
+
+function flashRow(row) {
+  row.classList.remove('flash');
+  // Restart the animation even if the row flashed a moment ago.
+  void row.offsetWidth;
+  row.classList.add('flash');
+  setTimeout(() => row.classList.remove('flash'), 1700);
+}
+
 function revealNewGraphics(s) {
-  const now = new Set(Object.keys(SCENE_FIELDS).filter((key) => s.preview.scenes[key] && s.preview.scenes[key].visible));
-  if (previewedBefore === null) { previewedBefore = now; return; }
+  const visibleIn = (bank) => Object.keys(bank.scenes).filter((key) => bank.scenes[key].visible);
+  const now = new Set(visibleIn(s.preview));
+  if (previewedBefore === null) {
+    previewedBefore = now;
+    // First paint: the folds holding whatever is already in preview or on
+    // air open, so a show in progress is in view.
+    openSectionsFor([...now, ...visibleIn(s.program)]);
+    return;
+  }
   const fresh = [...now].filter((key) => !previewedBefore.has(key));
   previewedBefore = now;
   if (!fresh.length) return;
+  openSectionsFor(fresh);
+  const drawn = fresh.filter((key) => Object.hasOwn(SCENE_FIELDS, key));
+  if (!drawn.length) return;
   foldCard($('featuresCard'), true);
   const fields = new Set();
-  for (const key of fresh) {
+  for (const key of drawn) {
     for (const field of SCENE_FIELDS[key]) {
       if (sceneDraws(key, field, null, s.preview)) fields.add(field);
     }
@@ -2164,21 +2211,13 @@ function revealNewGraphics(s) {
     if (sec.classList.contains('hidden')) continue;
     sec.open = true;
     for (const row of rows) {
-      row.classList.remove('flash');
-      // Restart the animation even if the row flashed a moment ago.
-      void row.offsetWidth;
-      row.classList.add('flash');
-      setTimeout(() => row.classList.remove('flash'), 1700);
+      flashRow(row);
       first = first || row;
     }
   }
   // Rows outside any fold flash too, so the score bug lights points and names.
   for (const row of document.querySelectorAll('.field-grid > .field-row')) {
-    if (!fields.has(row.dataset.field)) continue;
-    row.classList.remove('flash');
-    void row.offsetWidth;
-    row.classList.add('flash');
-    setTimeout(() => row.classList.remove('flash'), 1700);
+    if (fields.has(row.dataset.field)) flashRow(row);
   }
   if (first) first.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }

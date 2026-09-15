@@ -75,8 +75,10 @@ Two standalone transparent sources beyond the PSDs:
 9. **Card popup** — operator searches any card by name, it animates in. Same
    engine feeds the POV card slots.
 
-**Experimental outputs (2026-09-14, Sam's ask, not yet locked).** Behind
-Setup > Experimental (`theme.experimental`, setup data like the logo):
+**Outputs from the broadcast scouting (2026-09-14, Sam's ask, not yet
+locked).** Behind Setup > Experimental (`theme.experimental`) until 0.10.0;
+since then listed with the rest of the graphics, the flag kept as setup
+data and unread:
 
 10. **IGO portrait pillars** (`igoportrait`) — the Yu-Gi-Oh broadcast
     grammar: portrait table camera x 545..1375, y 64..1080, a 64px game-state
@@ -113,17 +115,23 @@ cues: `turn` (next / prev / reset / set / side) acting on both banks.
 Event: roundsRemaining, countdown (a second timer, `timer` with
 `which: 'countdown'`), tables[4], casters[4], seeds paste. The panel lists
 each graphic with a live thumbnail (`?force=1` renders a scene as if on)
-that puts the graphic in preview when clicked, and Setup is three
-collapsible sections: browser source links, updates, experimental.
+that puts the graphic in preview when clicked, and Setup is two
+collapsible sections: browser source links and updates.
 
-Panel layout (2026-09-15): Graphics lists its rows under two headings,
-Overlays (over the game) and Full screen (instead of the game), and the
-experimental block repeats both so a graphic sits under the same heading
-either way. Graphic features, Decklist, Staged card and Setup fold from
-their heading; which are folded is kept per browser, and a graphic put in
+Panel layout (2026-09-15, 0.10.0): Graphics lists its rows in three
+folds, 1v1, 2v2 and Other (bugs, the card popup, the full screens), closed
+on load; a fold's heading counts what is in preview and on air inside it,
+and a graphic put in preview opens its fold. Graphic features, Decklist,
+Look and Setup fold from their heading, and every control card has a grip
+along its bottom edge that sets its height (vertical only; double-click
+resets). Folded cards and heights are kept per browser. A graphic put in
 preview opens Graphic features the same way it opens the Match data folds
-holding its fields. The control band is three columns: Graphics, then the
-cards that change a graphic, then Look above Setup.
+holding its fields. The control band is three columns: Graphics, then
+Graphic features over Decklist, then Look above Setup. Match data has no
+field focus bar any more; its folds are Player details, 2v2 teams, Hands
+and showdown, Event, and Staged card (the card popup's search). TAKE and
+CLEAR are pinned to the top of their column with the tip as TAKE's hover
+text, and the on-air list fills the column from the bottom.
 
 What is on air is named under CLEAR, one row per graphic with an X that
 drops it, and a graphic's ON AIR badge is the same control where the graphic

@@ -105,7 +105,7 @@ function defaultBank() {
       // keying over the feed). deckName labels a list loaded from the saved
       // library. replay is a counter the "replay intro" cue bumps.
       decklist: { visible: false, list: '', showSideboard: true, background: true, deckName: '', replay: 0 },
-      // --- experimental (Setup > Experimental switches them on in the panel) ---
+      // --- from the September 2026 broadcast scouting (listed with the rest since 0.10.0) ---
       // Portrait pillars: a pillarboxed portrait table cam with a compact
       // game-state bar over it (the Yu-Gi-Oh grammar). handCam opens a
       // second transparent window on the left; cardWell docks the popup's
@@ -139,8 +139,9 @@ function defaultBank() {
 function defaultTheme() {
   const scenes = {};
   for (const key of LOOK_SCENES) scenes[key] = emptySceneLook();
-  // experimental is setup, not a cue: it decides which graphics the panel
-  // lists, so it lives with the theme rather than in a bank.
+  // experimental once gated the scouted graphics in the panel (0.6 to 0.9);
+  // it stays here as setup data for older saves, and the panel no longer
+  // reads it.
   return { accentA: '#11b6fb', accentB: '#1bef19', font: '', logo: '', experimental: false, look: emptyLook(), scenes };
 }
 

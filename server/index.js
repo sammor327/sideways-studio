@@ -553,12 +553,12 @@ async function start() {
     console.log(`    In-game 2v2 bars: ${base}/scenes/igobars/?transparent=1`);
     console.log(`    POV overlay:    ${base}/scenes/pov/?transparent=1`);
     console.log(`    Decklist:       ${base}/scenes/decklist/?transparent=1`);
-    if (getState().theme.experimental) {
-      console.log(`    Portrait pillars: ${base}/scenes/igoportrait/?transparent=1  (experimental)`);
-      console.log(`    Rows:           ${base}/scenes/igorows/?transparent=1  (experimental)`);
-      console.log(`    Arena bug:      ${base}/scenes/arenabug/?transparent=1  (experimental)`);
-      console.log(`    Slate:          ${base}/scenes/slate/?transparent=1  (experimental)`);
-    }
+    console.log(`    Portrait pillars: ${base}/scenes/igoportrait/?transparent=1`);
+    console.log(`    Rows:           ${base}/scenes/igorows/?transparent=1`);
+    console.log(`    Arena bug:      ${base}/scenes/arenabug/?transparent=1`);
+    console.log(`    Slate:          ${base}/scenes/slate/?transparent=1`);
+    console.log(`    Hand fan:       ${base}/scenes/handfan/?transparent=1`);
+    console.log(`    Showdown:       ${base}/scenes/showdown/?transparent=1`);
     if (isPackaged) {
       console.log('');
       console.log(`  Working folder:   ${APP_ROOT}`);

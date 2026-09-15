@@ -6,8 +6,11 @@
    known cards face up, unknown ones as dashed slots. Identity tag bottom
    left, round clock bottom right.
 
-   Motion: --t fades the whole scene; the fan lifts in from below the frame.
-   Every read is var(--t, 1). Card sizes come from the scene as --cw. */
+   Motion: --t fades the whole scene and lifts the fan in from below the
+   frame as one stacked deck; --f then spreads the cards from that stack to
+   the fan (each card's slot offset --dx, turn --rot and lift --lift scale
+   by it). Every read is var(--x, 1), so a clock that never runs shows the
+   settled fan. Card sizes come from the scene as --cw. */
 
 .fanscene { position: absolute; inset: 0; opacity: var(--t, 1); }
 .fanscene.off { display: none; }
@@ -38,7 +41,10 @@
   border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
   box-shadow: 0 calc(10 * var(--u)) calc(30 * var(--u)) rgba(0, 0, 0, 0.6);
   transform-origin: 50% 120%;
-  transform: rotate(calc(var(--rot, 0) * 1deg)) translateY(calc(var(--lift, 0) * var(--u)));
+  transform:
+    translateX(calc((var(--f, 1) - 1) * var(--dx, 0) * var(--u)))
+    rotate(calc(var(--rot, 0) * var(--f, 1) * 1deg))
+    translateY(calc(var(--lift, 0) * var(--f, 1) * var(--u)));
   background: var(--ss-plate, #0a0d12);
 }
 .fc .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }

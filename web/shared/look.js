@@ -20,9 +20,9 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
 
-// The experimental graphics (2026-09-14, from the five-game overlay
-// scouting): listed in the panel only while Setup's Experimental switch is
-// on, so a TO who wants the shipped set never sees them.
+// The September 2026 graphics (from the five-game overlay scouting). They
+// sat behind Setup's Experimental switch until 0.10.0; the panel now lists
+// them with the rest, in its 1v1, 2v2 and Other folds.
 export const EXPERIMENTAL_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
 
 export const SCENE_LABELS = {

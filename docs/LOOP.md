@@ -214,6 +214,49 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-15 (out of band: v0.10.0, the panel round after 0.9.1)
+
+Sam's seven asks, all panel-side but one. **Transition column:** TAKE and
+CLEAR are pinned to the top (`justify-content: flex-start`), the on-air
+list is anchored to the bottom (`margin-top: auto`) so it grows upward
+without moving the buttons, and the "TAKE puts preview on air" line is
+TAKE's hover title (CLEAR carries its half). **Focus bar gone:** the
+"light up the fields used by" chips, the hint, `applyFocus` and the
+`.dim` rules are removed; the row labels still say which graphics draw
+them, and a graphic put in preview still opens and flashes its rows.
+**Graphics in three folds:** 1v1 (1v1 overlay, dual columns, portrait
+pillars, rows, POV, hand fan, showdown), 2v2 (2v2 overlay, 2v2 bars) and
+Other (score bug, arena bug, card popup, decklist, slate), each a
+`details.scene-section` closed on load whose summary counts what is in
+preview and on air inside (`renderSections`); `revealNewGraphics` now
+tracks every scene, opens the fold of a graphic entering preview and, on
+first paint, the folds of anything in preview or on air. **Out of
+experimental:** the six scouted graphics are ordinary rows (no `data-exp`,
+no `.exp-only`, no Setup switch; `theme.experimental` stays in state,
+unread, so old saves and the tests are untouched), their source URLs sit
+in Browser source links, the server prints them at launch, and the
+Experimental overlays fold in Match data became Player details (record,
+country, pronouns, archetype) and Hands and showdown (hand count, cards
+in hand, unknown cards, turn, showdown), with rounds left, break clock,
+up next, casters and seeds moved into Event. **Staged card** is a fold
+under Event in Match data (same ids; `placeList` flips its list upward at
+the foot of the column, and a click on the popup's thumbnail with nothing
+staged opens the fold); the middle column is Graphic features over
+Decklist. **Resizable cards:** Graphics, Graphic features, Decklist, Look
+and Setup end in a `.card-resizer` grip, sticky at the bottom of a
+scrolling card, that drags the height (vertical only, 72px floor;
+double-click resets); heights live in `sidewaysStudio.cardHeights`, a
+folded card drops its height and gets it back on open, and `.controls`
+scrolls if a card is dragged past the band. **Look folds** like the other
+cards (`data-fold` `look`). **Hand fan entrance:** the scene runs a second
+seek clock, `--f` (700ms), after `--t`: the hand rises from below as one
+stacked deck (every card translated onto the middle one by `--dx`, its
+slot offset of 0.77 card widths per step), then fans (`--rot`, `--lift`
+and `--dx` all scale by `--f`); the exit takes the fan down in one move
+and closes the stack once off; fresh loads and `anim=0` snap to the
+settled fan. Reset match also switches off the hand fan and the showdown
+now. Tests unchanged (65 pass).
+
 ### 2026-09-14g (out of band: the showdown, a bare hand fan, no holds)
 
 **Showdown, `showdown`.** State `match.showdown {active, battlefield,

@@ -118,10 +118,13 @@ button.update-go { background: var(--tes-grad); color: #06110a; border: none; fo
   pointer-events: none;
 }
 
+/* TAKE and CLEAR are pinned to the top of the column and what is on air
+   fills it from the bottom, so the buttons never move as graphics come and
+   go. The tip about them is TAKE's hover title. */
 .transition-col {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 12px;
   min-height: 0;
 }
@@ -152,12 +155,11 @@ button.clear {
   cursor: pointer;
 }
 button.clear:hover { border-color: #e33; }
-.transition-hint { font-size: 11px; color: #8b98a5; margin: 0; text-align: center; }
 
 /* What is on air, listed under CLEAR: one row per graphic, the X drops that
    one. A long show can have more rows than the column is tall, so the rows
    scroll rather than push the hint past the monitors. */
-.onair-list { display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.onair-list { display: flex; flex-direction: column; gap: 5px; min-height: 0; margin-top: auto; }
 .onair-list-label {
   font-size: 10px;
   font-weight: 800;
@@ -204,6 +206,8 @@ button.clear:hover { border-color: #e33; }
   /* Graphics, then the cards that change a graphic, then Look over Setup. */
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+  /* A card dragged taller than the band scrolls the band. */
+  overflow-y: auto;
 }
 .card {
   background: #12161b;
@@ -350,35 +354,11 @@ button.onair:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .clear-mini { padding: 4px 8px; font-size: 12px; }
 
 /* --- match data column: one row per fact, Player 1 and Player 2 side by
-   side, so each row can be lit or dimmed as a unit. --- */
+   side. --- */
 .data-panel { gap: 10px; }
 .data-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
 .data-head .row { flex-wrap: nowrap; }
 .data-head .danger-ghost { margin-left: 0; }
-
-.focus-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
-  background: #0c0f12;
-  border: 1px solid #1e242b;
-}
-.focus-label { font-size: 11px; color: #8b98a5; text-transform: uppercase; letter-spacing: 1px; }
-.focus-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.focus-chip {
-  padding: 5px 11px;
-  font-size: 13px;
-  border-radius: 999px;
-  color: #b8c4cf;
-}
-.focus-chip.on {
-  background: var(--tes-grad);
-  color: #06110a;
-  border-color: transparent;
-  font-weight: 700;
-}
-#focusHint { min-height: 1.35em; line-height: 1.35; }
 
 .field-grid { display: flex; flex-direction: column; gap: 7px; }
 .grid-head, .field-row {
@@ -408,15 +388,6 @@ button.onair:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
   letter-spacing: 1px;
   color: #8b98a5;
 }
-
-/* Dimmed means "this graphic does not draw it", not "locked": the field still
-   edits, and comes back up under the pointer or the keyboard so what is being
-   typed is readable. */
-.cell, .row-label, .side-label, .section-label { transition: opacity 0.15s linear; }
-.cell.dim, .dim-row .row-label, .side-label.dim, .section-label.dim { opacity: 0.28; }
-.cell.dim:hover { opacity: 0.8; }
-/* Fully up while typing: a picker's list inherits the cell's opacity. */
-.cell.dim:focus-within { opacity: 1; }
 
 /* Featured card: thumb, search, clear, all on one line. */
 .card-cell { display: flex; align-items: center; gap: 6px; }
@@ -718,19 +689,41 @@ footer p { margin: 0; }
 .scene-thumb.on-air .thumb-tag { color: #ff8a8a; }
 .scene-thumb.disabled { opacity: 0.5; cursor: default; }
 .graphics-card .scene-options { grid-column: 2 / -1; padding-left: 0; }
-/* Graphics are grouped by what they do to the frame: overlays sit over the
-   game, full screens replace it. Each group spaces its rows the same way the
-   card does, so the experimental block reads like the list above it. */
-.scene-group, #experimentalScenes { display: flex; flex-direction: column; gap: 10px; }
-.group-label { padding-top: 8px; border-top: 1px solid #1e242b; color: #b8c4cf; }
-.scene-group:first-of-type > .group-label { padding-top: 0; border-top: 0; }
+.scene-group { display: flex; flex-direction: column; gap: 10px; }
+.group-label { color: #b8c4cf; }
 .group-label .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
-.exp-label { margin-top: 4px; padding-top: 8px; border-top: 1px solid #1e242b; }
-.exp-label .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
+/* Graphics are listed in three folds, 1v1, 2v2 and Other, closed on load;
+   a fold's heading counts what is in preview and on air inside it. */
+details.scene-section { display: block; padding-top: 8px; border-top: 1px solid #1e242b; }
+details.scene-section:first-of-type { padding-top: 0; border-top: 0; }
+details.scene-section > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+details.scene-section > summary::-webkit-details-marker { display: none; }
+details.scene-section > summary::before { content: '\25B8'; font-size: 11px; color: #8b98a5; transition: transform 0.15s linear; }
+details.scene-section[open] > summary::before { transform: rotate(90deg); }
+details.scene-section > summary:hover .group-label { color: #e8edf1; }
+details.scene-section > .scene-group { margin-top: 10px; }
+.sec-count { font-size: 11px; color: #8b98a5; }
+.sec-pill {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+.sec-pill.prev { border: 1px solid var(--tes-green); color: var(--tes-green); }
+.sec-pill.air { background: #e33; color: #fff; }
 .slate-text { flex: 1 1 160px; padding: 4px 8px; font-size: 13px; }
 .slate-text.hidden { display: none; }
 
-/* --- match data: experimental rows --- */
+/* --- match data: rows for the scouted graphics --- */
 .hand-cell { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
 .hand-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .hand-chip {
@@ -798,7 +791,7 @@ footer p { margin: 0; }
 }
 .column-stack .card { flex: 0 1 auto; }
 .column-stack .deck-card { flex: 1 1 auto; }
-.features-card h2, .staged-card h2 { margin-bottom: 0; }
+.features-card h2 { margin-bottom: 0; }
 .feature-group { padding-top: 8px; border-top: 1px solid #1e242b; display: flex; flex-direction: column; gap: 6px; }
 .feature-group.hidden { display: none; }
 .feature-group h3 { margin: 0; font-size: 13px; font-weight: 600; }
@@ -806,7 +799,7 @@ footer p { margin: 0; }
 
 /* --- foldable control cards: the heading folds its card away ---
    The control band holds more than a short screen shows at once, so Graphic
-   features, Decklist, Staged card and Setup each fold from their heading.
+   features, Decklist, Look and Setup each fold from their heading.
    Which ones are folded is one operator's convenience, kept in this browser
    rather than in match state. */
 .fold-btn {
@@ -832,6 +825,36 @@ footer p { margin: 0; }
 .card.collapsed > *:not(.fold-head) { display: none; }
 /* A folded card in the stack gives its room back to the ones still open. */
 .column-stack .card.collapsed { flex: 0 0 auto; }
+
+/* --- resizable cards: a grip along the bottom edge sets the card's height ---
+   Up and down only; the columns stay where they are. Double-click on the
+   grip lets the card size itself again. The grip is sticky, so a scrolling
+   card keeps it at its bottom edge. */
+.card-resizer {
+  flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  height: 10px;
+  /* auto on top pushes the grip to the foot of a card taller than its
+     content; sticky keeps it in view at the foot of one that scrolls. */
+  margin: auto -16px 0;
+  cursor: ns-resize;
+  background: #12161b;
+  border-top: 1px solid #1e242b;
+}
+.card-resizer::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 3px;
+  margin: 3px auto 0;
+  border-radius: 2px;
+  background: #3a4552;
+}
+.card-resizer:hover::after, body.resizing .card-resizer::after { background: var(--tes-blue); }
+body.resizing { cursor: ns-resize; user-select: none; }
+body.resizing iframe { pointer-events: none; }
 
 /* Collapsible match-data sections: the summary is the section label. */
 details.field-section { display: block; }

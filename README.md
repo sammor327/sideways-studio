@@ -100,11 +100,17 @@ copy can run beside a live one without sharing its autosave.
 
 ## Panel layout
 
-Graphics are listed under two headings: Overlays, which sit over the game,
-and Full screen, which replace it. Graphic features, Decklist, Staged card
-and Setup each fold away from their heading, so a short screen keeps the
-cards a show actually uses open; the browser remembers which are folded, and
-putting a graphic in preview opens Graphic features again.
+Graphics are listed in three folds: 1v1, 2v2 and Other (the bugs, the card
+popup and the full screens). They start closed; a fold's heading says how
+many of its graphics are in preview or on air, and putting a graphic in
+preview opens its fold. Each row still carries an Overlay or Full frame
+tag. Graphic features, Decklist, Look and Setup fold from their heading
+too, and every control card can be dragged taller or shorter by the grip
+along its bottom edge (double-click puts it back); the browser remembers
+the folds and the heights. The card popup's search and staged card live in
+Match data, under Event. TAKE and CLEAR stay at the top of their column
+and the tip about them is TAKE's hover text; what is on air fills the
+column from the bottom.
 
 What is on air is listed under CLEAR, each row with an X that takes that one
 graphic off air; a graphic's red ON AIR badge does the same thing from the
@@ -151,13 +157,14 @@ leaves the table camera full width; the tiles cover x 514 to 1406 for the
 top 145 px and bottom 145 px of the frame. Team cam "Webcam cutout" cuts
 the bar away behind the camera window for an OBS source.
 
-### Experimental graphics
+### Graphics from the broadcast scouting
 
-Setup > Experimental > "Show experimental graphics" lists four more overlays
-under Graphics, adds their fields to Match data, and shows their source
-URLs. They come from the September 2026 scouting of Pokémon, Yu-Gi-Oh, One
-Piece, Magic and Flesh and Blood broadcasts and are not part of the locked
-spec yet; the switch is remembered with the event.
+Six more graphics come from the September 2026 scouting of Pokémon,
+Yu-Gi-Oh, One Piece, Magic and Flesh and Blood broadcasts. They are listed
+under Graphics with everything else (the pillars, rows, hand fan and
+showdown under 1v1, the arena bug and the slate under Other); their fields
+sit in Match data's Player details, Hands and showdown, and Event folds,
+and their source URLs are in Setup's browser source links.
 
 - **Portrait pillars** (`/scenes/igoportrait/`): a portrait table camera
   in the middle (crop it to 830 x 1016 at x 545, y 64) with a game-state bar

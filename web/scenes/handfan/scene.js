@@ -1,11 +1,13 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps } from '../../stage/art.js';
-import { clockText, renderRunes, loadLegendDomains, legendDomains, applyVisibility } from '../../stage/exp.js';
+import { clockText, renderRunes, loadLegendDomains, legendDomains } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 600);
+// The spread of the fan: 0 holds every card on the middle one, 1 is the fan.
+const fanClock = new SeekClock(root, '--f', 700);
 
 const BADGES = { reaction: 'Reaction', action: 'Action', unit: 'Unit', champion: 'Champion', gear: 'Gear', spell: 'Spell' };
 
@@ -34,7 +36,8 @@ function cardEl(c, small) {
 
 // Card width shrinks with the hand so twelve cards still fit between the
 // two tags; the fan's rotation and lift come from each card's distance
-// from the middle.
+// from the middle, and so does its slot offset, which the entrance pulls
+// to zero so the hand arrives as one stacked deck.
 function renderFan(cards, unknown) {
   const key = handKey(cards, unknown);
   if (key === fanKey) return;
@@ -51,9 +54,12 @@ function renderFan(cards, unknown) {
   const cw = n <= 7 ? 190 : Math.max(120, Math.floor(1180 / n) + 30);
   fan.style.setProperty('--cw', String(cw));
   const mid = (n - 1) / 2;
+  // One card's slot: its width less the overlap on each side.
+  const pitch = cw * 0.77;
   fan.replaceChildren(...cards.map((c, i) => {
     const el = cardEl(c, false);
     const d = i - mid;
+    el.style.setProperty('--dx', (d * pitch).toFixed(1));
     el.style.setProperty('--rot', (d * 4).toFixed(2));
     el.style.setProperty('--lift', (Math.abs(d) * Math.abs(d) * 2.2).toFixed(1));
     return el;
@@ -85,6 +91,39 @@ setInterval(() => {
 }, 250);
 
 let shownVisible = null;
+
+// The entrance is two moves: the hand rises from below the frame as one
+// stacked deck (--t lifts and fades the scene while --f holds every card on
+// the middle one), then the cards fan out (--f runs 0 to 1). The exit takes
+// the fanned hand back down in one move, and the stack closes again once
+// the scene is off so the next entrance starts from a deck. Fresh loads
+// snap to the settled fan; so does anim=0, since play() then seeks.
+function showFan(visible, first) {
+  if (visible === shownVisible) return;
+  shownVisible = visible;
+  root.dataset.shown = visible ? '1' : '0';
+  if (first) {
+    root.classList.toggle('off', !visible);
+    inOut.seek(visible ? 1 : 0);
+    fanClock.seek(1);
+    return;
+  }
+  if (visible) {
+    root.classList.remove('off');
+    fanClock.stop();
+    fanClock.seek(0);
+    inOut.play({ from: 0, to: 1 }).then(() => {
+      if (root.dataset.shown === '1') fanClock.play({ from: 0, to: 1 });
+    });
+    return;
+  }
+  fanClock.stop();
+  inOut.play({ from: 1, to: 0 }).then(() => {
+    if (root.dataset.shown === '1') return;
+    root.classList.add('off');
+    fanClock.seek(0);
+  });
+}
 
 const params = initStage({
   scene: 'handfan',
@@ -119,7 +158,7 @@ const params = initStage({
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
-    shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
+    showFan(visible, first);
   },
 });
 
