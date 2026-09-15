@@ -123,6 +123,7 @@ button.update-go { background: var(--tes-grad); color: #06110a; border: none; fo
   flex-direction: column;
   justify-content: center;
   gap: 12px;
+  min-height: 0;
 }
 button.take {
   font-size: 22px;
@@ -152,6 +153,48 @@ button.clear {
 }
 button.clear:hover { border-color: #e33; }
 .transition-hint { font-size: 11px; color: #8b98a5; margin: 0; text-align: center; }
+
+/* What is on air, listed under CLEAR: one row per graphic, the X drops that
+   one. A long show can have more rows than the column is tall, so the rows
+   scroll rather than push the hint past the monitors. */
+.onair-list { display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.onair-list-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #e33;
+}
+.air-rows { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
+.air-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px 3px 7px;
+  background: #1a2027;
+  border-left: 3px solid #e33;
+}
+.air-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: #e8edf1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.air-x {
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  background: none;
+  border: 1px solid #5a2a2a;
+  color: #e08b8b;
+}
+.air-x:hover { background: #e33; border-color: #e33; color: #fff; }
 
 /* --- control cards band --- */
 .controls {
@@ -244,7 +287,11 @@ code { background: #0c0f12; padding: 1px 5px; }
   background: #e33;
   color: #fff;
   padding: 2px 7px;
+  border: 0;
+  cursor: pointer;
 }
+button.onair:hover { background: #ff5c5c; }
+button.onair:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .scene-toggle { min-width: 64px; font-weight: 700; }
 .scene-toggle.on { background: var(--tes-grad); color: #06110a; border: none; }
 

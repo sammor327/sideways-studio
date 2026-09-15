@@ -570,8 +570,9 @@ function bump() {
 }
 
 // Whitelist merge: unknown keys are dropped silently, numerics clamped.
-// Actions: take (preview -> program, atomic) and clear (all program graphics
-// off, data untouched: the wrong-graphic-on-air recovery).
+// Actions: take (preview -> program, atomic), clear (all program graphics
+// off, data untouched: the wrong-graphic-on-air recovery) and off (one
+// program graphic down, the same recovery aimed at a single graphic).
 export function applyUpdate(patch) {
   if (!patch || typeof patch !== 'object') return { ok: false, error: 'invalid body' };
 
@@ -582,6 +583,15 @@ export function applyUpdate(patch) {
   }
   if (patch.action === 'clear') {
     for (const scene of Object.values(state.program.scenes)) scene.visible = false;
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // CLEAR aimed at one graphic: the operator drops the overlay that should
+  // not be up without pulling down the rest of the show. A cue on program
+  // only, like CLEAR, so preview keeps what it holds and TAKE puts it back.
+  if (patch.action === 'off') {
+    if (!Object.hasOwn(state.program.scenes, patch.scene)) return { ok: false, error: 'unknown scene' };
+    state.program.scenes[patch.scene].visible = false;
     bump();
     return { ok: true, version: state.version };
   }

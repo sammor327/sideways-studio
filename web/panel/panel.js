@@ -70,6 +70,17 @@ const SCENE_NAMES = {
   slate: 'the slate',
   handfan: 'the hand fan',
   showdown: 'the showdown',
+  decklist: 'the decklist',
+  cardpopup: 'the card popup',
+};
+
+// Short names for the on-air list, which lives in the narrow column between
+// the monitors and has no room for "In-game overlay, portrait pillars".
+const SCENE_SHORT = {
+  scorebug: 'Score bug', cardpopup: 'Card popup', igo1v1: '1v1 overlay', igo2v2: '2v2 overlay',
+  igodual: 'Dual columns', igobars: '2v2 bars', pov: 'POV', decklist: 'Decklist',
+  igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
+  handfan: 'Hand fan', showdown: 'Showdown',
 };
 const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
 
@@ -621,6 +632,7 @@ function render(s) {
   renderClock(m.timer);
 
   renderScenes(s);
+  renderOnAir(s);
   renderLook(s.theme);
   renderExtras(s);
   applyFocus();
@@ -635,6 +647,38 @@ function render(s) {
 
 $('takeBtn').addEventListener('click', () => post({ action: 'take' }));
 $('clearBtn').addEventListener('click', () => post({ action: 'clear' }));
+
+// What is on air, named under CLEAR. CLEAR is the whole-show recovery; this
+// list is the aimed one, so the operator drops the graphic that should not be
+// up without taking down the ones that should. Preview keeps what it holds,
+// so TAKE puts a graphic back.
+const takeOffAir = (key) => post({ action: 'off', scene: key });
+
+let onAirShown = null;
+
+function renderOnAir(s) {
+  const keys = Object.keys(s.program.scenes).filter((key) => s.program.scenes[key].visible);
+  const signature = keys.join(',');
+  if (signature === onAirShown) return;
+  onAirShown = signature;
+  $('onAirList').classList.toggle('hidden', !keys.length);
+  $('onAirRows').replaceChildren(...keys.map((key) => {
+    const row = document.createElement('div');
+    row.className = 'air-row';
+    const name = document.createElement('span');
+    name.className = 'air-name';
+    name.textContent = SCENE_SHORT[key] || key;
+    const off = document.createElement('button');
+    off.type = 'button';
+    off.className = 'air-x';
+    off.textContent = '\u00d7';
+    off.title = `Take ${SCENE_NAMES[key] || key} off air`;
+    off.setAttribute('aria-label', off.title);
+    off.addEventListener('click', () => takeOffAir(key));
+    row.append(name, off);
+    return row;
+  }));
+}
 
 // --- match data (all edits land in the preview bank) ---
 
@@ -2016,6 +2060,9 @@ for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
   thumb.addEventListener('click', () => toggleScene(key));
   thumb.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleScene(key); } });
   row.prepend(thumb);
+  const badge = row.querySelector('.onair');
+  badge.title = `Take ${SCENE_NAMES[key] || key} off air`;
+  badge.addEventListener('click', () => takeOffAir(key));
 }
 
 function renderThumbs(s) {

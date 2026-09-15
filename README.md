@@ -106,6 +106,11 @@ and Setup each fold away from their heading, so a short screen keeps the
 cards a show actually uses open; the browser remembers which are folded, and
 putting a graphic in preview opens Graphic features again.
 
+What is on air is listed under CLEAR, each row with an X that takes that one
+graphic off air; a graphic's red ON AIR badge does the same thing from the
+Graphics list. Preview is untouched either way, so TAKE puts the graphic
+back. CLEAR still drops everything at once.
+
 ## Looks
 
 The Look card in the control panel recolours every graphic: pick a preset

@@ -125,6 +125,11 @@ preview opens Graphic features the same way it opens the Match data folds
 holding its fields. The control band is three columns: Graphics, then the
 cards that change a graphic, then Look above Setup.
 
+What is on air is named under CLEAR, one row per graphic with an X that
+drops it, and a graphic's ON AIR badge is the same control where the graphic
+is listed. Both post `{action:'off', scene}`: CLEAR aimed at one graphic, a
+cue on program only, so preview keeps what it holds and TAKE puts it back.
+
 Timers (Part 10) shipped early with the dual overlay: one round clock in
 `match.timer`, driven by a `timer` action (start / pause / reset / set
 minutes) that acts on both banks at once, so the clock on air never waits

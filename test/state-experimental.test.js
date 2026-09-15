@@ -163,4 +163,15 @@ describe('experimental overlay fields', () => {
     applyUpdate({ action: 'clear' });
     assert.equal(getState().program.scenes.slate.visible, false);
   });
+
+  it('takes one graphic off air and leaves the rest of program up', () => {
+    applyUpdate({ scenes: { slate: { visible: true }, scorebug: { visible: true } } });
+    applyUpdate({ action: 'take' });
+    assert.equal(applyUpdate({ action: 'off', scene: 'slate' }).ok, true);
+    assert.equal(getState().program.scenes.slate.visible, false);
+    assert.equal(getState().program.scenes.scorebug.visible, true, 'the other graphic stays on air');
+    assert.equal(getState().preview.scenes.slate.visible, true, 'preview keeps it, so TAKE puts it back');
+    assert.equal(applyUpdate({ action: 'off', scene: 'nope' }).ok, false);
+    applyUpdate({ action: 'clear' });
+  });
 });
