@@ -98,6 +98,14 @@ copy can run beside a live one without sharing its autosave.
 
 `npm test` runs the unit tests (Node's built-in runner, no dependencies).
 
+## Panel layout
+
+Graphics are listed under two headings: Overlays, which sit over the game,
+and Full screen, which replace it. Graphic features, Decklist, Staged card
+and Setup each fold away from their heading, so a short screen keeps the
+cards a show actually uses open; the browser remembers which are folded, and
+putting a graphic in preview opens Graphic features again.
+
 ## Looks
 
 The Look card in the control panel recolours every graphic: pick a preset

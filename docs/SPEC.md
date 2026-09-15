@@ -116,6 +116,15 @@ each graphic with a live thumbnail (`?force=1` renders a scene as if on)
 that puts the graphic in preview when clicked, and Setup is three
 collapsible sections: browser source links, updates, experimental.
 
+Panel layout (2026-09-15): Graphics lists its rows under two headings,
+Overlays (over the game) and Full screen (instead of the game), and the
+experimental block repeats both so a graphic sits under the same heading
+either way. Graphic features, Decklist, Staged card and Setup fold from
+their heading; which are folded is kept per browser, and a graphic put in
+preview opens Graphic features the same way it opens the Match data folds
+holding its fields. The control band is three columns: Graphics, then the
+cards that change a graphic, then Look above Setup.
+
 Timers (Part 10) shipped early with the dual overlay: one round clock in
 `match.timer`, driven by a `timer` action (start / pause / reset / set
 minutes) that acts on both banks at once, so the clock on air never waits

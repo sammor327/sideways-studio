@@ -158,7 +158,8 @@ button.clear:hover { border-color: #e33; }
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Graphics, then the cards that change a graphic, then Look over Setup. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 .card {
@@ -565,6 +566,10 @@ footer p { margin: 0; }
   body { overflow: auto; }
   .workspace { grid-template-columns: 480px minmax(0, 1fr); }
   .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Two columns would leave the third stack in a half-width hole, so Look and
+     Setup take the full width side by side instead. */
+  .controls > .side-stack { grid-column: 1 / -1; flex-direction: row; }
+  .controls > .side-stack > .card { flex: 1 1 0; }
   .controls .card { max-height: 560px; }
 }
 /* Half a 1080p screen and narrower: data on top, everything else below, and
@@ -666,6 +671,13 @@ footer p { margin: 0; }
 .scene-thumb.on-air .thumb-tag { color: #ff8a8a; }
 .scene-thumb.disabled { opacity: 0.5; cursor: default; }
 .graphics-card .scene-options { grid-column: 2 / -1; padding-left: 0; }
+/* Graphics are grouped by what they do to the frame: overlays sit over the
+   game, full screens replace it. Each group spaces its rows the same way the
+   card does, so the experimental block reads like the list above it. */
+.scene-group, #experimentalScenes { display: flex; flex-direction: column; gap: 10px; }
+.group-label { padding-top: 8px; border-top: 1px solid #1e242b; color: #b8c4cf; }
+.scene-group:first-of-type > .group-label { padding-top: 0; border-top: 0; }
+.group-label .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
 .exp-label { margin-top: 4px; padding-top: 8px; border-top: 1px solid #1e242b; }
 .exp-label .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
 .slate-text { flex: 1 1 160px; padding: 4px 8px; font-size: 13px; }
@@ -744,6 +756,35 @@ footer p { margin: 0; }
 .feature-group.hidden { display: none; }
 .feature-group h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .feature-group .scene-options { padding-left: 0; }
+
+/* --- foldable control cards: the heading folds its card away ---
+   The control band holds more than a short screen shows at once, so Graphic
+   features, Decklist, Staged card and Setup each fold from their heading.
+   Which ones are folded is one operator's convenience, kept in this browser
+   rather than in match state. */
+.fold-btn {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+}
+.fold-btn::before { content: '\25B8'; font-size: 11px; transition: transform 0.15s linear; }
+.fold-btn[aria-expanded="true"]::before { transform: rotate(90deg); }
+.fold-btn:hover { color: #e8edf1; background: none; }
+.fold-btn:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 3px; }
+.card.foldable > .fold-head { flex: 0 0 auto; }
+.card.collapsed { gap: 0; overflow: hidden; }
+.card.collapsed > *:not(.fold-head) { display: none; }
+/* A folded card in the stack gives its room back to the ones still open. */
+.column-stack .card.collapsed { flex: 0 0 auto; }
 
 /* Collapsible match-data sections: the summary is the section label. */
 details.field-section { display: block; }

@@ -445,72 +445,86 @@
   <section class="card graphics-card">
     <h2>Graphics</h2>
     <p class="hint">Each picture shows the preview data as it stands. Click one to put that graphic in preview, click it again to take it out. Its options appear under Graphic features.</p>
-    <div class="scene-row" data-scene="scorebug">
-      <div class="scene-name">Score bug <span class="kind">Overlay</span> <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
-      <button id="toggleScorebug" class="scene-toggle">OFF</button>
+
+    <div class="scene-group">
+      <h4 class="section-label group-label">Overlays <span class="muted">over the game</span></h4>
+      <div class="scene-row" data-scene="scorebug">
+        <div class="scene-name">Score bug <span class="kind">Overlay</span> <span class="onair hidden" id="scorebugOnAir">ON AIR</span></div>
+        <button id="toggleScorebug" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="igo1v1">
+        <div class="scene-name">In-game overlay 1v1 <span class="kind">Overlay</span> <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
+        <button id="toggleIgo" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="igo2v2">
+        <div class="scene-name">In-game overlay 2v2 <span class="kind">Overlay</span> <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
+        <button id="toggleIgo2" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="igodual">
+        <div class="scene-name">In-game overlay, dual columns <span class="kind">Overlay</span> <span class="onair hidden" id="igoDualOnAir">ON AIR</span></div>
+        <button id="toggleIgoDual" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="igobars">
+        <div class="scene-name">In-game overlay, 2v2 bars <span class="kind">Overlay</span> <span class="onair hidden" id="igoBarsOnAir">ON AIR</span></div>
+        <button id="toggleIgoBars" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row" data-scene="pov">
+        <div class="scene-name">POV overlay <span class="kind">Overlay</span> <span class="onair hidden" id="povOnAir">ON AIR</span></div>
+        <button id="togglePov" class="scene-toggle">OFF</button>
+      </div>
+      <div class="scene-row popup-row" data-scene="cardpopup">
+        <div class="scene-name">Card popup <span class="kind">Overlay</span> <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
+        <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
+      </div>
     </div>
-    <div class="scene-row" data-scene="igo1v1">
-      <div class="scene-name">In-game overlay 1v1 <span class="kind">Overlay</span> <span class="onair hidden" id="igoOnAir">ON AIR</span></div>
-      <button id="toggleIgo" class="scene-toggle">OFF</button>
-    </div>
-    <div class="scene-row" data-scene="igo2v2">
-      <div class="scene-name">In-game overlay 2v2 <span class="kind">Overlay</span> <span class="onair hidden" id="igo2OnAir">ON AIR</span></div>
-      <button id="toggleIgo2" class="scene-toggle">OFF</button>
-    </div>
-    <div class="scene-row" data-scene="igodual">
-      <div class="scene-name">In-game overlay, dual columns <span class="kind">Overlay</span> <span class="onair hidden" id="igoDualOnAir">ON AIR</span></div>
-      <button id="toggleIgoDual" class="scene-toggle">OFF</button>
-    </div>
-    <div class="scene-row" data-scene="igobars">
-      <div class="scene-name">In-game overlay, 2v2 bars <span class="kind">Overlay</span> <span class="onair hidden" id="igoBarsOnAir">ON AIR</span></div>
-      <button id="toggleIgoBars" class="scene-toggle">OFF</button>
-    </div>
-    <div class="scene-row" data-scene="pov">
-      <div class="scene-name">POV overlay <span class="kind">Overlay</span> <span class="onair hidden" id="povOnAir">ON AIR</span></div>
-      <button id="togglePov" class="scene-toggle">OFF</button>
-    </div>
-    <div class="scene-row" data-scene="decklist">
-      <div class="scene-name">Decklist <span class="kind full">Full frame</span> <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
-      <button id="toggleDeck" class="scene-toggle">OFF</button>
+
+    <div class="scene-group">
+      <h4 class="section-label group-label">Full screen <span class="muted">instead of the game</span></h4>
+      <div class="scene-row" data-scene="decklist">
+        <div class="scene-name">Decklist <span class="kind full">Full frame</span> <span class="onair hidden" id="deckOnAir">ON AIR</span></div>
+        <button id="toggleDeck" class="scene-toggle">OFF</button>
+      </div>
     </div>
 
     <div class="exp-only hidden" id="experimentalScenes">
       <h4 class="section-label exp-label">Experimental <span class="muted">(Setup &rsaquo; Experimental)</span></h4>
-      <div class="scene-row" data-scene="igoportrait" data-exp="1">
-        <div class="scene-name">In-game overlay, portrait pillars <span class="kind">Overlay</span> <span class="onair hidden" id="igoPortraitOnAir">ON AIR</span></div>
-        <button id="toggleIgoPortrait" class="scene-toggle">OFF</button>
+      <div class="scene-group">
+        <h4 class="section-label group-label">Overlays</h4>
+        <div class="scene-row" data-scene="igoportrait" data-exp="1">
+          <div class="scene-name">In-game overlay, portrait pillars <span class="kind">Overlay</span> <span class="onair hidden" id="igoPortraitOnAir">ON AIR</span></div>
+          <button id="toggleIgoPortrait" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="igorows" data-exp="1">
+          <div class="scene-name">In-game overlay, rows <span class="kind">Overlay</span> <span class="onair hidden" id="igoRowsOnAir">ON AIR</span></div>
+          <button id="toggleIgoRows" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="arenabug" data-exp="1">
+          <div class="scene-name">Arena score bug <span class="kind">Overlay</span> <span class="onair hidden" id="arenaOnAir">ON AIR</span></div>
+          <button id="toggleArena" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="handfan" data-exp="1">
+          <div class="scene-name">Hand fan <span class="kind">Overlay</span> <span class="onair hidden" id="handfanOnAir">ON AIR</span></div>
+          <button id="toggleHandfan" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="showdown" data-exp="1">
+          <div class="scene-name">Showdown <span class="kind">Overlay</span> <span class="onair hidden" id="showdownOnAir">ON AIR</span></div>
+          <button id="toggleShowdown" class="scene-toggle">OFF</button>
+        </div>
       </div>
-      <div class="scene-row" data-scene="igorows" data-exp="1">
-        <div class="scene-name">In-game overlay, rows <span class="kind">Overlay</span> <span class="onair hidden" id="igoRowsOnAir">ON AIR</span></div>
-        <button id="toggleIgoRows" class="scene-toggle">OFF</button>
-      </div>
-      <div class="scene-row" data-scene="arenabug" data-exp="1">
-        <div class="scene-name">Arena score bug <span class="kind">Overlay</span> <span class="onair hidden" id="arenaOnAir">ON AIR</span></div>
-        <button id="toggleArena" class="scene-toggle">OFF</button>
-      </div>
-      <div class="scene-row" data-scene="slate" data-exp="1">
-        <div class="scene-name">Slate <span class="kind full">Full frame</span> <span class="onair hidden" id="slateOnAir">ON AIR</span></div>
-        <button id="toggleSlate" class="scene-toggle">OFF</button>
-      </div>
-      <div class="scene-row" data-scene="handfan" data-exp="1">
-        <div class="scene-name">Hand fan <span class="kind">Overlay</span> <span class="onair hidden" id="handfanOnAir">ON AIR</span></div>
-        <button id="toggleHandfan" class="scene-toggle">OFF</button>
-      </div>
-      <div class="scene-row" data-scene="showdown" data-exp="1">
-        <div class="scene-name">Showdown <span class="kind">Overlay</span> <span class="onair hidden" id="showdownOnAir">ON AIR</span></div>
-        <button id="toggleShowdown" class="scene-toggle">OFF</button>
-      </div>
-    </div>
 
-    <div class="scene-row popup-row" data-scene="cardpopup">
-      <div class="scene-name">Card popup <span class="kind">Overlay</span> <span class="onair hidden" id="cardOnAir">ON AIR</span></div>
-      <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
+      <div class="scene-group">
+        <h4 class="section-label group-label">Full screen</h4>
+        <div class="scene-row" data-scene="slate" data-exp="1">
+          <div class="scene-name">Slate <span class="kind full">Full frame</span> <span class="onair hidden" id="slateOnAir">ON AIR</span></div>
+          <button id="toggleSlate" class="scene-toggle">OFF</button>
+        </div>
+      </div>
     </div>
   </section>
 
   <div class="column-stack">
-  <section class="card features-card" id="featuresCard">
-    <h2>Graphic features</h2>
+  <section class="card features-card foldable" id="featuresCard" data-fold="features">
+    <h2 class="fold-head"><button type="button" class="fold-btn" aria-expanded="true" aria-controls="featuresCard">Graphic features</button></h2>
     <p class="hint" id="featuresHint">Put a graphic in preview to see its options here.</p>
     <div class="feature-group hidden" data-scene="igo1v1">
       <h3>In-game overlay 1v1</h3>
@@ -653,9 +667,9 @@
     </div>
   </section>
 
-  <section class="card deck-card">
-    <div class="deck-head">
-      <h2>Decklist</h2>
+  <section class="card deck-card foldable" id="deckCard" data-fold="deck">
+    <div class="deck-head fold-head">
+      <h2><button type="button" class="fold-btn" aria-expanded="true" aria-controls="deckCard">Decklist</button></h2>
       <a class="link-btn" href="/decklist/" target="_blank" rel="noopener" title="Paste, check and save decklists, export PNGs, import a deck sheet">Open deck editor</a>
     </div>
     <div class="deck-now">
@@ -683,8 +697,8 @@
     </div>
   </section>
 
-  <section class="card staged-card">
-    <h2>Staged card</h2>
+  <section class="card staged-card foldable" id="stagedCard" data-fold="staged">
+    <h2 class="fold-head"><button type="button" class="fold-btn" aria-expanded="true" aria-controls="stagedCard">Staged card</button></h2>
     <div class="search-wrap">
       <label>Search a card by name
         <input id="cardSearch" placeholder="Type at least 2 letters…" autocomplete="off">
@@ -703,6 +717,7 @@
   </section>
   </div>
 
+  <div class="column-stack side-stack">
   <section class="card look-card">
     <div class="deck-head">
       <h2>Look</h2>
@@ -761,8 +776,8 @@
     <p class="hint">Cleared colours fall back to each graphic's designed look. The look is not cued: changes air at once.</p>
   </section>
 
-  <section class="card setup-card">
-    <h2>Setup</h2>
+  <section class="card setup-card foldable" id="setupCard" data-fold="setup">
+    <h2 class="fold-head"><button type="button" class="fold-btn" aria-expanded="true" aria-controls="setupCard">Setup</button></h2>
     <p id="dbStatus">Checking…</p>
     <div class="progress hidden" id="dbProgressWrap"><div class="progress-bar" id="dbProgress"></div></div>
     <div class="row">
@@ -880,6 +895,7 @@
     </div>
     </details>
   </section>
+  </div>
 </main>
 </div>
 </div>

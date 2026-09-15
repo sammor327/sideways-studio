@@ -9,3 +9,21 @@
   --tes-plate: #0a0a0a;
   --tes-font: 'Segoe UI', 'Arial Narrow', Arial, sans-serif;
 }
+
+/* Scrollbars, branded. The panel and the deck editor are the only surfaces
+   that scroll: a graphic never does, so the scenes that load this sheet are
+   untouched. Firefox takes the two-colour form, Chromium the parts below. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2f3a45 var(--tes-ink);
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--tes-ink); }
+::-webkit-scrollbar-corner { background: var(--tes-ink); }
+::-webkit-scrollbar-thumb {
+  background: #2f3a45;
+  border: 2px solid var(--tes-ink);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: #3d4b59; }
+::-webkit-scrollbar-thumb:active { background: var(--tes-blue); }

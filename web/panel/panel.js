@@ -2052,6 +2052,35 @@ function renderFeatures(s) {
   $('featuresHint').classList.toggle('hidden', any);
 }
 
+// --- foldable control cards ---
+//
+// Four cards in the control band fold from their heading, so an operator on
+// a short screen keeps the ones a show actually uses open. Which are folded
+// is a per-browser convenience, not match state: it never reaches the wire.
+const CARD_FOLD_KEY = 'sidewaysStudio.foldedCards';
+
+let foldedCards = new Set();
+try {
+  const saved = JSON.parse(localStorage.getItem(CARD_FOLD_KEY) || '[]');
+  if (Array.isArray(saved)) foldedCards = new Set(saved.filter((k) => typeof k === 'string'));
+} catch { /* storage blocked or corrupt: every card starts open */ }
+
+function foldCard(card, open, { remember = true } = {}) {
+  card.classList.toggle('collapsed', !open);
+  card.querySelector('.fold-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (!remember) return;
+  if (open) foldedCards.delete(card.dataset.fold);
+  else foldedCards.add(card.dataset.fold);
+  try { localStorage.setItem(CARD_FOLD_KEY, JSON.stringify([...foldedCards])); } catch { /* this session only */ }
+}
+
+for (const card of document.querySelectorAll('.card.foldable')) {
+  foldCard(card, !foldedCards.has(card.dataset.fold), { remember: false });
+  card.querySelector('.fold-btn').addEventListener('click', () => {
+    foldCard(card, card.classList.contains('collapsed'));
+  });
+}
+
 // --- folds: everything starts collapsed; a graphic opens what it needs ---
 //
 // Every collapsible section (the Match data folds and the Setup sections)
@@ -2076,6 +2105,7 @@ function revealNewGraphics(s) {
   const fresh = [...now].filter((key) => !previewedBefore.has(key));
   previewedBefore = now;
   if (!fresh.length) return;
+  foldCard($('featuresCard'), true);
   const fields = new Set();
   for (const key of fresh) {
     for (const field of SCENE_FIELDS[key]) {
