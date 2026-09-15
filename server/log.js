@@ -2,7 +2,7 @@
 //
 // Sideways Studio used to BE a console window: everything the operator could
 // learn about the running app was printed to stdout, and the window had to
-// stay open because closing it stopped the graphics. The app window (0.11.0)
+// stay open because closing it stopped the graphics. The app window (0.11.1)
 // keeps that log, it just renders it inside the app instead of leaving a raw
 // terminal on the taskbar. So console.log stays the way the server talks, and
 // this module is the bus that carries those lines to the window.
@@ -59,7 +59,3 @@ export function onLog(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
-
-// For the app's own status lines, where the level matters to the window but
-// stdout should stay plain.
-export const logInfo = (text) => console.log(text);

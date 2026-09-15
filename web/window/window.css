@@ -1,0 +1,373 @@
+/* The app window (0.11.1).
+   Launcher grammar: a hero plate with the wordmark and the one button that
+   matters, a rail of status tiles under it, then the two things the operator
+   actually came for side by side, the browser source URLs and the console the
+   app used to be. Drawn for the 1280x860 window the app opens and down to
+   about 900x560 if it is resized; nothing but the two panes and the console
+   ever scrolls. */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: #07090b;
+  color: #e8edf1;
+  font-family: var(--tes-font);
+  overflow: hidden;
+  user-select: none;
+}
+.hidden { display: none !important; }
+.grow { flex: 1; }
+.muted { color: #8b98a5; font-weight: 400; }
+
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* --- hero ------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 22px 26px 20px;
+  border-bottom: 3px solid transparent;
+  border-image: var(--tes-grad) 1;
+  overflow: hidden;
+}
+/* The TES plate, mirrored so its glowing arrows sit behind the top right and
+   leave the dark half of the photo under the wordmark. A plain background
+   colour is underneath it, so a missing file costs the glow and nothing
+   else. */
+.hero-art {
+  position: absolute;
+  inset: 0;
+  background:
+    url('../assets/textures/grain-dark.png') repeat,
+    url('../assets/decklist/background.jpg') no-repeat center / cover;
+  transform: scaleX(-1);
+  opacity: 0.8;
+}
+/* The glow peaks in the middle right and is pulled back down at the far edge,
+   where the status line and the legend chip have to stay readable. */
+.hero-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #07090b 24%, rgba(7, 9, 11, 0.5) 58%, rgba(7, 9, 11, 0.82) 100%);
+  transform: scaleX(-1);
+}
+.hero-copy { position: relative; }
+.kicker {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #8b98a5;
+}
+.hero h1 {
+  margin: 2px 0 0;
+  font-size: 40px;
+  line-height: 1.05;
+  font-style: italic;
+  letter-spacing: 3px;
+}
+.hero h1 span {
+  background: var(--tes-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.tagline { margin: 6px 0 16px; font-size: 13px; color: #b6c2cd; }
+
+.cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+button {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid #2f3a45;
+  background: #151b21;
+  color: #e8edf1;
+  cursor: pointer;
+}
+button:hover { background: #1c242c; border-color: #3d4b59; }
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 2px; }
+button.go {
+  background: var(--tes-grad);
+  color: #06110a;
+  border: none;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+button.go:hover { filter: brightness(1.08); }
+button.go.big { font-size: 15px; padding: 12px 22px; }
+.cta-row .go { font-size: 15px; padding: 12px 22px; }
+
+/* The legend of the launch: the same holder crop the in-game overlay uses,
+   in a gradient frame. Hidden outright when there is no art for it. */
+.legend {
+  position: absolute;
+  right: 26px;
+  bottom: 18px;
+  margin: 0;
+  width: 132px;
+  text-align: center;
+}
+.legend img {
+  width: 132px;
+  height: 122px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: linear-gradient(#0c0f12, #0c0f12) padding-box, var(--tes-grad) border-box;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+.legend figcaption {
+  margin-top: 6px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #b6c2cd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live {
+  position: absolute;
+  top: 20px;
+  right: 26px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 11px;
+  font-size: 12px;
+  color: #e8edf1;
+  background: rgba(7, 9, 11, 0.72);
+  border: 1px solid #1d252c;
+  border-radius: 999px;
+  backdrop-filter: blur(2px);
+}
+.dot { width: 10px; height: 10px; border-radius: 50%; background: #e33; }
+.dot.ok { background: var(--tes-green); box-shadow: 0 0 10px rgba(27, 239, 25, 0.6); }
+
+/* --- update bar -------------------------------------------------------- */
+
+.update-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 26px;
+  background: #12161b;
+  border-bottom: 2px solid transparent;
+  border-image: var(--tes-grad) 1;
+}
+.update-text { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.update-text strong { font-size: 14px; }
+.update-text .muted { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.update-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+
+/* --- status rail ------------------------------------------------------- */
+
+.rail {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px 26px 0;
+}
+.tile {
+  position: relative;
+  padding: 10px 12px 12px;
+  background: #0f1317;
+  border: 1px solid #1d252c;
+  border-radius: 8px;
+  min-width: 0;
+}
+.tile::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  border-radius: 8px 8px 0 0;
+  background: var(--tes-grad);
+  opacity: 0.55;
+}
+.tile h3 {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #8b98a5;
+  font-weight: 600;
+}
+.tile-main {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tile-sub {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #8b98a5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tile-btn { margin-top: 8px; padding: 5px 10px; font-size: 11px; }
+
+.progress {
+  margin-top: 8px;
+  height: 5px;
+  background: #1d252c;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar { height: 100%; width: 0; background: var(--tes-grad); transition: width 0.25s ease; }
+
+/* --- body: sources and console ---------------------------------------- */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 10px;
+  padding: 12px 26px;
+}
+.card {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0f1317;
+  border: 1px solid #1d252c;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.card h2 {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 1px solid #1d252c;
+}
+.card h2 .muted { letter-spacing: 0.5px; text-transform: none; font-size: 11px; }
+.card h2 button { padding: 4px 9px; font-size: 11px; }
+
+.sources ul {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+}
+/* Label over URL, the panel's url-row grammar: a 1920x1080 scene URL does not
+   fit beside its own name in a window this wide, and a truncated URL is worse
+   than useless to someone typing it into vMix. */
+.sources li {
+  padding: 6px 7px 7px;
+  border-radius: 6px;
+}
+.sources li:hover { background: #141a20; }
+.sources li + li { border-top: 1px solid #141a20; }
+.src-label { display: block; font-size: 12px; margin-bottom: 4px; }
+.src-line { display: flex; align-items: center; gap: 6px; }
+.src-url {
+  flex: 1;
+  min-width: 0;
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  font-size: 11px;
+  color: #8b98a5;
+  background: #0a0d10;
+  border: 1px solid #1d252c;
+  border-radius: 5px;
+  padding: 4px 7px;
+  user-select: text;
+}
+.sources li button { padding: 4px 10px; font-size: 11px; flex: 0 0 auto; }
+.sources .hint {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #8b98a5;
+  border-top: 1px solid #1d252c;
+}
+
+.follow { font-size: 11px; color: #8b98a5; display: flex; align-items: center; gap: 5px; letter-spacing: 0.5px; text-transform: none; }
+
+.console ol {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  background: #080b0e;
+  font-family: Consolas, 'Cascadia Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  user-select: text;
+}
+.console li { display: flex; gap: 10px; white-space: pre-wrap; word-break: break-word; }
+.console li.blank { min-height: 8px; }
+.console time { flex: 0 0 60px; color: #46525e; }
+.console .warn span { color: #ffce54; }
+.console .error span { color: #ff6b6b; }
+
+/* --- footer ------------------------------------------------------------ */
+
+footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 26px 10px;
+  border-top: 1px solid #1d252c;
+  font-size: 11px;
+  color: #8b98a5;
+}
+.foot-left { color: #b6c2cd; }
+.foot-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+footer button { padding: 5px 14px; font-size: 11px; }
+
+/* --- curtain ----------------------------------------------------------- */
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 9, 11, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+.curtain-box { width: min(440px, 80vw); text-align: center; }
+.curtain-box h2 { margin: 6px 0 8px; font-size: 26px; font-style: italic; letter-spacing: 2px; }
+.curtain-box p { margin: 0; font-size: 13px; color: #b6c2cd; }
+.curtain-box .progress { margin-top: 16px; height: 7px; }
+
+/* A squeezed window stacks the two panes instead of crushing them. */
+@media (max-width: 900px) {
+  .rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+  .legend { display: none; }
+}

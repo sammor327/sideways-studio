@@ -7,10 +7,18 @@ Turn'em Sideways.
 
 ## Run (the app)
 
-Double-click **SidewaysStudio.exe**. It starts the server, opens the control
-panel in your default browser, and prints every browser-source URL in its own
-window. Leave that window open while you stream; closing it stops the
-graphics.
+Double-click **SidewaysStudio.exe**. The Sideways Studio window opens: one
+button to the control panel, the state of the server, the card database and
+updates, every browser-source URL with a Copy button, and the app's console
+running down the side of it. Leave that window open while you stream;
+closing it stops the graphics.
+
+The window is drawn by the copy of Edge (or Chrome) the computer already
+has, started with its own private profile in `data\window`, so there is
+still one file to copy and nothing to install. If neither is there, or the
+window cannot be drawn for any reason, the app says so in its old console
+window and carries on exactly as it did before: the show never stops for
+this.
 
 The app is one self-contained file: the server, the control panel, every
 scene and the legend art are inside it. On first run it creates a `data`
@@ -18,24 +26,30 @@ folder beside itself for the card database, downloaded fonts and the event
 autosave, so the whole thing is portable. Copy the exe and its `data` folder
 to a USB stick or the venue PC and it works there, offline.
 
-`SIDEWAYS_PORT` overrides the port. `--no-open` skips opening the browser.
+`SIDEWAYS_PORT` overrides the port. `--console` runs it the old way, in a
+console window with every URL printed and the control panel opened in your
+default browser; `--no-open` does the same and opens nothing.
 
 ## Updates
 
 Every launch asks the release channel whether a newer build exists. If one
-does, the app's own window offers it:
+does, a bar across the top of the app window offers it: **Update now**, **Not
+now**, or **Skip this version**. Nothing installs on its own, so an
+unattended machine always comes up on the version it has. The control panel
+shows the same banner, which is the one to use between matches if you said
+not now at launch.
+
+A release can be marked `required`. Those install themselves, behind a
+progress curtain in the window, and that is the lever for pushing an urgent
+fix.
+
+In `--console` mode the same choice is a keystroke with a 15 second
+countdown, and an unanswered prompt starts the version already installed:
 
 ```
   Update available: 0.1.0 to 0.2.0
   [Y] update now   [N] not now   [S] skip this version   starting in 15s
 ```
-
-Nobody answering starts the version already installed, so an unattended
-machine always comes up. The control panel also shows a banner with the same
-choice, which is the one to use between matches if you skipped it at launch.
-
-A release can be marked `required`, and only those install themselves when
-the prompt times out. That is the lever for pushing an urgent fix.
 
 `--skip-update` or `SIDEWAYS_NO_UPDATE=1` turns the check off for one run.
 `SIDEWAYS_UPDATE_URL` points the app at a different channel.
@@ -91,10 +105,13 @@ npm start
 Every graphic also has its own browser-source URL, listed with a Copy button
 in the panel's Setup card and printed when the server starts.
 
-`npm start -- --open` also opens the panel in your default browser.
+`npm start -- --open` also opens the panel in your default browser, and
+`npm start -- --window` opens the app window the packaged build opens (from
+source the console is the default, since that is where you are working).
 `SIDEWAYS_PORT` (or `--port=4711`) overrides the port, and
 `SIDEWAYS_DATA_DIR` (or `--data-dir=...`) moves the data folder, so a second
-copy can run beside a live one without sharing its autosave.
+copy can run beside a live one without sharing its autosave or its window
+profile.
 
 `npm test` runs the unit tests (Node's built-in runner, no dependencies).
 

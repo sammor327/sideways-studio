@@ -309,7 +309,7 @@ function askWithCountdown(options, seconds, fallback) {
 // The launch-time flow. Returns true when the app is handing over to an
 // updated copy and should stop starting up.
 //
-// `prompt: false` is the app window's launch (0.11.0): there is no console
+// `prompt: false` is the app window's launch (0.11.1): there is no console
 // for a countdown to appear in and no keyboard pointed at it, so the check
 // only loads the answer and the window offers it a second later, with
 // buttons. Required releases install from there rather than from a timeout.
@@ -374,7 +374,7 @@ export async function runLaunchCheck({ prompt = true } = {}) {
 }
 
 // Whatever has to be taken down before this process makes way for the new
-// one: since 0.11.0 that is the app window, which would otherwise still be
+// one: since 0.11.1 that is the app window, which would otherwise still be
 // holding its browser profile when the new copy tries to draw its own.
 let handoverHook = null;
 export function onBeforeHandover(fn) { handoverHook = fn; }

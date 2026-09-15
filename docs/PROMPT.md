@@ -34,7 +34,17 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **Part 6b and the look model shipped 2026-09-14** (the
+Current status: **The app window shipped 2026-09-15 (0.11.1)**: the exe opens
+its own window (Edge or Chrome as `--app=`, private profile in `data/window`)
+with the wordmark, the control-panel button, status tiles, every
+browser-source URL and the app's console as a live log pane, updates offered
+there with buttons rather than a console countdown, and the console window
+minimized then hidden, restored with the old banner on any path that cannot
+draw a window (`server/appwindow.js`, `server/log.js`, `web/window/`,
+`web/shared/sources.js`; LOOP.md 2026-09-15i). Before that: **the
+out-of-game starter kit shipped 2026-09-15 (0.11.0)** (seven scenes, the
+slate rework, bracket and standings editors; LOOP.md 2026-09-15h).
+Before that: **Part 6b and the look model shipped 2026-09-14** (the
 dual-column in-game overlay on the Regional Qualifier geometry, with the
 round clock, seed badges, docked card and mirrored track; every graphic's
 colours and background customizable globally or per graphic through the

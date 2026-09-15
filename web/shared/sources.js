@@ -5,15 +5,13 @@
 // announced in both places by adding one line, and so the two can never
 // disagree about what a source is called or what its URL is.
 //
-// Shipped graphics only. A scene folder exists for several graphics that are
-// still being built (bracket, standings, result and friends); listing them
-// here would invite an operator to put an unfinished plate on air.
-import { SCENE_LABELS } from './look.js';
+// Derived from the look model rather than typed out a third time: a graphic
+// the look can recolour is a graphic that airs, so the two lists are the same
+// set by construction and a new scene reaches OBS, the app window and the
+// banner the moment it is added there.
+import { LOOK_SCENES, SCENE_LABELS } from './look.js';
 
-export const SOURCE_KEYS = [
-  'scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
-  'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
-];
+export const SOURCE_KEYS = [...LOOK_SCENES];
 
 // Everything at once, for the operator who would rather run a single source
 // and switch graphics from the panel.
@@ -37,8 +35,11 @@ export const ALL_SOURCES = [OUTPUT_SOURCE, ...SCENE_SOURCES];
 export const sourceUrls = (base) => ALL_SOURCES.map((s) => ({ ...s, url: `${base}${s.path}` }));
 
 // The operator pages, same shape, so the window and the banner list them the
-// same way.
+// same way. 'deckeditor' rather than 'decklist' because these keys share a
+// namespace with the sources when the window asks for something to be opened,
+// and there is already a decklist GRAPHIC: one key, two different things, and
+// the Open button on the decklist source would quietly open the editor.
 export const APP_PAGES = [
   { key: 'panel', label: 'Control panel', path: '/panel/' },
-  { key: 'decklist', label: 'Deck editor', path: '/decklist/' },
+  { key: 'deckeditor', label: 'Deck editor', path: '/decklist/' },
 ];

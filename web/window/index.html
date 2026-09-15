@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio</title>
+<link rel="icon" href="../assets/favicon.ico">
+<link rel="stylesheet" href="../assets/brand.css">
+<link rel="stylesheet" href="./window.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="hero">
+    <div class="hero-art" aria-hidden="true"></div>
+    <div class="hero-copy">
+      <p class="kicker">Turn'em Sideways</p>
+      <h1>SIDEWAYS <span>STUDIO</span></h1>
+      <p class="tagline">Riftbound broadcast graphics, running on this computer.</p>
+      <div class="cta-row">
+        <button class="go" data-open="panel">Open control panel</button>
+        <button data-open="deckeditor">Deck editor</button>
+        <button data-open="output">Preview graphics</button>
+      </div>
+    </div>
+    <figure class="legend hidden" id="legendChip">
+      <img id="legendArt" alt="">
+      <figcaption id="legendName"></figcaption>
+    </figure>
+    <p class="live" id="liveState"><span class="dot" id="liveDot"></span><span id="liveText">Starting…</span></p>
+  </header>
+
+  <section class="update-bar hidden" id="updateBar">
+    <div class="update-text">
+      <strong id="updateHeadline">Update available</strong>
+      <span class="muted" id="updateNotes"></span>
+    </div>
+    <div class="update-actions">
+      <button class="go" id="updateInstall">Update now</button>
+      <button id="updateLater">Not now</button>
+      <button id="updateSkip">Skip this version</button>
+    </div>
+  </section>
+
+  <section class="rail">
+    <article class="tile">
+      <h3>Server</h3>
+      <p class="tile-main" id="serverMain">localhost</p>
+      <p class="tile-sub" id="serverSub">Starting…</p>
+    </article>
+    <article class="tile">
+      <h3>Card database</h3>
+      <p class="tile-main" id="cardMain">Checking…</p>
+      <p class="tile-sub" id="cardSub"></p>
+      <div class="progress hidden" id="cardProgressWrap"><div class="progress-bar" id="cardProgress"></div></div>
+      <button class="tile-btn hidden" id="cardSync">Download</button>
+    </article>
+    <article class="tile">
+      <h3>Version</h3>
+      <p class="tile-main" id="versionMain">Sideways Studio</p>
+      <p class="tile-sub" id="versionSub">Checking for updates…</p>
+      <button class="tile-btn" id="updateCheck">Check now</button>
+    </article>
+    <article class="tile">
+      <h3>Data folder</h3>
+      <p class="tile-main">Cards, fonts, events</p>
+      <p class="tile-sub" id="dataPath">…</p>
+      <button class="tile-btn" id="openData">Open folder</button>
+    </article>
+  </section>
+
+  <main class="body">
+
+    <section class="card sources">
+      <h2>Browser sources <span class="muted">1920 &times; 1080, 60 fps</span></h2>
+      <ul id="sourceList"></ul>
+      <p class="hint">In OBS or vMix add each one as a browser source at 1920 &times; 1080, 60 fps, with a transparent background. Card data and art are saved on this computer, so the graphics keep working with no internet at the venue.</p>
+    </section>
+
+    <section class="card console">
+      <h2>
+        Console
+        <span class="grow"></span>
+        <label class="follow"><input type="checkbox" id="follow" checked> Follow</label>
+        <button id="copyLog">Copy log</button>
+      </h2>
+      <ol id="log" aria-live="polite"></ol>
+    </section>
+
+  </main>
+
+  <footer>
+    <span class="foot-left" id="footVersion">Sideways Studio</span>
+    <label class="foot-opt"><input type="checkbox" id="autoPanel"> Open the control panel when the app starts</label>
+    <span class="grow"></span>
+    <span class="foot-note">Closing this window stops the graphics.</span>
+    <button id="quit">Quit</button>
+  </footer>
+
+</div>
+
+<div class="curtain hidden" id="curtain">
+  <div class="curtain-box">
+    <p class="kicker">Sideways Studio</p>
+    <h2 id="curtainHeadline">Updating</h2>
+    <p id="curtainHint">The app closes and reopens on its own.</p>
+    <div class="progress" id="curtainProgressWrap"><div class="progress-bar" id="curtainProgress"></div></div>
+  </div>
+</div>
+
+<script type="module" src="./window.js"></script>
+</body>
+</html>

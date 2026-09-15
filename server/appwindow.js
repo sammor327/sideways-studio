@@ -1,7 +1,7 @@
 // The app window: Sideways Studio as a program with a window, not a console.
 //
 // SPEC said "single portable exe, double-click it, no install, no admin
-// rights", and that is still exactly what this is. What changed in 0.11.0 is
+// rights", and that is still exactly what this is. What changed in 0.11.1 is
 // the face it shows: instead of a raw console window the operator has to be
 // told not to close, the app opens its own window, and the console that used
 // to be the whole experience lives inside that window as a log pane.
@@ -28,20 +28,21 @@ import { findBrowser } from './still.js';
 // screen, and giving up early would drop the operator into a console they did
 // not ask for.
 const CONNECT_TIMEOUT_MS = 30_000;
-// A browser that exits this fast never drew anything: it handed our window to
-// another instance holding the same profile (the moment after an update
-// restart), or it could not start at all.
-const INSTANT_EXIT_MS = 4000;
-const RETRY_DELAY_MS = 1500;
+// How long the window may be gone before the app treats it as closed. The
+// page reconnects every 1.2s, so this only ever expires on a window that is
+// really not there any more; anything shorter would quit the app over a
+// refresh or a renderer hiccup, in the middle of a show.
+const GONE_GRACE_MS = 10_000;
 
 const WIN32 = process.platform === 'win32';
 const PROFILE_DIR = path.join(DATA_DIR, 'window');
 
 let proc = null;
-let connected = false;
+let windows = 0;        // live ?role=window sockets
+let connected = false;  // the window has reported in at least once
 let quitting = false;
 let timer = null;
-let attempts = 0;
+let goneTimer = null;
 let hooks = { onQuit: () => {}, onFallback: () => {} };
 
 // The window is the packaged app's normal face. From source the console is
@@ -62,7 +63,17 @@ export const browserForWindow = () => findBrowser();
 // inherits this process's console, so GetConsoleWindow() there returns THIS
 // window's handle. Deliberately not windowsHide, which would give the child a
 // console of its own and hide the wrong window.
-let consoleHidden = false;
+let consoleState = 'normal';   // normal | minimized | hidden
+
+// Never the bare name: this process's PATH is whatever launched it, and a
+// PowerShell that cannot be found would fail silently and leave the window,
+// or the console, exactly where it was.
+function psExe() {
+  const system = process.env.SystemRoot
+    ? path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
+    : null;
+  return system && existsSync(system) ? system : 'powershell.exe';
+}
 
 function setConsoleWindow(showCmd, foreground) {
   if (!WIN32) return;
@@ -75,11 +86,8 @@ function setConsoleWindow(showCmd, foreground) {
     `if ($h -ne [IntPtr]::Zero) { [void]$t::ShowWindow($h, ${showCmd})`
       + `${foreground ? '; [void]$t::SetForegroundWindow($h)' : ''} }`,
   ].join('; ');
-  const system = process.env.SystemRoot
-    ? path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
-    : null;
   try {
-    const child = spawn(system && existsSync(system) ? system : 'powershell.exe',
+    const child = spawn(psExe(),
       ['-NoProfile', '-NonInteractive', '-Command', ps],
       { stdio: 'ignore', windowsHide: false });
     // PowerShell missing or locked down just means the console stays where it
@@ -88,21 +96,31 @@ function setConsoleWindow(showCmd, foreground) {
   } catch { /* same */ }
 }
 
+// Out of the way while the window is on its way up, rather than straight to
+// hidden. If the window never arrives there is a taskbar button to click in
+// the meantime, and the seconds before it opens do not look like a program
+// that flashed a black box and died.
+export function minimizeConsole() {
+  if (!WIN32 || consoleState !== 'normal') return;
+  consoleState = 'minimized';
+  setConsoleWindow(6, false);   // SW_MINIMIZE
+}
+
+// Called once the window is really on screen: from here the app IS the
+// window, and a console in the taskbar is just something to close by mistake.
 export function hideConsole() {
-  if (!WIN32 || consoleHidden) return;
-  consoleHidden = true;
+  if (!WIN32 || consoleState === 'hidden') return;
+  consoleState = 'hidden';
   setConsoleWindow(0, false);   // SW_HIDE
 }
 
 // Every dead end calls this: no window on screen means the console comes
 // back, so there is always something to read and something to close.
 export function showConsole() {
-  if (!WIN32 || !consoleHidden) return;
-  consoleHidden = false;
-  setConsoleWindow(5, true);    // SW_SHOW, and bring it forward
+  if (!WIN32 || consoleState === 'normal') return;
+  consoleState = 'normal';
+  setConsoleWindow(9, true);    // SW_RESTORE, and bring it forward
 }
-
-export const isConsoleHidden = () => consoleHidden;
 
 // --- the window itself ------------------------------------------------------
 
@@ -132,8 +150,6 @@ function fallback(reason) {
 }
 
 function spawnWindow(url) {
-  attempts += 1;
-  const startedAt = Date.now();
   const exe = browserForWindow();
   if (!exe) { fallback('no Edge or Chrome on this computer to draw the window with'); return; }
   const child = spawn(exe, launchArgs(url), { stdio: 'ignore', windowsHide: false, detached: false });
@@ -145,23 +161,16 @@ function spawnWindow(url) {
     fallback(`the app window could not start (${err.message})`);
   });
 
+  // Watching this process is the fast path, not the contract. Edge in
+  // particular usually hands the window to a fresh process of its own and
+  // lets the one we started exit within a second, so an exit here means very
+  // little on its own: the window's socket is what says whether there is a
+  // window (windowConnected / windowGone below).
   child.on('exit', () => {
     if (child !== proc) return;
     proc = null;
     if (quitting) return;
-    if (connected) {
-      // The operator closed the window. That is the app's quit, the same way
-      // closing the console window always was.
-      hooks.onQuit('the app window was closed');
-      return;
-    }
-    if (Date.now() - startedAt < INSTANT_EXIT_MS && attempts < 2) {
-      // Nearly always the profile still being held by the copy we are
-      // replacing during an update restart. Give it a moment and ask again.
-      setTimeout(() => { if (!quitting && !connected) spawnWindow(url); }, RETRY_DELAY_MS);
-      return;
-    }
-    fallback('the app window closed before it finished loading');
+    if (connected && windows === 0) hooks.onQuit('the app window was closed');
   });
 }
 
@@ -170,8 +179,8 @@ function spawnWindow(url) {
 export async function startAppWindow({ url, onQuit, onFallback }) {
   hooks = { onQuit, onFallback };
   connected = false;
+  windows = 0;
   quitting = false;
-  attempts = 0;
   await mkdir(PROFILE_DIR, { recursive: true }).catch(() => {});
   spawnWindow(url);
   timer = setTimeout(() => {
@@ -179,33 +188,64 @@ export async function startAppWindow({ url, onQuit, onFallback }) {
   }, CONNECT_TIMEOUT_MS);
 }
 
-// Called when the window's page reports in over the WebSocket. Until that
-// happens the window has not proved it is on screen, and the console stays
-// one timeout away from coming back.
+// Called when the window's page opens its WebSocket. Until that happens the
+// window has not proved it is on screen, and the console stays one timeout
+// away from coming back.
 export function windowConnected() {
+  windows += 1;
+  clearTimeout(goneTimer);
+  goneTimer = null;
   if (connected) return;
   connected = true;
   clearTimeout(timer);
   timer = null;
+  hideConsole();
 }
 
-export const hasAppWindow = () => Boolean(proc);
+// ...and when it closes. A refresh, a renderer restart or a moment of sleep
+// all land here and come back within a second or two; a window that is really
+// gone does not, and closing the window has always been how this app is
+// stopped.
+export function windowGone() {
+  windows = Math.max(0, windows - 1);
+  if (quitting || !connected || windows > 0 || goneTimer) return;
+  goneTimer = setTimeout(() => {
+    goneTimer = null;
+    if (!quitting && windows === 0) hooks.onQuit('the app window was closed');
+  }, GONE_GRACE_MS);
+}
 
 // Closing it for our own reasons (quit, update handover): the exit handler
 // above must not read that as the operator closing the window.
 export function closeAppWindow() {
   quitting = true;
   clearTimeout(timer);
+  clearTimeout(goneTimer);
   timer = null;
+  goneTimer = null;
   const child = proc;
   proc = null;
-  if (!child || child.exitCode !== null) return;
   try {
     // A browser is a process tree; killing the one we spawned leaves the rest
     // of it holding the profile and the window on screen.
-    if (WIN32) execFile('taskkill', ['/pid', String(child.pid), '/t', '/f'], () => {});
-    else child.kill();
+    if (child && child.exitCode === null) {
+      if (WIN32) execFile('taskkill', ['/pid', String(child.pid), '/t', '/f'], { windowsHide: true }, () => {});
+      else child.kill();
+    }
   } catch { /* it is going away either way */ }
+  if (!WIN32) return;
+  // And the window itself, which is usually no longer in that tree: Edge
+  // hands it to a process of its own. The profile folder is ours alone, so
+  // the command line that mentions it is the window and nothing else. This
+  // matters most on an update restart, where a browser still holding the
+  // profile would leave the new copy unable to draw.
+  const profile = PROFILE_DIR.replace(/'/g, "''");
+  const ps = "Get-CimInstance Win32_Process -Filter \"Name='msedge.exe' or Name='chrome.exe'\""
+    + ` | Where-Object { $_.CommandLine -like '*${profile}*' }`
+    + ' | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }';
+  try {
+    execFile(psExe(), ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true }, () => {});
+  } catch { /* the window outliving us by a moment is not worth failing over */ }
 }
 
 // A crash must not leave a window with nothing behind it.

@@ -9,8 +9,8 @@ import { WebSocketServer } from 'ws';
 import { APP_ROOT, APP_VERSION, DATA_DIR, WEB_DIR, isPackaged, readAsset } from './runtime.js';
 import { captureConsole, onLog, recentLog } from './log.js';
 import {
-  appWindowWanted, browserForWindow, closeAppWindow, hideConsole,
-  startAppWindow, windowConnected,
+  appWindowWanted, browserForWindow, closeAppWindow, minimizeConsole,
+  startAppWindow, windowConnected, windowGone,
 } from './appwindow.js';
 import {
   runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest, onBeforeHandover,
@@ -574,6 +574,7 @@ wss.on('connection', (ws, req) => {
   if (new URL(req.url, 'http://app').searchParams.get('role') === 'window') {
     ws.isWindow = true;
     windowConnected();
+    ws.on('close', windowGone);
     ws.send(JSON.stringify({ type: 'log', lines: recentLog() }));
   }
 });
@@ -616,8 +617,9 @@ async function quitApp(reason) {
   await shutdownStills().catch(() => {});
   server.close();
   // Sockets that a browser source is holding open would keep the process
-  // alive well past the point the operator asked it to stop.
-  setTimeout(() => process.exit(0), 300).unref();
+  // alive well past the point the operator asked it to stop. The delay is
+  // also what gives closeAppWindow's kill time to land.
+  setTimeout(() => process.exit(0), 700).unref();
 }
 
 const banner = (base) => {
@@ -635,7 +637,7 @@ const banner = (base) => {
 const bannerSources = (base) => {
   console.log('');
   console.log('  Browser sources, all 1920x1080 @ 60fps:');
-  for (const s of sourceUrls(base)) console.log(`    ${`${s.label}:`.padEnd(30)}${s.url}`);
+  for (const s of sourceUrls(base)) console.log(`    ${`${s.label}:`.padEnd(36)}${s.url}`);
   if (isPackaged) {
     console.log('');
     console.log(`  Working folder:   ${APP_ROOT}`);
@@ -656,7 +658,7 @@ async function start() {
   // window offers the update instead (/api/update/*), so the check here only
   // loads the answer for it.
   windowMode = appWindowWanted() && Boolean(browserForWindow());
-  if (windowMode) hideConsole();
+  if (windowMode) minimizeConsole();
   // Before anything else: if a newer build is out and the operator takes it,
   // this process hands over and never starts the server at all.
   if (await runLaunchCheck({ prompt: !windowMode })) return;

@@ -214,6 +214,57 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-15i (out of band: the app window, 0.11.1)
+
+Sam: "reskin the console launch as an actual app with a console in it and
+keep it as the sideways studio app. Think like a launcher for a video
+game." So the exe stops being a console window with a program behind it.
+`server/appwindow.js` starts the machine's Edge (Chrome as fallback, the
+same `findBrowser` the PNG export uses) with `--app=http://localhost:PORT/
+window/` and a private profile in `data/window`: no tab strip, no address
+bar, nothing else in it, and still one portable file with nothing
+installed. `web/window/` is the launcher itself: the plate hero with the
+wordmark and the legend of the launch, a gradient Open control panel
+button beside Deck editor and Preview graphics, a rail of four status
+tiles (server, card database, version, data folder), every browser-source
+URL with Copy and Open, and the console, streamed live over the WebSocket
+as `?role=window` (`server/log.js` mirrors every console.log into a 500
+line ring buffer, and a window that opens a second late still gets the
+launch banner). Updates moved into the window: a countdown prompt printed
+into a hidden console with nobody at the keyboard would be a trap, so
+`runLaunchCheck({ prompt: false })` only loads the answer and the window
+offers it with buttons, required releases installing themselves behind a
+curtain the way the timeout used to.
+The three things that had to be safe. **Never invisible:** the console
+window is minimized at launch (a taskbar button, not a black box) and
+hidden only once the window's socket lands; every dead end (no browser,
+a browser that will not start, nothing connected after 30s) restores it,
+prints the old banner and opens the panel, so the operator gets exactly
+the 0.10 experience instead of a machine with no way to stop the
+graphics. **Knowing the window closed:** watching the process we spawn is
+not enough, Edge hands the window to a process of its own and exits
+within a second, so the window's own socket is the lifeline, with a 10s
+grace that a refresh or a renderer restart rides out. **Letting go:**
+quitting (the Quit button, or closing the window) kills every browser
+process whose command line names our profile folder, which is also what
+frees the profile for the copy that starts after an update
+(`onBeforeHandover`).
+Also: `web/shared/sources.js` is now the one list of browser sources,
+derived from `LOOK_SCENES`, read by the window's rail and by the console
+banner, so the seven starter-kit graphics that shipped in 0.11.0 are
+announced too, and `/api/app/open` hands URLs to Windows rather than
+letting the window open them in its own profile (page keys renamed
+`deckeditor` to keep them unambiguous against the decklist graphic).
+Verified from source with `--window`: the window opens and connects, the
+console pane carries the banner, closing the window stops the app, Quit
+stops the app and the window together, a browser that cannot draw falls
+back to the console after 30s with the full source list, the page holds
+at 1280x860 and 940x620 with no page scroll, 83 tests.
+Note for the log: 0.11.0 shipped from another session's broad commit with
+this feature's server half in it but not `web/window/`, so a packaged
+0.11.0 hides its console, fails to load the window and falls back after
+30s. 0.11.1 is the fix; it is the release to point people at.
+
 ### 2026-09-15b (out of band: v0.10.1, Open switches the showdown on)
 
 Sam: "the showdown overlay is not popping up". Reproduced nothing: the

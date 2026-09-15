@@ -10,6 +10,17 @@ Sam; do not re-litigate them without Sam explicitly reopening one.
 - Single portable **Windows .exe** (packaging is a later part; dev runs `npm start`).
   Double-click starts a localhost webserver, opens the control panel in the
   default browser, shows status. No install, no admin rights.
+  **Amendment 2026-09-15 (Sam):** "shows status" is an app window, not a
+  console. The exe opens its own window (the machine's Edge or Chrome started
+  with `--app=` and a private profile in `data/window`, so there is still one
+  file to copy and nothing to install) carrying the wordmark, the button that
+  opens the control panel, the status of the server, the card database and
+  updates, every browser-source URL with a Copy button, and the console the
+  app used to be, as a log pane inside it. The console window Windows gives
+  the exe is minimized at launch and hidden once the window reports in, and
+  comes back with the old banner if the window cannot be drawn: no path ends
+  with the app running where nobody can see or stop it. Closing the window
+  stops the graphics, exactly as closing the console window did.
 - **Localhost only** (bind 127.0.0.1). No LAN control surface in v1.
 - One browser-source URL per graphic, all **1920x1080 @ 60fps**, for OBS and vMix.
 - WebSocket push: every edit reaches every open output instantly.
