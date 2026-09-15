@@ -272,6 +272,49 @@ and closes the stack once off; fresh loads and `anim=0` snap to the
 settled fan. Reset match also switches off the hand fan and the showdown
 now. Tests unchanged (65 pass).
 
+### 2026-09-15h (out of band: the out-of-game starter kit, 0.11.0)
+
+Sam: "Let's implement them into sideways studio and then publish a
+release" after the "Riftbound Broadcast Starter Kit" mocks (eleven
+graphics, seventeen frames; the bracket reworked into four formats and the
+standings made traditional at his ask). Built as seven new scenes plus the
+slate rework, on the mocks' geometry:
+
+`cornertag`, `lowerthird` (casters / interview / coming), `headtohead`
+(the spec's output 3, on the two sides' own card ids), `profile`,
+`bracket` (spec output 1, four formats from `web/shared/bracket.js`, which
+the server, the scene and the panel's match editor all read, so what the
+editor lists is what airs), `standings` (spec output 2, twenty rows a
+page, cut line), `result`. The slate's starting / brb / thanks modes are
+the hold, the be-right-back with a camera window and the sign-off.
+
+State: sides gain team, store, seasonRecord, bestFinish, finishes; match
+gains choseFirst and result {winner, note}; event gains schedule[] +
+scheduleNow, format, commands, sponsors, nextName, nextWhen, champion,
+bracket {format, players, results} and standings {rows, cut}; casters
+carry a handle. Results are re-cleaned against the format on every
+bracket patch so a format switch drops the matches that no longer exist.
+
+Panel: a "Between games" fold in Graphics holds the slate and the seven
+new rows (thumbnails, kind tags, feature groups); Match data gains a
+"Match card and result" fold (chose first, result, champion), the Event
+fold gains schedule (with a Now picker), format, commands, sponsors and
+next event, and two new folds hold the Bracket editor (format, players in
+the up-next line shape, one row per match with scores and a winner
+button) and the Standings editor (cut, pipe-separated rows). Full-frame
+graphics are exclusive in preview. `web/stage/kit.css` carries the shared
+pieces (chip, thumb, lockup, sponsor row, shards).
+
+Verified on the 4713 server with a seeded event: every scene and variant
+rendered as a still (`?force=1`), overlays composited over a table cam,
+the panel loaded with no page errors and the bracket editor populated.
+Caught and fixed on the stills: the image loader replaces an img's class,
+so scene CSS must target `.art img` not a class on the img; a gradient
+border-box on a transparent camera well paints the gradient through the
+window (solid accent border instead); the hold's feature-match names
+needed a smaller size in the 540px column. Tests: bracket model (5) and
+starter-kit state (6); 76 pass.
+
 ### 2026-09-14g (out of band: the showdown, a bare hand fan, no holds)
 
 **Showdown, `showdown`.** State `match.showdown {active, battlefield,

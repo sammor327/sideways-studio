@@ -112,6 +112,50 @@ data and unread:
     the graphic on in preview when it is off (0.10.1), and the graphic's
     row warns while it is up with no showdown open.
 
+**The out-of-game starter kit (2026-09-15, Sam's ask, from the "Between
+the Games" scout and the mocked kit).** Outputs 1 to 3 are now built on
+this set; the PSDs stay the visual reference.
+
+16. **Corner tag** (`cornertag`) — "UP NEXT · match or round or a custom
+    line · break clock", top right, over anything. Reads event.countdown.
+17. **Lower third** (`lowerthird`) — one bar, three modes: casters (the
+    first two of event.casters with role and handle, the event lockup
+    between them), interview (a side's legend thumbnail, name, country and a
+    credential line, typed or built from seed, record, legend and best
+    finish), coming (the round over "A vs B").
+18. **Match card** (`headtohead`, spec output 3) — legend art fills each
+    side, the legend card and the featured card float above the name with
+    domain runes, seed, Swiss and season records, best finish, pronouns and
+    team; a centre column with the round, best-of, "first to 8 points" and
+    who chose first (match.choseFirst); a status line along the bottom.
+19. **Player profile** (`profile`) — one side: legend art backdrop, name,
+    legend, country and seed, tiles for Swiss record, season record, deck
+    and store, up to three top finishes, and a transparent camera well
+    bottom right.
+20. **Bracket** (`bracket`, spec output 1) — event.bracket {format se8 |
+    se16 | de8 | de16, players[16] in seed order, results by match id}.
+    web/shared/bracket.js holds the formats (seed pairings, feeds, the
+    double-elimination drops) and resolves every slot; the scene lays the
+    tree out with SVG connectors, lights the winner's path, dims the
+    eliminated and marks live matches. The panel lists every match with
+    scores and a winner button.
+21. **Standings** (`standings`, spec output 2) — event.standings {rows[64]
+    (name, country, legend, record, points, OMW, GW, OGW), cut 0/4/8/16/32}
+    as one full-width table, twenty rows a page (scene.page), the cut drawn
+    under the last qualifying row.
+22. **Result strip** (`result`) — the match winner (match.result.winner, or
+    whoever holds the series) with legend art, round and game chips, the
+    "advances to" note and a transparent camera well; the series score as a
+    bug top right.
+The slate's starting mode became the hold (clock, event.schedule with
+event.scheduleNow lit, event.format panel, first feature table, sponsors,
+tables ticker); brb leaves a transparent camera window with the resume
+clock, next match and event.commands; thanks names event.champion with
+their legend art and event.nextName / nextWhen. Sides gained team, store,
+seasonRecord, bestFinish, finishes; casters gained a handle. Full-frame
+graphics (slate, decklist, match card, profile, bracket, standings) switch
+each other off in preview.
+
 New per-side fields: record, country (2-3 letters), pronouns, archetype,
 handCount, hand[] (cardId, cardName, energy, domains), holds. New match
 cues: `turn` (next / prev / reset / set / side) acting on both banks.

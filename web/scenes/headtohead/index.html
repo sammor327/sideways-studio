@@ -1,0 +1,55 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Match Card</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="h2h off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="side l" id="lside">
+      <div class="art"><img class="hero hidden" id="lhero" alt="" draggable="false"></div>
+      <div class="cards"><div class="card"><img class="art hidden" id="lcard1" alt="" draggable="false"></div><div class="card"><img class="art hidden" id="lcard2" alt="" draggable="false"></div></div>
+      <div class="id">
+        <div class="nm"><span class="k-chip" id="lcountry"></span><span class="n" id="lname"></span></div>
+        <div class="lg"><span class="k-runes" id="lrunes"></span><span id="llegend"></span></div>
+        <div class="meta" id="lmeta"></div>
+        <div class="tags" id="ltags"></div>
+      </div>
+    </div>
+    <div class="centre">
+      <div class="vs">VS</div>
+      <div class="box"><div class="l" id="roundLabel"></div><div class="v" id="bestOf"></div></div>
+      <div class="box"><div class="l">First to</div><div class="v">8 points</div></div>
+      <div class="box" id="firstBox"><div class="l">Game one</div><div class="v small" id="firstText"></div></div>
+    </div>
+    <div class="side r" id="rside">
+      <div class="art"><img class="hero hidden" id="rhero" alt="" draggable="false"></div>
+      <div class="cards"><div class="card"><img class="art hidden" id="rcard1" alt="" draggable="false"></div><div class="card"><img class="art hidden" id="rcard2" alt="" draggable="false"></div></div>
+      <div class="id">
+        <div class="nm"><span class="k-chip" id="rcountry"></span><span class="n" id="rname"></span></div>
+        <div class="lg"><span id="rlegend"></span><span class="k-runes" id="rrunes"></span></div>
+        <div class="meta" id="rmeta"></div>
+        <div class="tags" id="rtags"></div>
+      </div>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText"></span></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The match card is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

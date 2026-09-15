@@ -57,7 +57,7 @@ describe('experimental overlay fields', () => {
       igoportrait: { visible: true, mode: 'webcam', handCam: true, cardWell: false, bogus: true },
       igorows: { visible: true, mode: 'nope', hand: false },
       arenabug: { visible: true, clock: false },
-      slate: { visible: true, mode: 'custom', text: 'Back after the break', countdown: false },
+      slate: { visible: true, mode: 'custom', text: 'Back after the break', countdown: false, schedule: true, ticker: true, camera: true },
     } });
     const sc = getState().preview.scenes;
     assert.deepEqual(sc.igoportrait, { visible: true, mode: 'webcam', topBar: true, handCam: true, cardWell: false });
@@ -69,7 +69,7 @@ describe('experimental overlay fields', () => {
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
     assert.equal(getState().preview.scenes.handfan.side, 'right');
     assert.deepEqual(sc.arenabug, { visible: true, clock: false });
-    assert.deepEqual(sc.slate, { visible: true, mode: 'custom', text: 'Back after the break', countdown: false });
+    assert.deepEqual(sc.slate, { visible: true, mode: 'custom', text: 'Back after the break', countdown: false, schedule: true, ticker: true, camera: true });
     applyUpdate({ scenes: { slate: { mode: 'sideways' } } });
     assert.equal(getState().preview.scenes.slate.mode, 'custom', 'an unknown slate mode is ignored');
   });
@@ -81,7 +81,7 @@ describe('experimental overlay fields', () => {
         { label: 'Table 1', left: { name: 'Shoji', country: 'kr', record: '8-2-0', seed: '3rd', legend: 'Yasuo, Unforgiven', legendSlug: 'yasuo-unforgiven', legendCardId: 'OGN-259' }, right: { name: 'Margaux' } },
         'junk', {}, {}, {},
       ],
-      casters: [{ name: 'Lena', role: 'Play-by-play' }, { name: '' }, { role: 'no name' }],
+      casters: [{ name: 'Lena', role: 'Play-by-play', handle: '' }, { name: '' }, { role: 'no name' }],
       seeds: 'Guubums · 9-1-0 · Irelia\n\x07Dax · 8-2-0',
     } });
     const ev = getState().preview.event;
@@ -91,7 +91,7 @@ describe('experimental overlay fields', () => {
     assert.equal(ev.tables[0].left.legendSlug, 'yasuo-unforgiven');
     assert.equal(ev.tables[0].right.name, 'Margaux');
     assert.equal(ev.tables[1].left.name, '', 'a junk row becomes an empty table, never a crash');
-    assert.deepEqual(ev.casters, [{ name: 'Lena', role: 'Play-by-play' }]);
+    assert.deepEqual(ev.casters, [{ name: 'Lena', role: 'Play-by-play', handle: '' }]);
     assert.equal(ev.seeds, 'Guubums · 9-1-0 · Irelia\nDax · 8-2-0');
   });
 

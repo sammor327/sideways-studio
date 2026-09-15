@@ -1,0 +1,46 @@
+/* Result strip (starter kit, 2026-09-15): the moment a match ends. A 300px
+   band along the bottom: the winner's legend art, the round and game chips,
+   MATCH WINNER, the name, and the line that matters (where they go next);
+   a transparent camera well on the right so the strip can hold while the
+   players shake hands. The series score stays as a small bug top right.
+
+   Motion: --t lifts the strip from below the frame; every read is var(--t, 1). */
+
+.result { position: absolute; inset: 0; }
+.result.off { display: none; }
+.result, .result * { box-sizing: border-box; }
+
+.score {
+  position: absolute; right: calc(60 * var(--u)); top: calc(48 * var(--u));
+  display: flex; align-items: stretch;
+  background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  opacity: var(--t, 1); transform: translateX(calc((1 - var(--t, 1)) * 400 * var(--u)));
+}
+.score .n { padding: calc(12 * var(--u)) calc(20 * var(--u)); font: 800 calc(26 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); display: grid; align-content: center; max-width: calc(320 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.score .s { padding: calc(10 * var(--u)) calc(22 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); font: 800 calc(40 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; display: grid; place-items: center; white-space: nowrap; }
+
+.strip {
+  position: absolute; left: 0; right: 0; bottom: 0; height: calc(300 * var(--u));
+  background: var(--ss-plate, #0a0d12); border-top: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  display: grid; grid-template-columns: calc(420 * var(--u)) 1fr calc(520 * var(--u));
+  opacity: var(--t, 1); transform: translateY(calc((1 - var(--t, 1)) * 320 * var(--u)));
+}
+.strip .art { position: relative; overflow: hidden; background: var(--ss-ink, #10151d); }
+.strip .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
+.strip .art img.hidden { display: none; }
+.strip .art img.icon-tier { object-fit: contain; padding: 18%; opacity: 0.6; }
+.strip .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, var(--ss-plate, #0a0d12)); }
+.strip .body { padding: calc(34 * var(--u)) calc(40 * var(--u)); display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.strip .stack { display: flex; gap: calc(12 * var(--u)); align-items: center; }
+.strip .stack .k-chip { font-size: calc(13 * var(--u)); }
+.strip .w { font: 800 calc(34 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); margin-top: calc(16 * var(--u)); letter-spacing: calc(2 * var(--u)); }
+.strip .nm { display: flex; align-items: center; gap: calc(18 * var(--u)); font: 800 calc(96 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); margin-top: calc(8 * var(--u)); min-width: 0; }
+.strip .nm .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip .nm .k-chip { font-size: calc(18 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u)) calc(5 * var(--u)); }
+.strip .adv { font: 400 calc(18 * var(--u))/1.3 var(--tes-font); color: var(--ss-text, #dfe6ee); margin-top: calc(16 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.strip .adv b { font-weight: 800; }
+.strip .adv:empty { display: none; }
+.strip .cam { position: relative; }
+.strip .cam .well { position: absolute; inset: calc(24 * var(--u)); border: calc(2 * var(--u)) solid var(--ss-accent-b, #1bef19); border-radius: calc(6 * var(--u)); overflow: hidden; }
+.strip .cam .well .win { position: absolute; inset: 0; border-radius: calc(4 * var(--u)); background: transparent; }
+html:not(.transparent) .strip .cam .well .win { background: rgba(8, 12, 18, 0.7); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); }

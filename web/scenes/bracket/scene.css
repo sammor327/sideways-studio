@@ -1,0 +1,64 @@
+/* Bracket (starter kit, 2026-09-15; spec output 1): one scene, four layouts.
+   Top 8 and top 16, single and double elimination, laid out by scene.js
+   from the shared bracket model. Every slot is the same object: seed, legend
+   thumbnail, country chip, name, legend name, and a score box that takes the
+   trim gradient when that player won. Connectors are drawn as SVG elbows and
+   the winner's path lights up; live matches carry an accent inner frame;
+   eliminated players dim. Slot height sets the font sizes via --sh.
+
+   Motion: --t fades the frame; the tree slides up a little. */
+
+.bracket { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); }
+.bracket.off { display: none; }
+.bracket, .bracket * { box-sizing: border-box; }
+
+.head { position: absolute; left: calc(80 * var(--u)); top: calc(44 * var(--u)); display: flex; align-items: flex-end; gap: calc(26 * var(--u)); }
+.head .title { font: 800 calc(56 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
+.head .sub { font: 700 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(1200 * var(--u)); }
+
+.wire { position: absolute; left: 0; top: 0; width: calc(1920 * var(--u)); height: calc(1080 * var(--u)); }
+.wire path { fill: none; stroke: rgba(255, 255, 255, 0.18); stroke-width: 2; }
+.wire path.on { stroke: var(--ss-accent-b, #1bef19); opacity: 0.75; }
+
+.tree { position: absolute; inset: 0; transform: translateY(calc((1 - var(--t, 1)) * 60 * var(--u))); }
+.rl { position: absolute; font: 500 calc(11 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; }
+.rl b { color: var(--ss-text, #fff); font-weight: 800; }
+.rl.sec { color: var(--ss-accent-b, #1bef19); letter-spacing: calc(2.4 * var(--u)); }
+.rl.sec b { color: var(--ss-accent-b, #1bef19); }
+
+.m { position: absolute; }
+.s {
+  position: absolute; left: 0; right: 0; height: calc(var(--sh) * var(--u));
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+  background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); overflow: hidden;
+}
+.s.top { top: 0; } .s.bot { top: calc((var(--sh) + 4) * var(--u)); }
+.s .sd { width: calc(28 * var(--u)); flex: 0 0 auto; text-align: center; font: 700 calc(var(--sh) * 0.36 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); }
+.s .k-thumb { width: calc((var(--sh) - 2) * var(--u)); height: calc((var(--sh) - 2) * var(--u)); border-radius: 0; border: 0; border-right: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+.s .k-thumb.hidden { display: none; }
+.s .who { min-width: 0; flex: 1; line-height: 1; }
+.s .who .k-chip { font-size: calc(10 * var(--u)); padding: calc(2 * var(--u)) calc(5 * var(--u)) calc(1 * var(--u)); margin-right: calc(6 * var(--u)); }
+.s .nm { font: 700 calc(var(--sh) * 0.4 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s .lg { font: 400 calc(var(--sh) * 0.22 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); margin-top: calc(3 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s .lg:empty, .s.small .lg { display: none; }
+.s .sc { flex: 0 0 auto; height: 100%; width: calc(var(--sh) * 0.95 * var(--u)); display: grid; place-items: center; font: 700 calc(var(--sh) * 0.4 * var(--u))/1 var(--tes-font); border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); color: var(--ss-text-muted, #9aa7b6); }
+.s.win .sc { background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); border-left-color: transparent; }
+.s.win { border-color: var(--ss-accent-b, #1bef19); }
+.s.out { opacity: 0.4; }
+.s.tbd { border-style: dashed; }
+.s.tbd .nm { color: var(--ss-text-muted, #9aa7b6); font-weight: 500; text-transform: none; letter-spacing: calc(0.3 * var(--u)); }
+.s.live { box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--ss-accent-a, #11b6fb); }
+
+.champ { position: absolute; display: flex; flex-direction: column; align-items: center; gap: calc(10 * var(--u)); text-align: center; }
+.champ .cup { width: calc(90 * var(--u)); height: calc(90 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); opacity: 0.35; }
+.champ.won .cup { opacity: 1; }
+.champ .l { font: 500 calc(11 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(2.4 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+.champ .nm { font: 800 calc(26 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); max-width: calc(260 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.champ.won .nm { color: var(--ss-text, #fff); }
+
+.k-foot .legend { display: flex; gap: calc(18 * var(--u)); align-items: center; font: 500 calc(11 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+.k-foot .legend i { display: inline-block; width: calc(14 * var(--u)); height: calc(14 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); margin-right: calc(6 * var(--u)); vertical-align: calc(-2 * var(--u)); background: var(--ss-plate, #10151d); }
+.k-foot .legend i.w { border-color: var(--ss-accent-b, #1bef19); }
+.k-foot .legend i.lv { box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--ss-accent-a, #11b6fb); }
+.k-foot .legend i.o { opacity: 0.4; }
+.k-foot .note b { color: var(--ss-accent-b, #1bef19); }

@@ -1,0 +1,98 @@
+import { initStage, sceneBank, setText } from '../../stage/stage.js';
+import { SeekClock } from '../../stage/seekclock.js';
+import { chainLoad, clearArt, heroSteps } from '../../stage/art.js';
+import { renderRunes, loadLegendDomains, legendDomains, applyVisibility } from '../../stage/exp.js';
+
+const $ = (id) => document.getElementById(id);
+const root = $('root');
+const inOut = new SeekClock(root, '--t', 700);
+
+let heroKey = null;
+function loadHero(side) {
+  const key = side.legendSlug || '';
+  if (heroKey === key) return;
+  heroKey = key;
+  const img = $('hero');
+  const steps = heroSteps(side);
+  if (!steps.length) { clearArt(img); return; }
+  chainLoad(img, steps);
+}
+
+// "Event · Result" per line; a line with no separator prints as the event.
+let finKey = null;
+function renderFinishes(text) {
+  if (finKey === text) return;
+  finKey = text;
+  const lines = String(text || '').split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 3);
+  $('finBox').classList.toggle('hidden', lines.length === 0);
+  $('finishes').replaceChildren(...lines.map((line) => {
+    const [ev, ...rest] = line.split(/\s*[·|:-]\s*/);
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.append(
+      Object.assign(document.createElement('span'), { textContent: ev }),
+      Object.assign(document.createElement('b'), { textContent: rest.join(' ') }),
+    );
+    return row;
+  }));
+}
+
+function renderTags(side) {
+  const tags = [side.pronouns, side.team].filter(Boolean);
+  const el = $('tags');
+  const key = tags.join('|');
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  el.replaceChildren(...tags.map((t) => Object.assign(document.createElement('span'), { className: 'k-chip ghost', textContent: t })));
+}
+
+let lastState = null;
+let shownVisible = null;
+
+const params = initStage({
+  scene: 'profile',
+  onState(state, first) {
+    lastState = state;
+    $('diag').classList.remove('on');
+    const bank = sceneBank(state, params);
+    const scene = bank.scenes.profile;
+    const side = scene.side === 'right' ? bank.match.right : bank.match.left;
+
+    setText($('eventName'), bank.event.name || 'Sideways Studio');
+    setText($('roundTitle'), [bank.event.roundTitle, 'Player profile'].filter(Boolean).join(' · '));
+    const logo = state.theme.logo || '';
+    const logoEl = $('logo');
+    if (logoEl.getAttribute('src') !== (logo || null)) { if (logo) logoEl.src = logo; else logoEl.removeAttribute('src'); }
+    logoEl.classList.toggle('hidden', !logo);
+    $('mark').classList.toggle('hidden', Boolean(logo));
+
+    setText($('name'), side.name || ' ');
+    setText($('legend'), side.legend || '');
+    renderRunes($('runes'), legendDomains(side));
+    setText($('country'), side.country || '');
+    setText($('seed'), side.seed ? `${side.seed} seed` : '');
+    renderTags(side);
+    const tiles = [['statRecord', 'record', side.record], ['statSeason', 'seasonRecord', side.seasonRecord], ['statArchetype', 'archetype', side.archetype], ['statStore', 'store', side.store]];
+    for (const [box, id, value] of tiles) {
+      $(box).classList.toggle('hidden', !value);
+      setText($(id), value || '');
+    }
+    renderFinishes(side.finishes);
+    loadHero(side);
+
+    const visible = params.force || scene.visible;
+    $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
+    shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
+  },
+});
+
+loadLegendDomains(() => {
+  if (!lastState) return;
+  const bank = sceneBank(lastState, params);
+  const side = bank.scenes.profile.side === 'right' ? bank.match.right : bank.match.left;
+  renderRunes($('runes'), legendDomains(side));
+});
+
+setTimeout(() => {
+  if (shownVisible === null) $('diag').classList.add('on');
+}, 4000);

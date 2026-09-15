@@ -308,13 +308,22 @@ function askWithCountdown(options, seconds, fallback) {
 
 // The launch-time flow. Returns true when the app is handing over to an
 // updated copy and should stop starting up.
-export async function runLaunchCheck() {
+//
+// `prompt: false` is the app window's launch (0.11.0): there is no console
+// for a countdown to appear in and no keyboard pointed at it, so the check
+// only loads the answer and the window offers it a second later, with
+// buttons. Required releases install from there rather than from a timeout.
+export async function runLaunchCheck({ prompt = true } = {}) {
   if (!isPackaged) return false;
   if (process.argv.includes('--skip-update') || process.env.SIDEWAYS_NO_UPDATE === '1') return false;
 
   await cleanupOldBinary();
   const manifest = await checkForUpdate();
   if (!manifest) return false;
+  if (!prompt) {
+    console.log(`  Update available: ${APP_VERSION} to ${manifest.version}${manifest.required ? '  (required)' : ''}`);
+    return false;
+  }
 
   console.log('');
   console.log(`  Update available: ${APP_VERSION} to ${manifest.version}${manifest.required ? '  (required)' : ''}`);
@@ -364,6 +373,12 @@ export async function runLaunchCheck() {
   return true;
 }
 
+// Whatever has to be taken down before this process makes way for the new
+// one: since 0.11.0 that is the app window, which would otherwise still be
+// holding its browser profile when the new copy tries to draw its own.
+let handoverHook = null;
+export function onBeforeHandover(fn) { handoverHook = fn; }
+
 // Panel-triggered install: same download, then hand over. The reply goes out
 // before the process exits so the panel can say what is happening.
 export async function installLatest() {
@@ -372,6 +387,9 @@ export async function installLatest() {
   const ok = await downloadUpdate(manifest);
   if (!ok) return { ok: false, error: status.error };
   await swapAndRestart();
+  if (handoverHook) {
+    try { handoverHook(); } catch { /* the restart matters more */ }
+  }
   setTimeout(() => process.exit(0), 600);
   return { ok: true, version: manifest.version };
 }

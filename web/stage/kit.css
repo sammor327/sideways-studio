@@ -1,0 +1,41 @@
+/* Shared pieces of the out-of-game starter kit (2026-09-15): the corner tag,
+   the event lockup, the country chip, the legend thumbnail, the sponsor row
+   and the soft shards over a ground. Every metric is calc(N * var(--u)); the
+   colours are the resolved look (--ss-*). Scenes include this after
+   stage.css and before their own scene.css. */
+
+.k-label { font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-label:empty { display: none; }
+.k-chip { display: inline-block; flex: 0 0 auto; font: 800 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); padding: calc(4 * var(--u)) calc(7 * var(--u)) calc(3 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); border-radius: calc(2 * var(--u)); vertical-align: middle; }
+.k-chip:empty { display: none; }
+.k-chip.ghost { background: transparent; border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); color: var(--ss-text-muted, #9aa7b6); }
+.k-thumb { flex: 0 0 auto; border-radius: calc(6 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); background: var(--ss-ink, #10151d); overflow: hidden; position: relative; }
+.k-thumb .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.k-thumb .art.hidden { display: none; }
+.k-thumb .art.icon-tier { object-fit: contain; padding: 12%; }
+.k-thumb .art.crop-legend { object-position: center 18%; }
+
+.k-lockup { display: inline-flex; align-items: center; gap: calc(12 * var(--u)); min-width: 0; }
+.k-lockup .mark { flex: 0 0 auto; width: calc(34 * var(--u)); height: calc(34 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.k-lockup .logo { flex: 0 0 auto; height: calc(40 * var(--u)); max-width: calc(140 * var(--u)); object-fit: contain; }
+.k-lockup .logo.hidden { display: none; }
+.k-lockup .t { font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1 * var(--u)); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-lockup .t small { display: block; font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); color: var(--ss-text-muted, #9aa7b6); margin-top: calc(4 * var(--u)); text-transform: uppercase; }
+.k-lockup .t small:empty { display: none; }
+
+.k-spons { display: flex; align-items: center; gap: calc(14 * var(--u)); }
+.k-spons .logo { height: calc(46 * var(--u)); padding: 0 calc(18 * var(--u)); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); display: grid; place-items: center; color: var(--ss-text-muted, #9aa7b6); font: 800 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; white-space: nowrap; }
+.k-spons:empty { display: none; }
+
+.k-runes { display: inline-flex; gap: calc(4 * var(--u)); vertical-align: middle; }
+.k-runes .rune { width: calc(24 * var(--u)); height: calc(24 * var(--u)); object-fit: contain; filter: drop-shadow(0 calc(1 * var(--u)) calc(1 * var(--u)) rgba(0, 0, 0, 0.6)); }
+.k-runes .rune.hidden { display: none; }
+
+/* Two soft accent shards over a full-frame ground: texture, not a feature. */
+.k-shard { position: absolute; width: calc(1400 * var(--u)); height: calc(380 * var(--u)); transform: rotate(-18deg); opacity: 0.14; background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); filter: blur(calc(2 * var(--u))); pointer-events: none; }
+.k-shard.s1 { left: calc(-300 * var(--u)); top: calc(620 * var(--u)); }
+.k-shard.s2 { left: calc(900 * var(--u)); top: calc(-240 * var(--u)); opacity: 0.09; }
+
+/* The foot line every full-frame scene carries. */
+.k-foot { position: absolute; left: calc(80 * var(--u)); right: calc(80 * var(--u)); bottom: calc(40 * var(--u)); display: flex; align-items: center; justify-content: space-between; gap: calc(22 * var(--u)); }
+.k-foot .note { font: 400 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

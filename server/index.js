@@ -7,7 +7,14 @@ import path from 'node:path';
 import { exec } from 'node:child_process';
 import { WebSocketServer } from 'ws';
 import { APP_ROOT, APP_VERSION, DATA_DIR, WEB_DIR, isPackaged, readAsset } from './runtime.js';
-import { runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest } from './updater.js';
+import { captureConsole, onLog, recentLog } from './log.js';
+import {
+  appWindowWanted, browserForWindow, closeAppWindow, hideConsole,
+  startAppWindow, windowConnected,
+} from './appwindow.js';
+import {
+  runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest, onBeforeHandover,
+} from './updater.js';
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
@@ -16,8 +23,13 @@ import { initLegends, listLegends, listBattlefields, listChampionUnits, readHero
 import { buildDeck } from './decklist.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
 import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
-import { findBrowser, renderStill } from './still.js';
+import { findBrowser, renderStill, shutdownStills } from './still.js';
 import { legendSlug } from '../web/scenes/decklist/layout.js';
+import { ALL_SOURCES, APP_PAGES, sourceUrls } from '../web/shared/sources.js';
+
+// Before anything has anything to say: every console line the app prints is
+// also the app window's console pane (server/log.js).
+captureConsole();
 
 const DATA_DIR_THEME = path.join(DATA_DIR, 'theme');
 const LOGO_EXT = ['png', 'jpg', 'webp', 'svg'];
@@ -34,6 +46,12 @@ const sendJson = (res, status, body) => {
   res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
   res.end(JSON.stringify(body));
 };
+
+// Hand a URL or a folder to Windows, which gives it to the operator's own
+// browser or to Explorer. windowsHide keeps cmd's console out of it, which
+// matters now that the app's own console window is hidden behind the app
+// window: a black flash would look like something went wrong.
+const openExternal = (target) => exec(`start "" "${target}"`, { windowsHide: true });
 
 // "20260911-142233", local time: keeps repeat exports of one deck from
 // overwriting each other.
@@ -351,6 +369,62 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // --- the app window ---
+
+  // What the window needs to draw its header and its status rail. The source
+  // list itself is not here: the window imports the same shared list the
+  // console banner prints from (web/shared/sources.js).
+  if (url.pathname === '/api/app/status' && req.method === 'GET') {
+    sendJson(res, 200, {
+      version: APP_VERSION,
+      port: PORT,
+      packaged: isPackaged,
+      windowed: windowMode,
+      dataDir: DATA_DIR,
+      appRoot: APP_ROOT,
+      exportBrowser: findBrowser() ? path.basename(findBrowser()) : null,
+    });
+    return;
+  }
+
+  // Opening anything happens here rather than in the window, because a link
+  // clicked inside the window would open in the window's own browser profile,
+  // which is not the operator's browser and dies with the app. An allowlist,
+  // so the app window can only ever ask for its own pages, its own graphics,
+  // or its data folder.
+  if (url.pathname === '/api/app/open' && req.method === 'POST') {
+    let target = '';
+    try {
+      target = String(JSON.parse((await readBody(req)).toString('utf8')).target || '');
+    } catch { /* falls through to the unknown-target reply */ }
+    if (target === 'data') {
+      await mkdir(DATA_DIR, { recursive: true }).catch(() => {});
+      openExternal(DATA_DIR);
+      sendJson(res, 200, { ok: true, opened: DATA_DIR });
+      return;
+    }
+    const page = APP_PAGES.find((p) => p.key === target);
+    const source = ALL_SOURCES.find((s) => s.key === target);
+    const hit = page || source;
+    if (!hit) {
+      sendJson(res, 400, { ok: false, error: 'unknown target' });
+      return;
+    }
+    const opened = `http://localhost:${PORT}${hit.path}`;
+    openExternal(opened);
+    console.log(`  Opened ${hit.label.toLowerCase()} in your browser.`);
+    sendJson(res, 200, { ok: true, opened });
+    return;
+  }
+
+  // The window's Quit button. Closing the window does the same thing; this is
+  // for the operator who would rather press a button that says what it does.
+  if (url.pathname === '/api/app/quit' && req.method === 'POST') {
+    sendJson(res, 200, { ok: true, stopping: true });
+    setTimeout(() => quitApp('Quit from the app window'), 150);
+    return;
+  }
+
   if (url.pathname === '/api/cards/status' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     res.end(JSON.stringify(cardDbStatus()));
@@ -492,8 +566,23 @@ const server = http.createServer(async (req, res) => {
 });
 
 const wss = new WebSocketServer({ server, path: '/ws' });
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   ws.send(JSON.stringify({ type: 'state', state: getState() }));
+  // The app window connects as ?role=window. That connection is how the
+  // window proves it is on screen (server/appwindow.js is holding a timeout
+  // until it does) and it is the only client that wants the console.
+  if (new URL(req.url, 'http://app').searchParams.get('role') === 'window') {
+    ws.isWindow = true;
+    windowConnected();
+    ws.send(JSON.stringify({ type: 'log', lines: recentLog() }));
+  }
+});
+// Console lines, pushed to the window as they are printed.
+onLog((entry) => {
+  const msg = JSON.stringify({ type: 'log', lines: [entry] });
+  for (const client of wss.clients) {
+    if (client.isWindow && client.readyState === 1) client.send(msg);
+  }
 });
 onChange((state) => {
   const msg = JSON.stringify({ type: 'state', state });
@@ -510,13 +599,70 @@ onLibraryChange((library) => {
   }
 });
 
+// True once the app has decided to draw itself as a window rather than as a
+// console. The API reports it, and the banner and the update flow both read
+// differently when there is nobody looking at a console.
+let windowMode = false;
+
+// Stopping, for any of the three reasons there are: the window was closed,
+// the window's Quit button, or the window never appeared and the operator
+// closed the console instead (which Windows does for us).
+let stopping = false;
+async function quitApp(reason) {
+  if (stopping) return;
+  stopping = true;
+  console.log(`  ${reason}. Sideways Studio is stopping.`);
+  closeAppWindow();
+  await shutdownStills().catch(() => {});
+  server.close();
+  // Sockets that a browser source is holding open would keep the process
+  // alive well past the point the operator asked it to stop.
+  setTimeout(() => process.exit(0), 300).unref();
+}
+
+const banner = (base) => {
+  console.log('');
+  console.log(`  SIDEWAYS STUDIO ${APP_VERSION}: Riftbound broadcast graphics`);
+  console.log('  Built by Sam Morris / Turn\'em Sideways');
+  console.log('');
+  console.log(`  Control panel:    ${base}/panel/`);
+  console.log(`  Deck editor:      ${base}/decklist/`);
+};
+
+// The console-only listing. The app window shows the same list as a rail of
+// copy buttons, from the same source (web/shared/sources.js), so this is
+// printed when there is no window rather than always.
+const bannerSources = (base) => {
+  console.log('');
+  console.log('  Browser sources, all 1920x1080 @ 60fps:');
+  for (const s of sourceUrls(base)) console.log(`    ${`${s.label}:`.padEnd(30)}${s.url}`);
+  if (isPackaged) {
+    console.log('');
+    console.log(`  Working folder:   ${APP_ROOT}`);
+    console.log('  Card art and saved events are kept in the data folder beside this app.');
+    console.log('');
+    console.log('  Leave this window open while you stream. Close it to stop the graphics.');
+  }
+  console.log('');
+};
+
 // Everything that has to happen before the first request, then listen. Kept
 // as one function rather than top-level await so the same source compiles to
 // the CommonJS bundle the packaged exe is built from.
 async function start() {
+  // Decided first, because it changes what the next line is allowed to do: a
+  // launch-time update prompt printed into a console nobody can see would sit
+  // there waiting for a keystroke that can never arrive. In window mode the
+  // window offers the update instead (/api/update/*), so the check here only
+  // loads the answer for it.
+  windowMode = appWindowWanted() && Boolean(browserForWindow());
+  if (windowMode) hideConsole();
   // Before anything else: if a newer build is out and the operator takes it,
   // this process hands over and never starts the server at all.
-  if (await runLaunchCheck()) return;
+  if (await runLaunchCheck({ prompt: !windowMode })) return;
+  // The handover kills this process a moment later; the window has to go with
+  // it, or the copy starting up finds the profile held and cannot draw.
+  onBeforeHandover(closeAppWindow);
   await initFonts();
   await initCardDb();
   // Not awaited: a refresh must never hold up the graphics, and it fails
@@ -534,45 +680,36 @@ async function start() {
     }
   } catch { /* no theme dir yet */ }
 
-  server.listen(PORT, '127.0.0.1', () => {
+  server.listen(PORT, '127.0.0.1', async () => {
     const base = `http://localhost:${PORT}`;
-    console.log('');
-    console.log(`  SIDEWAYS STUDIO ${APP_VERSION}: Riftbound broadcast graphics`);
-    console.log('  Built by Sam Morris / Turn\'em Sideways');
-    console.log('');
-    console.log(`  Control panel:    ${base}/panel/`);
-    console.log(`  Deck editor:      ${base}/decklist/`);
-    console.log('');
-    console.log('  Browser sources, all 1920x1080 @ 60fps:');
-    console.log(`    All graphics:   ${base}/output/`);
-    console.log(`    Score bug:      ${base}/scenes/scorebug/?transparent=1`);
-    console.log(`    Card popup:     ${base}/scenes/cardpopup/?transparent=1`);
-    console.log(`    In-game 1v1:    ${base}/scenes/igo1v1/?transparent=1`);
-    console.log(`    In-game 2v2:    ${base}/scenes/igo2v2/?transparent=1`);
-    console.log(`    In-game dual:   ${base}/scenes/igodual/?transparent=1`);
-    console.log(`    In-game 2v2 bars: ${base}/scenes/igobars/?transparent=1`);
-    console.log(`    POV overlay:    ${base}/scenes/pov/?transparent=1`);
-    console.log(`    Decklist:       ${base}/scenes/decklist/?transparent=1`);
-    console.log(`    Portrait pillars: ${base}/scenes/igoportrait/?transparent=1`);
-    console.log(`    Rows:           ${base}/scenes/igorows/?transparent=1`);
-    console.log(`    Arena bug:      ${base}/scenes/arenabug/?transparent=1`);
-    console.log(`    Slate:          ${base}/scenes/slate/?transparent=1`);
-    console.log(`    Hand fan:       ${base}/scenes/handfan/?transparent=1`);
-    console.log(`    Showdown:       ${base}/scenes/showdown/?transparent=1`);
-    if (isPackaged) {
-      console.log('');
-      console.log(`  Working folder:   ${APP_ROOT}`);
-      console.log('  Card art and saved events are kept in the data folder beside this app.');
-      console.log('');
-      console.log('  Leave this window open while you stream. Close it to stop the graphics.');
+    banner(base);
+
+    if (!windowMode) {
+      bannerSources(base);
+      // Double-clicking the packaged app passes no arguments, so it opens the
+      // panel unless told not to; from source --open is opt-in as before.
+      const openPanel = isPackaged ? !process.argv.includes('--no-open') : process.argv.includes('--open');
+      if (openPanel) openExternal(`${base}/panel/`);
+      return;
     }
+
     console.log('');
-    // Double-clicking the packaged app passes no arguments, so it opens the
-    // panel unless told not to; from source --open is opt-in as before.
-    const openPanel = isPackaged ? !process.argv.includes('--no-open') : process.argv.includes('--open');
-    if (openPanel) {
-      exec(`start "" "${base}/panel/"`);
-    }
+    console.log('  Opening the Sideways Studio window...');
+    await startAppWindow({
+      url: `${base}/window/`,
+      onQuit: (reason) => quitApp(reason.charAt(0).toUpperCase() + reason.slice(1)),
+      // No window on screen is not a reason to stop the show. The console is
+      // already back by the time this runs (server/appwindow.js), so print
+      // the operator everything they would have had without it and carry on.
+      onFallback: (reason) => {
+        windowMode = false;
+        console.log('');
+        console.log(`  ${reason.charAt(0).toUpperCase()}${reason.slice(1)}.`);
+        console.log('  Sideways Studio is running in this window instead.');
+        bannerSources(base);
+        openExternal(`${base}/panel/`);
+      },
+    });
   });
 }
 

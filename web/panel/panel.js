@@ -3,6 +3,8 @@ import {
 } from '../shared/look.js';
 import { setOffline } from '../shared/offline.js';
 
+import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
+
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 const SIDES = [['l', 'left'], ['r', 'right']];
@@ -53,9 +55,17 @@ const SCENE_FIELDS = {
   igorows: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'pronouns', 'legend', 'legendText',
     'champion', 'championText', 'archetype', 'handCount', 'hand', 'turn', 'roundTitle'],
   arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
-  slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds'],
+  slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds', 'schedule', 'format', 'commands', 'sponsors', 'nextEvent', 'champion', 'name', 'country', 'legend', 'record'],
   handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'handUnknown', 'roundTitle', 'timer', 'turn'],
   showdown: ['name', 'country', 'legend', 'hand', 'handCount', 'handUnknown', 'showdown'],
+  // The starter kit (2026-09-15).
+  cornertag: ['name', 'roundTitle', 'eventName', 'countdown'],
+  lowerthird: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'bestFinish', 'eventName', 'roundTitle', 'casters'],
+  headtohead: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'seed', 'record', 'pronouns', 'playerTeam', 'seasonRecord', 'bestFinish', 'card', 'choseFirst', 'roundTitle', 'eventName'],
+  profile: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'pronouns', 'playerTeam', 'seasonRecord', 'archetype', 'store', 'finishes', 'eventName', 'roundTitle'],
+  bracket: ['bracket', 'eventName'],
+  standings: ['standings', 'eventName', 'roundTitle'],
+  result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
 };
 const SCENE_NAMES = {
   scorebug: 'the score bug',
@@ -72,6 +82,13 @@ const SCENE_NAMES = {
   showdown: 'the showdown',
   decklist: 'the decklist',
   cardpopup: 'the card popup',
+  cornertag: 'the corner tag',
+  lowerthird: 'the lower third',
+  headtohead: 'the match card',
+  profile: 'the player profile',
+  bracket: 'the bracket',
+  standings: 'the standings',
+  result: 'the result strip',
 };
 
 // Short names for the on-air list, which lives in the narrow column between
@@ -81,6 +98,7 @@ const SCENE_SHORT = {
   igodual: 'Dual columns', igobars: '2v2 bars', pov: 'POV', decklist: 'Decklist',
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
+  cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', result: 'Result',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
@@ -105,8 +123,25 @@ function sceneDraws(scene, field, side, bank) {
   if (scene === 'handfan' && !cfg.opponent && field === 'handUnknown') return false;
   if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
   if (scene === 'slate') {
-    if (cfg.mode !== 'upnext' && ['tables', 'seeds'].includes(field)) return false;
+    if (field === 'seeds' && cfg.mode !== 'upnext') return false;
+    if (field === 'tables' && !['upnext', 'starting', 'brb'].includes(cfg.mode)) return false;
+    if (['schedule', 'format', 'sponsors'].includes(field) && cfg.mode !== 'starting' && !(field === 'sponsors' && cfg.mode === 'brb')) return false;
+    if (field === 'commands' && cfg.mode !== 'brb') return false;
+    if (['nextEvent', 'champion', 'name', 'country', 'legend', 'record'].includes(field) && cfg.mode !== 'thanks') return false;
     if (!cfg.countdown && field === 'countdown') return false;
+    if (field === 'casters' && !['upnext', 'custom'].includes(cfg.mode)) return false;
+  }
+  // One-player graphics draw only the side they are set to.
+  if ((scene === 'profile' || (scene === 'lowerthird' && cfg.mode === 'interview')) && side && cfg.side !== side) return false;
+  if (scene === 'lowerthird') {
+    if (cfg.mode === 'casters' && !['casters', 'eventName', 'roundTitle'].includes(field)) return false;
+    if (cfg.mode === 'coming' && !['name', 'roundTitle', 'eventName'].includes(field)) return false;
+    if (cfg.mode === 'interview' && field === 'casters') return false;
+  }
+  if (scene === 'cornertag') {
+    if (cfg.mode === 'match' && field === 'eventName') return false;
+    if (cfg.mode === 'round' && field === 'name') return false;
+    if (cfg.mode === 'custom' && ['name', 'roundTitle', 'eventName'].includes(field)) return false;
   }
   return true;
 }
@@ -653,6 +688,7 @@ for (const [p, side] of SIDES) {
   for (const [id, field] of [
     [`${p}name`, 'name'], [`${p}name2`, 'name2'], [`${p}team`, 'teamName'],
     [`${p}legendText`, 'legend'], [`${p}championText`, 'champion'], [`${p}seed`, 'seed'],
+    [`${p}playerTeam`, 'team'], [`${p}store`, 'store'], [`${p}seasonRecord`, 'seasonRecord'], [`${p}bestFinish`, 'bestFinish'], [`${p}finishes`, 'finishes'],
   ]) {
     const el = $(id);
     let timer = null;
@@ -683,6 +719,7 @@ $('resetMatch').addEventListener('click', () => {
     match: {
       left: { score: 0, gameWins: 0 },
       right: { score: 0, gameWins: 0 },
+      choseFirst: '', result: { winner: '', note: '' },
     },
     scenes: {
       scorebug: { visible: false }, cardpopup: { visible: false },
@@ -690,6 +727,8 @@ $('resetMatch').addEventListener('click', () => {
       pov: { visible: false },
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
       handfan: { visible: false }, showdown: { visible: false },
+      cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
+      bracket: { visible: false }, standings: { visible: false }, result: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -702,6 +741,7 @@ const SWAP_FIELDS = [
   'champion', 'name2', 'legend2', 'legendSlug2', 'legendCardId2', 'battlefield2', 'teamName',
   'champion2', 'score', 'gameWins', 'seed',
   'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'handUnknown',
+  'team', 'store', 'seasonRecord', 'bestFinish', 'finishes',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -1064,6 +1104,9 @@ $('arenaUrl').value = `${location.origin}/scenes/arenabug/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result']) {
+  $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
+}
 
 for (const input of document.querySelectorAll('.url-input')) {
   input.addEventListener('focus', () => input.select());
@@ -1416,7 +1459,7 @@ loadDeckLibrary();
 
 $('toggleDeck').addEventListener('click', () => {
   if (!state) return;
-  post({ scenes: { decklist: { visible: !state.preview.scenes.decklist.visible } } });
+  setFullScene('decklist', !state.preview.scenes.decklist.visible);
 });
 
 // --- update channel ---
@@ -1509,9 +1552,20 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
-const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown' };
-const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir' };
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result'];
+const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
+  cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult' };
+const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
+  cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir' };
+
+// The full-frame graphics cover everything, so switching one on in preview
+// switches the others off, the way the edge overlays do.
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'profile', 'bracket', 'standings'];
+function setFullScene(key, next) {
+  const scenes = { [key]: { visible: next } };
+  if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
+  post({ scenes });
+}
 
 $('toggleIgoPortrait').addEventListener('click', () => toggleEdgeScene('igoportrait'));
 $('toggleIgoRows').addEventListener('click', () => toggleEdgeScene('igorows'));
@@ -1523,8 +1577,34 @@ $('toggleArena').addEventListener('click', () => {
 });
 $('toggleSlate').addEventListener('click', () => {
   if (!state) return;
-  post({ scenes: { slate: { visible: !state.preview.scenes.slate.visible } } });
+  setFullScene('slate', !state.preview.scenes.slate.visible);
 });
+for (const key of ['headtohead', 'profile', 'bracket', 'standings']) {
+  $(EXP_TOGGLES[key]).addEventListener('click', () => {
+    if (!state) return;
+    setFullScene(key, !state.preview.scenes[key].visible);
+  });
+}
+for (const key of ['cornertag', 'lowerthird', 'result']) {
+  $(EXP_TOGGLES[key]).addEventListener('click', () => {
+    if (!state) return;
+    post({ scenes: { [key]: { visible: !state.preview.scenes[key].visible } } });
+  });
+}
+for (const [id, flag] of [['slateSchedule', 'schedule'], ['slateTicker', 'ticker'], ['slateCamera', 'camera']]) {
+  $(id).addEventListener('change', () => post({ scenes: { slate: { [flag]: $(id).checked } } }));
+}
+$('cornertagMode').addEventListener('change', () => post({ scenes: { cornertag: { mode: $('cornertagMode').value } } }));
+$('lowerthirdMode').addEventListener('change', () => post({ scenes: { lowerthird: { mode: $('lowerthirdMode').value } } }));
+$('lowerthirdSide').addEventListener('change', () => post({ scenes: { lowerthird: { side: $('lowerthirdSide').value } } }));
+$('profileSide').addEventListener('change', () => post({ scenes: { profile: { side: $('profileSide').value } } }));
+for (const [id, scene, field] of [['cornertagText', 'cornertag', 'text'], ['lowerthirdCred', 'lowerthird', 'credential'], ['h2hStatus', 'headtohead', 'status']]) {
+  const el = $(id);
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { [scene]: { [field]: el.value } } }); };
+  el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  el.addEventListener('blur', flush);
+}
 $('igoPortraitMode').addEventListener('change', () => post({ scenes: { igoportrait: { mode: $('igoPortraitMode').value } } }));
 for (const [id, flag] of [['igoPortraitTop', 'topBar'], ['igoPortraitHand', 'handCam'], ['igoPortraitCard', 'cardWell']]) {
   $(id).addEventListener('change', () => post({ scenes: { igoportrait: { [flag]: $(id).checked } } }));
@@ -1860,8 +1940,12 @@ function tablesToText(tables) {
     clearTimeout(timer);
     timer = null;
     const casters = $('castersText').value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
-      const [name, ...rest] = l.split(/\s+-\s+|\s+–\s+/);
-      return { name: name.trim(), role: rest.join(' ').trim() };
+      const parts = l.split(/\s+-\s+|\s+–\s+/).map((x) => x.trim());
+      const name = parts.shift() || '';
+      // "@handle" may sit in either remaining slot; whatever is left is the role.
+      const hi = parts.findIndex((x) => x.startsWith('@'));
+      const handle = hi >= 0 ? parts.splice(hi, 1)[0] : '';
+      return { name, role: parts.join(' ').trim(), handle };
     });
     post({ event: { casters } });
   };
@@ -1874,7 +1958,178 @@ function tablesToText(tables) {
   $('seedsText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
   $('seedsText').addEventListener('blur', flush);
 }
-const castersToText = (casters) => casters.map((c) => (c.role ? `${c.name} - ${c.role}` : c.name)).join('\n');
+const castersToText = (casters) => casters.map((c) => [c.name, c.role, c.handle].filter(Boolean).join(' - ')).join('\n');
+
+// --- the starter kit's event fields: schedule, format, commands, sponsors, next event ---
+
+// "10:00 Swiss round 9": a leading time (anything without spaces) then the title.
+function parseSchedule(text) {
+  return text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 8).map((l) => {
+    const m = l.match(/^(\S{1,12})\s+(.+)$/);
+    return m && /\d/.test(m[1]) ? { time: m[1], title: m[2].trim() } : { time: '', title: l };
+  });
+}
+const scheduleToText = (rows) => rows.map((r) => (r.time ? `${r.time} ${r.title}` : r.title)).join('\n');
+{
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ event: { schedule: parseSchedule($('scheduleText').value) } }); };
+  $('scheduleText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
+  $('scheduleText').addEventListener('blur', flush);
+}
+$('scheduleNow').addEventListener('change', () => post({ event: { scheduleNow: Number($('scheduleNow').value) } }));
+for (const [id, field] of [['formatText', 'format'], ['commandsText', 'commands'], ['sponsorsText', 'sponsors'], ['nextName', 'nextName'], ['nextWhen', 'nextWhen']]) {
+  const el = $(id);
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ event: { [field]: el.value } }); };
+  el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  el.addEventListener('blur', flush);
+}
+$('champion').addEventListener('change', () => post({ event: { champion: $('champion').value } }));
+$('choseFirst').addEventListener('change', () => post({ match: { choseFirst: $('choseFirst').value } }));
+$('resultWinner').addEventListener('change', () => post({ match: { result: { winner: $('resultWinner').value } } }));
+{
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ match: { result: { note: $('resultNote').value } } }); };
+  $('resultNote').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  $('resultNote').addEventListener('blur', flush);
+}
+
+// --- the bracket editor ---
+//
+// Players one per line in seed order (the up-next table-side shape), the
+// format, then one row per match with the two names, the scores and a
+// winner button each. Rows come from the shared model, so what the panel
+// lists is what the scene draws.
+$('bracketFormat').addEventListener('change', () => post({ event: { bracket: { format: $('bracketFormat').value } } }));
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    const players = $('bracketPlayers').value.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 16).map(parseTableSide);
+    post({ event: { bracket: { players } } });
+  };
+  $('bracketPlayers').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
+  $('bracketPlayers').addEventListener('blur', flush);
+}
+const playersToText = (players) => players.map(tableSideText).join('\n');
+
+function postResult(id, patch) {
+  if (!state) return;
+  const results = structuredClone(state.preview.event.bracket.results || {});
+  results[id] = { top: 0, bottom: 0, winner: '', ...(results[id] || {}), ...patch };
+  post({ event: { bracket: { results } } });
+}
+let bracketKey = null;
+function renderBracketEditor(s) {
+  const b = s.preview.event.bracket || { format: 'se8', players: [], results: {} };
+  if (document.activeElement !== $('bracketFormat')) $('bracketFormat').value = b.format || 'se8';
+  setIfIdle('bracketPlayers', playersToText(b.players || []));
+  const f = BRACKET_FORMATS[b.format] || BRACKET_FORMATS.se8;
+  const n = (b.players || []).filter((p) => p.name).length;
+  $('bracketHint').textContent = n ? `${n} of ${f.players} players entered.` : `Enter ${f.players} players, one per line, in seed order.`;
+  const built = buildBracket(b.format || 'se8', b.players || [], b.results || {});
+  const key = JSON.stringify(built.matches.map((m) => [m.id, m.top.player && m.top.player.name, m.bottom.player && m.bottom.player.name, m.topScore, m.bottomScore, m.winner, m.state]));
+  if (key === bracketKey) return;
+  bracketKey = key;
+  const nodes = [];
+  let lastRound = null;
+  for (const m of built.matches) {
+    const roundKey = `${m.losers ? 'L' : 'W'}${m.round}`;
+    if (roundKey !== lastRound) {
+      lastRound = roundKey;
+      nodes.push(Object.assign(document.createElement('div'), { className: 'br-round', textContent: m.label.replace(/\s\d+$/, '') }));
+    }
+    const row = document.createElement('div');
+    row.className = 'br-match';
+    row.dataset.id = m.id;
+    const who = (slot, which) => Object.assign(document.createElement('span'), {
+      className: `who${slot.player ? '' : ' tbd'}${m.winner === which ? ' win' : ''}`,
+      textContent: slot.player ? slot.player.name : (slot.placeholder || 'TBD'),
+      title: slot.player ? slot.player.name : '',
+    });
+    const score = (which, value) => {
+      const inp = document.createElement('input');
+      inp.className = 'sc';
+      inp.inputMode = 'numeric';
+      inp.value = String(value);
+      inp.dataset.which = which;
+      inp.setAttribute('aria-label', `${m.label} ${which} score`);
+      inp.disabled = m.state === 'waiting';
+      return inp;
+    };
+    const winBtn = (which) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `win-btn${m.winner === which ? ' on' : ''}`;
+      btn.dataset.win = which;
+      btn.textContent = m.winner === which ? 'Won' : 'Wins';
+      btn.disabled = m.state === 'waiting';
+      btn.title = m.winner === which ? 'Clear this result' : `${which === 'top' ? 'Top' : 'Bottom'} player wins`;
+      return btn;
+    };
+    row.append(who(m.top, 'top'), score('top', m.topScore), who(m.bottom, 'bottom'), score('bottom', m.bottomScore));
+    const btns = document.createElement('div');
+    btns.style.display = 'contents';
+    row.append(winBtn('top'), Object.assign(document.createElement('span'), { className: 'id', textContent: `${m.label} · ${m.id}` }), winBtn('bottom'));
+    nodes.push(row);
+  }
+  $('bracketMatches').replaceChildren(...nodes);
+}
+$('bracketMatches').addEventListener('click', (e) => {
+  const btn = e.target.closest('.win-btn');
+  if (!btn) return;
+  const id = btn.closest('.br-match').dataset.id;
+  const cur = state && state.preview.event.bracket.results[id];
+  postResult(id, { winner: cur && cur.winner === btn.dataset.win ? '' : btn.dataset.win });
+});
+$('bracketMatches').addEventListener('change', (e) => {
+  const inp = e.target.closest('input.sc');
+  if (!inp) return;
+  const id = inp.closest('.br-match').dataset.id;
+  postResult(id, { [inp.dataset.which]: Math.max(0, Math.min(9, Number(inp.value) || 0)) });
+});
+
+// --- the standings editor: pipe-separated rows in rank order ---
+function parseStandings(text) {
+  const rows = [];
+  const bad = [];
+  for (const raw of text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 64)) {
+    const parts = raw.split('|').map((x) => x.trim());
+    if (parts.length < 2) {
+      // The table-side shape with trailing numbers: Name (CN, 9-1-0) [Irelia] 27 68.4
+      const m = raw.match(/^(.*?)((?:\s+[\d.]+)*)$/);
+      const side = parseTableSide(m ? m[1] : raw);
+      if (!side.name) { bad.push(raw); continue; }
+      const nums = (m && m[2] ? m[2].trim().split(/\s+/) : []).map(Number);
+      rows.push({ ...side, points: nums[0] || 0, omw: nums[1] || 0, gw: nums[2] || 0, ogw: nums[3] || 0 });
+      continue;
+    }
+    const [name, country = '', legendText = '', record = '', points = '0', omw = '0', gw = '0', ogw = '0'] = parts;
+    if (!name) { bad.push(raw); continue; }
+    const side = parseTableSide(`${name} (${[country, record].filter(Boolean).join(', ')})${legendText ? ` [${legendText}]` : ''}`);
+    rows.push({ ...side, points: Number(points) || 0, omw: Number(omw) || 0, gw: Number(gw) || 0, ogw: Number(ogw) || 0 });
+  }
+  return { rows, bad };
+}
+const standingsToText = (rows) => rows.map((r) => [r.name, r.country, r.legend, r.record, r.points, r.omw || '', r.gw || '', r.ogw || ''].join(' | ').replace(/( \| )+$/, '')).join('\n');
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    const { rows, bad } = parseStandings($('standingsText').value);
+    $('standingsHint').textContent = bad.length ? `Could not read: ${bad[0]}.` : (rows.length ? `${rows.length} row${rows.length === 1 ? '' : 's'}, ${Math.max(1, Math.ceil(rows.length / 20))} page${rows.length > 20 ? 's' : ''}.` : '');
+    post({ event: { standings: { rows } } });
+  };
+  $('standingsText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
+  $('standingsText').addEventListener('blur', flush);
+}
+$('standingsCut').addEventListener('change', () => post({ event: { standings: { cut: Number($('standingsCut').value) } } }));
+$('standingsPrev').addEventListener('click', () => { if (state) post({ scenes: { standings: { page: Math.max(1, (state.preview.scenes.standings.page || 1) - 1) } } }); });
+$('standingsNext').addEventListener('click', () => { if (state) post({ scenes: { standings: { page: Math.min(4, (state.preview.scenes.standings.page || 1) + 1) } } }); });
 
 function renderExtras(s) {
   const prev = s.preview;
@@ -1912,6 +2167,45 @@ function renderExtras(s) {
   setIfIdle('slateText', sl.text || '');
   $('slateText').classList.toggle('hidden', sl.mode !== 'custom');
   if (document.activeElement !== $('slateCountdown')) $('slateCountdown').checked = sl.countdown;
+  for (const [id, flag] of [['slateSchedule', 'schedule'], ['slateTicker', 'ticker'], ['slateCamera', 'camera']]) {
+    if (document.activeElement !== $(id)) $(id).checked = sl[flag] !== false;
+  }
+  const ct = prev.scenes.cornertag;
+  if (document.activeElement !== $('cornertagMode')) $('cornertagMode').value = ct.mode || 'match';
+  setIfIdle('cornertagText', ct.text || '');
+  $('cornertagText').classList.toggle('hidden', ct.mode !== 'custom');
+  const lt = prev.scenes.lowerthird;
+  if (document.activeElement !== $('lowerthirdMode')) $('lowerthirdMode').value = lt.mode || 'casters';
+  if (document.activeElement !== $('lowerthirdSide')) $('lowerthirdSide').value = lt.side || 'left';
+  setIfIdle('lowerthirdCred', lt.credential || '');
+  $('lowerthirdSide').parentElement.classList.toggle('hidden', lt.mode !== 'interview');
+  $('lowerthirdCred').classList.toggle('hidden', lt.mode !== 'interview');
+  setIfIdle('h2hStatus', prev.scenes.headtohead.status || '');
+  if (document.activeElement !== $('profileSide')) $('profileSide').value = prev.scenes.profile.side || 'left';
+  $('standingsPage').textContent = String(prev.scenes.standings.page || 1);
+  if (document.activeElement !== $('standingsCut')) $('standingsCut').value = String(prev.event.standings ? prev.event.standings.cut : 8);
+  setIfIdle('standingsText', standingsToText(prev.event.standings ? prev.event.standings.rows || [] : []));
+  renderBracketEditor(s);
+  if (document.activeElement !== $('choseFirst')) $('choseFirst').value = prev.match.choseFirst || '';
+  if (document.activeElement !== $('resultWinner')) $('resultWinner').value = (prev.match.result && prev.match.result.winner) || '';
+  setIfIdle('resultNote', (prev.match.result && prev.match.result.note) || '');
+  if (document.activeElement !== $('champion')) $('champion').value = prev.event.champion || '';
+  setIfIdle('scheduleText', scheduleToText(prev.event.schedule || []));
+  {
+    const sel = $('scheduleNow');
+    const rows = prev.event.schedule || [];
+    const want = rows.map((r) => r.title).join('|');
+    if (sel.dataset.want !== want) {
+      sel.dataset.want = want;
+      sel.replaceChildren(Object.assign(document.createElement('option'), { value: '-1', textContent: 'Not set' }), ...rows.map((r, i) => Object.assign(document.createElement('option'), { value: String(i), textContent: `${r.time ? `${r.time} ` : ''}${r.title}` })));
+    }
+    if (document.activeElement !== sel) sel.value = String(Number.isInteger(prev.event.scheduleNow) ? prev.event.scheduleNow : -1);
+  }
+  setIfIdle('formatText', prev.event.format || '');
+  setIfIdle('commandsText', prev.event.commands || '');
+  setIfIdle('sponsorsText', prev.event.sponsors || '');
+  setIfIdle('nextName', prev.event.nextName || '');
+  setIfIdle('nextWhen', prev.event.nextWhen || '');
 
   for (const [p, side] of SIDES) {
     const sd = prev.match[side];
@@ -1919,6 +2213,11 @@ function renderExtras(s) {
     setIfIdle(`${p}country`, sd.country || '');
     setIfIdle(`${p}pronouns`, sd.pronouns || '');
     setIfIdle(`${p}archetype`, sd.archetype || '');
+    setIfIdle(`${p}playerTeam`, sd.team || '');
+    setIfIdle(`${p}store`, sd.store || '');
+    setIfIdle(`${p}seasonRecord`, sd.seasonRecord || '');
+    setIfIdle(`${p}bestFinish`, sd.bestFinish || '');
+    setIfIdle(`${p}finishes`, sd.finishes || '');
     $(`${p}handOut`).textContent = sd.handCount || 0;
     $(`${p}unknownOut`).textContent = sd.handUnknown || 0;
     renderHandChips(p, sd.hand || []);
@@ -1959,9 +2258,10 @@ function toggleScene(key) {
     return;
   }
   if (key === 'decklist') {
-    if (prev.scenes.decklist.list.trim()) post({ scenes: { decklist: { visible: true } } });
+    if (prev.scenes.decklist.list.trim()) setFullScene('decklist', true);
     return;
   }
+  if (FULL_SCENES.includes(key)) { setFullScene(key, true); return; }
   post({ scenes: { [key]: { visible: true } } });
 }
 

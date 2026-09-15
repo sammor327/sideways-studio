@@ -201,6 +201,36 @@
         <div class="cell" data-side="left"><input id="larchetype" maxlength="40" autocomplete="off" placeholder="Yasuo Tempo" aria-label="Player 1 archetype"></div>
         <div class="cell" data-side="right"><input id="rarchetype" maxlength="40" autocomplete="off" placeholder="Jinx Burn" aria-label="Player 2 archetype"></div>
       </div>
+
+      <div class="field-row" data-field="playerTeam">
+        <span class="row-label" title="The player's team or org, printed as a tag on the match card and the profile.">Team</span>
+        <div class="cell" data-side="left"><input id="lplayerTeam" maxlength="40" autocomplete="off" placeholder="Team KDX" aria-label="Player 1 team"></div>
+        <div class="cell" data-side="right"><input id="rplayerTeam" maxlength="40" autocomplete="off" placeholder="Gambit" aria-label="Player 2 team"></div>
+      </div>
+
+      <div class="field-row" data-field="store">
+        <span class="row-label" title="The player's local store, a tile on the profile.">Local store</span>
+        <div class="cell" data-side="left"><input id="lstore" maxlength="40" autocomplete="off" placeholder="Rift Cave Shenyang" aria-label="Player 1 store"></div>
+        <div class="cell" data-side="right"><input id="rstore" maxlength="40" autocomplete="off" placeholder="" aria-label="Player 2 store"></div>
+      </div>
+
+      <div class="field-row" data-field="seasonRecord">
+        <span class="row-label" title="Season record across events, printed as typed: 41-9.">Season record</span>
+        <div class="cell" data-side="left"><input id="lseasonRecord" maxlength="12" autocomplete="off" placeholder="41-9" aria-label="Player 1 season record"></div>
+        <div class="cell" data-side="right"><input id="rseasonRecord" maxlength="12" autocomplete="off" placeholder="28-14" aria-label="Player 2 season record"></div>
+      </div>
+
+      <div class="field-row" data-field="bestFinish">
+        <span class="row-label" title="One line: the player's best finish, for the match card and the interview lower third.">Best finish</span>
+        <div class="cell" data-side="left"><input id="lbestFinish" maxlength="60" autocomplete="off" placeholder="RQ Shenyang champion" aria-label="Player 1 best finish"></div>
+        <div class="cell" data-side="right"><input id="rbestFinish" maxlength="60" autocomplete="off" placeholder="Showdown Chengdu top 4" aria-label="Player 2 best finish"></div>
+      </div>
+
+      <div class="field-row" data-field="finishes">
+        <span class="row-label" title="Up to three lines for the profile, each Event · Result.">Top finishes</span>
+        <div class="cell" data-side="left"><textarea id="lfinishes" rows="3" spellcheck="false" placeholder="RQ Shenyang · Champion&#10;RO Wuhan · Top 4" aria-label="Player 1 top finishes"></textarea></div>
+        <div class="cell" data-side="right"><textarea id="rfinishes" rows="3" spellcheck="false" placeholder="Showdown Chengdu · Top 4" aria-label="Player 2 top finishes"></textarea></div>
+      </div>
     </details>
 
     <details class="field-section fold" data-sec="teams">
@@ -346,6 +376,44 @@
       </div>
     </details>
 
+    <details class="field-section fold" data-sec="cut">
+      <summary><h4 class="section-label">Match card and result</h4></summary>
+
+      <div class="field-row" data-field="choseFirst">
+        <span class="row-label" title="Who chose to go first in game one. The match card prints it with an arrow.">Chose first</span>
+        <div class="cell span2">
+          <select id="choseFirst" aria-label="Who chose first">
+            <option value="">Not set</option>
+            <option value="left">Player 1</option>
+            <option value="right">Player 2</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="result">
+        <span class="row-label" title="The result strip's winner and the line under the name: where they go next. Left unset, the strip uses whoever holds the series.">Result</span>
+        <div class="cell span2 result-cell">
+          <select id="resultWinner" aria-label="Match winner">
+            <option value="">From game wins</option>
+            <option value="left">Player 1 wins</option>
+            <option value="right">Player 2 wins</option>
+          </select>
+          <input id="resultNote" maxlength="120" autocomplete="off" placeholder="Advances to Semifinal 1 · Semifinals at 14:30" aria-label="Result note">
+        </div>
+      </div>
+
+      <div class="field-row" data-field="champion">
+        <span class="row-label" title="The sign-off slate names this side as the champion, with their legend art.">Champion</span>
+        <div class="cell span2">
+          <select id="champion" aria-label="Champion">
+            <option value="">Nobody yet</option>
+            <option value="left">Player 1</option>
+            <option value="right">Player 2</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
     <details class="field-section fold" data-sec="event">
       <summary><h4 class="section-label">Event</h4></summary>
 
@@ -396,13 +464,88 @@
       </div>
 
       <div class="field-row" data-field="casters">
-        <span class="row-label" title="One caster per line: Name - Role.">Casters</span>
-        <div class="cell span2"><textarea id="castersText" rows="2" spellcheck="false" placeholder="Lena - Play-by-play&#10;Marcus - Analyst"></textarea></div>
+        <span class="row-label" title="One caster per line: Name - Role - @handle. The role and handle are optional.">Casters</span>
+        <div class="cell span2"><textarea id="castersText" rows="2" spellcheck="false" placeholder="Lena - Play-by-play - @lenacasts&#10;Marcus - Analyst"></textarea></div>
       </div>
 
       <div class="field-row" data-field="seeds">
         <span class="row-label" title="One line per seed for the slate's standings strip: Name · 9-1-0 · Irelia. Up to eight.">Seeds</span>
         <div class="cell span2"><textarea id="seedsText" rows="3" spellcheck="false" placeholder="Guubums · 9-1-0 · Irelia&#10;Dax · 8-2-0 · Viktor"></textarea></div>
+      </div>
+
+      <div class="field-row" data-field="schedule">
+        <span class="row-label" title="One block per line for the starting-soon slate: a time then what happens. Pick the current block so done blocks dim and the next one lights.">Schedule</span>
+        <div class="cell span2">
+          <textarea id="scheduleText" rows="3" spellcheck="false" placeholder="10:00 Swiss round 9&#10;12:30 Quarterfinals&#10;16:00 Grand final"></textarea>
+          <label class="inline">Now
+            <select id="scheduleNow" aria-label="Current schedule block"><option value="-1">Not set</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="format">
+        <span class="row-label" title="A few lines about the format, shown in the starting-soon slate's side panel.">Format</span>
+        <div class="cell span2"><textarea id="formatText" rows="3" spellcheck="false" placeholder="First to 8 points wins a game. Higher seed chooses who goes first in game one.&#10;Top 4 earn an invite to the Regional Championship."></textarea></div>
+      </div>
+
+      <div class="field-row" data-field="commands">
+        <span class="row-label" title="Chat commands the be-right-back slate lists, separated by spaces or commas.">Chat commands</span>
+        <div class="cell span2"><input id="commandsText" maxlength="120" autocomplete="off" placeholder="!bracket !decks !schedule !prizes"></div>
+      </div>
+
+      <div class="field-row" data-field="sponsors">
+        <span class="row-label" title="Sponsor names, comma separated; the holds print them in a row of boxes.">Sponsors</span>
+        <div class="cell span2"><input id="sponsorsText" maxlength="200" autocomplete="off" placeholder="Rift Cave, Turn'em Sideways"></div>
+      </div>
+
+      <div class="field-row" data-field="nextEvent">
+        <span class="row-label" title="The next event, for the sign-off slate: its name and when.">Next event</span>
+        <div class="cell span2 next-cell">
+          <input id="nextName" maxlength="80" autocomplete="off" placeholder="TES Open Chengdu" aria-label="Next event name">
+          <input id="nextWhen" maxlength="80" autocomplete="off" placeholder="Saturday 3 October · stream from 10:00" aria-label="Next event date">
+        </div>
+      </div>
+    </details>
+
+    <details class="field-section fold" data-sec="bracket">
+      <summary><h4 class="section-label">Bracket</h4></summary>
+
+      <div class="field-row" data-field="bracket">
+        <span class="row-label" title="The players in seed order, one per line, the same shape as an up-next table side: Name (CN, 9-1-0, 1st) [Irelia]. Then click the winner of each match as results land; the bracket on air follows the next TAKE.">Bracket</span>
+        <div class="cell span2 bracket-cell">
+          <label class="inline">Format
+            <select id="bracketFormat" aria-label="Bracket format">
+              <option value="se8">Top 8, single elimination</option>
+              <option value="se16">Top 16, single elimination</option>
+              <option value="de8">Top 8, double elimination</option>
+              <option value="de16">Top 16, double elimination</option>
+            </select>
+          </label>
+          <textarea id="bracketPlayers" rows="4" spellcheck="false" placeholder="Guubums (CN, 9-1-0) [Irelia]&#10;Dax (US, 8-2-0) [Viktor]&#10;Shoji (KR, 8-2-0) [Yasuo]&#10;…one line per seed"></textarea>
+          <p class="hint" id="bracketHint"></p>
+          <div class="br-matches" id="bracketMatches"></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="field-section fold" data-sec="standings">
+      <summary><h4 class="section-label">Standings</h4></summary>
+
+      <div class="field-row" data-field="standings">
+        <span class="row-label" title="One row per line in rank order: Name | CN | Irelia, Blade Dancer | 9-1-0 | 27 | 68.4 | 72.1 | 61.0. Points and the three tiebreaks are optional. Twenty rows a page.">Standings</span>
+        <div class="cell span2 standings-cell">
+          <label class="inline">Cut
+            <select id="standingsCut" aria-label="Cut size">
+              <option value="8">Top 8</option>
+              <option value="16">Top 16</option>
+              <option value="4">Top 4</option>
+              <option value="32">Top 32</option>
+              <option value="0">No cut line</option>
+            </select>
+          </label>
+          <textarea id="standingsText" rows="5" spellcheck="false" placeholder="Guubums | CN | Irelia, Blade Dancer | 9-1-0 | 27 | 68.4 | 72.1 | 61.0&#10;Dax | US | Viktor, Herald of the Arcane | 8-2-0 | 24 | 66.1 | 70.4 | 60.2"></textarea>
+          <p class="hint" id="standingsHint"></p>
+        </div>
       </div>
     </details>
 
@@ -528,9 +671,43 @@
           <div class="scene-name">Decklist <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="deckOnAir">ON AIR</button></div>
           <button id="toggleDeck" class="scene-toggle">OFF</button>
         </div>
+      </div>
+    </details>
+
+    <details class="scene-section" data-group="between">
+      <summary><h4 class="section-label group-label">Between games <span class="muted">holds, lower thirds, the top cut set</span></h4><span class="sec-count"></span><span class="sec-pill prev hidden"></span><span class="sec-pill air hidden"></span></summary>
+      <div class="scene-group">
         <div class="scene-row" data-scene="slate">
           <div class="scene-name">Slate <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="slateOnAir">ON AIR</button></div>
           <button id="toggleSlate" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="cornertag">
+          <div class="scene-name">Corner tag <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cornertagOnAir">ON AIR</button></div>
+          <button id="toggleCornertag" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="lowerthird">
+          <div class="scene-name">Lower third <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="lowerthirdOnAir">ON AIR</button></div>
+          <button id="toggleLowerthird" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="headtohead">
+          <div class="scene-name">Match card <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="headtoheadOnAir">ON AIR</button></div>
+          <button id="toggleHeadtohead" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="profile">
+          <div class="scene-name">Player profile <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="profileOnAir">ON AIR</button></div>
+          <button id="toggleProfile" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="bracket">
+          <div class="scene-name">Bracket <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="bracketOnAir">ON AIR</button></div>
+          <button id="toggleBracket" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="standings">
+          <div class="scene-name">Standings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="standingsOnAir">ON AIR</button></div>
+          <button id="toggleStandings" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="result">
+          <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
+          <button id="toggleResult" class="scene-toggle">OFF</button>
         </div>
       </div>
     </details>
@@ -677,7 +854,75 @@
         </label>
         <input id="slateText" class="slate-text hidden" maxlength="120" autocomplete="off" placeholder="Custom line" aria-label="Custom slate line">
         <label class="inline"><input type="checkbox" id="slateCountdown" checked> Break clock</label>
+        <label class="inline" title="Starting soon: the day's schedule under the clock"><input type="checkbox" id="slateSchedule" checked> Schedule</label>
+        <label class="inline" title="Starting soon: the feature tables as a ticker along the bottom"><input type="checkbox" id="slateTicker" checked> Tables ticker</label>
+        <label class="inline" title="Be right back: leave a window for a camera source behind this browser source"><input type="checkbox" id="slateCamera" checked> Camera window</label>
       </div>
+    </div>
+    <div class="feature-group hidden" data-scene="cornertag">
+      <h3>Corner tag</h3>
+      <div class="scene-options">
+        <label class="inline">Shows
+          <select id="cornertagMode">
+            <option value="match">Up next: the two players</option>
+            <option value="round">Up next: the round</option>
+            <option value="custom">Custom line</option>
+          </select>
+        </label>
+        <input id="cornertagText" class="slate-text hidden" maxlength="60" autocomplete="off" placeholder="Custom line" aria-label="Corner tag line">
+        <span class="hint">Reads the break clock. Top right, over anything; leave it on through interviews.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="lowerthird">
+      <h3>Lower third</h3>
+      <div class="scene-options">
+        <label class="inline">Shows
+          <select id="lowerthirdMode">
+            <option value="casters">Casters (the first two)</option>
+            <option value="interview">Interview: one player</option>
+            <option value="coming">Coming up: the match</option>
+          </select>
+        </label>
+        <label class="inline">Player
+          <select id="lowerthirdSide"><option value="left">Player 1</option><option value="right">Player 2</option></select>
+        </label>
+        <input id="lowerthirdCred" class="slate-text" maxlength="120" autocomplete="off" placeholder="Credential line (blank = seed, record, legend, best finish)" aria-label="Interview credential">
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="headtohead">
+      <h3>Match card</h3>
+      <div class="scene-options">
+        <input id="h2hStatus" class="slate-text" maxlength="80" autocomplete="off" placeholder="Status line, e.g. Players shuffling · game one begins shortly" aria-label="Match card status line">
+        <span class="hint">Who chose first, season records and team tags live under Match data › Match card and result and Player details.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="profile">
+      <h3>Player profile</h3>
+      <div class="scene-options">
+        <label class="inline">Player
+          <select id="profileSide"><option value="left">Player 1</option><option value="right">Player 2</option></select>
+        </label>
+        <span class="hint">Team, store, season record and top finishes are under Match data › Player details. The camera well bottom right is transparent for a player feed behind this source.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="bracket">
+      <h3>Bracket</h3>
+      <div class="scene-options"><span class="hint">Players, format and results are under Match data › Bracket. Click a match's winner there; the bracket on air follows the next TAKE.</span></div>
+    </div>
+    <div class="feature-group hidden" data-scene="standings">
+      <h3>Standings</h3>
+      <div class="scene-options">
+        <label class="inline">Page
+          <button type="button" id="standingsPrev" class="clear-mini">&lsaquo;</button>
+          <output id="standingsPage">1</output>
+          <button type="button" id="standingsNext" class="clear-mini">&rsaquo;</button>
+        </label>
+        <span class="hint">Twenty rows a page. Rows and the cut are under Match data › Standings.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="result">
+      <h3>Result</h3>
+      <div class="scene-options"><span class="hint">The winner and the "advances to" line are under Match data › Match card and result. Unset, the strip names whoever holds the series.</span></div>
     </div>
   </section>
 
@@ -869,6 +1114,34 @@
     <div class="url-row">
       <span class="url-label">Showdown source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="showdownUrl" readonly><button data-copy="showdownUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Corner tag source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="cornertagUrl" readonly><button data-copy="cornertagUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Lower third source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="lowerthirdUrl" readonly><button data-copy="lowerthirdUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Match card source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="headtoheadUrl" readonly><button data-copy="headtoheadUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Player profile source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="profileUrl" readonly><button data-copy="profileUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Bracket source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="bracketUrl" readonly><button data-copy="bracketUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Standings source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="standingsUrl" readonly><button data-copy="standingsUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Result source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="resultUrl" readonly><button data-copy="resultUrl">Copy</button></div>
     </div>
     <p class="hint">Card data and art come from Rift Registry, saved on this computer: no venue internet needed once downloaded. Add <code>&amp;side=left</code> to the popup URL to mirror it. vMix: add each URL as a Web Browser input at 1920 × 1080, tick "Use Transparent Background", and set FPS to 60.</p>
     </details>

@@ -1,0 +1,36 @@
+/* Standings (starter kit, 2026-09-15; spec output 2): one full-width table
+   the way a results sheet reads. Rank, player with legend thumbnail and
+   country chip, legend, record, points, then the three tiebreaks right
+   aligned. Twenty rows a page at 39px, alternate rows shaded, the cut drawn
+   as an accent rule under the last qualifying row with a small Cut tag;
+   rows below the cut dim slightly so the bubble stays visible.
+
+   Motion: --t fades the frame; every read is var(--t, 1). */
+
+.standings { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); }
+.standings.off { display: none; }
+.standings, .standings * { box-sizing: border-box; }
+
+.head { position: absolute; left: calc(80 * var(--u)); top: calc(54 * var(--u)); right: calc(80 * var(--u)); display: flex; align-items: flex-end; justify-content: space-between; }
+.head .lead { display: flex; align-items: flex-end; min-width: 0; }
+.head .title { font: 800 calc(64 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
+.head .sub { font: 700 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); margin-left: calc(26 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.head .pg { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); white-space: nowrap; }
+
+table { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1760 * var(--u)); border-collapse: collapse; background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+th { font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); text-align: left; padding: calc(10 * var(--u)) calc(14 * var(--u)); border-bottom: calc(1 * var(--u)) solid var(--ss-frame, #26303c); background: rgba(255, 255, 255, 0.03); }
+th.n, th.tb { text-align: right; }
+td { padding: 0 calc(14 * var(--u)); height: calc(39 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
+td.rk { font: 700 calc(22 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); width: calc(96 * var(--u)); position: relative; }
+td.pl { font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; max-width: calc(560 * var(--u)); }
+td.pl .k-thumb { display: inline-block; width: calc(30 * var(--u)); height: calc(30 * var(--u)); border-radius: calc(4 * var(--u)); vertical-align: middle; margin-right: calc(12 * var(--u)); }
+td.pl .k-chip { margin-right: calc(8 * var(--u)); }
+td.lg { font-size: calc(16 * var(--u)); color: var(--ss-text, #dfe6ee); max-width: calc(420 * var(--u)); }
+td.n { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-align: right; font-variant-numeric: tabular-nums; }
+td.tb { text-align: right; color: var(--ss-text-muted, #9aa7b6); font-variant-numeric: tabular-nums; font-size: calc(16 * var(--u)); }
+tr.cut td { border-bottom: calc(2 * var(--u)) solid var(--ss-accent-b, #1bef19); }
+tr.cut td.rk::after { content: 'Cut'; position: absolute; right: calc(8 * var(--u)); top: calc(19 * var(--u)); font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
+tr.outc td { opacity: 0.82; }
+.empty { position: absolute; left: calc(80 * var(--u)); top: calc(220 * var(--u)); width: calc(1760 * var(--u)); padding: calc(40 * var(--u)); text-align: center; font: 500 calc(20 * var(--u))/1.4 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); }
+.empty.hidden { display: none; }

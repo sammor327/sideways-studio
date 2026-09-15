@@ -204,6 +204,15 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   Match data; click a chip to mark it played, its × to remove it.
 - The rows overlay's hand can be a plain list or **lanes by type**
   (Reactions, Actions, Units and gear) with an art strip per card.
+- **The between-games set** (0.11.0): a **corner tag** ("Up next · match ·
+  clock", top right, over anything), a **lower third** (casters, an
+  interview name with a credential line, or "coming up"), the **match card**
+  (both players with legend art, their cards, records, who chose first and a
+  status line), a **player profile**, a **bracket** in four formats (top 8
+  and top 16, single and double elimination, edited match by match under
+  Match data), **standings** as a full-width table with the cut line, and a
+  **result strip**. The slate's Starting soon, Be right back and Thanks
+  modes carry the day's schedule, a camera window and the champion.
 - **Showdown** (`/scenes/showdown/`): the cards played onto a showdown, in
   order, the newest lifted because it resolves first. Open it in Match data
   by picking the battlefield; then click a card in either Cards in hand to

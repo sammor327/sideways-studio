@@ -1,0 +1,67 @@
+/* Lower third (starter kit, 2026-09-15): one bar shape, three modes.
+   casters: two name plates with role and handle flanking the event lockup
+   (Flesh and Blood's paired plates). interview: a legend thumbnail, the
+   name with its country chip and a credential line, why this person is on
+   camera (Pokémon's and Konami's floor tags). coming: "Coming up" over the
+   round and the two names (Magic's bar over b-roll).
+
+   Motion: --t lifts the bar from below the safe edge; every read is var(--t, 1). */
+
+.lt { position: absolute; inset: 0; }
+.lt.off { display: none; }
+.lt, .lt * { box-sizing: border-box; }
+.lt > div { display: none; }
+.lt.mode-casters .casters { display: flex; }
+.lt.mode-interview .interview { display: flex; }
+.lt.mode-coming .coming { display: flex; }
+
+/* --- casters --- */
+.casters {
+  position: absolute; left: 0; right: 0; bottom: calc(96 * var(--u));
+  justify-content: center; align-items: flex-end;
+  opacity: var(--t, 1); transform: translateY(calc((1 - var(--t, 1)) * 140 * var(--u)));
+}
+.casters .plate { background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); padding: calc(16 * var(--u)) calc(28 * var(--u)) calc(14 * var(--u)); min-width: calc(420 * var(--u)); max-width: calc(620 * var(--u)); }
+.casters .plate.l { text-align: right; border-right: 0; }
+.casters .plate.r { border-left: 0; }
+.casters .nm { font: 800 calc(40 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.casters .role { font: 500 calc(13 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); margin-top: calc(8 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.casters .role b { color: var(--ss-accent-b, #1bef19); font-weight: 800; }
+.casters .role span:not(:empty)::before { content: ' · '; }
+.casters .role b:empty + span::before { content: ''; }
+.casters .mid { background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); padding: calc(16 * var(--u)) calc(26 * var(--u)); text-align: center; min-width: calc(180 * var(--u)); max-width: calc(360 * var(--u)); }
+.casters .mid .t { font: 800 calc(26 * var(--u))/1 var(--tes-font); text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.casters .mid .s { font: 800 calc(11 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; margin-top: calc(6 * var(--u)); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.casters .mid .s:empty { display: none; }
+.casters .plate.hidden { display: none; }
+
+/* --- interview --- */
+.interview {
+  position: absolute; left: calc(80 * var(--u)); bottom: calc(96 * var(--u));
+  align-items: stretch; max-width: calc(1100 * var(--u));
+  opacity: var(--t, 1); transform: translateX(calc((1 - var(--t, 1)) * -600 * var(--u)));
+}
+.interview .strip { width: calc(8 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); }
+.interview .leg { width: calc(110 * var(--u)); position: relative; background: var(--ss-ink, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); border-right: 0; overflow: hidden; }
+.interview .leg .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+.interview .leg .art.hidden { display: none; }
+.interview .leg .art.icon-tier { object-fit: contain; padding: 12%; }
+.interview .body { background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); padding: calc(16 * var(--u)) calc(30 * var(--u)) calc(14 * var(--u)) calc(24 * var(--u)); min-width: calc(520 * var(--u)); min-width: 0; }
+.interview .nm { display: flex; align-items: center; gap: calc(12 * var(--u)); font: 800 calc(44 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
+.interview .nm span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.interview .cred { font: 400 calc(15 * var(--u))/1.3 var(--tes-font); letter-spacing: calc(0.6 * var(--u)); color: var(--ss-text, #dfe6ee); margin-top: calc(8 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.interview .cred b { color: var(--ss-accent-b, #1bef19); font-weight: 800; letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; font-size: calc(12 * var(--u)); margin-right: calc(8 * var(--u)); }
+.interview .cred b:empty { display: none; }
+
+/* --- coming up --- */
+.coming {
+  position: absolute; left: 0; right: 0; bottom: calc(96 * var(--u));
+  justify-content: center; align-items: stretch;
+  opacity: var(--t, 1); transform: translateY(calc((1 - var(--t, 1)) * 140 * var(--u)));
+}
+.coming .k { padding: calc(14 * var(--u)) calc(20 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); font: 800 calc(15 * var(--u))/1 var(--tes-font); letter-spacing: calc(2.2 * var(--u)); text-transform: uppercase; display: grid; place-items: center; white-space: nowrap; }
+.coming .body { background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); padding: calc(12 * var(--u)) calc(30 * var(--u)); min-width: calc(560 * var(--u)); max-width: calc(1100 * var(--u)); }
+.coming .round { font: 500 calc(13 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coming .round:empty { display: none; }
+.coming .vs { font: 800 calc(38 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); margin-top: calc(6 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coming .vs .x { color: var(--ss-text-muted, #9aa7b6); font-size: calc(24 * var(--u)); margin: 0 calc(14 * var(--u)); }

@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Bracket</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="bracket off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="k-shard s1"></div><div class="k-shard s2"></div>
+    <div class="head"><div class="title" id="title">Top 8</div><div class="sub" id="sub"></div></div>
+    <svg class="wire" id="wire" viewBox="0 0 1920 1080" preserveAspectRatio="none"></svg>
+    <div class="tree" id="tree"></div>
+    <div class="champ" id="champ"><div class="cup"></div><div class="l">Champion</div><div class="nm" id="champName">To be decided</div></div>
+    <div class="k-foot"><span class="note" id="foot"></span><span class="legend"><span><i class="w"></i>Winner</span><span><i class="lv"></i>Live</span><span><i class="o"></i>Eliminated</span></span></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The bracket is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

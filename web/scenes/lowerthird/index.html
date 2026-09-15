@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Lower Third</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="lt off mode-casters" id="root">
+    <!-- Casters: two plates flanking the event lockup. -->
+    <div class="casters" id="casters">
+      <div class="plate l"><div class="nm" id="c1name"></div><div class="role"><b id="c1role"></b><span id="c1handle"></span></div></div>
+      <div class="mid"><div class="t" id="midEvent"></div><div class="s" id="midRound"></div></div>
+      <div class="plate r"><div class="nm" id="c2name"></div><div class="role"><b id="c2role"></b><span id="c2handle"></span></div></div>
+    </div>
+    <!-- Interview: legend thumbnail, name, a credential line. -->
+    <div class="interview" id="interview">
+      <div class="strip"></div>
+      <div class="leg"><img class="art hidden" id="leg" alt="" draggable="false"></div>
+      <div class="body">
+        <div class="nm"><span class="k-chip" id="country"></span><span id="name"></span></div>
+        <div class="cred"><b id="credKey"></b><span id="cred"></span></div>
+      </div>
+    </div>
+    <!-- Coming up: the round over the two names. -->
+    <div class="coming" id="coming">
+      <div class="k" id="comingKey">Coming up</div>
+      <div class="body"><div class="round" id="comingRound"></div><div class="vs" id="comingVs"></div></div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The lower third is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

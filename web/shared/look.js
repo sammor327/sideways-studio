@@ -18,7 +18,8 @@
 // every scene reads them); a scene override may replace them.
 
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
-  'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
+  'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
+  'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -40,6 +41,13 @@ export const SCENE_LABELS = {
   slate: 'Slate',
   handfan: 'Hand fan',
   showdown: 'Showdown',
+  cornertag: 'Corner tag',
+  lowerthird: 'Lower third',
+  headtohead: 'Match card',
+  profile: 'Player profile',
+  bracket: 'Bracket',
+  standings: 'Standings',
+  result: 'Result',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -146,6 +154,36 @@ export const DESIGNED = {
   showdown: {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  // The starter kit: the overlays paint plates only; the full screens share
+  // the slate's gradient ground.
+  cornertag: {
+    colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  lowerthird: {
+    colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  result: {
+    colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  headtohead: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 30, dim: 0 },
+  },
+  profile: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+  },
+  bracket: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+  },
+  standings: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
   },
 };
 

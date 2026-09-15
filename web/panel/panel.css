@@ -924,3 +924,20 @@ details.field-section > .field-row { margin-top: 7px; }
 .sd-chain .entry .who { color: #8b98a5; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
 #sdOpen.on { background: var(--tes-grad); color: #06110a; border: none; }
 .hand-chip.playable { border-color: var(--tes-green); }
+
+/* --- the starter kit (2026-09-15): result and next-event cells, the bracket editor --- */
+.result-cell, .next-cell { display: flex; gap: 6px; align-items: center; }
+.result-cell input, .next-cell input { flex: 1 1 120px; min-width: 0; }
+.bracket-cell, .standings-cell { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.bracket-cell textarea, .standings-cell textarea { width: 100%; }
+.br-matches { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
+.br-matches:empty { display: none; }
+.br-round { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8b98a5; margin-top: 6px; }
+.br-match { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 4px 6px; align-items: center; padding: 4px 6px; border: 1px solid #1e242b; border-radius: 3px; background: #0f1318; font-size: 12px; }
+.br-match .who { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.br-match .who.tbd { color: #6c7783; }
+.br-match .who.win { color: var(--tes-green); font-weight: 700; }
+.br-match .sc { width: 34px; padding: 2px 4px; font-size: 12px; text-align: center; }
+.br-match .win-btn { padding: 2px 6px; font-size: 11px; }
+.br-match .win-btn.on { background: var(--tes-green); color: #0a0d12; border-color: transparent; }
+.br-match .id { grid-column: 1 / -1; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6c7783; }

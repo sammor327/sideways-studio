@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Result</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="result off" id="root">
+    <div class="score"><span class="n" id="lname"></span><span class="s"><span id="lwins">0</span> - <span id="rwins">0</span></span><span class="n" id="rname"></span></div>
+    <div class="strip">
+      <div class="art"><img class="hero hidden" id="hero" alt="" draggable="false"></div>
+      <div class="body">
+        <div class="stack"><span class="k-chip" id="round"></span><span class="k-chip ghost" id="games"></span><span class="k-chip ghost" id="points"></span></div>
+        <div class="w" id="winnerLabel">Match winner</div>
+        <div class="nm"><span class="k-chip" id="country"></span><span class="n" id="name"></span></div>
+        <div class="adv" id="adv"></div>
+      </div>
+      <div class="cam"><div class="well"><div class="win"></div></div></div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The result strip is hidden: set a winner, switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

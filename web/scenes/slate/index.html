@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="/stage/stage.css">
 <link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
 <link rel="stylesheet" href="./scene.css">
 </head>
 <body>
@@ -33,7 +34,48 @@
       </div>
     </div>
 
-    <!-- Message slates: starting soon, be right back, thanks, custom. -->
+    <!-- Starting soon: the clock is the hero, the day's schedule under it. -->
+    <div class="hold" id="hold">
+      <div class="k-lockup"><img class="logo hidden" id="holdLogo" alt="" draggable="false"><span class="mark" id="holdMark"></span><span class="t"><span id="holdEvent"></span><small id="holdRound"></small></span></div>
+      <div class="trim"></div>
+      <div class="title">Starting soon</div>
+      <div class="bigclock" id="holdClock">00:00</div>
+      <div class="clocklabel" id="holdClockLabel"></div>
+      <div class="sched" id="sched"><span class="label">Today's schedule</span><div id="schedRows"></div></div>
+    </div>
+    <div class="holdside" id="holdSide">
+      <div class="panel fmt" id="fmtBox"><span class="label">Format</span><div class="fmtText" id="fmtText"></div></div>
+      <div class="panel next" id="holdNext"><span class="label" id="holdNextLabel">Feature match</span><div class="vs" id="holdVs"></div></div>
+      <div class="panel spons" id="holdSpons"><span class="label">Presented by</span><div class="k-spons" id="holdSponsors"></div></div>
+    </div>
+
+    <!-- Be right back: a camera window, the resume clock, the next match. -->
+    <div class="brb" id="brb">
+      <div class="camwin" id="camwin"><div class="win"></div><div class="tag" id="camTag"></div></div>
+      <div class="brbside">
+        <div class="panel"><span class="label">Stream resumes in</span><div class="bigclock accent" id="brbClock">00:00</div><div class="big">We'll be right back</div></div>
+        <div class="panel next" id="brbNext"><span class="label" id="brbNextLabel">Up next</span><div class="vs col" id="brbVs"></div></div>
+        <div class="panel cmd" id="cmdBox"><span class="label">Chat commands</span><div class="cmds" id="cmds"></div></div>
+      </div>
+      <div class="bar" id="brbBar"><span class="msg" id="brbMsg"></span><span class="label" id="brbSub"></span><div class="k-spons" id="brbSponsors"></div></div>
+    </div>
+
+    <!-- Thanks: the champion and the next event. -->
+    <div class="thanks" id="thanks">
+      <div class="art"><img class="hero hidden" id="thanksHero" alt="" draggable="false"></div>
+      <div class="lead">
+        <div class="k-lockup"><img class="logo hidden" id="thanksLogo" alt="" draggable="false"><span class="mark" id="thanksMark"></span><span class="t"><span id="thanksEvent"></span><small id="thanksRound"></small></span></div>
+        <div class="k" id="thanksKey">Thanks for watching</div>
+        <div class="nm" id="thanksName"></div>
+        <div class="lg" id="thanksLegend"></div>
+      </div>
+      <div class="panels">
+        <div class="panel"><span class="label">Thank you for watching</span><div class="v">See you at the next one</div><div class="s" id="thanksLine"></div></div>
+        <div class="panel" id="nextBox"><span class="label">Next event</span><div class="v" id="nextName"></div><div class="s" id="nextWhen"></div></div>
+      </div>
+    </div>
+
+    <!-- Custom: one line over the ground. -->
     <div class="message" id="message">
       <span class="label eyebrow" id="msgEyebrow"></span>
       <div class="trim"></div>
@@ -46,7 +88,10 @@
       <div class="panel cast" id="castBox"><span class="label">On the desk</span><div id="casters"></div></div>
     </div>
 
-    <div class="foot">
+    <!-- Feature tables ticker along the bottom (starting soon). -->
+    <div class="ticker" id="ticker"><div class="k">Feature tables</div><div class="items" id="tickerItems"></div></div>
+
+    <div class="foot" id="foot">
       <span class="mark"><img class="logo hidden" id="footLogo" alt="" draggable="false"><span class="ev" id="footEvent"></span></span>
       <span class="label">Riftbound is a trademark of Riot Games. Fan content, not endorsed by Riot.</span>
     </div>

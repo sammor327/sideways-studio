@@ -12,6 +12,7 @@ import { isCuratedFont } from './fonts.js';
 import { DATA_DIR } from './runtime.js';
 import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } from '../web/shared/look.js';
 import { kindOf } from './carddb.js';
+import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -42,6 +43,10 @@ function defaultSide(name) {
     // count for a TO who counts but cannot spot, and a "holds" line naming
     // the battlefields a side controls.
     handCount: 0, hand: [], holds: '', handUnknown: 0,
+    // The profile and match card lines (2026-09-15 starter kit): team and
+    // store, the season record, the best finish, and up to three top
+    // finishes one per line.
+    team: '', store: '', seasonRecord: '', bestFinish: '', finishes: '',
     score: 0, gameWins: 0,
   };
 }
@@ -63,6 +68,13 @@ function defaultBank() {
       // second clock for the slate's "stream resumes in", the feature tables
       // the up-next board lists, the caster desk, and a seeds paste.
       roundsRemaining: 0, countdown: defaultTimer(), tables: [], casters: [], seeds: '',
+      // The starter kit (2026-09-15): the hold's day schedule with the
+      // current block, a format blurb, chat commands, sponsor names, the
+      // next event for the sign-off, the champion the sign-off names, the
+      // bracket and the standings.
+      schedule: [], scheduleNow: -1, format: '', commands: '', sponsors: '', nextName: '', nextWhen: '', champion: '',
+      bracket: { format: 'se8', players: [], results: {} },
+      standings: { rows: [], cut: 8 },
     },
     match: {
       seriesLength: 3,
@@ -74,6 +86,9 @@ function defaultBank() {
       // chain of cards played onto it in order. Driven by the chain cue so
       // it never waits for a TAKE; the showdown scene draws it.
       showdown: { active: false, battlefield: '', battlefieldCardId: '', priority: '', chain: [] },
+      // Who chose to go first in game one (the match card prints it) and the
+      // result strip's winner with a line about where they go next.
+      choseFirst: '', result: { winner: '', note: '' },
       left: defaultSide('PLAYER ONE'),
       right: defaultSide('PLAYER TWO'),
       timer: defaultTimer(),
@@ -119,7 +134,7 @@ function defaultBank() {
       arenabug: { visible: false, clock: true },
       // Slate: full-frame hold screens. upnext lists event.tables; the
       // others print a message and, when on, the countdown clock.
-      slate: { visible: false, mode: 'upnext', text: '', countdown: true },
+      slate: { visible: false, mode: 'upnext', text: '', countdown: true, schedule: true, ticker: true, camera: true },
       // Hand fan: one player's hand as real cards fanned along the bottom
       // edge, the other's known cards small at the top. showdown lights the
       // reactions until the real showdown state exists.
@@ -128,6 +143,21 @@ function defaultBank() {
       // whichever in-game overlay is on; takeover is the full lower band
       // with cameras and both hands.
       showdown: { visible: false, mode: 'strip', hands: true },
+      // --- the out-of-game starter kit (2026-09-15) ---
+      // Corner tag: "UP NEXT · match · clock" top right, over anything.
+      cornertag: { visible: false, mode: 'match', text: '' },
+      // Lower third: the caster pair, an interview name with a credential
+      // line, or the coming-up bar.
+      lowerthird: { visible: false, mode: 'casters', side: 'left', credential: '' },
+      // Match card (the spec's head-to-head): both sides with a centre column.
+      headtohead: { visible: false, status: '' },
+      // Player profile: one side, legend art backdrop, stat tiles.
+      profile: { visible: false, side: 'left' },
+      // Bracket and standings draw event.bracket and event.standings.
+      bracket: { visible: false },
+      standings: { visible: false, page: 1 },
+      // Result strip: the match winner and where they go next.
+      result: { visible: false },
     },
   };
 }
@@ -195,9 +225,15 @@ function mergeBank(bank, raw) {
   // the name and round title, and a hand or table list must be an array.
   bank.event = { ...fresh.event, ...bank.event };
   bank.event.countdown = { ...fresh.event.countdown, ...(bank.event.countdown || {}) };
-  for (const key of ['tables', 'casters']) {
+  for (const key of ['tables', 'casters', 'schedule']) {
     if (!Array.isArray(bank.event[key])) bank.event[key] = [];
   }
+  bank.event.bracket = { ...fresh.event.bracket, ...(bank.event.bracket || {}) };
+  if (!Array.isArray(bank.event.bracket.players)) bank.event.bracket.players = [];
+  if (!bank.event.bracket.results || typeof bank.event.bracket.results !== 'object') bank.event.bracket.results = {};
+  bank.event.standings = { ...fresh.event.standings, ...(bank.event.standings || {}) };
+  if (!Array.isArray(bank.event.standings.rows)) bank.event.standings.rows = [];
+  bank.match.result = { ...fresh.match.result, ...(bank.match.result || {}) };
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
   }
@@ -313,7 +349,25 @@ function cleanCaster(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const name = cleanStr(raw.name || '', 40);
   if (!name) return null;
-  return { name, role: cleanStr(raw.role || '', 30) };
+  return { name, role: cleanStr(raw.role || '', 30), handle: cleanStr(raw.handle || '', 30) };
+}
+
+// A row of the day's schedule: a time and what happens then.
+function cleanScheduleRow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const title = cleanStr(raw.title || '', 40);
+  if (!title) return null;
+  return { time: cleanStr(raw.time || '', 12), title };
+}
+
+// A standings row: the table side's identity plus the numbers. Points and
+// the tiebreaks are kept as numbers so the scene can right-align them.
+const num1 = (v) => { const n = Number(v); return Number.isFinite(n) ? Math.round(Math.min(100, Math.max(0, n)) * 10) / 10 : 0; };
+function cleanStandingsRow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const side = cleanTableSide(raw);
+  if (!side.name) return null;
+  return { ...side, points: clampInt(raw.points, 0, 999), omw: num1(raw.omw), gw: num1(raw.gw), ogw: num1(raw.ogw) };
 }
 
 function applySide(side, patch) {
@@ -346,6 +400,11 @@ function applySide(side, patch) {
   if (patch.champion !== undefined) side.champion = cleanStr(patch.champion, 40);
   if (patch.champion2 !== undefined) side.champion2 = cleanStr(patch.champion2, 40);
   if (patch.seed !== undefined) side.seed = cleanStr(patch.seed, 8);
+  if (patch.team !== undefined) side.team = cleanStr(patch.team, 40);
+  if (patch.store !== undefined) side.store = cleanStr(patch.store, 40);
+  if (patch.seasonRecord !== undefined) side.seasonRecord = cleanStr(patch.seasonRecord, 12);
+  if (patch.bestFinish !== undefined) side.bestFinish = cleanStr(patch.bestFinish, 60);
+  if (patch.finishes !== undefined) side.finishes = cleanMultiline(patch.finishes, 300);
   // Card ids become art URLs: same shape guard as any other card id.
   if (patch.legendCardId !== undefined) side.legendCardId = cleanCardId(patch.legendCardId);
   if (patch.legendCardId2 !== undefined) side.legendCardId2 = cleanCardId(patch.legendCardId2);
@@ -380,6 +439,29 @@ function applyBankPatch(bank, patch) {
     if (patch.event.seeds !== undefined) bank.event.seeds = cleanMultiline(patch.event.seeds, 800);
     if (Array.isArray(patch.event.tables)) bank.event.tables = patch.event.tables.slice(0, 4).map(cleanTable);
     if (Array.isArray(patch.event.casters)) bank.event.casters = patch.event.casters.slice(0, 4).map(cleanCaster).filter(Boolean);
+    if (Array.isArray(patch.event.schedule)) bank.event.schedule = patch.event.schedule.slice(0, 8).map(cleanScheduleRow).filter(Boolean);
+    if (patch.event.scheduleNow !== undefined) bank.event.scheduleNow = clampInt(patch.event.scheduleNow, -1, 7);
+    if (patch.event.format !== undefined) bank.event.format = cleanMultiline(patch.event.format, 400);
+    if (patch.event.commands !== undefined) bank.event.commands = cleanStr(patch.event.commands, 120);
+    if (patch.event.sponsors !== undefined) bank.event.sponsors = cleanStr(patch.event.sponsors, 200);
+    if (patch.event.nextName !== undefined) bank.event.nextName = cleanStr(patch.event.nextName, 80);
+    if (patch.event.nextWhen !== undefined) bank.event.nextWhen = cleanStr(patch.event.nextWhen, 80);
+    if (['', 'left', 'right'].includes(patch.event.champion)) bank.event.champion = patch.event.champion;
+    if (patch.event.bracket && typeof patch.event.bracket === 'object') {
+      const b = patch.event.bracket;
+      const cur = bank.event.bracket;
+      if (BRACKET_FORMAT_KEYS.includes(b.format)) cur.format = b.format;
+      if (Array.isArray(b.players)) cur.players = b.players.slice(0, 16).map(cleanTableSide);
+      // Results are re-cleaned against the format even when only the format
+      // changed, so a switch from 16 to 8 drops the matches that no longer exist.
+      if (b.results && typeof b.results === 'object') cur.results = cleanBracketResults(b.results, cur.format);
+      else if (b.format) cur.results = cleanBracketResults(cur.results, cur.format);
+    }
+    if (patch.event.standings && typeof patch.event.standings === 'object') {
+      const st = patch.event.standings;
+      if (Array.isArray(st.rows)) bank.event.standings.rows = st.rows.slice(0, 64).map(cleanStandingsRow).filter(Boolean);
+      if (st.cut !== undefined && [0, 4, 8, 16, 32].includes(Number(st.cut))) bank.event.standings.cut = Number(st.cut);
+    }
   }
 
   if (patch.match && typeof patch.match === 'object') {
@@ -389,6 +471,12 @@ function applyBankPatch(bank, patch) {
     }
     if (['', 'left', 'right'].includes(patch.match.activeSide)) bank.match.activeSide = patch.match.activeSide;
     if (patch.match.turn !== undefined) bank.match.turn = clampInt(patch.match.turn, 0, 99);
+    if (['', 'left', 'right'].includes(patch.match.choseFirst)) bank.match.choseFirst = patch.match.choseFirst;
+    if (patch.match.result && typeof patch.match.result === 'object') {
+      const r = patch.match.result;
+      if (['', 'left', 'right'].includes(r.winner)) bank.match.result.winner = r.winner;
+      if (r.note !== undefined) bank.match.result.note = cleanStr(r.note, 120);
+    }
     if (patch.match.left && typeof patch.match.left === 'object') applySide(bank.match.left, patch.match.left);
     if (patch.match.right && typeof patch.match.right === 'object') applySide(bank.match.right, patch.match.right);
   }
@@ -477,6 +565,43 @@ function applyBankPatch(bank, patch) {
       if (SLATE_MODES.includes(s.mode)) bank.scenes.slate.mode = s.mode;
       if (s.text !== undefined) bank.scenes.slate.text = cleanStr(s.text, 120);
       if (s.countdown !== undefined) bank.scenes.slate.countdown = Boolean(s.countdown);
+      for (const flag of ['schedule', 'ticker', 'camera']) {
+        if (s[flag] !== undefined) bank.scenes.slate[flag] = Boolean(s[flag]);
+      }
+    }
+    // --- the starter kit scenes ---
+    if (patch.scenes.cornertag && typeof patch.scenes.cornertag === 'object') {
+      const c = patch.scenes.cornertag;
+      if (c.visible !== undefined) bank.scenes.cornertag.visible = Boolean(c.visible);
+      if (['match', 'round', 'custom'].includes(c.mode)) bank.scenes.cornertag.mode = c.mode;
+      if (c.text !== undefined) bank.scenes.cornertag.text = cleanStr(c.text, 60);
+    }
+    if (patch.scenes.lowerthird && typeof patch.scenes.lowerthird === 'object') {
+      const l = patch.scenes.lowerthird;
+      if (l.visible !== undefined) bank.scenes.lowerthird.visible = Boolean(l.visible);
+      if (['casters', 'interview', 'coming'].includes(l.mode)) bank.scenes.lowerthird.mode = l.mode;
+      if (['left', 'right'].includes(l.side)) bank.scenes.lowerthird.side = l.side;
+      if (l.credential !== undefined) bank.scenes.lowerthird.credential = cleanStr(l.credential, 120);
+    }
+    if (patch.scenes.headtohead && typeof patch.scenes.headtohead === 'object') {
+      const h = patch.scenes.headtohead;
+      if (h.visible !== undefined) bank.scenes.headtohead.visible = Boolean(h.visible);
+      if (h.status !== undefined) bank.scenes.headtohead.status = cleanStr(h.status, 80);
+    }
+    if (patch.scenes.profile && typeof patch.scenes.profile === 'object') {
+      const p = patch.scenes.profile;
+      if (p.visible !== undefined) bank.scenes.profile.visible = Boolean(p.visible);
+      if (['left', 'right'].includes(p.side)) bank.scenes.profile.side = p.side;
+    }
+    for (const key of ['bracket', 'result']) {
+      if (patch.scenes[key] && typeof patch.scenes[key] === 'object' && patch.scenes[key].visible !== undefined) {
+        bank.scenes[key].visible = Boolean(patch.scenes[key].visible);
+      }
+    }
+    if (patch.scenes.standings && typeof patch.scenes.standings === 'object') {
+      const st = patch.scenes.standings;
+      if (st.visible !== undefined) bank.scenes.standings.visible = Boolean(st.visible);
+      if (st.page !== undefined) bank.scenes.standings.page = clampInt(st.page, 1, 4);
     }
   }
 }

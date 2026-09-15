@@ -1,0 +1,37 @@
+/* Corner tag (starter kit, 2026-09-15): "UP NEXT · match · clock" top right,
+   the smallest graphic in the app. It sits over anything (cam, b-roll, an
+   interview) and reads the break clock, so switching from a slate to the
+   tag never resets the time. Pokémon keeps a tag like it on through floor
+   interviews; that is the intended use.
+
+   Motion: --t slides the tag in from the right edge; every read is var(--t, 1). */
+
+.cornertag { position: absolute; inset: 0; }
+.cornertag.off { display: none; }
+.cornertag, .cornertag * { box-sizing: border-box; }
+
+.tag {
+  position: absolute; right: calc(60 * var(--u)); top: calc(48 * var(--u));
+  display: flex; align-items: stretch;
+  background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  max-width: calc(760 * var(--u));
+  opacity: var(--t, 1);
+  transform: translateX(calc((1 - var(--t, 1)) * 520 * var(--u)));
+}
+.tag .k {
+  flex: 0 0 auto; padding: calc(12 * var(--u)) calc(16 * var(--u)) calc(10 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12);
+  font: 800 calc(14 * var(--u))/1 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase;
+  display: grid; place-items: center; white-space: nowrap;
+}
+.tag .v { min-width: 0; padding: calc(10 * var(--u)) calc(18 * var(--u)); display: grid; align-content: center; }
+.tag .v .main { font: 700 calc(24 * var(--u))/1.1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag .v small { display: block; font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); margin-top: calc(3 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tag .v small:empty { display: none; }
+.tag .clock {
+  flex: 0 0 auto; padding: calc(10 * var(--u)) calc(18 * var(--u));
+  border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  font: 700 calc(34 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums;
+  display: grid; place-items: center; color: var(--ss-accent-b, #1bef19);
+}
+.tag .clock.hidden { display: none; }

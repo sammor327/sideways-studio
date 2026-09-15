@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Player Profile</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="profile off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="art"><img class="hero hidden" id="hero" alt="" draggable="false"></div>
+    <div class="card">
+      <div class="k-lockup"><img class="logo hidden" id="logo" alt="" draggable="false"><span class="mark" id="mark"></span><span class="t"><span id="eventName">Sideways Studio</span><small id="roundTitle"></small></span></div>
+      <div class="nm" id="name"></div>
+      <div class="lg"><span class="k-runes" id="runes"></span><span id="legend"></span></div>
+      <div class="seedrow"><span class="k-chip big" id="country"></span><span class="big" id="seed"></span><span class="tags" id="tags"></span></div>
+      <div class="stats">
+        <div class="stat" id="statRecord"><div class="l">Swiss record</div><div class="v" id="record"></div></div>
+        <div class="stat" id="statSeason"><div class="l">Season record</div><div class="v" id="seasonRecord"></div></div>
+        <div class="stat" id="statArchetype"><div class="l">Deck</div><div class="v small" id="archetype"></div></div>
+        <div class="stat" id="statStore"><div class="l">Local store</div><div class="v small" id="store"></div></div>
+      </div>
+      <div class="fin" id="finBox"><div class="l">Top finishes</div><div id="finishes"></div></div>
+    </div>
+    <div class="cam" id="cam"><div class="well"><div class="win"></div></div><div class="tag">Live</div></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The player profile is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>
