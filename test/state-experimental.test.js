@@ -18,7 +18,7 @@ describe('experimental overlay fields', () => {
     applyUpdate({ match: { left: {
       record: ' 8-2-0 ', country: 'kr', pronouns: 'he/him', archetype: 'Yasuo Tempo', handCount: 25, holds: 'Altar to Unity · 3 units',
       hand: [
-        { cardId: 'OGN-076', cardName: 'Yasuo, Remorseful', energy: 3, domains: ['Calm', 'Nope'] },
+        { cardId: 'OGN-076', cardName: 'Yasuo, Remorseful', energy: 3, domains: ['Calm', 'Nope'], kind: 'reaction', played: 1 },
         { cardId: 'bad id!', cardName: '' },
         'not a card',
       ],
@@ -30,7 +30,13 @@ describe('experimental overlay fields', () => {
     assert.equal(left.archetype, 'Yasuo Tempo');
     assert.equal(left.handCount, 20, 'hand count clamps to 20');
     assert.equal(left.holds, 'Altar to Unity · 3 units');
-    assert.deepEqual(left.hand, [{ cardId: 'OGN-076', cardName: 'Yasuo, Remorseful', energy: 3, domains: ['Calm'] }]);
+    assert.deepEqual(left.hand, [{ cardId: 'OGN-076', cardName: 'Yasuo, Remorseful', energy: 3, domains: ['Calm'], kind: 'reaction', played: true }]);
+    // A kind the panel did not send resolves from the card index (empty in
+    // tests, where no index is loaded) rather than being trusted from anywhere.
+    applyUpdate({ match: { left: { hand: [{ cardId: 'OGN-076', cardName: 'Yasuo, Remorseful', kind: 'wizard' }], handUnknown: 30 } } });
+    assert.equal(getState().preview.match.left.hand[0].kind, '');
+    assert.equal(getState().preview.match.left.hand[0].played, false);
+    assert.equal(getState().preview.match.left.handUnknown, 20);
   });
 
   it('refuses a country code that is not two or three letters', () => {
@@ -55,7 +61,13 @@ describe('experimental overlay fields', () => {
     } });
     const sc = getState().preview.scenes;
     assert.deepEqual(sc.igoportrait, { visible: true, mode: 'webcam', topBar: true, handCam: true, cardWell: false });
-    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false });
+    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', showdown: false });
+    applyUpdate({ scenes: { igorows: { handStyle: 'lanes', showdown: true }, handfan: { visible: true, side: 'right', opponent: false, showdown: true } } });
+    assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
+    assert.deepEqual(getState().preview.scenes.handfan, { visible: true, side: 'right', opponent: false, showdown: true });
+    applyUpdate({ scenes: { igorows: { handStyle: 'pile' }, handfan: { side: 'middle' } } });
+    assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
+    assert.equal(getState().preview.scenes.handfan.side, 'right');
     assert.deepEqual(sc.arenabug, { visible: true, clock: false });
     assert.deepEqual(sc.slate, { visible: true, mode: 'custom', text: 'Back after the break', countdown: false });
     applyUpdate({ scenes: { slate: { mode: 'sideways' } } });

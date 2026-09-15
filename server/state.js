@@ -11,6 +11,7 @@ import path from 'node:path';
 import { isCuratedFont } from './fonts.js';
 import { DATA_DIR } from './runtime.js';
 import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } from '../web/shared/look.js';
+import { kindOf } from './carddb.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -40,7 +41,7 @@ function defaultSide(name) {
     // (resolved cards, so the scene draws costs without a catalog), a plain
     // count for a TO who counts but cannot spot, and a "holds" line naming
     // the battlefields a side controls.
-    handCount: 0, hand: [], holds: '',
+    handCount: 0, hand: [], holds: '', handUnknown: 0,
     score: 0, gameWins: 0,
   };
 }
@@ -108,13 +109,17 @@ function defaultBank() {
       igoportrait: { visible: false, mode: 'legend', topBar: true, handCam: false, cardWell: true },
       // Rows: slim bars top and bottom and a left column with both cameras
       // and the cards-in-hand list (the Magic grammar).
-      igorows: { visible: false, mode: 'legend', hand: true },
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', showdown: false },
       // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
       // stage and player cameras. Exclusive with the score bug in the panel.
       arenabug: { visible: false, clock: true },
       // Slate: full-frame hold screens. upnext lists event.tables; the
       // others print a message and, when on, the countdown clock.
       slate: { visible: false, mode: 'upnext', text: '', countdown: true },
+      // Hand fan: one player's hand as real cards fanned along the bottom
+      // edge, the other's known cards small at the top. showdown lights the
+      // reactions until the real showdown state exists.
+      handfan: { visible: false, side: 'left', opponent: true, showdown: false },
     },
   };
 }
@@ -265,8 +270,12 @@ function cleanHandCard(raw) {
   if (!cardId && !cardName) return null;
   const domains = Array.isArray(raw.domains) ? raw.domains.filter((d) => DOMAINS.includes(d)).slice(0, 2) : [];
   const energy = raw.energy === '' || raw.energy === null || raw.energy === undefined ? null : clampInt(raw.energy, 0, 20);
-  return { cardId, cardName, energy, domains };
+  // The hand overlays badge each card by what it can do. A patch may carry
+  // it (the panel gets it from the search); otherwise the index says.
+  const kind = HAND_KINDS.includes(raw.kind) ? raw.kind : (cardId ? kindOf(cardId) : '');
+  return { cardId, cardName, energy, domains, kind, played: Boolean(raw.played) };
 }
+const HAND_KINDS = ['reaction', 'action', 'unit', 'champion', 'gear', 'spell'];
 
 const COUNTRY = /^[A-Z]{0,3}$/;
 // The identity block one player carries on an up-next table card. Its
@@ -307,6 +316,7 @@ function applySide(side, patch) {
   if (patch.archetype !== undefined) side.archetype = cleanStr(patch.archetype, 40);
   if (patch.handCount !== undefined) side.handCount = clampInt(patch.handCount, 0, 20);
   if (patch.holds !== undefined) side.holds = cleanStr(patch.holds, 80);
+  if (patch.handUnknown !== undefined) side.handUnknown = clampInt(patch.handUnknown, 0, 20);
   if (Array.isArray(patch.hand)) side.hand = patch.hand.map(cleanHandCard).filter(Boolean).slice(0, 12);
   if (patch.legend !== undefined) side.legend = cleanStr(patch.legend, 60);
   if (patch.legendSlug !== undefined) {
@@ -424,6 +434,18 @@ function applyBankPatch(bank, patch) {
           if (igo[flag] !== undefined) bank.scenes[key][flag] = Boolean(igo[flag]);
         }
       }
+    }
+    if (patch.scenes.igorows && typeof patch.scenes.igorows === 'object') {
+      const r = patch.scenes.igorows;
+      if (['list', 'lanes'].includes(r.handStyle)) bank.scenes.igorows.handStyle = r.handStyle;
+      if (r.showdown !== undefined) bank.scenes.igorows.showdown = Boolean(r.showdown);
+    }
+    if (patch.scenes.handfan && typeof patch.scenes.handfan === 'object') {
+      const h = patch.scenes.handfan;
+      if (h.visible !== undefined) bank.scenes.handfan.visible = Boolean(h.visible);
+      if (['left', 'right'].includes(h.side)) bank.scenes.handfan.side = h.side;
+      if (h.opponent !== undefined) bank.scenes.handfan.opponent = Boolean(h.opponent);
+      if (h.showdown !== undefined) bank.scenes.handfan.showdown = Boolean(h.showdown);
     }
     if (patch.scenes.arenabug && typeof patch.scenes.arenabug === 'object') {
       const a = patch.scenes.arenabug;

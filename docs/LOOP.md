@@ -214,6 +214,47 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-14f (out of band: the hand fan and the hand lanes)
+
+From the hand and showdown mocks ("Riftbound Hand and Showdown Mocks"):
+Sam took the hand fan and the hand lanes; the showdown takeover was too
+much screen, so it was re-mocked as a strip docked into each in-game
+overlay's camera window (composites in the same gallery) and waits for the
+showdown state.
+
+**What a card can do.** `cardKind` in server/carddb.js reads the rules
+text: `[REACTION]` and `[ACTION]` tags first, then the type (champion,
+unit, gear, spell). The ranked search returns it, the panel stores it on
+each hand entry, and the state sanitizer fills a missing one from the index
+(`kindOf`) so a hand posted by anything else still badges. Hand entries
+also carry `played` (on the chain: greys on air) and each side a
+`handUnknown` count for cards the spotter has not seen.
+
+**Hand fan, `handfan`.** Experimental scene on the look model: the
+featured side's hand as real cards (full art, thumb fallback) fanned along
+the bottom edge, rotation and lift from the distance to the middle, card
+width shrinking past seven so twelve still fit between the tags; a badge
+per card by kind; `showdown` lights the reactions and shows the pill;
+played cards grey with "On the chain"; the opponent's known cards small at
+the top right with dashed slots for `handUnknown` (or the hand count minus
+the listed cards); identity tag with runes bottom left, clock and round
+bottom right; a labelled dashed outline when the hand is empty. Config
+`{visible, side, opponent, showdown}`. Not an edge scene: it is meant for
+the plain camera.
+
+**Hand lanes.** `scenes.igorows.handStyle: list | lanes` regroups the rows
+column into Reactions / Actions / Units and gear lanes with an art strip
+per card and the unplayed count per lane; `scenes.igorows.showdown` lights
+the reactions lane and swaps the active-turn label for a Showdown pill.
+Played cards grey in both styles.
+
+**Panel.** Hand fan row and feature group (fanned hand side, opponent's
+hand, showdown open); rows gains Hand as list / lanes and Showdown open;
+an Unknown cards counter; hand chips show R / A / U / C / G / S, click
+toggles played, the × removes. Focus chip, URL, monitor and output stacks,
+LOOK_SCENES and DESIGNED carry the new scene. Tests cover kind, played,
+handUnknown and both scene configs (63 pass).
+
 ### 2026-09-14e (out of band: folds start collapsed, a graphic opens its own)
 
 Sam: every collapsible section starts collapsed, and putting a graphic in

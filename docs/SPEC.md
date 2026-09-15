@@ -95,6 +95,11 @@ Setup > Experimental (`theme.experimental`, setup data like the logo):
     Exclusive with the score bug in the panel.
 13. **Slate** (`slate`) — full-frame holds: up next (event.tables, seeds
     strip, casters, break clock) or a message line.
+14. **Hand fan** (`handfan`) — one player's cards in hand as real cards
+    fanned along the bottom edge with a badge per card (what it can do,
+    read off the card text), reactions lit while a showdown is open, played
+    cards greyed, the opponent's known cards small at the top with dashed
+    unknown slots. The rows overlay's list can also be lanes by kind.
 
 New per-side fields: record, country (2-3 letters), pronouns, archetype,
 handCount, hand[] (cardId, cardName, energy, domains), holds. New match

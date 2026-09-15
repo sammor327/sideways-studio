@@ -54,6 +54,7 @@ const SCENE_FIELDS = {
     'champion', 'championText', 'archetype', 'handCount', 'hand', 'holds', 'turn', 'roundTitle'],
   arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
   slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds'],
+  handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'handUnknown', 'roundTitle', 'timer', 'turn'],
 };
 const SCENE_NAMES = {
   scorebug: 'the score bug',
@@ -66,6 +67,7 @@ const SCENE_NAMES = {
   igorows: 'the rows overlay',
   arenabug: 'the arena score bug',
   slate: 'the slate',
+  handfan: 'the hand fan',
 };
 const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
 
@@ -96,6 +98,7 @@ function sceneDraws(scene, field, side, bank) {
     if (!cfg.cardWell && field === 'card') return false;
   }
   if (scene === 'igorows' && !cfg.hand && ['hand', 'handCount', 'holds'].includes(field)) return false;
+  if (scene === 'handfan' && !cfg.opponent && field === 'handUnknown') return false;
   if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
   if (scene === 'slate') {
     if (cfg.mode !== 'upnext' && ['tables', 'seeds'].includes(field)) return false;
@@ -636,6 +639,7 @@ function paintCounter(side, field, value) {
   const p = side === 'left' ? 'l' : 'r';
   if (field === 'score') setIfIdle(`${p}score`, String(value));
   else if (field === 'handCount') $(`${p}handOut`).textContent = value;
+  else if (field === 'handUnknown') $(`${p}unknownOut`).textContent = value;
   else $(`${p}winsOut`).textContent = value;
 }
 
@@ -646,7 +650,7 @@ for (const btn of document.querySelectorAll('.counter button')) {
     // Optimistic: mutate the local copy immediately so rapid clicks stack
     // instead of re-sending the same stale value.
     const m = state.preview.match;
-    const max = field === 'score' ? 8 : (field === 'handCount' ? 20 : winsNeeded(m.seriesLength));
+    const max = field === 'score' ? 8 : (['handCount', 'handUnknown'].includes(field) ? 20 : winsNeeded(m.seriesLength));
     const next = Math.min(max, Math.max(0, m[side][field] + Number(step)));
     m[side][field] = next;
     paintCounter(side, field, next);
@@ -727,7 +731,7 @@ const SWAP_FIELDS = [
   'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
   'champion', 'name2', 'legend2', 'legendSlug2', 'legendCardId2', 'battlefield2', 'teamName',
   'champion2', 'score', 'gameWins', 'seed',
-  'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'holds',
+  'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'holds', 'handUnknown',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -1088,6 +1092,7 @@ $('igoPortraitUrl').value = `${location.origin}/scenes/igoportrait/?transparent=
 $('igoRowsUrl').value = `${location.origin}/scenes/igorows/?transparent=1`;
 $('arenaUrl').value = `${location.origin}/scenes/arenabug/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
+$('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 
 for (const input of document.querySelectorAll('.url-input')) {
   input.addEventListener('focus', () => input.select());
@@ -1531,9 +1536,9 @@ pollUpdate();
 // data (theme.experimental): on, their rows, focus chips, match-data fields
 // and source URLs appear; off, they hide and anything on in preview goes off.
 
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate'];
-const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate' };
-const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir' };
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan'];
+const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan' };
+const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir' };
 let experimental = false;
 
 function applyExperimental(on) {
@@ -1574,6 +1579,15 @@ for (const [id, flag] of [['igoPortraitTop', 'topBar'], ['igoPortraitHand', 'han
 }
 $('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mode: $('igoRowsMode').value } } }));
 $('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
+$('igoRowsHandStyle').addEventListener('change', () => post({ scenes: { igorows: { handStyle: $('igoRowsHandStyle').value } } }));
+$('igoRowsShowdown').addEventListener('change', () => post({ scenes: { igorows: { showdown: $('igoRowsShowdown').checked } } }));
+$('toggleHandfan').addEventListener('click', () => {
+  if (!state) return;
+  post({ scenes: { handfan: { visible: !state.preview.scenes.handfan.visible } } });
+});
+$('handfanSide').addEventListener('change', () => post({ scenes: { handfan: { side: $('handfanSide').value } } }));
+$('handfanOpponent').addEventListener('change', () => post({ scenes: { handfan: { opponent: $('handfanOpponent').checked } } }));
+$('handfanShowdown').addEventListener('change', () => post({ scenes: { handfan: { showdown: $('handfanShowdown').checked } } }));
 $('arenaClock').addEventListener('change', () => post({ scenes: { arenabug: { clock: $('arenaClock').checked } } }));
 $('slateMode').addEventListener('change', () => post({ scenes: { slate: { mode: $('slateMode').value } } }));
 $('slateCountdown').addEventListener('change', () => post({ scenes: { slate: { countdown: $('slateCountdown').checked } } }));
@@ -1614,20 +1628,37 @@ function renderHandChips(p, hand) {
   if (box.dataset.key === key) return;
   box.dataset.key = key;
   const side = p === 'l' ? 'left' : 'right';
+  const KIND_LETTER = { reaction: 'R', action: 'A', unit: 'U', champion: 'C', gear: 'G', spell: 'S' };
   box.replaceChildren(...hand.map((c, i) => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'hand-chip';
-    chip.title = 'Remove from hand';
-    chip.textContent = c.cardName || c.cardId;
+    const chip = document.createElement('span');
+    chip.className = `hand-chip${c.played ? ' played' : ''}`;
+    chip.title = c.played ? 'On the chain: click to take it back into the hand' : 'Click to mark it played onto the chain';
+    if (c.kind) {
+      const k = document.createElement('span');
+      k.className = `k ${c.kind}`;
+      k.textContent = KIND_LETTER[c.kind] || '';
+      chip.append(k);
+    }
+    chip.append(document.createTextNode(c.cardName || c.cardId));
     if (c.energy !== null && c.energy !== undefined) {
       const small = document.createElement('small');
       small.textContent = String(c.energy);
       chip.append(small);
     }
-    chip.addEventListener('click', () => {
+    const x = document.createElement('span');
+    x.className = 'x';
+    x.textContent = '×';
+    x.title = 'Remove from hand';
+    x.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (!state) return;
       const next = (state.preview.match[side].hand || []).filter((_, j) => j !== i);
+      post({ match: { [side]: { hand: next } } });
+    });
+    chip.append(x);
+    chip.addEventListener('click', () => {
+      if (!state) return;
+      const next = (state.preview.match[side].hand || []).map((card, j) => (j === i ? { ...card, played: !card.played } : card));
       post({ match: { [side]: { hand: next } } });
     });
     return chip;
@@ -1643,7 +1674,7 @@ function wireHandSearch(p, side) {
     if (!state) return;
     const current = state.preview.match[side].hand || [];
     if (current.length >= 12) return;
-    post({ match: { [side]: { hand: [...current, { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [] }] } } });
+    post({ match: { [side]: { hand: [...current, { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [], kind: card.kind || '' }] } } });
     input.value = '';
     hits = [];
     close();
@@ -1821,6 +1852,12 @@ function renderExtras(s) {
   const rw = prev.scenes.igorows;
   if (document.activeElement !== $('igoRowsMode')) $('igoRowsMode').value = rw.mode;
   if (document.activeElement !== $('igoRowsHand')) $('igoRowsHand').checked = rw.hand;
+  if (document.activeElement !== $('igoRowsHandStyle')) $('igoRowsHandStyle').value = rw.handStyle || 'list';
+  if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
+  const hf = prev.scenes.handfan;
+  if (document.activeElement !== $('handfanSide')) $('handfanSide').value = hf.side || 'left';
+  if (document.activeElement !== $('handfanOpponent')) $('handfanOpponent').checked = Boolean(hf.opponent);
+  if (document.activeElement !== $('handfanShowdown')) $('handfanShowdown').checked = Boolean(hf.showdown);
   if (document.activeElement !== $('arenaClock')) $('arenaClock').checked = prev.scenes.arenabug.clock;
   const sl = prev.scenes.slate;
   if (document.activeElement !== $('slateMode')) $('slateMode').value = sl.mode;
@@ -1836,6 +1873,7 @@ function renderExtras(s) {
     setIfIdle(`${p}archetype`, sd.archetype || '');
     setIfIdle(`${p}holds`, sd.holds || '');
     $(`${p}handOut`).textContent = sd.handCount || 0;
+    $(`${p}unknownOut`).textContent = sd.handUnknown || 0;
     renderHandChips(p, sd.hand || []);
   }
   $('turnOut').textContent = prev.match.turn || 0;

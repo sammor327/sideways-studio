@@ -237,6 +237,26 @@ export async function prefetchFullArt() {
 
 // Ranked name search for the operator: prefix beats word-prefix beats
 // substring; ties break alphabetically. Returns the fields the panel needs.
+// What a card can do, read off its rules text and type: every Reaction's
+// text opens with [REACTION] and every Action's with [ACTION]; the rest is
+// the card type. The hand overlays badge cards with it.
+export function cardKind(c) {
+  if (!c) return '';
+  const text = String(c.text || '');
+  if (/\[REACTION\]/i.test(text)) return 'reaction';
+  if (/\[ACTION\]/i.test(text)) return 'action';
+  const type = String(c.type || '');
+  if (type === 'Champion Unit') return 'champion';
+  if (type.includes('Unit')) return 'unit';
+  if (type.includes('Gear')) return 'gear';
+  if (type.includes('Spell')) return 'spell';
+  return '';
+}
+
+export function kindOf(cardId) {
+  return cardKind(byId.get(cardId));
+}
+
 export function searchCards(query, limit = 12) {
   const q = normalize(query).trim();
   if (!q || !cards.length) return [];
@@ -256,6 +276,7 @@ export function searchCards(query, limit = 12) {
     cardType: c.type || '',
     domains: c.domains || [],
     energy: c.energy,
+    kind: cardKind(c),
   }));
 }
 

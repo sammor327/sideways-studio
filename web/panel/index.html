@@ -59,6 +59,7 @@
       <button class="focus-chip exp-only hidden" data-focus="igorows" aria-pressed="false">Rows</button>
       <button class="focus-chip exp-only hidden" data-focus="arenabug" aria-pressed="false">Arena bug</button>
       <button class="focus-chip exp-only hidden" data-focus="slate" aria-pressed="false">Slate</button>
+      <button class="focus-chip exp-only hidden" data-focus="handfan" aria-pressed="false">Hand fan</button>
     </div>
     <p class="hint" id="focusHint"></p>
   </div>
@@ -291,7 +292,7 @@
       </div>
 
       <div class="field-row" data-field="hand">
-        <span class="row-label" title="The rows overlay lists these cards with their costs. Search a card and press Enter to add it; click a chip to remove it.">Cards in hand</span>
+        <span class="row-label" title="The rows overlay and the hand fan show these cards. Search a card and press Enter to add it. Click a chip to mark it played onto the chain (it greys on air); click its × to remove it. R and A mark reactions and actions.">Cards in hand</span>
         <div class="cell picker-wrap hand-cell" data-side="left">
           <input id="lhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card in hand">
           <ul class="results" id="lhandResults"></ul>
@@ -301,6 +302,24 @@
           <input id="rhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 2 add a card in hand">
           <ul class="results" id="rhandResults"></ul>
           <div class="hand-chips" id="rhandChips"></div>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="handUnknown">
+        <span class="row-label" title="Cards in hand the spotter has not seen: drawn as dashed slots on the hand fan. The hand count minus the listed cards is used when this is 0.">Unknown cards</span>
+        <div class="cell" data-side="left">
+          <div class="counter">
+            <button data-step="-1" data-side="left" data-field="handUnknown" aria-label="Player 1 unknown cards down">&minus;</button>
+            <output id="lunknownOut">0</output>
+            <button data-step="1" data-side="left" data-field="handUnknown" aria-label="Player 1 unknown cards up">+</button>
+          </div>
+        </div>
+        <div class="cell" data-side="right">
+          <div class="counter">
+            <button data-step="-1" data-side="right" data-field="handUnknown" aria-label="Player 2 unknown cards down">&minus;</button>
+            <output id="runknownOut">0</output>
+            <button data-step="1" data-side="right" data-field="handUnknown" aria-label="Player 2 unknown cards up">+</button>
+          </div>
         </div>
       </div>
 
@@ -456,6 +475,10 @@
         <div class="scene-name">Slate <span class="kind full">Full frame</span> <span class="onair hidden" id="slateOnAir">ON AIR</span></div>
         <button id="toggleSlate" class="scene-toggle">OFF</button>
       </div>
+      <div class="scene-row" data-scene="handfan" data-exp="1">
+        <div class="scene-name">Hand fan <span class="kind">Overlay</span> <span class="onair hidden" id="handfanOnAir">ON AIR</span></div>
+        <button id="toggleHandfan" class="scene-toggle">OFF</button>
+      </div>
     </div>
 
     <div class="scene-row popup-row" data-scene="cardpopup">
@@ -548,12 +571,32 @@
           </select>
         </label>
         <label class="inline" title="The cards-in-hand list and the holds line from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
+        <label class="inline" title="A flat list, or lanes grouped by what each card can do: reactions, actions, then units and gear">Hand as
+          <select id="igoRowsHandStyle">
+            <option value="list">List</option>
+            <option value="lanes">Lanes by type</option>
+          </select>
+        </label>
+        <label class="inline" title="Lights the reactions lane and swaps the active-turn label for a Showdown pill"><input type="checkbox" id="igoRowsShowdown"> Showdown open</label>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="arenabug" data-exp="1">
       <h3>Arena score bug</h3>
       <div class="scene-options">
         <label class="inline" title="The event and round clock lozenge top left"><input type="checkbox" id="arenaClock" checked> Clock lozenge</label>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="handfan" data-exp="1">
+      <h3>Hand fan</h3>
+      <div class="scene-options">
+        <label class="inline" title="Whose hand is fanned large along the bottom">Fanned hand
+          <select id="handfanSide">
+            <option value="left">Player 1</option>
+            <option value="right">Player 2</option>
+          </select>
+        </label>
+        <label class="inline" title="The other player's known cards small at the top, with dashed slots for the unknown ones"><input type="checkbox" id="handfanOpponent" checked> Opponent's hand</label>
+        <label class="inline" title="Lights the reactions and shows the Showdown pill"><input type="checkbox" id="handfanShowdown"> Showdown open</label>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="slate" data-exp="1">
@@ -788,6 +831,10 @@
       <div class="url-row">
         <span class="url-label">Slate source, 1920 &times; 1080, 60 fps</span>
         <div class="url-line"><input class="url-input" id="slateUrl" readonly><button data-copy="slateUrl">Copy</button></div>
+      </div>
+      <div class="url-row">
+        <span class="url-label">Hand fan source, 1920 &times; 1080, 60 fps</span>
+        <div class="url-line"><input class="url-input" id="handfanUrl" readonly><button data-copy="handfanUrl">Copy</button></div>
       </div>
       <p class="hint">The combined source already includes all four.</p>
     </div>

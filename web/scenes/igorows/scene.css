@@ -68,10 +68,13 @@
 
 /* --- hidden information --- */
 
-.info { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); display: flex; flex-direction: column; gap: calc(14 * var(--u)); }
-.info.top { top: calc(236 * var(--u)); }
-.info.bot { top: calc(556 * var(--u)); }
-.divider { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(540 * var(--u)); height: calc(1 * var(--u)); background: var(--ss-frame, #26303c); }
+/* Both players' blocks flow in one column between the cameras, the divider
+   between them, so a long hand pushes the other block down instead of
+   over it; what cannot fit clips at the bottom rather than overlapping. */
+.infos { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u)); display: flex; flex-direction: column; gap: calc(14 * var(--u)); overflow: hidden; }
+.info { display: flex; flex-direction: column; gap: calc(14 * var(--u)); flex: none; }
+.info.bot { margin-top: auto; }
+.divider { flex: none; height: calc(1 * var(--u)); background: var(--ss-frame, #26303c); }
 .hand { display: flex; flex-direction: column; }
 .hand.hidden { display: none; }
 .hand .h { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.06); padding: calc(6 * var(--u)) calc(10 * var(--u)); margin-bottom: calc(4 * var(--u)); }
@@ -118,3 +121,23 @@
 .deck .rune { width: calc(26 * var(--u)); height: calc(26 * var(--u)); }
 .round { font: 800 calc(22 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; color: var(--ss-text, #fff); margin-left: calc(16 * var(--u)); padding-left: calc(20 * var(--u)); border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); white-space: nowrap; }
 .round:empty { display: none; }
+
+/* --- hand lanes (handStyle: lanes) and the showdown pill --- */
+.card.with-art { grid-template-columns: calc(56 * var(--u)) 1fr auto; padding: calc(4 * var(--u)) calc(6 * var(--u)) calc(4 * var(--u)) 0; }
+.card { display: grid; grid-template-columns: 1fr auto; }
+.card .strip { width: calc(56 * var(--u)); height: calc(34 * var(--u)); object-fit: cover; object-position: center 22%; border-radius: calc(3 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+.card .strip.hidden { display: none; }
+.card.played { opacity: 0.35; }
+.card.played .nm::after { content: ' · on the chain'; color: var(--ss-accent-b, #1bef19); font-size: calc(11 * var(--u)); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; }
+.lane { margin-top: calc(8 * var(--u)); }
+.lane .lh { display: flex; justify-content: space-between; align-items: center; padding: calc(5 * var(--u)) calc(10 * var(--u)); background: rgba(255, 255, 255, 0.06); border-left: calc(3 * var(--u)) solid var(--ss-frame, #26303c); }
+.lane.reaction .lh { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.10); }
+.lane.action .lh { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.10); }
+.lane .lh .label { color: var(--ss-text, #fff); }
+.lane .lcnt { font: 700 calc(16 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
+.lane.reaction .lcnt { color: var(--ss-accent-b, #1bef19); }
+.showdown .lane.reaction .lh { box-shadow: 0 0 calc(14 * var(--u)) rgba(27, 239, 25, 0.35); }
+.sd-pill { display: none; align-items: center; gap: calc(6 * var(--u)); padding: calc(3 * var(--u)) calc(8 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-accent-b, #1bef19); border-radius: calc(999 * var(--u)); font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
+.sd-pill i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); border-radius: 50%; background: var(--ss-accent-b, #1bef19); box-shadow: 0 0 calc(8 * var(--u)) var(--ss-accent-b, #1bef19); }
+.showdown .sd-pill { display: inline-flex; }
+.showdown .active-label { display: none; }

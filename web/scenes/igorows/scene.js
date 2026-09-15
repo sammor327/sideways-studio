@@ -45,42 +45,81 @@ function renderDots(el, seriesLength, gameWins, animate) {
   });
 }
 
-// One row per card: name, then the energy cost and the power runes. Rebuilt
-// only when the list changes, so a score bump never restarts image loads.
-function renderHand(p, side, on) {
+// One row per card: an art strip in lanes style, the name, then the energy
+// cost and the power runes. A card on the chain greys out and says so.
+// Rebuilt only when the list changes, so a score bump never restarts image
+// loads.
+function cardRow(c, lanes) {
+  const row = document.createElement('div');
+  row.className = `card${c.played ? ' played' : ''}${lanes ? ' with-art' : ''}`;
+  if (lanes) {
+    const img = document.createElement('img');
+    img.className = 'strip';
+    img.src = `/cardart/thumb/${c.cardId}.webp`;
+    img.alt = '';
+    img.draggable = false;
+    img.onerror = () => img.classList.add('hidden');
+    row.append(img);
+  }
+  const nm = document.createElement('span');
+  nm.className = 'nm';
+  nm.textContent = c.cardName || c.cardId;
+  const cost = document.createElement('span');
+  cost.className = 'cost';
+  const e = document.createElement('span');
+  e.className = 'e';
+  e.textContent = c.energy === null || c.energy === undefined ? '' : String(c.energy);
+  cost.append(e);
+  for (const d of (c.domains || []).filter((x) => DOMAINS.includes(x))) {
+    const img = document.createElement('img');
+    img.className = 'rune';
+    img.src = runeSrc(d);
+    img.alt = d;
+    img.draggable = false;
+    img.onerror = () => img.classList.add('hidden');
+    cost.append(img);
+  }
+  row.append(nm, cost);
+  return row;
+}
+
+// Lanes: reactions, then actions, then everything else, each with its own
+// header and count; the reactions lane carries the live rule.
+const LANES = [
+  ['reaction', 'Reactions', (c) => c.kind === 'reaction'],
+  ['action', 'Actions', (c) => c.kind === 'action'],
+  ['other', 'Units and gear', (c) => c.kind !== 'reaction' && c.kind !== 'action'],
+];
+function laneEls(list) {
+  const out = [];
+  for (const [cls, label, pick] of LANES) {
+    const cards = list.filter(pick);
+    if (!cards.length) continue;
+    const lane = document.createElement('div');
+    lane.className = `lane ${cls}`;
+    const h = document.createElement('div');
+    h.className = 'lh';
+    h.append(
+      Object.assign(document.createElement('span'), { className: 'label', textContent: label }),
+      Object.assign(document.createElement('span'), { className: 'lcnt', textContent: String(cards.filter((c) => !c.played).length) }),
+    );
+    lane.append(h, ...cards.map((c) => cardRow(c, true)));
+    out.push(lane);
+  }
+  return out;
+}
+
+function renderHand(p, side, on, lanes) {
   const block = $(`${p}handBlock`);
   const list = side.hand || [];
   const count = side.handCount > 0 ? side.handCount : list.length;
   const show = on && count > 0;
   block.classList.toggle('hidden', !show);
   setText($(`${p}handCount`), show ? String(count) : '');
-  const key = list.map((c) => `${c.cardId}|${c.cardName}|${c.energy}|${(c.domains || []).join(',')}`).join(';');
+  const key = `${lanes ? 'L' : 'F'}:` + list.map((c) => `${c.cardId}|${c.cardName}|${c.energy}|${(c.domains || []).join(',')}|${c.kind}|${c.played ? 1 : 0}`).join(';');
   if (shown.hand[p] === key) return;
   shown.hand[p] = key;
-  $(`${p}hand`).replaceChildren(...list.map((c) => {
-    const row = document.createElement('div');
-    row.className = 'card';
-    const nm = document.createElement('span');
-    nm.className = 'nm';
-    nm.textContent = c.cardName || c.cardId;
-    const cost = document.createElement('span');
-    cost.className = 'cost';
-    const e = document.createElement('span');
-    e.className = 'e';
-    e.textContent = c.energy === null || c.energy === undefined ? '' : String(c.energy);
-    cost.append(e);
-    for (const d of (c.domains || []).filter((x) => DOMAINS.includes(x))) {
-      const img = document.createElement('img');
-      img.className = 'rune';
-      img.src = runeSrc(d);
-      img.alt = d;
-      img.draggable = false;
-      img.onerror = () => img.classList.add('hidden');
-      cost.append(img);
-    }
-    row.append(nm, cost);
-    return row;
-  }));
+  $(`${p}hand`).replaceChildren(...(lanes ? laneEls(list) : list.map((c) => cardRow(c, false))));
 }
 
 function proLine(side) {
@@ -121,8 +160,10 @@ const params = initStage({
 
     renderSide('l', m.left, m, animate);
     renderSide('r', m.right, m, animate);
-    renderHand('l', m.left, scene.hand);
-    renderHand('r', m.right, scene.hand);
+    root.classList.toggle('showdown', Boolean(scene.showdown));
+    const lanes = scene.handStyle === 'lanes';
+    renderHand('l', m.left, scene.hand, lanes);
+    renderHand('r', m.right, scene.hand, lanes);
 
     const round = [bank.event.roundTitle, m.turn > 0 ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
     setText($('round'), round);

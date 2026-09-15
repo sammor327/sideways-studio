@@ -776,3 +776,13 @@ details.field-section > .field-row { margin-top: 7px; }
   animation: row-flash 1.6s ease-out 1;
 }
 .field-row.flash > .row-label { color: var(--tes-green); transition: color 0.2s; }
+
+/* Hand chips: a kind letter, a played state, and a remove cross. */
+.hand-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 6px 3px 8px; }
+.hand-chip:hover { border-color: var(--tes-blue); color: #e8edf1; }
+.hand-chip .k { font-size: 9px; font-weight: 800; letter-spacing: 1px; padding: 1px 4px; border-radius: 2px; background: #2a323b; color: #b8c4cf; }
+.hand-chip .k.reaction { background: var(--tes-green); color: #06110a; }
+.hand-chip .k.action { background: var(--tes-blue); color: #06110a; }
+.hand-chip.played { opacity: 0.55; text-decoration: line-through; }
+.hand-chip .x { font-size: 13px; color: #8b98a5; padding-left: 4px; }
+.hand-chip .x:hover { color: #e08b8b; }

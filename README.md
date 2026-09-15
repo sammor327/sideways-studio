@@ -175,6 +175,16 @@ spec yet; the switch is remembered with the event.
 The turn counter, the active side and the break clock are cues like the
 round clock: Next turn, Reset and the clock buttons act on air at once.
 
+- **Hand fan** (`/scenes/handfan/`): one player's cards in hand as real
+  cards fanned along the bottom edge, each badged Reaction, Action, Unit,
+  Champion or Gear (the app reads that off the card's own text), with the
+  other player's known cards small at the top and dashed slots for the
+  unknown ones. "Showdown open" lights the reactions; a card marked played
+  greys out and says so. Cards go in through the Cards in hand search in
+  Match data; click a chip to mark it played, its × to remove it.
+- The rows overlay's hand can be a plain list or **lanes by type**
+  (Reactions, Actions, Units and gear) with an art strip per card.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are
