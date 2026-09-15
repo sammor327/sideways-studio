@@ -60,6 +60,7 @@
       <button class="focus-chip exp-only hidden" data-focus="arenabug" aria-pressed="false">Arena bug</button>
       <button class="focus-chip exp-only hidden" data-focus="slate" aria-pressed="false">Slate</button>
       <button class="focus-chip exp-only hidden" data-focus="handfan" aria-pressed="false">Hand fan</button>
+      <button class="focus-chip exp-only hidden" data-focus="showdown" aria-pressed="false">Showdown</button>
     </div>
     <p class="hint" id="focusHint"></p>
   </div>
@@ -323,12 +324,6 @@
         </div>
       </div>
 
-      <div class="field-row" data-field="holds">
-        <span class="row-label" title="One line naming the battlefields this side holds, printed under the hand list.">Holds</span>
-        <div class="cell" data-side="left"><input id="lholds" maxlength="80" autocomplete="off" placeholder="Altar to Unity · 3 units" aria-label="Player 1 holds"></div>
-        <div class="cell" data-side="right"><input id="rholds" maxlength="80" autocomplete="off" placeholder="Back-Alley Bar · 1 unit" aria-label="Player 2 holds"></div>
-      </div>
-
       <div class="field-row" data-field="turn">
         <span class="row-label" title="The turn counter and whose turn it is. Cues: they act on air at once, no TAKE needed.">Turn</span>
         <div class="cell span2 turn-cell">
@@ -341,6 +336,28 @@
             <option value="right">Player 2 active</option>
           </select>
           <button id="turnReset" class="clear-mini" title="Turn 0, no active side">Reset</button>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="showdown">
+        <span class="row-label" title="Open a showdown at a battlefield; then clicking a card in either Cards in hand plays it onto the chain. Cues: everything here acts on air at once.">Showdown</span>
+        <div class="cell span2 sd-cell">
+          <div class="row sd-row">
+            <div class="picker-wrap sd-bf"><input id="sdBattlefield" placeholder="Battlefield&hellip;" autocomplete="off" aria-label="Showdown battlefield"><ul class="results" id="sdBattlefieldResults"></ul></div>
+            <button id="sdOpen">Open</button>
+            <button id="sdClose" class="danger-ghost">Close</button>
+          </div>
+          <div class="row sd-row">
+            <select id="sdPriority" aria-label="Who can respond">
+              <option value="">No one to respond</option>
+              <option value="left">Player 1 to respond</option>
+              <option value="right">Player 2 to respond</option>
+            </select>
+            <button id="sdResolve" class="clear-mini" title="The top card resolves and leaves its hand">Resolve top</button>
+            <button id="sdUnplay" class="clear-mini" title="The last card goes back into its hand">Undo last</button>
+          </div>
+          <div class="sd-chain" id="sdChain"></div>
+          <p class="hint" id="sdHint"></p>
         </div>
       </div>
 
@@ -479,6 +496,10 @@
         <div class="scene-name">Hand fan <span class="kind">Overlay</span> <span class="onair hidden" id="handfanOnAir">ON AIR</span></div>
         <button id="toggleHandfan" class="scene-toggle">OFF</button>
       </div>
+      <div class="scene-row" data-scene="showdown" data-exp="1">
+        <div class="scene-name">Showdown <span class="kind">Overlay</span> <span class="onair hidden" id="showdownOnAir">ON AIR</span></div>
+        <button id="toggleShowdown" class="scene-toggle">OFF</button>
+      </div>
     </div>
 
     <div class="scene-row popup-row" data-scene="cardpopup">
@@ -570,7 +591,7 @@
             <option value="webcam">Webcam cutouts</option>
           </select>
         </label>
-        <label class="inline" title="The cards-in-hand list and the holds line from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
+        <label class="inline" title="The cards-in-hand list from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
         <label class="inline" title="A flat list, or lanes grouped by what each card can do: reactions, actions, then units and gear">Hand as
           <select id="igoRowsHandStyle">
             <option value="list">List</option>
@@ -596,7 +617,22 @@
           </select>
         </label>
         <label class="inline" title="The other player's known cards small at the top, with dashed slots for the unknown ones"><input type="checkbox" id="handfanOpponent" checked> Opponent's hand</label>
+        <label class="inline" title="The name, legend and hand count tag bottom left"><input type="checkbox" id="handfanIdentity" checked> Identity tag</label>
+        <label class="inline" title="The round clock and round title bottom right"><input type="checkbox" id="handfanClock" checked> Clock tag</label>
         <label class="inline" title="Lights the reactions and shows the Showdown pill"><input type="checkbox" id="handfanShowdown"> Showdown open</label>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="showdown" data-exp="1">
+      <h3>Showdown</h3>
+      <div class="scene-options">
+        <label class="inline" title="Strip: docks into the camera window of whichever in-game overlay is on. Takeover: the full lower band with cameras and hands.">Layout
+          <select id="showdownMode">
+            <option value="strip">Strip in the camera window</option>
+            <option value="takeover">Takeover band</option>
+          </select>
+        </label>
+        <label class="inline" title="Both players' hands as small cards on the takeover band"><input type="checkbox" id="showdownHands" checked> Hands on the band</label>
+        <span class="hint">Airs only while a showdown is open in Match data.</span>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="slate" data-exp="1">
@@ -835,6 +871,10 @@
       <div class="url-row">
         <span class="url-label">Hand fan source, 1920 &times; 1080, 60 fps</span>
         <div class="url-line"><input class="url-input" id="handfanUrl" readonly><button data-copy="handfanUrl">Copy</button></div>
+      </div>
+      <div class="url-row">
+        <span class="url-label">Showdown source, 1920 &times; 1080, 60 fps</span>
+        <div class="url-line"><input class="url-input" id="showdownUrl" readonly><button data-copy="showdownUrl">Copy</button></div>
       </div>
       <p class="hint">The combined source already includes all four.</p>
     </div>

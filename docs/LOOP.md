@@ -214,6 +214,35 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-14g (out of band: the showdown, a bare hand fan, no holds)
+
+**Showdown, `showdown`.** State `match.showdown {active, battlefield,
+battlefieldCardId, priority, chain[]}` driven by the `chain` cue on both
+banks: `open` (battlefield name and card id; priority defaults to whoever
+is not the active player), `play` (side + hand index; the card is read
+from PREVIEW's hand, pushed onto both banks' chains, marked played in any
+bank that has it, priority passes), `resolve` (top pops and the card
+leaves its hand, hand count follows), `unplay` (the last card back), a
+`priority` override, `close` (anything left resolves, everything clears).
+Scene modes: `strip` docks a 204px strip into the camera window of
+whichever in-game overlay is on in the same bank (dual 354..1568 at the
+bottom, pillars 545..1375, rows 330..1920 above its bar, else full width)
+with a battlefield pill, the chain as 104px cards in play order with
+arrows and the newest lifted "Resolves first", and a "To respond" chip;
+`takeover` is the 420px lower band over the battlefield's art (rotated
+from portrait) with both cameras and small hands at the ends and the chain
+as 196px cards. The scene airs only while a showdown is open, so the
+switch can stay on all match. Panel: a Showdown row in Match data
+(battlefield picker, Open / Close, who responds, Resolve top, Undo last,
+the chain listed); while open, clicking a hand chip plays it. Feature
+group: layout and hands. Tested end to end (64 pass).
+
+**Hand fan switches.** `identity` and `clock` on `scenes.handfan` hide
+the two tags, so with `opponent` off the fan is only the fan.
+
+**Holds removed** from the rows overlay, the panel and the field maps at
+Sam's ask (the state field stays, harmless, for older saves).
+
 ### 2026-09-14f (out of band: the hand fan and the hand lanes)
 
 From the hand and showdown mocks ("Riftbound Hand and Showdown Mocks"):

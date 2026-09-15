@@ -786,3 +786,19 @@ details.field-section > .field-row { margin-top: 7px; }
 .hand-chip.played { opacity: 0.55; text-decoration: line-through; }
 .hand-chip .x { font-size: 13px; color: #8b98a5; padding-left: 4px; }
 .hand-chip .x:hover { color: #e08b8b; }
+
+/* Showdown block in Match data. */
+.sd-cell { display: flex; flex-direction: column; gap: 6px; }
+.sd-row { flex-wrap: nowrap; }
+.sd-bf { flex: 1; min-width: 0; }
+.sd-bf input { width: 100%; }
+.sd-row select { flex: 1; min-width: 0; padding: 5px 8px; font-size: 13px; }
+.sd-chain { display: flex; flex-direction: column; gap: 3px; }
+.sd-chain .entry { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; font-size: 12.5px; padding: 3px 8px; background: #0c0f12; border: 1px solid #1e242b; border-left: 3px solid #2a323b; }
+.sd-chain .entry.left { border-left-color: var(--tes-blue); }
+.sd-chain .entry.right { border-left-color: var(--tes-green); }
+.sd-chain .entry.top { border-color: var(--tes-green); }
+.sd-chain .entry .n { color: #8b98a5; font-weight: 700; }
+.sd-chain .entry .who { color: #8b98a5; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+#sdOpen.on { background: var(--tes-grad); color: #06110a; border: none; }
+.hand-chip.playable { border-color: var(--tes-green); }

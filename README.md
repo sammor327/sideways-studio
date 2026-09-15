@@ -184,6 +184,13 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   Match data; click a chip to mark it played, its × to remove it.
 - The rows overlay's hand can be a plain list or **lanes by type**
   (Reactions, Actions, Units and gear) with an art strip per card.
+- **Showdown** (`/scenes/showdown/`): the cards played onto a showdown, in
+  order, the newest lifted because it resolves first. Open it in Match data
+  by picking the battlefield; then click a card in either Cards in hand to
+  play it, Resolve top when it resolves, Close when the showdown ends. All
+  of that acts on air at once. "Strip" docks into the camera window of
+  whichever in-game overlay is on; "Takeover band" is the full lower band
+  with both cameras and hands over the battlefield's art.
 
 ## Decklists
 

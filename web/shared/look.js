@@ -18,12 +18,12 @@
 // every scene reads them); a scene override may replace them.
 
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
-  'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan'];
+  'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
 
 // The experimental graphics (2026-09-14, from the five-game overlay
 // scouting): listed in the panel only while Setup's Experimental switch is
 // on, so a TO who wants the shipped set never sees them.
-export const EXPERIMENTAL_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan'];
+export const EXPERIMENTAL_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
 
 export const SCENE_LABELS = {
   scorebug: 'Score bug',
@@ -39,6 +39,7 @@ export const SCENE_LABELS = {
   arenabug: 'Arena score bug',
   slate: 'Slate',
   handfan: 'Hand fan',
+  showdown: 'Showdown',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -139,6 +140,10 @@ export const DESIGNED = {
     background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
   },
   handfan: {
+    colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  showdown: {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },

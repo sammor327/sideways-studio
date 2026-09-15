@@ -70,6 +70,10 @@ function defaultBank() {
       // overlays) and the turn counter; both are cues, so they act on air
       // without a TAKE like the clock does.
       activeSide: '', turn: 0,
+      // The showdown: the contested battlefield, who can respond, and the
+      // chain of cards played onto it in order. Driven by the chain cue so
+      // it never waits for a TAKE; the showdown scene draws it.
+      showdown: { active: false, battlefield: '', battlefieldCardId: '', priority: '', chain: [] },
       left: defaultSide('PLAYER ONE'),
       right: defaultSide('PLAYER TWO'),
       timer: defaultTimer(),
@@ -119,7 +123,11 @@ function defaultBank() {
       // Hand fan: one player's hand as real cards fanned along the bottom
       // edge, the other's known cards small at the top. showdown lights the
       // reactions until the real showdown state exists.
-      handfan: { visible: false, side: 'left', opponent: true, showdown: false },
+      handfan: { visible: false, side: 'left', opponent: true, showdown: false, identity: true, clock: true },
+      // Showdown: the chain as cards. strip docks into the camera window of
+      // whichever in-game overlay is on; takeover is the full lower band
+      // with cameras and both hands.
+      showdown: { visible: false, mode: 'strip', hands: true },
     },
   };
 }
@@ -180,6 +188,8 @@ function mergeBank(bank, raw) {
   }
   bank.match.timer = { ...fresh.match.timer, ...(bank.match.timer || {}) };
   bank.match = { ...fresh.match, ...bank.match };
+  bank.match.showdown = { ...fresh.match.showdown, ...(bank.match.showdown || {}) };
+  if (!Array.isArray(bank.match.showdown.chain)) bank.match.showdown.chain = [];
   // Event fields grew with the experimental graphics; older saves carry only
   // the name and round title, and a hand or table list must be an array.
   bank.event = { ...fresh.event, ...bank.event };
@@ -446,6 +456,14 @@ function applyBankPatch(bank, patch) {
       if (['left', 'right'].includes(h.side)) bank.scenes.handfan.side = h.side;
       if (h.opponent !== undefined) bank.scenes.handfan.opponent = Boolean(h.opponent);
       if (h.showdown !== undefined) bank.scenes.handfan.showdown = Boolean(h.showdown);
+      if (h.identity !== undefined) bank.scenes.handfan.identity = Boolean(h.identity);
+      if (h.clock !== undefined) bank.scenes.handfan.clock = Boolean(h.clock);
+    }
+    if (patch.scenes.showdown && typeof patch.scenes.showdown === 'object') {
+      const d = patch.scenes.showdown;
+      if (d.visible !== undefined) bank.scenes.showdown.visible = Boolean(d.visible);
+      if (['strip', 'takeover'].includes(d.mode)) bank.scenes.showdown.mode = d.mode;
+      if (d.hands !== undefined) bank.scenes.showdown.hands = Boolean(d.hands);
     }
     if (patch.scenes.arenabug && typeof patch.scenes.arenabug === 'object') {
       const a = patch.scenes.arenabug;
@@ -601,6 +619,82 @@ export function applyUpdate(patch) {
           break;
         default:
           return { ok: false, error: 'unknown turn op' };
+      }
+    }
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // The showdown chain is a cue: open at a battlefield, play a card from a
+  // hand onto it, resolve the top, close. Acts on both banks like the clock.
+  if (patch.action === 'chain') {
+    const other = (side) => (side === 'left' ? 'right' : 'left');
+    for (const bank of [state.preview, state.program]) {
+      const sd = bank.match.showdown;
+      switch (patch.op) {
+        case 'open': {
+          sd.active = true;
+          sd.chain = [];
+          sd.battlefield = cleanStr(patch.battlefield || '', 40);
+          sd.battlefieldCardId = cleanCardId(patch.battlefieldCardId || '');
+          // The defender responds first: whoever is not the active player.
+          sd.priority = ['left', 'right'].includes(patch.priority) ? patch.priority
+            : (bank.match.activeSide ? other(bank.match.activeSide) : 'right');
+          break;
+        }
+        case 'play': {
+          // The card is what the operator sees: preview's hand. Program may
+          // hold an older hand (or none), so it gets the same chain entry and
+          // marks a matching card played only where it has one.
+          if (!['left', 'right'].includes(patch.side)) return { ok: false, error: 'side must be left or right' };
+          const i = clampInt(patch.index, 0, 99);
+          const source = state.preview.match[patch.side].hand[i];
+          if (!source) return { ok: false, error: 'no such card in hand' };
+          if (sd.chain.length >= 12) return { ok: false, error: 'the chain is full' };
+          const hand = bank.match[patch.side].hand;
+          const card = (hand[i] && hand[i].cardId === source.cardId) ? hand[i] : hand.find((c) => c.cardId === source.cardId && !c.played);
+          if (card) card.played = true;
+          sd.active = true;
+          sd.chain.push({ cardId: source.cardId, cardName: source.cardName, kind: source.kind || '', side: patch.side });
+          sd.priority = other(patch.side);
+          break;
+        }
+        case 'resolve': {
+          const top = sd.chain.pop();
+          // A resolved card leaves the hand for good; the count follows.
+          if (top) {
+            const side = bank.match[top.side];
+            const j = side.hand.findIndex((c) => c.played && c.cardId === top.cardId);
+            if (j >= 0) side.hand.splice(j, 1);
+            if (side.handCount > 0) side.handCount -= 1;
+          }
+          break;
+        }
+        case 'unplay': {
+          // The last card back into the hand: the spotter clicked early.
+          const top = sd.chain.pop();
+          if (top) {
+            const card = bank.match[top.side].hand.find((c) => c.played && c.cardId === top.cardId);
+            if (card) card.played = false;
+            sd.priority = top.side;
+          }
+          break;
+        }
+        case 'priority':
+          if (['', 'left', 'right'].includes(patch.side)) sd.priority = patch.side;
+          break;
+        case 'close': {
+          // Whatever is still on the chain resolved off camera: it leaves the hands.
+          for (const entry of sd.chain) {
+            const side = bank.match[entry.side];
+            const j = side.hand.findIndex((c) => c.played && c.cardId === entry.cardId);
+            if (j >= 0) side.hand.splice(j, 1);
+            if (side.handCount > 0) side.handCount -= 1;
+          }
+          sd.active = false; sd.chain = []; sd.priority = ''; sd.battlefield = ''; sd.battlefieldCardId = '';
+          break;
+        }
+        default:
+          return { ok: false, error: 'unknown chain op' };
       }
     }
     bump();

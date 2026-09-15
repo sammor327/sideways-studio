@@ -100,6 +100,12 @@ Setup > Experimental (`theme.experimental`, setup data like the logo):
     read off the card text), reactions lit while a showdown is open, played
     cards greyed, the opponent's known cards small at the top with dashed
     unknown slots. The rows overlay's list can also be lanes by kind.
+15. **Showdown** (`showdown`) — the chain of cards played onto a showdown,
+    as the cards in play order with the newest lifted (it resolves first).
+    Strip mode docks into the on-air in-game overlay's camera window;
+    takeover mode is the lower band over the battlefield art with cameras
+    and hands. Driven by the `chain` cue (open / play / resolve / unplay /
+    priority / close) on `match.showdown`, both banks at once.
 
 New per-side fields: record, country (2-3 letters), pronouns, archetype,
 handCount, hand[] (cardId, cardName, energy, domains), holds. New match

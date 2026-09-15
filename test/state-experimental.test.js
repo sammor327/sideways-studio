@@ -64,7 +64,7 @@ describe('experimental overlay fields', () => {
     assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', showdown: false });
     applyUpdate({ scenes: { igorows: { handStyle: 'lanes', showdown: true }, handfan: { visible: true, side: 'right', opponent: false, showdown: true } } });
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
-    assert.deepEqual(getState().preview.scenes.handfan, { visible: true, side: 'right', opponent: false, showdown: true });
+    assert.deepEqual(getState().preview.scenes.handfan, { visible: true, side: 'right', opponent: false, showdown: true, identity: true, clock: true });
     applyUpdate({ scenes: { igorows: { handStyle: 'pile' }, handfan: { side: 'middle' } } });
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
     assert.equal(getState().preview.scenes.handfan.side, 'right');
@@ -118,6 +118,42 @@ describe('experimental overlay fields', () => {
     applyUpdate({ action: 'timer', which: 'countdown', op: 'start' });
     assert.equal(getState().preview.event.countdown.running, true);
     assert.equal(getState().preview.match.timer.running, false);
+  });
+
+  it('runs the showdown chain as cues: open, play, resolve, undo, close', () => {
+    applyUpdate({ match: {
+      left: { handCount: 2, hand: [{ cardId: 'SFD-045', cardName: 'Not So Fast', kind: 'reaction' }, { cardId: 'OGN-205', cardName: 'Yasuo, Windrider', kind: 'champion' }] },
+      right: { handCount: 1, hand: [{ cardId: 'UNL-007', cardName: 'Smite', kind: 'action' }] },
+    } });
+    applyUpdate({ action: 'turn', op: 'side', side: 'right' });
+    assert.equal(applyUpdate({ action: 'chain', op: 'open', battlefield: 'Altar to Unity', battlefieldCardId: 'OGN-275' }).ok, true);
+    let sd = getState().preview.match.showdown;
+    assert.equal(sd.active, true);
+    assert.equal(sd.battlefield, 'Altar to Unity');
+    assert.equal(sd.priority, 'left', 'the non-active player responds first');
+    applyUpdate({ action: 'chain', op: 'play', side: 'right', index: 0 });
+    applyUpdate({ action: 'chain', op: 'play', side: 'left', index: 0 });
+    sd = getState().program.match.showdown;
+    assert.equal(sd.chain.length, 2, 'both banks carry the chain');
+    assert.deepEqual(sd.chain[1], { cardId: 'SFD-045', cardName: 'Not So Fast', kind: 'reaction', side: 'left' });
+    assert.equal(sd.priority, 'right', 'priority passes to the other player after a play');
+    assert.equal(getState().preview.match.left.hand[0].played, true);
+    assert.equal(applyUpdate({ action: 'chain', op: 'play', side: 'left', index: 9 }).ok, false);
+    applyUpdate({ action: 'chain', op: 'unplay' });
+    assert.equal(getState().preview.match.showdown.chain.length, 1);
+    assert.equal(getState().preview.match.left.hand[0].played, false);
+    applyUpdate({ action: 'chain', op: 'play', side: 'left', index: 0 });
+    applyUpdate({ action: 'chain', op: 'resolve' });
+    const left = getState().preview.match.left;
+    assert.equal(left.hand.length, 1, 'a resolved card leaves the hand');
+    assert.equal(left.hand[0].cardId, 'OGN-205');
+    assert.equal(left.handCount, 1);
+    applyUpdate({ action: 'chain', op: 'close' });
+    sd = getState().preview.match.showdown;
+    assert.equal(sd.active, false);
+    assert.equal(sd.chain.length, 0);
+    assert.equal(getState().preview.match.right.hand.length, 0, 'closing resolves what was left on the chain');
+    assert.equal(applyUpdate({ action: 'chain', op: 'dance' }).ok, false);
   });
 
   it('clears the experimental scenes with everything else on CLEAR', () => {

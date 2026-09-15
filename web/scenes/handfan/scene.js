@@ -98,6 +98,8 @@ const params = initStage({
     const other = scene.side === 'right' ? m.left : m.right;
 
     root.classList.toggle('showdown', Boolean(scene.showdown));
+    $('tagL').classList.toggle('hidden', scene.identity === false);
+    $('tagR').classList.toggle('hidden', scene.clock === false);
 
     setText($('name'), featured.name || ' ');
     setText($('country'), featured.country || '');

@@ -51,10 +51,11 @@ const SCENE_FIELDS = {
   igoportrait: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'record', 'country', 'legend', 'legendText',
     'champion', 'championText', 'archetype', 'handCount', 'turn', 'eventName', 'roundTitle', 'roundsRemaining', 'timer', 'card'],
   igorows: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'pronouns', 'legend', 'legendText',
-    'champion', 'championText', 'archetype', 'handCount', 'hand', 'holds', 'turn', 'roundTitle'],
+    'champion', 'championText', 'archetype', 'handCount', 'hand', 'turn', 'roundTitle'],
   arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
   slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds'],
   handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'handUnknown', 'roundTitle', 'timer', 'turn'],
+  showdown: ['name', 'country', 'legend', 'hand', 'handCount', 'handUnknown', 'showdown'],
 };
 const SCENE_NAMES = {
   scorebug: 'the score bug',
@@ -68,6 +69,7 @@ const SCENE_NAMES = {
   arenabug: 'the arena score bug',
   slate: 'the slate',
   handfan: 'the hand fan',
+  showdown: 'the showdown',
 };
 const FOCUS_KEY = 'sidewaysStudio.fieldFocus';
 
@@ -97,7 +99,8 @@ function sceneDraws(scene, field, side, bank) {
     if (!cfg.topBar && ['seriesLength', 'score', 'gameWins', 'timer', 'turn'].includes(field)) return false;
     if (!cfg.cardWell && field === 'card') return false;
   }
-  if (scene === 'igorows' && !cfg.hand && ['hand', 'handCount', 'holds'].includes(field)) return false;
+  if (scene === 'igorows' && !cfg.hand && ['hand', 'handCount'].includes(field)) return false;
+  if (scene === 'showdown' && !cfg.hands && ['hand', 'handCount', 'handUnknown'].includes(field)) return false;
   if (scene === 'handfan' && !cfg.opponent && field === 'handUnknown') return false;
   if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
   if (scene === 'slate') {
@@ -731,7 +734,7 @@ const SWAP_FIELDS = [
   'name', 'legend', 'legendSlug', 'legendCardId', 'battlefield', 'battlefieldCardId',
   'champion', 'name2', 'legend2', 'legendSlug2', 'legendCardId2', 'battlefield2', 'teamName',
   'champion2', 'score', 'gameWins', 'seed',
-  'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'holds', 'handUnknown',
+  'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'handUnknown',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -1093,6 +1096,7 @@ $('igoRowsUrl').value = `${location.origin}/scenes/igorows/?transparent=1`;
 $('arenaUrl').value = `${location.origin}/scenes/arenabug/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
+$('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
 
 for (const input of document.querySelectorAll('.url-input')) {
   input.addEventListener('focus', () => input.select());
@@ -1536,9 +1540,9 @@ pollUpdate();
 // data (theme.experimental): on, their rows, focus chips, match-data fields
 // and source URLs appear; off, they hide and anything on in preview goes off.
 
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan'];
-const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan' };
-const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir' };
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown'];
+const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown' };
+const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir' };
 let experimental = false;
 
 function applyExperimental(on) {
@@ -1588,6 +1592,70 @@ $('toggleHandfan').addEventListener('click', () => {
 $('handfanSide').addEventListener('change', () => post({ scenes: { handfan: { side: $('handfanSide').value } } }));
 $('handfanOpponent').addEventListener('change', () => post({ scenes: { handfan: { opponent: $('handfanOpponent').checked } } }));
 $('handfanShowdown').addEventListener('change', () => post({ scenes: { handfan: { showdown: $('handfanShowdown').checked } } }));
+$('handfanIdentity').addEventListener('change', () => post({ scenes: { handfan: { identity: $('handfanIdentity').checked } } }));
+$('handfanClock').addEventListener('change', () => post({ scenes: { handfan: { clock: $('handfanClock').checked } } }));
+$('toggleShowdown').addEventListener('click', () => {
+  if (!state) return;
+  post({ scenes: { showdown: { visible: !state.preview.scenes.showdown.visible } } });
+});
+$('showdownMode').addEventListener('change', () => post({ scenes: { showdown: { mode: $('showdownMode').value } } }));
+$('showdownHands').addEventListener('change', () => post({ scenes: { showdown: { hands: $('showdownHands').checked } } }));
+
+// --- the showdown chain: cues on both banks ---
+//
+// Open names the battlefield (picked from the catalog so the takeover band
+// gets its art), then a click on any hand chip plays that card onto the
+// chain; Resolve pops the top and the card leaves its hand; Undo puts the
+// last card back; Close ends it.
+let sdPick = null;
+wirePicker('sdBattlefield', 'sdBattlefieldResults', {
+  search: (q) => battlefieldCatalog.filter((b) => b.cardName.toLowerCase().includes(q)),
+  renderItem: (b) => ({ label: b.cardName, icon: `/cardart/thumb/${b.cardId}.webp` }),
+  onPick: (b) => { sdPick = { battlefield: b.cardName, battlefieldCardId: b.cardId }; },
+  onClear: () => { sdPick = null; },
+  current: () => (sdPick ? sdPick.battlefield : (state.preview.match.showdown.battlefield || '')),
+});
+$('sdOpen').addEventListener('click', () => {
+  if (!state) return;
+  const typed = $('sdBattlefield').value.trim();
+  const pick = sdPick || (typed ? { battlefield: typed, battlefieldCardId: '' } : {});
+  post({ action: 'chain', op: 'open', ...pick });
+});
+$('sdClose').addEventListener('click', () => post({ action: 'chain', op: 'close' }));
+$('sdResolve').addEventListener('click', () => post({ action: 'chain', op: 'resolve' }));
+$('sdUnplay').addEventListener('click', () => post({ action: 'chain', op: 'unplay' }));
+$('sdPriority').addEventListener('change', () => post({ action: 'chain', op: 'priority', side: $('sdPriority').value }));
+
+function renderShowdown(s) {
+  const sd = s.preview.match.showdown || { active: false, chain: [], priority: '' };
+  const active = Boolean(sd.active);
+  $('sdOpen').classList.toggle('on', active);
+  $('sdOpen').textContent = active ? 'Reopen' : 'Open';
+  for (const id of ['sdClose', 'sdResolve', 'sdUnplay', 'sdPriority']) $(id).disabled = !active;
+  $('sdResolve').disabled = !active || !(sd.chain || []).length;
+  $('sdUnplay').disabled = !active || !(sd.chain || []).length;
+  if (document.activeElement !== $('sdPriority')) $('sdPriority').value = sd.priority || '';
+  if (document.activeElement !== $('sdBattlefield') && !sdPick) $('sdBattlefield').value = sd.battlefield || '';
+  const chain = sd.chain || [];
+  const key = JSON.stringify(chain);
+  if ($('sdChain').dataset.key !== key) {
+    $('sdChain').dataset.key = key;
+    $('sdChain').replaceChildren(...[...chain].reverse().map((e, i) => {
+      const row = document.createElement('div');
+      row.className = `entry ${e.side}${i === 0 ? ' top' : ''}`;
+      row.append(
+        Object.assign(document.createElement('span'), { className: 'n', textContent: String(chain.length - i) }),
+        Object.assign(document.createElement('span'), { textContent: e.cardName || e.cardId }),
+        Object.assign(document.createElement('span'), { className: 'who', textContent: `${e.side === 'left' ? 'P1' : 'P2'}${i === 0 ? ' · resolves next' : ''}` }),
+      );
+      return row;
+    }));
+  }
+  $('sdHint').textContent = active
+    ? (chain.length ? 'Click a card in either Cards in hand to play it onto the chain.' : 'Open. Click a card in either Cards in hand to play it onto the chain.')
+    : 'Pick the battlefield and press Open when a showdown starts.';
+  document.querySelector('.field-row[data-field="showdown"]').classList.toggle('sd-active', active);
+}
 $('arenaClock').addEventListener('change', () => post({ scenes: { arenabug: { clock: $('arenaClock').checked } } }));
 $('slateMode').addEventListener('change', () => post({ scenes: { slate: { mode: $('slateMode').value } } }));
 $('slateCountdown').addEventListener('change', () => post({ scenes: { slate: { countdown: $('slateCountdown').checked } } }));
@@ -1601,7 +1669,7 @@ $('slateCountdown').addEventListener('change', () => post({ scenes: { slate: { c
 // Per-side text fields the experimental overlays print. The country code is
 // uppercased as typed so the chip on air matches the field.
 for (const [p, side] of SIDES) {
-  for (const [id, field] of [[`${p}record`, 'record'], [`${p}country`, 'country'], [`${p}pronouns`, 'pronouns'], [`${p}archetype`, 'archetype'], [`${p}holds`, 'holds']]) {
+  for (const [id, field] of [[`${p}record`, 'record'], [`${p}country`, 'country'], [`${p}pronouns`, 'pronouns'], [`${p}archetype`, 'archetype']]) {
     const el = $(id);
     let timer = null;
     const flush = () => {
@@ -1624,7 +1692,7 @@ for (const [p, side] of SIDES) {
 // scene reads.
 function renderHandChips(p, hand) {
   const box = $(`${p}handChips`);
-  const key = JSON.stringify(hand);
+  const key = JSON.stringify(hand) + (state && state.preview.match.showdown && state.preview.match.showdown.active ? '#open' : '');
   if (box.dataset.key === key) return;
   box.dataset.key = key;
   const side = p === 'l' ? 'left' : 'right';
@@ -1656,8 +1724,12 @@ function renderHandChips(p, hand) {
       post({ match: { [side]: { hand: next } } });
     });
     chip.append(x);
+    const sdOpen = Boolean(state && state.preview.match.showdown && state.preview.match.showdown.active);
+    if (sdOpen && !c.played) { chip.classList.add('playable'); chip.title = 'Play onto the chain'; }
     chip.addEventListener('click', () => {
       if (!state) return;
+      const open = Boolean(state.preview.match.showdown && state.preview.match.showdown.active);
+      if (open && !c.played) { post({ action: 'chain', op: 'play', side, index: i }); return; }
       const next = (state.preview.match[side].hand || []).map((card, j) => (j === i ? { ...card, played: !card.played } : card));
       post({ match: { [side]: { hand: next } } });
     });
@@ -1858,6 +1930,12 @@ function renderExtras(s) {
   if (document.activeElement !== $('handfanSide')) $('handfanSide').value = hf.side || 'left';
   if (document.activeElement !== $('handfanOpponent')) $('handfanOpponent').checked = Boolean(hf.opponent);
   if (document.activeElement !== $('handfanShowdown')) $('handfanShowdown').checked = Boolean(hf.showdown);
+  if (document.activeElement !== $('handfanIdentity')) $('handfanIdentity').checked = hf.identity !== false;
+  if (document.activeElement !== $('handfanClock')) $('handfanClock').checked = hf.clock !== false;
+  const sdc = prev.scenes.showdown;
+  if (document.activeElement !== $('showdownMode')) $('showdownMode').value = sdc.mode || 'strip';
+  if (document.activeElement !== $('showdownHands')) $('showdownHands').checked = sdc.hands !== false;
+  renderShowdown(s);
   if (document.activeElement !== $('arenaClock')) $('arenaClock').checked = prev.scenes.arenabug.clock;
   const sl = prev.scenes.slate;
   if (document.activeElement !== $('slateMode')) $('slateMode').value = sl.mode;
@@ -1871,7 +1949,6 @@ function renderExtras(s) {
     setIfIdle(`${p}country`, sd.country || '');
     setIfIdle(`${p}pronouns`, sd.pronouns || '');
     setIfIdle(`${p}archetype`, sd.archetype || '');
-    setIfIdle(`${p}holds`, sd.holds || '');
     $(`${p}handOut`).textContent = sd.handCount || 0;
     $(`${p}unknownOut`).textContent = sd.handUnknown || 0;
     renderHandChips(p, sd.hand || []);

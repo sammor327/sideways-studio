@@ -135,9 +135,6 @@ function renderSide(p, side, m, animate) {
   setText($(`${p}champion`), [side.champion, side.archetype].filter(Boolean).join(' · '));
   renderRunes($(`${p}runes`), legendDomains(side));
   renderDots($(`${p}dots`), m.seriesLength, side.gameWins, animate);
-  const holds = side.holds || '';
-  $(`${p}holds`).classList.toggle('hidden', !holds);
-  setText($(`${p}holdsText`), holds);
   loadHero(p, side);
 }
 

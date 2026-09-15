@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Showdown</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="showdown off mode-strip dock-none" id="root">
+
+    <!-- Strip: docks into the camera window of whichever in-game overlay is on. -->
+    <div class="strip" id="strip">
+      <div class="bf">
+        <div class="kick"><i></i><span class="label lit">Showdown</span></div>
+        <div class="t" id="sBf"></div>
+        <span class="label" id="sCount"></span>
+      </div>
+      <div class="chain" id="sChain"></div>
+      <div class="prio">
+        <span class="label">To respond</span>
+        <span class="who"><span class="chev" id="sChev"></span><span id="sPrio"></span><span class="chip" id="sPrioChip"></span></span>
+        <span class="pill"><i></i>Reaction window</span>
+      </div>
+    </div>
+
+    <!-- Takeover: the full lower band over the battlefield's art, cameras and hands at the ends. -->
+    <div class="band" id="band">
+      <div class="bfart"><img class="art hidden" id="bBfImg" alt="" draggable="false"></div>
+      <div class="shade"></div>
+      <div class="trim"></div>
+      <div class="ribbon"><i></i><span class="t" id="bTitle"></span><span class="label" id="bSub"></span></div>
+
+      <div class="side l" id="bLeft">
+        <div class="cam" id="lcam"><img class="art hidden hero" id="lhero" alt="" draggable="false"></div>
+        <div class="name"><span class="chip" id="lcountry"></span><span id="lname"></span></div>
+        <div class="hand" id="lhand"></div>
+        <span class="label" id="lhandLabel"></span>
+        <span class="prio-pill" id="lprio"><i></i>To respond</span>
+      </div>
+
+      <div class="bchain" id="bChain"></div>
+
+      <div class="side r" id="bRight">
+        <div class="cam" id="rcam"><img class="art hidden hero" id="rhero" alt="" draggable="false"></div>
+        <div class="name"><span id="rname"></span><span class="chip" id="rcountry"></span></div>
+        <div class="hand" id="rhand"></div>
+        <span class="label" id="rhandLabel"></span>
+        <span class="prio-pill" id="rprio"><i></i>To respond</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The showdown is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

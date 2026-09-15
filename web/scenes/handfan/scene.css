@@ -125,3 +125,5 @@
 .topfan .fc.played::after { font-size: calc(8 * var(--u)); top: calc(56 * var(--u)); }
 .topfan .fc.unknown { background: linear-gradient(160deg, var(--ss-ink, #1a2230), var(--ss-plate, #0a0d12)); border-style: dashed; }
 .topfan .fc.unknown::before { content: '?'; position: absolute; inset: 0; display: grid; place-items: center; font: 800 calc(44 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
+
+.tag.hidden { display: none; }

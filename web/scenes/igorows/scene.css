@@ -5,7 +5,7 @@
    domain runes; the bottom bar ends with the round title. A 330px column on
    the left holds both cameras (player 1 top, player 2 bottom), the series
    dots, an active-turn mark, and between them the hidden-information block:
-   CARDS IN HAND with each card's cost, and a HOLDS line.
+   CARDS IN HAND with each card's cost.
 
    Motion: --t slides the column in from the left and the bars in from their
    edges; every read is var(--t, 1). */
