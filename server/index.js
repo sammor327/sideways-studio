@@ -18,7 +18,7 @@ import {
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
-import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, searchCards, getArtFile } from './carddb.js';
+import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
@@ -499,20 +499,14 @@ const server = http.createServer(async (req, res) => {
   // fallback chains take it from there).
   const art = url.pathname.match(/^\/cardart\/(thumb|full)\/([A-Za-z0-9-]{1,16})\.webp$/);
   if (art && req.method === 'GET') {
-    const file = await getArtFile(art[1], art[2]);
-    if (!file) {
+    const data = await getArtBytes(art[1], art[2]);
+    if (!data) {
       res.writeHead(404, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
       res.end('no art');
       return;
     }
-    try {
-      const data = await readFile(file);
-      res.writeHead(200, { 'content-type': 'image/webp', 'cache-control': 'max-age=86400' });
-      res.end(data);
-    } catch {
-      res.writeHead(404, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
-      res.end('no art');
-    }
+    res.writeHead(200, { 'content-type': 'image/webp', 'cache-control': 'max-age=86400' });
+    res.end(data);
     return;
   }
 
@@ -670,6 +664,9 @@ async function start() {
   // Not awaited: a refresh must never hold up the graphics, and it fails
   // silently when the venue has no internet.
   if (autoRefreshCardDb()) console.log('  Checking Rift Registry for new sets in the background.');
+  // An upgrade from a build that cached card art in the clear: seal it, in the
+  // background, so the graphics are live while it runs.
+  if (migrateLegacyArt()) console.log('  Encrypting the card art already on disk in the background.');
   await initLegends();
   await initState();
   await initLibrary();

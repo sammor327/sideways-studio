@@ -5,3 +5,6 @@ data/
 _psd-reference.png
 build/
 dist/
+# The card-store secret baked into released builds. Never commit it, and
+# never lose it: see scripts/build-exe.mjs and server/cardstore.js.
+.carddb-key

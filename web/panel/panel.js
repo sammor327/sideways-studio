@@ -1274,7 +1274,20 @@ $('themeReset').addEventListener('click', () => {
 
 let dbPollTimer = null;
 
+// A one-off after upgrading from a build that cached card art in the clear.
+// It can overlap a launch refresh, so it reads as a note on the end of
+// whatever else the database is doing rather than replacing it.
+function migrationNote(s) {
+  if (!s.migration || !s.migration.active) return '';
+  const of = s.migration.total ? ` ${s.migration.done} of ${s.migration.total}.` : '.';
+  return ` Encrypting the card art already saved on this machine:${of} The graphics work normally while this runs.`;
+}
+
 function describeDb(s) {
+  return describeDbState(s) + migrationNote(s);
+}
+
+function describeDbState(s) {
   if (s.progress.phase === 'index') return 'Downloading the card index…';
   if (s.progress.phase === 'thumbs') return `Downloading card thumbnails: ${s.progress.done} of ${s.progress.total}`;
   if (s.progress.phase === 'full') return `Downloading full card art: ${s.progress.done} of ${s.progress.total}`;

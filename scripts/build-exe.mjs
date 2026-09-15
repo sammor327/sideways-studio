@@ -13,7 +13,7 @@
 //
 // Run: npm run build:exe
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -32,6 +32,27 @@ const HERO_DIR = process.env.SIDEWAYS_HERO_DIR
   || 'C:\\Users\\sammo\\source\\repos\\sammor327\\flipdeck\\overlaysoftware\\RESOURCES\\IGO-LEGENDS';
 
 const VERSION = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).version;
+
+// The secret that seals the card database inside every install (server/
+// cardstore.js). Generated once into .carddb-key, which is gitignored, and
+// then never changed: a different key makes every installed copy's cache
+// unopenable, so it silently downloads the whole database again on upgrade.
+// Losing the file costs exactly that one re-download, not an install.
+async function cardStoreKey() {
+  const file = path.join(ROOT, '.carddb-key');
+  try {
+    const existing = (await readFile(file, 'utf8')).trim();
+    // Anything already there is used as it stands, short or not: regenerating
+    // over the operator's own key would be the one unrecoverable mistake here.
+    if (existing) return existing;
+  } catch { /* first build on this machine */ }
+  const key = randomBytes(48).toString('hex');
+  await writeFile(file, key + NL);
+  console.warn('      generated .carddb-key: the card-store secret for this build.');
+  console.warn('      BACK IT UP. Every future release has to be built with the same key,');
+  console.warn('      or upgrading installs discard their card cache and download it again.');
+  return key;
+}
 // Where releases are published; must match server/updater.js.
 const NL = String.fromCharCode(10);
 const OWNER = 'sammor327';
@@ -78,7 +99,12 @@ await esbuild.build({
   // The packaged build has to know its own version to compare against the
   // release channel; from source the same expression falls back to
   // package.json (server/runtime.js).
-  define: { 'process.env.SIDEWAYS_APP_VERSION': JSON.stringify(VERSION) },
+  define: {
+    'process.env.SIDEWAYS_APP_VERSION': JSON.stringify(VERSION),
+    // Baked in rather than read from the environment at runtime, so an
+    // operator cannot hand the app a key of their own to read the store with.
+    'process.env.SIDEWAYS_CARDDB_KEY': JSON.stringify(await cardStoreKey()),
+  },
   legalComments: 'none',
   logLevel: 'warning',
 });

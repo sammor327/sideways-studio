@@ -4,18 +4,17 @@
 // 2026-08-10). Icon tier: Rift Registry 256px alpha cutouts, proxied and
 // cached like card art. Slugs follow RR's legend-slug convention
 // (slugified card name: "Master Yi, Wuju Bladesman" -> master-yi-wuju-bladesman).
-import { mkdir, readdir, readFile, writeFile, rename } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { allCards } from './carddb.js';
-import { DATA_DIR, isPackaged, readAsset, readAssetIndex } from './runtime.js';
+import { readBlob, writeBlob, storedIds } from './cardstore.js';
+import { isPackaged, readAsset, readAssetIndex } from './runtime.js';
 
 // The packaged build carries the hero art inside the exe (SPEC amendment
 // 2026-08-10: official Riot project, bundling Riot art is permitted), so the
 // folder below only matters when running from source.
 const HERO_DIR = process.env.SIDEWAYS_HERO_DIR
   || 'C:\\Users\\sammo\\source\\repos\\sammor327\\flipdeck\\overlaysoftware\\RESOURCES\\IGO-LEGENDS';
-const ICON_DIR = path.join(DATA_DIR, 'carddb', 'legends');
-
 const FETCH_HEADERS = {
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
   referer: 'https://riftregistry.com/',
@@ -35,12 +34,6 @@ let heroByChamp = new Map();
 const cachedIcons = new Set();
 
 export async function initLegends() {
-  await mkdir(ICON_DIR, { recursive: true });
-  try {
-    for (const f of await readdir(ICON_DIR)) {
-      if (f.endsWith('.webp')) cachedIcons.add(f.slice(0, -5));
-    }
-  } catch { /* dir just created */ }
   heroByChamp = new Map();
   try {
     // A folder inside the exe cannot be listed, so the build writes an index
@@ -54,6 +47,11 @@ export async function initLegends() {
     }
   } catch (err) {
     console.warn('hero art folder unreadable:', err.message);
+  }
+  // Which cutouts are already cached. Done after the hero index is built
+  // because the slugs come from the catalog, which reads both.
+  for (const slug of await storedIds('legend', listLegends().map((l) => l.slug))) {
+    cachedIcons.add(slug);
   }
 }
 
@@ -137,24 +135,23 @@ export async function readHeroArt(slug) {
   }
 }
 
-// RR icon cutouts, cache-first with lazy fetch (same pattern as card art).
+// RR icon cutouts, cache-first with lazy fetch, sealed in the card store the
+// same way card art is: a legend cutout named for its legend is as easy to
+// lift as a card named for its card.
 export async function readIconArt(slug) {
   if (!bySlug().has(slug)) return null;
-  const file = path.join(ICON_DIR, `${slug}.webp`);
   if (cachedIcons.has(slug)) {
-    try {
-      return await readFile(file);
-    } catch {
-      cachedIcons.delete(slug);
-    }
+    const buf = await readBlob('legend', slug);
+    if (buf) return buf;
+    // Sealed with a key this build does not have, or lost its bytes: fetch it
+    // again rather than serving nothing.
+    cachedIcons.delete(slug);
   }
   try {
     const res = await fetch(`https://riftregistry.com/data/legends/${slug}.webp`, { headers: FETCH_HEADERS });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    const tmp = file + '.part';
-    await writeFile(tmp, buf);
-    await rename(tmp, file);
+    await writeBlob('legend', slug, buf);
     cachedIcons.add(slug);
     return buf;
   } catch {

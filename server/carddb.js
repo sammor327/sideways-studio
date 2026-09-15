@@ -4,16 +4,16 @@
 // 403 non-browser user agents (broadcast-line-handoff §2), so every fetch
 // sends a browser UA + Referer. The local server is the proxy, which also
 // makes all art same-origin for the scenes.
-import { mkdir, readFile, writeFile, readdir, rename, stat } from 'node:fs/promises';
-import path from 'node:path';
-import { DATA_DIR } from './runtime.js';
+//
+// Nothing here touches the disk directly: cardstore.js owns the on-disk form,
+// which is encrypted, so an install is not a free copy of the database for
+// whoever runs it. Read that file's header for what that is and is not worth.
+import {
+  initStore, readIndex, writeIndex, indexWrittenAt, readBlob, writeBlob,
+  storedIds, migrateIndex, migrateArt, legacyArtPending,
+} from './cardstore.js';
 
-const DB_DIR = path.join(DATA_DIR, 'carddb');
-const INDEX_FILE = path.join(DB_DIR, 'cards.json');
-const TIER_DIR = {
-  thumb: path.join(DB_DIR, 'thumb'),
-  full: path.join(DB_DIR, 'full'),
-};
+const TIERS = ['thumb', 'full'];
 
 const RR_ORIGIN = 'https://riftregistry.com';
 const FETCH_HEADERS = {
@@ -36,6 +36,12 @@ const cached = { thumb: new Set(), full: new Set() };
 // lastError survives past the run so the panel can say why a download failed.
 const progress = { phase: 'idle', done: 0, total: 0, errors: 0, lastError: null };
 
+// The one-off re-encryption of art an older build left in the clear, tracked
+// on its own rather than in a slot of `progress`: the launch refresh and this
+// can both be running on the same launch, and neither should hold up or
+// silently cancel the other.
+const migration = { active: false, done: 0, total: 0, errors: 0 };
+
 function normalize(s) {
   return String(s).toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g, '');
 }
@@ -49,20 +55,50 @@ function indexCards(list) {
 }
 
 export async function initCardDb() {
-  for (const dir of Object.values(TIER_DIR)) await mkdir(dir, { recursive: true });
-  try {
-    indexCards(JSON.parse(await readFile(INDEX_FILE, 'utf8')));
-    indexUpdatedAt = (await stat(INDEX_FILE)).mtime.toISOString();
-  } catch {
-    // No index yet: first-run state, the panel offers the download.
-  }
-  for (const tier of ['thumb', 'full']) {
+  await initStore();
+  // An install from a build before the store existed has a plaintext
+  // cards.json. Move it in rather than making the operator download the index
+  // again because the format changed under them.
+  const raw = (await readIndex()) || (await migrateIndex());
+  if (raw) {
     try {
-      for (const f of await readdir(TIER_DIR[tier])) {
-        if (f.endsWith('.webp')) cached[tier].add(f.slice(0, -5));
-      }
-    } catch { /* dir just created */ }
+      indexCards(JSON.parse(raw.toString('utf8')));
+      indexUpdatedAt = await indexWrittenAt();
+    } catch {
+      // Unreadable index: same as not having one. The panel offers the
+      // download and the sync writes over it.
+    }
   }
+  const ids = cards.map((c) => c.cardId);
+  for (const tier of TIERS) {
+    for (const id of await storedIds(tier, ids)) cached[tier].add(id);
+  }
+}
+
+// The art an older build left in the clear, sealed and the originals removed.
+// Runs in the background once the server is up: it is ~90 MB on a filled-in
+// install, and holding the graphics up for it would be the wrong trade at a
+// venue. Reads fall through to the plaintext copy until each file has moved,
+// so nothing goes missing while this runs.
+export function migrateLegacyArt() {
+  if (!legacyArtPending() || migration.active) return false;
+  migration.active = true;
+  migration.done = 0;
+  migration.total = 0;
+  migration.errors = 0;
+  migrateArt((done, total) => {
+    migration.done = done;
+    migration.total = total;
+  }).then(({ moved, failed }) => {
+    migration.errors = failed;
+    console.log(`  Card art store: ${moved} files encrypted.`);
+    if (failed) console.log(`  ${failed} could not be, and stay as they are; the next launch retries them.`);
+  }).catch((err) => {
+    console.warn('  Could not encrypt the card art already on disk:', err.message);
+  }).finally(() => {
+    migration.active = false;
+  });
+  return true;
 }
 
 export function allCards() {
@@ -78,6 +114,7 @@ export function cardDbStatus() {
     lastSync,
     indexUpdatedAt,
     progress,
+    migration,
   };
 }
 
@@ -137,14 +174,11 @@ function downloadArt(card, tier) {
     const src = artSourceUrl(card, tier);
     if (!src) throw new Error('no source url');
     const buf = await rrFetch(src, 20_000);
-    // Write via temp + rename so a crashed download never leaves a truncated
-    // file that would then be served forever as "cached".
-    const dest = path.join(TIER_DIR[tier], `${card.cardId}.webp`);
-    const tmp = dest + '.part';
-    await writeFile(tmp, buf);
-    await rename(tmp, dest);
+    // Sealed and written atomically by the store, so a crashed download never
+    // leaves a truncated file that would then be served forever as "cached".
+    await writeBlob(tier, card.cardId, buf);
     cached[tier].add(card.cardId);
-    return dest;
+    return buf;
   })().finally(() => inflight.delete(key));
   inflight.set(key, job);
   return job;
@@ -206,8 +240,7 @@ export async function syncCardDb() {
     const buf = await rrFetch(`${RR_ORIGIN}/data/cards.json`, 30_000);
     const list = JSON.parse(buf.toString('utf8'));
     if (!Array.isArray(list) || !list.length || !list[0].cardId) throw new Error('unexpected index shape');
-    await mkdir(DB_DIR, { recursive: true });
-    await writeFile(INDEX_FILE, buf);
+    await writeIndex(buf);
     indexCards(list);
     indexUpdatedAt = new Date().toISOString();
     progress.done = 1;
@@ -280,15 +313,21 @@ export function searchCards(query, limit = 12) {
   }));
 }
 
-// Serve art from cache, fetching lazily on a miss (full art especially: only
-// index + thumbs are prefetched). Unknown ids resolve to null so the route
-// 404s: card ids never reach the filesystem unvalidated.
-export async function getArtFile(tier, cardId) {
-  if (!TIER_DIR[tier]) return null;
+// Art bytes for the route, from the store on a hit and fetched lazily on a
+// miss (full art especially: only index + thumbs are prefetched). Unknown ids
+// resolve to null so the route 404s, and an id never reaches the filesystem:
+// it is hashed into a blob name, so there is nothing there to traverse with.
+export async function getArtBytes(tier, cardId) {
+  if (!TIERS.includes(tier)) return null;
   const card = byId.get(cardId);
   if (!card) return null;
-  const file = path.join(TIER_DIR[tier], `${card.cardId}.webp`);
-  if (cached[tier].has(card.cardId)) return file;
+  if (cached[tier].has(card.cardId)) {
+    const buf = await readBlob(tier, card.cardId);
+    if (buf) return buf;
+    // Counted as cached but unopenable: a blob from a build with a different
+    // key, or one that lost its bytes. Drop the claim and fetch it again.
+    cached[tier].delete(card.cardId);
+  }
   try {
     return await downloadArt(card, tier);
   } catch {
