@@ -31,6 +31,30 @@ const DOMAIN_COLOR = {
 };
 const RUNE_ICON = Object.fromEntries(RUNE_DOMAINS.map((d) => [d.toLowerCase(), d]));
 
+// A canvas gauge measures text in the plate's own face, so names and counts
+// can be fitted while the plate is still off screen with nothing laid out.
+// A gauge that cannot measure reports zero: the text then keeps its designed
+// size, which is the pre-fit look, never a blank.
+const gauge = document.createElement('canvas').getContext('2d');
+function textWidth(text, px, tracking = 0) {
+  try {
+    gauge.font = `800 ${px}px ${getComputedStyle(deckEl).fontFamily}`;
+    return gauge.measureText(text).width + text.length * tracking;
+  } catch {
+    return 0;
+  }
+}
+
+// The gauge reads whatever face the page has, so a theme font has to be in
+// before anything is measured: instant when it is installed, one small fetch
+// from this server otherwise, and never more than a moment's hold on a cue.
+async function fontsIn() {
+  try {
+    const family = getComputedStyle(deckEl).fontFamily;
+    await Promise.race([document.fonts.load(`800 ${L.RUNE_FONT}px ${family}`), sleep(400)]);
+  } catch { /* measured with the face the page fell back to */ }
+}
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const markReady = (value) => { document.documentElement.dataset.ready = value; };
 
@@ -143,6 +167,9 @@ function pillEl(card, pending) {
   }
   const name = el('div', 'pill-name');
   name.textContent = card.name.toUpperCase();
+  // A long name shrinks to its run before it is allowed to clip.
+  const fit = L.pillNameScale(textWidth(name.textContent, L.PILL_FONT, L.PILL_TRACKING));
+  if (fit < 1) name.style.setProperty('--fit', fit.toFixed(3));
   pill.append(art, name);
   return pill;
 }
@@ -234,6 +261,13 @@ function buildPlate(deck, content) {
     wrap.append(runeEl(domain, count, pending));
     runes.append(wrap);
   });
+  // Counts that would run past the strip (10/2, 11/1, a third domain beside
+  // a full rack) shrink the whole block instead of leaving the plate.
+  const rs = L.runeScale(
+    deck.runes.map(([, count]) => textWidth(String(count), L.RUNE_FONT)),
+    L.runeRoom(content.showSideboard, deck.sideboard.length),
+  );
+  if (rs < 1) runes.style.setProperty('--rs', rs.toFixed(3));
   strip.append(runes);
   plate.append(strip);
   return { plate, pending };
@@ -335,6 +369,7 @@ async function show(content, { animate = false, capMs = 1500 } = {}) {
   } catch {
     return 'failed';
   }
+  await fontsIn();
   if (token !== showToken) return 'stale';
   const { plate, pending } = buildPlate(deck, content);
   if (content.background) pending.push(backdropSettled());

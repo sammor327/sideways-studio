@@ -214,6 +214,49 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-15k (out of band: the decklist strip fits its names and counts)
+
+Sam: "can we make it so the battlefields names are shrunk down size wise if
+they're too long. Additionally for when the runes are 10/2 or 11/1 make sure
+the runes do not go off the screen."
+
+**What was wrong.** The strip is 1856 wide and, with the ten-slot rack up,
+its fixed items leave the rune counts 258px once both spacers have
+collapsed. Two single-digit counts at 78px take about 262, so every
+two-domain deck already sat a pixel or two into the right margin unnoticed;
+a two-digit count (10/2, 11/1) adds a digit and the block left the plate
+(the 2 was clipped at x=1919), and a third domain landed at 1898. A long
+battlefield name met an ellipsis: "HEISHO, SHELL OF T…", "GROVE OF THE GOD…".
+
+**The fix.** Both are fits, not layout changes: nothing moves when the
+content is short. `layout.js` gained the strip's arithmetic (`PILL_NAME_W`
+236, `runeRoom(showSideboard, sideboardDistinct)`, `runeScale(widths,
+room)`, `pillNameScale(width)`, `fitScale` with 2% slack), so the numbers
+run in the unit tests. The scene measures the text with a canvas gauge in
+the plate's own face, the overlays' `fitText` pattern, while the plate is
+still off screen, and writes `--fit` on a long pill name (font and tracking
+together, floor 11px, the app-wide name floor, where the ellipsis remains)
+and `--rs` on the rune block (icons, counts and both gaps together, floor
+0.5). Gauge before fonts: `show()` now awaits `document.fonts.load` for the
+plate's face, capped at 400ms, so a theme webfont is measured as itself and
+an installed face costs nothing. A gauge that cannot measure reports 0 and
+the designed size stands: the pre-fit look, never a blank.
+
+Why a gauge and not a layout read: the plate is built detached and revealed
+from under `.off` (display none), so there is nothing to read until it is
+already on air; the gauge fits it before it is mounted, in every mode
+including the still export. FlipDeck's reference Plate.tsx has the same
+78px flex block and the same overflow; flagged there, not fixed here.
+
+Verified through the still exporter on a scratch server (port 4717, scratch
+data dir with the carddb junction, Chrome as the still browser) against the
+installed 0.11.1 on 4700: 10/2 with the three longest names in the index,
+11/1, 7/5, 4/4/4, and 10/2 without the rack. Rightmost painted strip pixel
+1919 before / 1885 after (10/2), 1898 / 1887 (4/4/4); the 7/5 plate is
+visually unchanged (its block scaled 0.966, from 1890 to 1888); every long
+name reads in full. The live URL-mode page applies the same factors with no
+console errors. 97 tests.
+
 ### 2026-09-15j (out of band: cards in hand on the dual columns)
 
 Sam: "can we include the cards in hand on the in game overlay, dual

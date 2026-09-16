@@ -26,6 +26,21 @@ export const SLOT_GAP = 8;
 export const SLOT_QTY = 30;
 export const SMALL_RADIUS = 8;
 export const PILL_W = 330;
+// Inside a pill: two borders, the left pad, the art sliver, the gap to the
+// name and the right pad. What is left is the name's run.
+export const PILL_NAME_W = PILL_W - 2 * 2 - 6 - 56 - 12 - 16; // 236
+export const PILL_FONT = 19;
+export const PILL_TRACKING = 1;
+export const PILL_MIN_FONT = 11;
+
+export const STRIP_W = PLATE_W - MARGIN * 2; // 1856
+export const STRIP_GAP = 8;
+export const RAIL_W = 36;
+export const RUNE_ICON = 66;
+export const RUNE_GAP = 10; // icon to its count
+export const RUNES_GAP = 20; // between domains
+export const RUNE_FONT = 78;
+export const RUNE_MIN_SCALE = 0.5;
 
 // Six columns is the designed look (up to 18 distinct names in three rows); a
 // longer deck adds columns and shrinks the cards rather than clipping.
@@ -42,6 +57,54 @@ export function gridMetrics(distinct) {
 
 // A missing-art panel keeps the card's shape and says what should be there.
 export const missFontSize = (cardW) => Math.max(16, cardW * 0.11);
+
+// --- fitting the strip ---
+//
+// Two things in the strip are text, so their width depends on the font: the
+// battlefield names and the rune counts. Both shrink to fit instead of
+// clipping or running off the plate. The scene measures them with a canvas
+// gauge in the plate's own face; these take the measured design-pixel widths,
+// so the arithmetic runs in the unit tests without a browser.
+
+// Measured text counts as a little wider than it is, so a gauge that
+// disagrees with the renderer by a pixel or two still lands inside.
+const SLACK = 1.02;
+
+// The factor that fits `need` into `room`: 1 when it already fits, and never
+// below `floor`.
+export function fitScale(need, room, floor) {
+  if (need * SLACK <= room) return 1;
+  return Math.max(floor, room / (need * SLACK));
+}
+
+// A battlefield name's font and tracking factor: 19px when the name fits the
+// pill's run, smaller until it does, and no smaller than 11px (the floor every
+// name auto-fit in the app uses), where the ellipsis takes over. `width` is
+// the name measured at PILL_FONT with PILL_TRACKING.
+export const pillNameScale = (width) => fitScale(width, PILL_NAME_W, PILL_MIN_FONT / PILL_FONT);
+
+// What the strip leaves for the rune counts: everything its fixed-width items
+// (rails, pills, champion, rack) and the gaps between them do not take. The
+// two spacers give their width back first, so they count as zero.
+export function runeRoom(showSideboard, sideboardDistinct = 0) {
+  const items = [RAIL_W, PILL_W, 0, RAIL_W, CHAMPION_W];
+  if (showSideboard) {
+    const slots = sideboardSlots(sideboardDistinct);
+    items.push(0, RAIL_W, slots * SLOT_W + (slots - 1) * SLOT_GAP);
+  }
+  // One gap after every item, the last of them before the runes.
+  return STRIP_W - items.reduce((a, b) => a + b, 0) - items.length * STRIP_GAP;
+}
+
+// The rune block's factor: icons, counts and gaps shrink together once the
+// counts would run past the strip, which a two-digit count (10/2, 11/1) or a
+// third domain does beside a full sideboard rack. `widths` are the counts
+// measured at RUNE_FONT.
+export function runeScale(widths, room) {
+  if (!widths.length) return 1;
+  const need = widths.reduce((w, d) => w + RUNE_ICON + RUNE_GAP + d, 0) + RUNES_GAP * (widths.length - 1);
+  return fitScale(need, room, RUNE_MIN_SCALE);
+}
 
 // --- build-in (live swaps only) ---
 //

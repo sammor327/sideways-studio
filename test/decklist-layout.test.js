@@ -1,8 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CARD_RATIO, GRID_GAP, GRID_W, GRID_X, MARGIN, PLATE_W, STRIP_H, STRIP_TOP, TOP,
-  gridColumns, gridMetrics, introDelays, introSeconds, legendSlug, missFontSize, sideboardSlots, springAt,
+  CARD_RATIO, GRID_GAP, GRID_W, GRID_X, MARGIN, PILL_FONT, PILL_MIN_FONT, PILL_NAME_W, PLATE_W,
+  RUNE_MIN_SCALE, STRIP_H, STRIP_TOP, TOP,
+  fitScale, gridColumns, gridMetrics, introDelays, introSeconds, legendSlug, missFontSize,
+  pillNameScale, runeRoom, runeScale, sideboardSlots, springAt,
 } from '../web/scenes/decklist/layout.js';
 
 describe('plate geometry', () => {
@@ -49,6 +51,70 @@ describe('plate geometry', () => {
     assert.equal(sideboardSlots(0), 10);
     assert.equal(sideboardSlots(5), 10);
     assert.equal(sideboardSlots(12), 12);
+  });
+});
+
+describe('strip fitting', () => {
+  // A bold digit at 78px is about 45 design pixels wide in the TES face.
+  const digits = (n) => String(n).length * 45;
+
+  it('leaves the rune counts what the fixed items do not take', () => {
+    // rails, pills, champion and five gaps; the spacer collapses to nothing.
+    assert.equal(runeRoom(false), 1856 - (36 + 330 + 36 + 104) - 5 * 8);
+    // plus the sideboard rail, the ten-slot rack and three more gaps.
+    assert.equal(runeRoom(true, 5), 258);
+    assert.equal(runeRoom(true, 0), runeRoom(true, 10));
+    // every extra slot costs a card and a gap.
+    assert.equal(runeRoom(true, 12), 258 - 2 * (92 + 8));
+  });
+
+  it('keeps every split at full size without the rack', () => {
+    for (const split of [[6, 6], [7, 5], [12], [10, 2], [4, 4, 4]]) {
+      assert.equal(runeScale(split.map(digits), runeRoom(false)), 1, split.join('/'));
+    }
+  });
+
+  it('shrinks a two-digit split beside the rack, and a third domain more', () => {
+    const room = runeRoom(true, 5);
+    const twelve = runeScale([digits(12)], room);
+    const even = runeScale([6, 6].map(digits), room);
+    const tenTwo = runeScale([10, 2].map(digits), room);
+    const three = runeScale([4, 4, 4].map(digits), room);
+    assert.equal(twelve, 1);
+    assert.ok(even > 0.95 && even <= 1, `6/6 ${even}`);
+    assert.ok(tenTwo < even && tenTwo > 0.75, `10/2 ${tenTwo}`);
+    assert.ok(three < tenTwo && three > 0.55, `4/4/4 ${three}`);
+    // 11/1 is as wide as 10/2: the fit is about digits, not values.
+    assert.equal(runeScale([11, 1].map(digits), room), tenTwo);
+  });
+
+  it('lands the shrunken block inside the room, never below the floor', () => {
+    const room = runeRoom(true, 5);
+    const widths = [10, 2].map(digits);
+    const s = runeScale(widths, room);
+    const need = widths.reduce((w, d) => w + 66 + 10 + d, 0) + 20;
+    assert.ok(need * s <= room, `${need * s} in ${room}`);
+    assert.equal(runeScale([4, 4, 4].map(digits), runeRoom(true, 14)), RUNE_MIN_SCALE);
+    assert.equal(runeScale([], 0), 1);
+  });
+
+  it('shrinks a battlefield name to its run, then stops at the floor', () => {
+    assert.equal(PILL_NAME_W, 236);
+    assert.equal(pillNameScale(200), 1);
+    assert.equal(pillNameScale(230), 1);
+    const long = pillNameScale(364); // "HEISHO, SHELL OF THE WORLD"
+    assert.ok(long < 1 && long * 364 <= 236, `${long}`);
+    assert.ok(long * PILL_FONT >= PILL_MIN_FONT);
+    assert.equal(pillNameScale(2000) * PILL_FONT, PILL_MIN_FONT);
+    // A gauge that could not measure reports 0: the designed size stands.
+    assert.equal(pillNameScale(0), 1);
+  });
+
+  it('fits with slack, so a near miss still lands inside', () => {
+    assert.equal(fitScale(100, 102, 0), 1);
+    assert.ok(fitScale(100, 101, 0) < 1);
+    assert.ok(Math.abs(fitScale(200, 100, 0) * 200 * 1.02 - 100) < 1e-9);
+    assert.equal(fitScale(200, 10, 0.4), 0.4);
   });
 });
 

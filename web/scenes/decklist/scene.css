@@ -227,10 +227,13 @@ html.theme-font .deck { font-family: var(--tes-font); }
 }
 .pill-art.missing { background-color: rgba(255, 255, 255, 0.1); }
 .pill-art.missing > img { display: none; }
+/* --fit is the scene's shrink for a name longer than its run (layout.js
+   pillNameScale): the face and its tracking scale together, and the ellipsis
+   is only reached at the 11px floor. */
 .pill-name {
-  font-size: calc(19 * var(--u));
+  font-size: calc(19 * var(--fit, 1) * var(--u));
   font-weight: 800;
-  letter-spacing: calc(1 * var(--u));
+  letter-spacing: calc(1 * var(--fit, 1) * var(--u));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -253,30 +256,33 @@ html.theme-font .deck { font-family: var(--tes-font); }
   background-color: rgba(255, 255, 255, 0.06);
 }
 
+/* --rs is the scene's shrink for the whole block when the counts would run
+   past the strip (layout.js runeScale): a two-digit count (10/2, 11/1) or a
+   third domain beside a full rack. Icons, counts and gaps scale together. */
 .runes {
   flex: 1;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: calc(20 * var(--u));
+  gap: calc(20 * var(--rs, 1) * var(--u));
 }
 .rune {
   display: flex;
   align-items: center;
-  gap: calc(10 * var(--u));
+  gap: calc(10 * var(--rs, 1) * var(--u));
 }
 .rune > img {
-  width: calc(66 * var(--u));
-  height: calc(66 * var(--u));
+  width: calc(66 * var(--rs, 1) * var(--u));
+  height: calc(66 * var(--rs, 1) * var(--u));
   filter: drop-shadow(0 calc(4 * var(--u)) calc(10 * var(--u)) rgba(0, 0, 0, 0.6));
 }
 .rune-dot {
-  width: calc(64 * var(--u));
-  height: calc(64 * var(--u));
+  width: calc(64 * var(--rs, 1) * var(--u));
+  height: calc(64 * var(--rs, 1) * var(--u));
   border-radius: 999px;
 }
 .rune-n {
-  font-size: calc(78 * var(--u));
+  font-size: calc(78 * var(--rs, 1) * var(--u));
   font-weight: 800;
   line-height: 1;
   text-shadow: 0 calc(4 * var(--u)) calc(14 * var(--u)) rgba(0, 0, 0, 0.9);
