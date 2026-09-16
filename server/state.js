@@ -106,7 +106,13 @@ function defaultBank() {
       // 1-8-1 point track top centre, the round clock, the event block
       // bottom left, and the docked featured card bottom right (which shows
       // the card popup's card and stands in for the popup while it is on).
-      igodual: { visible: false, mode: 'legend', track: true, clock: true, eventBlock: true, cardSlot: true },
+      // hand claims the bottom of both columns for that player's cards in
+      // hand, in the rows overlay's two styles; whatever a column had down
+      // there stands down under it, and comes back when the hand goes off.
+      igodual: {
+        visible: false, mode: 'legend', track: true, clock: true, eventBlock: true, cardSlot: true,
+        hand: false, handStyle: 'list',
+      },
       // The 2v2 bars (the Singapore showmatch grammar): a bar per team
       // across the top and bottom edges with a legend / team camera /
       // legend cluster hanging off each. mode works like the sidebars'.
@@ -518,7 +524,7 @@ function applyBankPatch(bank, patch) {
       if (p.showRight !== undefined) bank.scenes.pov.showRight = Boolean(p.showRight);
     }
     const IGO_FLAGS = {
-      igodual: ['track', 'clock', 'eventBlock', 'cardSlot'],
+      igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
       igorows: ['hand'],
     };
@@ -534,9 +540,15 @@ function applyBankPatch(bank, patch) {
         }
       }
     }
+    // Both hand-list overlays take the same two hand styles.
+    for (const key of ['igorows', 'igodual']) {
+      const h = patch.scenes[key];
+      if (h && typeof h === 'object' && ['list', 'lanes'].includes(h.handStyle)) {
+        bank.scenes[key].handStyle = h.handStyle;
+      }
+    }
     if (patch.scenes.igorows && typeof patch.scenes.igorows === 'object') {
       const r = patch.scenes.igorows;
-      if (['list', 'lanes'].includes(r.handStyle)) bank.scenes.igorows.handStyle = r.handStyle;
       if (r.showdown !== undefined) bank.scenes.igorows.showdown = Boolean(r.showdown);
     }
     if (patch.scenes.handfan && typeof patch.scenes.handfan === 'object') {

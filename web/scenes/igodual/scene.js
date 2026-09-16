@@ -3,6 +3,7 @@ import { SeekClock, bump } from '../../stage/seekclock.js';
 import {
   chainLoad, clearArt, cardSteps, legendSteps, heroSteps, battlefieldSteps, rotateIfPortrait,
 } from '../../stage/art.js';
+import { handEls, handKey, handTotal, handUp } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
 const dual = $('dual');
@@ -12,7 +13,7 @@ const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 // What each slot currently shows, so a state push that changes nothing
 // about a slot never restarts its image load.
-const shown = { legend: {}, hero: {}, bf: {}, card: null };
+const shown = { legend: {}, hero: {}, bf: {}, card: null, hand: {} };
 
 function loadLegend(p, side) {
   const key = `${side.legendCardId || ''}|${side.legendSlug || ''}`;
@@ -173,6 +174,27 @@ function fitName(el, raw) {
   return setText(el, text);
 }
 
+// A player's cards in hand, in the bottom of their own column. Returns
+// whether the block is up, which is what stands the event block or the
+// docked card down: a side with nothing listed keeps what it had, so
+// switching the hand on before the spotter types never empties a column.
+// Past the row budget (eight rows above the clock, eleven without) the
+// rows tighten a step instead of clipping, counted from the list rather
+// than measured, because a browser source that is not drawing reports no
+// layout at all.
+function renderHand(p, side, up, lanes) {
+  const block = $(`${p}handBlock`);
+  const list = side.hand || [];
+  block.classList.toggle('hidden', !up);
+  block.classList.toggle('compact', list.length > (lanes ? 5 : 8));
+  setText($(`${p}handCount`), up ? String(handTotal(side)) : '');
+  const key = handKey(list, lanes);
+  if (shown.hand[p] !== key) {
+    shown.hand[p] = key;
+    $(`${p}handCards`).replaceChildren(...handEls(list, lanes, { art: false }));
+  }
+}
+
 function renderSide(p, side, m, animate) {
   if (fitName($(`${p}name`), side.name) && animate) bump($(`${p}name`), '--slide', 500);
   setText($(`${p}legend`), side.legend || ' ');
@@ -214,12 +236,23 @@ const params = initStage({
     logoEl.classList.toggle('hidden', !logo);
     setText($('eventName'), bank.event.name || '');
     setText($('roundTitle'), bank.event.roundTitle || '');
-    $('eventBlock').classList.toggle('hidden', !scene.eventBlock);
-    $('clock').classList.toggle('hidden', !scene.clock);
+    // The hand takes the bottom of each column from whatever was there.
+    const lanes = scene.handStyle === 'lanes';
+    const leftHand = handUp(scene, m.left);
+    const rightHand = handUp(scene, m.right);
+    renderHand('l', m.left, leftHand, lanes);
+    renderHand('r', m.right, rightHand, lanes);
+
+    $('eventBlock').classList.toggle('hidden', !scene.eventBlock || leftHand);
+    // The clock outlived the block it used to sit in: with the hand up it
+    // answers to its own switch, and both hands end above its baseline.
+    const clockOn = scene.clock && (scene.eventBlock || leftHand);
+    $('clock').classList.toggle('hidden', !clockOn);
+    dual.classList.toggle('clock-on', clockOn);
     timerState = m.timer || timerState;
     setText($('clock'), clockText());
 
-    $('cardSlot').classList.toggle('hidden', !scene.cardSlot);
+    $('cardSlot').classList.toggle('hidden', !scene.cardSlot || rightHand);
     loadCard(bank, logo, animate);
 
     const visible = params.force || scene.visible;

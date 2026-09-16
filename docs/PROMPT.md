@@ -34,7 +34,12 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **The app window shipped 2026-09-15 (0.11.1)**: the exe opens
+Current status: **Cards in hand on the dual columns, 2026-09-15, in the
+tree and not yet released**: each player's hand fills the bottom of their
+own column in the rows overlay's two styles, the event block and the docked
+card standing down under it, the clock kept on its baseline and the popup
+flying again when the hand takes its dock (LOOP.md 2026-09-15j). Before
+that: **The app window shipped 2026-09-15 (0.11.1)**: the exe opens
 its own window (Edge or Chrome as `--app=`, private profile in `data/window`)
 with the wordmark, the control-panel button, status tiles, every
 browser-source URL and the app's console as a live log pane, updates offered

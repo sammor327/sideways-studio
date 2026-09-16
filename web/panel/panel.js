@@ -44,7 +44,7 @@ const SCENE_FIELDS = {
   igo2v2: ['seriesLength', 'teamName', 'name', 'name2', 'gameWins',
     'legend', 'legend2', 'battlefield', 'battlefield2'],
   igodual: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'legend', 'legendText',
-    'battlefield', 'champion', 'championText', 'eventName', 'roundTitle', 'timer'],
+    'battlefield', 'champion', 'championText', 'eventName', 'roundTitle', 'timer', 'hand', 'handCount'],
   igobars: ['name', 'name2', 'score', 'legend', 'legendText', 'legend2',
     'champion', 'championText', 'champion2'],
   pov: ['name', 'score', 'legend', 'legendText', 'battlefield',
@@ -113,6 +113,7 @@ function sceneDraws(scene, field, side, bank) {
   if (scene === 'igodual') {
     if (!cfg.eventBlock && ['eventName', 'roundTitle', 'timer'].includes(field)) return false;
     if (!cfg.clock && field === 'timer') return false;
+    if (!cfg.hand && ['hand', 'handCount'].includes(field)) return false;
   }
   if (scene === 'igoportrait') {
     if (!cfg.topBar && ['seriesLength', 'score', 'gameWins', 'timer', 'turn'].includes(field)) return false;
@@ -192,7 +193,8 @@ function renderScenes(s) {
   dualBtn.classList.toggle('on', dualPrev.visible);
   $('igoDualOnAir').classList.toggle('hidden', !s.program.scenes.igodual.visible);
   if (document.activeElement !== $('igoDualMode')) $('igoDualMode').value = dualPrev.mode;
-  for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot']]) {
+  if (document.activeElement !== $('igoDualHandStyle')) $('igoDualHandStyle').value = dualPrev.handStyle || 'list';
+  for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot'], ['igoDualHand', 'hand']]) {
     if (document.activeElement !== $(id)) $(id).checked = dualPrev[flag];
   }
 
@@ -792,9 +794,10 @@ $('togglePov').addEventListener('click', () => toggleEdgeScene('pov'));
 $('igoDualMode').addEventListener('change', () => {
   post({ scenes: { igodual: { mode: $('igoDualMode').value } } });
 });
-for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot']]) {
+for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot'], ['igoDualHand', 'hand']]) {
   $(id).addEventListener('change', () => post({ scenes: { igodual: { [flag]: $(id).checked } } }));
 }
+$('igoDualHandStyle').addEventListener('change', () => post({ scenes: { igodual: { handStyle: $('igoDualHandStyle').value } } }));
 $('igoBarsMode').addEventListener('change', () => {
   post({ scenes: { igobars: { mode: $('igoBarsMode').value } } });
 });

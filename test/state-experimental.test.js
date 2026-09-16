@@ -74,6 +74,19 @@ describe('experimental overlay fields', () => {
     assert.equal(getState().preview.scenes.slate.mode, 'custom', 'an unknown slate mode is ignored');
   });
 
+  it('gives the dual columns the same hand switches as the rows', () => {
+    applyUpdate({ scenes: { igodual: { visible: true, hand: true, handStyle: 'lanes', bogus: true } } });
+    const dual = getState().preview.scenes.igodual;
+    assert.deepEqual(dual, {
+      visible: true, mode: 'legend', track: true, clock: true, eventBlock: true, cardSlot: true,
+      hand: true, handStyle: 'lanes',
+    });
+    applyUpdate({ scenes: { igodual: { handStyle: 'fan' } } });
+    assert.equal(getState().preview.scenes.igodual.handStyle, 'lanes', 'an unknown hand style is ignored');
+    applyUpdate({ scenes: { igodual: { hand: 0 } } });
+    assert.equal(getState().preview.scenes.igodual.hand, false);
+  });
+
   it('cleans the up-next tables, casters and seeds on the event', () => {
     applyUpdate({ event: {
       roundsRemaining: 120,

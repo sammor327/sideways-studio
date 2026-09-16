@@ -45,12 +45,20 @@
       </div>
       <div class="pips" id="lpips"></div>
 
+      <!-- Bottom of the column: the event block, or player 1's hand when
+           the cards-in-hand list claims the space. The clock rides below
+           either one, on the baseline it has always had. -->
+      <div class="hand hidden" id="lhandBlock">
+        <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="lhandCount"></span></div>
+        <div class="cards" id="lhandCards"></div>
+      </div>
+
       <div class="event" id="eventBlock">
         <img class="event-logo hidden" id="eventLogo" alt="" draggable="false">
         <div class="event-name" id="eventName"></div>
         <div class="round" id="roundTitle"></div>
-        <div class="clock" id="clock">00:00</div>
       </div>
+      <div class="clock" id="clock">00:00</div>
     </div>
 
     <!-- Right column: player 2, the docked featured card at the bottom. -->
@@ -83,6 +91,13 @@
         <div class="bf-name" id="rbf"></div>
       </div>
       <div class="pips" id="rpips"></div>
+
+      <!-- Bottom of the column: the docked featured card, or player 2's
+           hand when the cards-in-hand list claims the space. -->
+      <div class="hand hidden" id="rhandBlock">
+        <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="rhandCount"></span></div>
+        <div class="cards" id="rhandCards"></div>
+      </div>
 
       <div class="card-slot" id="cardSlot">
         <img class="art hidden slot-art" id="slotImg" alt="" draggable="false">

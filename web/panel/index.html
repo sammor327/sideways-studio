@@ -307,7 +307,7 @@
       </div>
 
       <div class="field-row" data-field="hand">
-        <span class="row-label" title="The rows overlay and the hand fan show these cards. Search a card and press Enter to add it. Click a chip to mark it played onto the chain (it greys on air); click its × to remove it. R and A mark reactions and actions.">Cards in hand</span>
+        <span class="row-label" title="The dual-column overlay, the rows overlay and the hand fan show these cards. Search a card and press Enter to add it. Click a chip to mark it played onto the chain (it greys on air); click its × to remove it. R and A mark reactions and actions.">Cards in hand</span>
         <div class="cell picker-wrap hand-cell" data-side="left">
           <input id="lhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card in hand">
           <ul class="results" id="lhandResults"></ul>
@@ -752,6 +752,13 @@
         <label class="inline"><input type="checkbox" id="igoDualEvent" checked> Event block</label>
         <label class="inline"><input type="checkbox" id="igoDualClock" checked> Clock</label>
         <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
+        <label class="inline" title="Each player's cards in hand fill the bottom of their own column. The event block and the docked card stand down under it, and come back when a side has no cards listed"><input type="checkbox" id="igoDualHand"> Cards in hand</label>
+        <label class="inline" title="A flat list, or lanes grouped by what each card can do: reactions, actions, then units and gear">Hand as
+          <select id="igoDualHandStyle">
+            <option value="list">List</option>
+            <option value="lanes">Lanes by type</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="igobars">

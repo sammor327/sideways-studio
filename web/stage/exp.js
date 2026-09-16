@@ -101,3 +101,97 @@ export function applyVisibility({ root, clock, visible, shown, first }) {
   root.dataset.shown = visible ? '1' : '0';
   return visible;
 }
+
+// --- cards in hand: the DOM both hand-list overlays draw ---
+//
+// The rows overlay and the dual columns build the same rows from the same
+// hand entries; only the metrics differ, so the markup lives here and each
+// scene's CSS sizes it for its own column.
+
+// One row per card: an art strip in lanes style, the name, then the energy
+// cost and the power runes. A card on the chain greys out and says so.
+function cardRow(c, lanes) {
+  const row = document.createElement('div');
+  row.className = `card${c.played ? ' played' : ''}${lanes ? ' with-art' : ''}`;
+  if (lanes) {
+    const img = document.createElement('img');
+    img.className = 'strip';
+    img.src = `/cardart/thumb/${c.cardId}.webp`;
+    img.alt = '';
+    img.draggable = false;
+    img.onerror = () => img.classList.add('hidden');
+    row.append(img);
+  }
+  const nm = document.createElement('span');
+  nm.className = 'nm';
+  nm.textContent = c.cardName || c.cardId;
+  const cost = document.createElement('span');
+  cost.className = 'cost';
+  const e = document.createElement('span');
+  e.className = 'e';
+  e.textContent = c.energy === null || c.energy === undefined ? '' : String(c.energy);
+  cost.append(e);
+  for (const d of (c.domains || []).filter((x) => DOMAINS.includes(x))) {
+    const img = document.createElement('img');
+    img.className = 'rune';
+    img.src = runeSrc(d);
+    img.alt = d;
+    img.draggable = false;
+    img.onerror = () => img.classList.add('hidden');
+    cost.append(img);
+  }
+  row.append(nm, cost);
+  return row;
+}
+
+// Lanes: reactions, then actions, then everything else, each with its own
+// header and count; the reactions lane carries the live rule.
+const LANES = [
+  ['reaction', 'Reactions', (c) => c.kind === 'reaction'],
+  ['action', 'Actions', (c) => c.kind === 'action'],
+  ['other', 'Units and gear', (c) => c.kind !== 'reaction' && c.kind !== 'action'],
+];
+function laneEls(list, art) {
+  const out = [];
+  for (const [cls, label, pick] of LANES) {
+    const cards = list.filter(pick);
+    if (!cards.length) continue;
+    const lane = document.createElement('div');
+    lane.className = `lane ${cls}`;
+    const h = document.createElement('div');
+    h.className = 'lh';
+    h.append(
+      Object.assign(document.createElement('span'), { className: 'label', textContent: label }),
+      Object.assign(document.createElement('span'), { className: 'lcnt', textContent: String(cards.filter((c) => !c.played).length) }),
+    );
+    lane.append(h, ...cards.map((c) => cardRow(c, art)));
+    out.push(lane);
+  }
+  return out;
+}
+
+// How many cards a side is holding: the spotter's count when they gave one,
+// otherwise the length of the list they typed.
+export const handTotal = (side) => (side && side.handCount > 0 ? side.handCount : ((side && side.hand) || []).length);
+
+// Whether one side's cards-in-hand block is up: the scene's switch, and a
+// hand with something in it. A block that claims another graphic's space
+// (the dual columns take the event block and the docked card) and that
+// graphic have to agree on this, so both ask here.
+export const handUp = (cfg, side) => Boolean(cfg && cfg.hand && handTotal(side) > 0);
+
+// The rows one hand draws, flat or in lanes. Lanes carry an art strip per
+// card where there is room for one: the dual columns' block is a third the
+// height of the rows column's and asks for `art: false`, so the grouping
+// survives in a box that the strips would have cost four cards.
+export function handEls(list, lanes, { art = true } = {}) {
+  return lanes ? laneEls(list, art) : list.map((c) => cardRow(c, false));
+}
+
+// Everything the rows depend on, in one string: a scene rebuilds only when
+// this changes, so a score bump never restarts an image load.
+export function handKey(list, lanes) {
+  return `${lanes ? 'L' : 'F'}:` + list
+    .map((c) => `${c.cardId}|${c.cardName}|${c.energy}|${(c.domains || []).join(',')}|${c.kind}|${c.played ? 1 : 0}`)
+    .join(';');
+}

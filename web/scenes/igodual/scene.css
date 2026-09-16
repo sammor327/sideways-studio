@@ -297,7 +297,7 @@
   left: calc(34 * var(--u));
   top: calc(690 * var(--u));
   width: calc(280 * var(--u));
-  height: calc(370 * var(--u));
+  height: calc(290 * var(--u));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -333,9 +333,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* The clock sits on its own baseline rather than inside the event block, so
+   it keeps that baseline when the hand takes the block's place. */
 .clock {
-  margin-top: calc(8 * var(--u));
-  margin-bottom: calc(26 * var(--u));
+  position: absolute;
+  left: calc(84 * var(--u));
+  top: calc(988 * var(--u));
   width: calc(180 * var(--u));
   height: calc(46 * var(--u));
   background: var(--ss-trim-grad, #c99c3e);
@@ -346,7 +349,112 @@
   text-align: center;
 }
 .clock.hidden { display: none; }
-.round:empty + .clock { margin-top: auto; }
+
+/* --- cards in hand --- */
+
+/* The bottom of a column carries exactly one block: the event block on the
+   left, the docked featured card on the right, or, with the hand on, that
+   player's cards in hand. A side with nothing listed keeps what it had, so
+   an empty hand is never an empty column.
+
+   Room for eight rows above the clock, eleven without it; a longer hand
+   tightens a step (.compact) rather than clipping, and the header count is
+   the true number either way. */
+.hand {
+  position: absolute;
+  left: calc(34 * var(--u));
+  top: calc(676 * var(--u));
+  width: calc(280 * var(--u));
+  bottom: calc(20 * var(--u));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.hand.hidden { display: none; }
+.dual.clock-on .hand { bottom: calc(100 * var(--u)); }
+.hand .h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: none;
+  padding: calc(6 * var(--u)) calc(10 * var(--u));
+  margin-bottom: calc(4 * var(--u));
+  background: rgba(255, 255, 255, 0.07);
+  border-left: calc(3 * var(--u)) solid var(--side-accent);
+}
+.hand .label {
+  font: 500 calc(12 * var(--u))/1.2 var(--tes-font);
+  letter-spacing: calc(1.4 * var(--u));
+  text-transform: uppercase;
+  color: var(--ss-text, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hand .cnt {
+  font: 700 calc(17 * var(--u))/1 var(--tes-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--side-accent);
+}
+.hand .cards { min-height: 0; overflow: hidden; }
+.hand .card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding: calc(6 * var(--u)) calc(8 * var(--u));
+  border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.08);
+  font: 400 calc(15 * var(--u))/1.2 var(--tes-font);
+  color: var(--ss-text, #fff);
+}
+.hand .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hand .cost { display: flex; align-items: center; gap: calc(4 * var(--u)); flex: 0 0 auto; }
+.hand .e {
+  width: calc(20 * var(--u));
+  height: calc(20 * var(--u));
+  border-radius: 50%;
+  background: var(--ss-ink, #12161b);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  font: 700 calc(13 * var(--u))/calc(18 * var(--u)) var(--tes-font);
+  color: var(--ss-text, #fff);
+  text-align: center;
+}
+.hand .e:empty { display: none; }
+.hand .rune { width: calc(17 * var(--u)); height: calc(17 * var(--u)); object-fit: contain; }
+.hand .rune.hidden { display: none; }
+.hand .card.played { opacity: 0.35; }
+.hand .card.played .nm::after {
+  content: ' · on the chain';
+  color: var(--ss-accent-b, #1bef19);
+  font-size: calc(10 * var(--u));
+  letter-spacing: calc(1 * var(--u));
+  text-transform: uppercase;
+}
+
+/* Lanes: the same grouping the rows overlay uses, so reactions read green
+   and actions blue on both overlays. No art strip here: the rows overlay
+   has a column to spend on one, this block would pay four cards for it. */
+.hand .lane { margin-top: calc(8 * var(--u)); }
+.hand .lane .lh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(4 * var(--u)) calc(10 * var(--u));
+  background: rgba(255, 255, 255, 0.06);
+  border-left: calc(3 * var(--u)) solid var(--ss-frame, #26303c);
+}
+.hand .lane.reaction .lh { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.10); }
+.hand .lane.action .lh { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.10); }
+.hand .lane .lcnt { font: 700 calc(14 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #c9d2da); }
+.hand .lane.reaction .lcnt { color: var(--ss-accent-b, #1bef19); }
+
+/* A hand past the row budget: one tighter step, the last thing tried
+   before anything would clip. */
+.hand.compact .card { padding: calc(2 * var(--u)) calc(8 * var(--u)); font-size: calc(13 * var(--u)); }
+.hand.compact .e { width: calc(16 * var(--u)); height: calc(16 * var(--u)); font-size: calc(11 * var(--u)); line-height: calc(14 * var(--u)); }
+.hand.compact .rune { width: calc(14 * var(--u)); height: calc(14 * var(--u)); }
+.hand.compact .lane { margin-top: calc(4 * var(--u)); }
+.hand.compact .lane .lh { padding: calc(3 * var(--u)) calc(10 * var(--u)); }
 
 /* --- docked featured card (right column, lower third) --- */
 

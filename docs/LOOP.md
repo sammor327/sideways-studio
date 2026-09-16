@@ -214,6 +214,56 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-15j (out of band: cards in hand on the dual columns)
+
+Sam: "can we include the cards in hand on the in game overlay, dual
+columns similarly as we have for the in game overlay, rows?" So the
+hidden-information block the rows overlay put in its left column now has a
+home in the Regional Qualifier grammar too, one hand per player in that
+player's own column.
+
+**Where it goes.** A column's bottom is one block, not two: the event
+block on the left, the docked featured card on the right. `hand` claims it
+(y 676 to 980, 280 wide), and whatever was there stands down while it is
+up, its own switch untouched, so switching the hand off puts it back. Two
+rules keep that from costing anything. The clock moved out of the event
+block into the baseline it already drew on (84, 988, 180x46, pixel for
+pixel where it was), so it outlives the block it used to sit in and both
+hands end above it; with the hand up it answers to its own switch alone.
+And a side with nothing listed keeps what it had, so switching the hand on
+before the spotter has typed anything never empties a column: the hand
+appears per side, as that side's cards do.
+
+**The card popup had to agree.** The popup stands down while the dual docks
+its card; the hand takes that dock, so `handUp()` is now shared between the
+two scenes and the popup flies again whenever player 2's hand is up. Both
+directions verified on air.
+
+**Fitting it.** Room for eight rows above the clock, eleven without it. Past
+that the rows tighten one step (`.compact`, from the list length, never from
+a layout read: a browser source that is not drawing reports no layout at
+all) and a full twelve-card hand lands at 252px inside a 304px block with
+nothing clipped. Lanes here drop the art strip the rows overlay carries:
+that column has the height to spend on one, this block would have paid four
+cards for it, so `handEls(list, lanes, { art })` makes the strip optional
+and the dual asks for none. Lanes hold nine before the tail clips; the
+header count is the true number either way.
+
+Shared rather than copied: `cardRow`, the lanes, `handEls`, `handKey`,
+`handTotal` and `handUp` moved from igorows/scene.js into stage/exp.js, and
+the rows overlay now imports them. The CSS stayed per scene, because the
+metrics are what differ.
+
+Panel: Cards in hand and Hand as list / lanes in the dual fold, `hand` and
+`handCount` added to its SCENE_FIELDS (so the hand rows light up for it and
+their titles name it), the old flags loop and the sanitizer's IGO_FLAGS
+carrying `hand`, `handStyle` validated for both overlays through one loop.
+Verified at 1920x1080 with no page scroll, transparent and anim=0, a
+12-card hand, lanes, the clock on and off, one side empty, the popup
+docking both ways, the rows overlay unregressed, and a kill/restart
+mid-view that held the frame and recovered with no diagnostic chip. 84
+tests.
+
 ### 2026-09-15i (out of band: the app window, 0.11.1)
 
 Sam: "reskin the console launch as an actual app with a console in it and
