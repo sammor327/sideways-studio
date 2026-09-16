@@ -31,6 +31,11 @@ let indexUpdatedAt = null;
 // Art cache counts are tracked in memory so the status endpoint can be polled
 // cheaply during a sync; seeded from disk once at startup.
 const cached = { thumb: new Set(), full: new Set() };
+// How many cards have art to fetch at all, per tier: the number "saved" is
+// measured against. Two SFD tokens carry only TCGPlayer hotlinks, so it is
+// 932 against 934 cards, and the panel would otherwise read that as two
+// files that never download.
+const available = { thumb: 0, full: 0 };
 
 // One shared progress object; the panel polls /api/cards/status while active.
 // lastError survives past the run so the panel can say why a download failed.
@@ -52,6 +57,14 @@ function indexCards(list) {
   cards = list.filter((c) => typeof c.cardId === 'string' && /^[A-Za-z0-9-]{1,16}$/.test(c.cardId));
   byId.clear();
   for (const c of cards) byId.set(c.cardId, c);
+  Object.assign(available, artAvailability(cards));
+}
+
+// Cards with a fetchable source per tier, counted once per index.
+export function artAvailability(list) {
+  const out = {};
+  for (const tier of TIERS) out[tier] = list.filter((c) => artSourceUrl(c, tier)).length;
+  return out;
 }
 
 export async function initCardDb() {
@@ -111,6 +124,8 @@ export function cardDbStatus() {
     cardCount: cards.length,
     thumbsCached: cached.thumb.size,
     fullCached: cached.full.size,
+    thumbsAvailable: available.thumb,
+    fullAvailable: available.full,
     lastSync,
     indexUpdatedAt,
     progress,
@@ -155,7 +170,7 @@ function allowRrUrl(u) {
     ? u : null;
 }
 
-function artSourceUrl(card, tier) {
+export function artSourceUrl(card, tier) {
   if (tier === 'full') return allowRrUrl(card.imageUrlFull);
   const u = card.imageUrl;
   if (typeof u === 'string' && u.startsWith('/')) return RR_ORIGIN + u;
@@ -206,8 +221,20 @@ export function warmFullArt(cardIds) {
   }
 }
 
+// What a prefetch of this tier would fetch: every card with a source that
+// is not on disk yet.
+const missingArt = (tier) => cards.filter((c) => !cached[tier].has(c.cardId) && artSourceUrl(c, tier));
+
+// True when the offline button has nothing left to fetch. The route answers
+// with that instead of starting a run, because a run over nothing shows an
+// empty progress bar for one poll and ends with no visible change, which an
+// operator reads as the button being broken (Sam, 2026-09-16).
+export function fullArtComplete() {
+  return cards.length > 0 && missingArt('full').length === 0;
+}
+
 async function prefetchTier(tier, phase) {
-  const missing = cards.filter((c) => !cached[tier].has(c.cardId) && artSourceUrl(c, tier));
+  const missing = missingArt(tier);
   progress.phase = phase;
   progress.done = 0;
   progress.total = missing.length;

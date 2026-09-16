@@ -34,8 +34,11 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **Cards in hand on the dual columns, 2026-09-15, in the
-tree and not yet released**: each player's hand fills the bottom of their
+Current status: **The download buttons answer, 2026-09-16, in the tree
+and not yet released**: the Setup card's two buttons answer with a dialog
+when a press had nothing to fetch ("already saved and ready", "nothing new"),
+and stay quiet when a real download ran (LOOP.md 2026-09-16a). Before that: **Cards in hand on the
+dual columns, 2026-09-15**: each player's hand fills the bottom of their
 own column in the rows overlay's two styles, the event block and the docked
 card standing down under it, the clock kept on its baseline and the popup
 flying again when the hand takes its dock (LOOP.md 2026-09-15j). Before

@@ -1276,6 +1276,9 @@ $('themeReset').addEventListener('click', () => {
 // --- card database status and downloads ---
 
 let dbPollTimer = null;
+// The last status the poller saw: what a button press measures its outcome
+// against (was the list already there, how many cards did it have).
+let dbLast = null;
 
 // A one-off after upgrading from a build that cached card art in the clear.
 // It can overlap a launch refresh, so it reads as a note on the end of
@@ -1310,6 +1313,7 @@ function describeDbState(s) {
 async function pollDbStatus() {
   try {
     const s = await (await fetch('/api/cards/status', { cache: 'no-store' })).json();
+    dbLast = s;
     // A finished first-run download is what fills the catalogs the pickers read.
     if (s.indexed && !catalogsReady) loadCatalogs();
     $('dbStatus').textContent = describeDb(s);
@@ -1329,12 +1333,76 @@ async function pollDbStatus() {
   }
 }
 
+// What a download button did, when it did nothing visible. Both buttons used
+// to answer with silence when there was nothing to fetch ("Check for new
+// sets" over a current list, the offline button with every file on disk),
+// and silence reads as broken (Sam, 2026-09-16). Sam chose the browser's own
+// dialog, the way the panel's other prompts work. It opens only for a press
+// that downloaded nothing: a run that did fetch files shows its progress bar
+// and changes the status line, and a modal arriving minutes later, in front
+// of TAKE, would be the wrong trade on a live panel.
+const dbCount = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const dbSentence = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Polls until the run a button just started is over, and hands back the
+// status it ended on. The busy phase alone is not enough to wait on: an
+// index refresh over a current list is done inside one poll interval and is
+// never seen busy, so the caller says what "over" looks like.
+async function dbSettled(isDone) {
+  const until = Date.now() + 20 * 60 * 1000;
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 600));
+    let s;
+    try {
+      s = await (await fetch('/api/cards/status', { cache: 'no-store' })).json();
+    } catch {
+      continue;
+    }
+    if (isDone(s) || Date.now() > until) return s;
+  }
+}
+
+async function dbPost(url) {
+  try {
+    return await (await fetch(url, { method: 'POST' })).json();
+  } catch {
+    return { ok: false, error: 'could not reach the app; is it still running?' };
+  }
+}
+
 $('dbSync').addEventListener('click', async () => {
-  await fetch('/api/cards/sync', { method: 'POST' });
+  const before = dbLast;
+  const r = await dbPost('/api/cards/sync');
+  if (!r.ok) {
+    alert(`${dbSentence(r.error)}.`);
+    return;
+  }
   pollDbStatus();
+  // Over when this run has stamped lastSync, or given up with an error.
+  const wasSynced = before ? before.lastSync : null;
+  const s = await dbSettled((st) => st.progress.phase === 'idle' && (st.lastSync !== wasSynced || st.progress.lastError));
+  if (s.progress.lastError) {
+    alert(`Could not check for new sets: ${s.progress.lastError}. Is the internet up?`);
+    return;
+  }
+  // Files came down, or the list itself changed: the progress bar showed it
+  // and the status line has the new numbers. Only a check that changed
+  // nothing needs saying out loud.
+  const had = before && before.indexed ? before.cardCount : 0;
+  if (s.progress.total > 0 || s.cardCount !== had) return;
+  alert(`Nothing new: the card list is current. ${dbCount(s.cardCount, 'card')} and ${s.thumbsCached} of ${s.thumbsAvailable} thumbnails are saved and ready to use.`);
 });
+
 $('dbPrefetchFull').addEventListener('click', async () => {
-  await fetch('/api/cards/prefetch-full', { method: 'POST' });
+  const r = await dbPost('/api/cards/prefetch-full');
+  if (!r.ok) {
+    alert(`${dbSentence(r.error)}.`);
+    return;
+  }
+  if (r.complete) {
+    alert(`All ${dbCount(r.fullAvailable, 'card art file')} are already saved on this computer and ready for offline use.`);
+    return;
+  }
   pollDbStatus();
 });
 

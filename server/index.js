@@ -18,7 +18,7 @@ import {
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
-import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
+import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
@@ -451,9 +451,18 @@ const server = http.createServer(async (req, res) => {
     const status = cardDbStatus();
     const busy = status.progress.phase !== 'idle';
     const err = busy ? 'a download is already running' : (!status.indexed ? 'download the card database first' : null);
-    if (!err) prefetchFullArt();
-    res.writeHead(err ? 409 : 200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify(err ? { ok: false, error: err } : { ok: true, started: true }));
+    if (err) {
+      sendJson(res, 409, { ok: false, error: err });
+      return;
+    }
+    // Everything already on disk: say so rather than run over nothing. The
+    // panel turns this into "saved and ready" where the button was pressed.
+    if (fullArtComplete()) {
+      sendJson(res, 200, { ok: true, started: false, complete: true, fullCached: status.fullCached, fullAvailable: status.fullAvailable });
+      return;
+    }
+    prefetchFullArt();
+    sendJson(res, 200, { ok: true, started: true });
     return;
   }
 

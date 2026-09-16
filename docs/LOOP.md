@@ -214,6 +214,47 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-16a (out of band: the download buttons answer)
+
+Sam: "can we add a confirmation pop up when the download button is pressed
+that if the card art is already downloaded it tosses up a prompt saying that
+they're downloaded and ready." Behind it: the two Setup buttons answered with
+nothing when there was nothing to fetch. "Check for new sets" over a current
+list is done inside one poll interval, so the panel never even shows it busy;
+the offline button with every file on disk ran a prefetch over an empty list,
+which flashed an empty progress bar for one poll and ended with no visible
+change. Both read as broken, and Sam had asked twice whether the download was
+(it was not: verified end to end on 0.11.1 and the 0.12.0 store, 2026-09-15).
+
+**Server.** `/api/cards/prefetch-full` answers `{ complete: true, fullCached,
+fullAvailable }` without starting a run when nothing is missing
+(`fullArtComplete()`, on the same `missingArt(tier)` the prefetch walks).
+Status carries `thumbsAvailable` and `fullAvailable`: the number "saved" is
+measured against, since two SFD tokens carry only TCGPlayer hotlinks and 932
+of 934 is complete, not two short.
+
+**Panel.** The browser's own dialog, the way the panel's other prompts
+work: Sam picked it from a rendered comparison against an inline line under
+the status and a toast at the top of the panel. Offline button with every
+file on disk: "All 932 card art files are already saved on this computer and
+ready for offline use." Sets button over a current list: "Nothing new: the
+card list is current. 934 cards and 932 of 932 thumbnails are saved and ready
+to use." The 409 reasons and "Could not check for new sets: <error>. Is the
+internet up?" open the same way. The sets button reads "over" off `lastSync`
+changing (or `lastError` set), not off the busy phase, which it may never
+see.
+
+**The dialog opens only for a press that downloaded nothing.** A run that did
+fetch files shows its progress bar and changes the status line, and a modal
+arriving minutes later, in front of TAKE, would be the wrong trade on a live
+panel: the panel's script is blocked until OK, so TAKE would not land.
+
+Verified from source: five full-art files removed from a cached copy, the
+offline button fetched them with no dialog, the next press answered "already
+saved", and "Check for new sets" answered "Nothing new" (`window.alert`
+captured rather than left open). `test/carddb-art.test.js` pins the
+source-URL rules and the availability counts. 101 tests.
+
 ### 2026-09-15k (out of band: the decklist strip fits its names and counts)
 
 Sam: "can we make it so the battlefields names are shrunk down size wise if
