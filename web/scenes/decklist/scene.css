@@ -303,3 +303,31 @@ html.theme-font .deck { font-family: var(--tes-font); }
 .plate.animating [data-anim="rise"] {
   transform: translateY(calc((1 - var(--s, 1)) * 26 * var(--u)));
 }
+
+/* --- highlight: one card lifted out, the rest blurred and dimmed ---
+   --k is the highlight's seek clock on the deck root (0 = plain plate, 1 =
+   settled highlight); --fs, --fx, --fy are the lifted card's own scale and
+   the shift that keeps its grown box inside the frame, measured by the
+   scene. Every read is var(--x, settled) so a clock that never ran shows
+   the settled highlight, never a half state. */
+
+.deck .dim {
+  filter: blur(calc(var(--k, 1) * 3 * var(--u))) brightness(calc(1 - var(--k, 1) * 0.45));
+}
+/* A blurred full-frame image feathers at its edges; a touch of scale keeps
+   the feather outside the frame. */
+.backdrop.dim { transform: scale(calc(1 + var(--k, 1) * 0.03)); }
+/* The way down to the lifted card is raised, so it paints over every
+   neighbour it grows across (a dimmed sibling is its own stacking layer). */
+.focus-path { z-index: 5; }
+.deck [data-card-id].focus {
+  z-index: 6;
+  transform:
+    translate(calc(var(--fx, 0) * var(--k, 1) * var(--u)), calc((var(--fy, 0) - 26) * var(--k, 1) * var(--u)))
+    scale(calc(1 + (var(--fs, 1.5) - 1) * var(--k, 1)));
+  box-shadow:
+    0 calc(24 * var(--u)) calc(60 * var(--u)) rgba(0, 0, 0, 0.7),
+    0 0 calc(var(--k, 1) * 44 * var(--u)) rgba(255, 255, 255, calc(var(--k, 1) * 0.35)),
+    0 0 0 calc(var(--k, 1) * 3 * var(--u)) var(--tes-green, #1bef19);
+}
+.pill.focus { background-color: rgba(10, 10, 10, 0.96); }

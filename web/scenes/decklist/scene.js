@@ -116,6 +116,9 @@ function cardEl(card, width, radius, qtySize, pending) {
   box.style.setProperty('--h', width / L.CARD_RATIO);
   box.style.setProperty('--r', radius);
   box.style.setProperty('--mf', L.missFontSize(width));
+  // The highlight finds its card by id, so the same card in the main deck
+  // and the sideboard both lift.
+  if (card.cardId) box.dataset.cardId = card.cardId;
   if (card.cardId) {
     const img = el('img');
     img.alt = '';
@@ -152,6 +155,7 @@ function spacerEl(width) {
 function pillEl(card, pending) {
   const pill = el('div', card ? 'pill' : 'pill empty');
   if (!card) return pill;
+  if (card.cardId) pill.dataset.cardId = card.cardId;
   const art = el('div', 'pill-art');
   if (card.cardId) {
     const img = el('img');
@@ -381,7 +385,103 @@ async function show(content, { animate = false, capMs = 1500 } = {}) {
   plateHost.replaceChildren(plate);
   shown = content;
   if (animate) playIntro(plate);
+  // A new plate carries no highlight marks: put the wanted one back.
+  syncFocus(false);
   return 'shown';
+}
+
+// --- highlight: one card lifted out of the plate --------------------------
+// The focus cue names a card id. That card scales up around its own centre,
+// lifts, and takes a glow; everything else on the plate (and the backdrop)
+// blurs and darkens. One seek clock, --k on the deck root, drives all of it
+// (0 = plain plate, 1 = highlight settled), so a change plays out and in on
+// wall-clock ticks like every other move here. The lifted card is measured
+// on screen so its scaled box is shifted back inside the frame when it sits
+// on an edge: a top-row card grows downward rather than off the top.
+
+const FOCUS_LIFT = 26;
+const FOCUS_PAD = 12;
+let focusId = '';        // the card the state wants highlighted
+let focusedEl = null;    // the element highlighted now
+let focusToken = 0;
+const focusClock = new SeekClock(deckEl, '--k', 380);
+
+function focusGeometry(target) {
+  const stage = deckEl.getBoundingClientRect();
+  const u = stage.width / L.PLATE_W || 1;
+  const r = target.getBoundingClientRect();
+  const w = r.width / u;
+  const h = r.height / u;
+  // Small cards grow more than big ones, to about the same size on screen;
+  // the legend, already the biggest thing on the plate, only nudges up.
+  const fs = target.classList.contains('pill') ? 1.35 : Math.min(2.8, Math.max(1.06, 330 / w));
+  const cx = (r.left - stage.left) / u + w / 2;
+  const cy = (r.top - stage.top) / u + h / 2 - FOCUS_LIFT;
+  const hw = (w * fs) / 2;
+  const hh = (h * fs) / 2;
+  let fx = 0;
+  let fy = 0;
+  if (cx - hw < FOCUS_PAD) fx = FOCUS_PAD - (cx - hw);
+  else if (cx + hw > L.PLATE_W - FOCUS_PAD) fx = (L.PLATE_W - FOCUS_PAD) - (cx + hw);
+  if (cy - hh < FOCUS_PAD) fy = FOCUS_PAD - (cy - hh);
+  else if (cy + hh > L.PLATE_H - FOCUS_PAD) fy = (L.PLATE_H - FOCUS_PAD) - (cy + hh);
+  return { fs, fx, fy };
+}
+
+function clearFocusMarks() {
+  for (const node of deckEl.querySelectorAll('.dim, .focus-path, .focus')) node.classList.remove('dim', 'focus-path', 'focus');
+  backdrop.classList.remove('dim');
+  const plate = plateHost.firstChild;
+  if (plate) plate.classList.remove('focusing');
+}
+
+// Everything on the plate dims except the path down to the target, which is
+// raised above its neighbours so the grown card overlaps them, not the
+// other way round.
+function markFocus(plate, target) {
+  const dimExcept = (container) => {
+    for (const child of container.children) {
+      if (child.contains(target)) {
+        child.classList.add('focus-path');
+        if (child !== target) dimExcept(child);
+      } else {
+        child.classList.add('dim');
+      }
+    }
+  };
+  dimExcept(plate);
+  backdrop.classList.add('dim');
+  const g = focusGeometry(target);
+  target.style.setProperty('--fs', g.fs.toFixed(3));
+  target.style.setProperty('--fx', g.fx.toFixed(1));
+  target.style.setProperty('--fy', g.fy.toFixed(1));
+  target.classList.add('focus');
+  plate.classList.add('focusing');
+}
+
+// Bring the plate in line with focusId. The geometry is measured on screen,
+// so this does nothing while the deck is hidden; every path that shows the
+// deck calls it again. A change while a highlight is up plays the old one
+// out, then the new one in.
+async function syncFocus(animate) {
+  const plate = plateHost.firstChild;
+  if (!plate || deckEl.classList.contains('off')) return;
+  const target = focusId ? plate.querySelector(`[data-card-id="${CSS.escape(focusId)}"]`) : null;
+  if (target === focusedEl && (target || !backdrop.classList.contains('dim'))) return;
+  const token = ++focusToken;
+  const anim = animate && animEnabled();
+  if (focusedEl && focusedEl.isConnected && anim) {
+    await focusClock.play({ from: 1, to: 0 });
+    if (token !== focusToken) return;
+  }
+  focusClock.stop();
+  focusClock.seek(0);
+  clearFocusMarks();
+  focusedEl = target;
+  if (!target) return;
+  markFocus(plate, target);
+  if (anim) focusClock.play({ from: 0, to: 1 });
+  else focusClock.seek(1);
 }
 
 // --- mode: server state (the broadcast source and the panel monitors) -------
@@ -398,6 +498,7 @@ function runStateMode() {
     if (sameContent(shown, content) && plateHost.firstChild) {
       deckEl.classList.remove('off');
       playIntro(plateHost.firstChild);
+      syncFocus(false);
       return;
     }
     // Hold the reveal until the new plate is built, so the old deck never
@@ -407,6 +508,7 @@ function runStateMode() {
       if (!visibleNow) return;
       deckEl.classList.remove('off');
       if (result === 'failed') playIntro(plateHost.firstChild);
+      syncFocus(false);
     });
   }
 
@@ -435,13 +537,23 @@ function runStateMode() {
       const replay = !first && !params.preview && lastReplay !== null && sc.replay !== lastReplay;
       lastReplay = sc.replay;
       target = content;
+      // The highlight is a cue in both banks; a change while the plate is up
+      // plays out and in, and any path that (re)shows the plate applies it.
+      const wantFocus = typeof sc.focus === 'string' ? sc.focus : '';
+      const focusChanged = wantFocus !== focusId;
+      focusId = wantFocus;
+      if (focusChanged && !first && visibleNow && !changed) syncFocus(true);
 
       if (first) {
         // Fresh loads, including an OBS "shutdown source when hidden" reload,
         // snap to the current state instead of replaying the entrance.
         visibleNow = visible;
         fade.seek(visible ? 1 : 0);
-        show(content).then(() => { if (visibleNow) deckEl.classList.remove('off'); });
+        show(content).then(() => {
+          if (!visibleNow) return;
+          deckEl.classList.remove('off');
+          syncFocus(false);
+        });
         return;
       }
 

@@ -118,21 +118,31 @@ profile.
 ## Panel layout
 
 Graphics are listed in three folds: 1v1, 2v2 and Other (the bugs, the card
-popup and the full screens). They start closed; a fold's heading says how
+popup, the card row and the full screens). They start closed; a fold's heading says how
 many of its graphics are in preview or on air, and putting a graphic in
 preview opens its fold. Each row still carries an Overlay or Full frame
 tag. Graphic features, Decklist, Look and Setup fold from their heading
 too, and every control card can be dragged taller or shorter by the grip
 along its bottom edge (double-click puts it back); the browser remembers
 the folds and the heights. The card popup's search and staged card live in
-Match data, under Event. TAKE and CLEAR stay at the top of their column
+Match data, under Event, and the card row's four slots sit under them.
+TAKE, CLEAR PROGRAM and CLEAR PREVIEW stay at the top of their column
 and the tip about them is TAKE's hover text; what is on air fills the
 column from the bottom.
 
-What is on air is listed under CLEAR, each row with an X that takes that one
-graphic off air; a graphic's red ON AIR badge does the same thing from the
-Graphics list. Preview is untouched either way, so TAKE puts the graphic
-back. CLEAR still drops everything at once.
+What is on air is listed under the clears, each row with an X that takes
+that one graphic off air; a graphic's red ON AIR badge does the same thing
+from the Graphics list. Preview is untouched either way, so TAKE puts the
+graphic back. CLEAR PROGRAM still drops everything on air at once, and
+CLEAR PREVIEW takes every graphic out of preview (data kept) so the next
+TAKE airs a clean frame.
+
+Two graphics take a highlight: the card row (one to four cards side by
+side; the star beside a slot grows and lifts that card while the others
+shrink and dim) and the decklist (Highlight a card on the Decklist card
+lifts one card out of the plate, larger and glowing, with the rest blurred
+and darkened; ‹ › step through the list). Both are cues like the clock:
+they act on air at once, no TAKE needed.
 
 ## Looks
 

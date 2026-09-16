@@ -34,8 +34,17 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **The download buttons answer, 2026-09-16, in the tree
-and not yet released**: the Setup card's two buttons answer with a dialog
+Current status: **Two clears, the card row, the decklist highlight and
+the index check, 2026-09-16, 0.13.0 in the tree and not yet released**:
+CLEAR is CLEAR PROGRAM plus a new CLEAR PREVIEW (`clearpreview` action);
+a new `cardrow` graphic puts one to four cards side by side with a
+highlighted slot grown and lifted (Match data › Card row, star per slot);
+the decklist lifts one card out of the plate with the rest blurred and
+dimmed (Decklist card › Highlight a card, ‹ › to step); both highlights
+are `focus` cues on both banks; and the card index is checked before it
+is parsed so a page from the host no longer reads as "is the internet
+up?" (LOOP.md 2026-09-16b). Before that: **The download buttons answer,
+2026-09-16**: the Setup card's two buttons answer with a dialog
 when a press had nothing to fetch ("already saved and ready", "nothing new"),
 and stay quiet when a real download ran (LOOP.md 2026-09-16a). Before that: **Cards in hand on the
 dual columns, 2026-09-15**: each player's hand fills the bottom of their

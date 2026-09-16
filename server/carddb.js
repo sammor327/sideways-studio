@@ -149,16 +149,48 @@ export function autoRefreshCardDb() {
   return true;
 }
 
-async function rrFetch(url, timeoutMs) {
+async function rrFetchWithType(url, timeoutMs) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const res = await fetch(url, { headers: FETCH_HEADERS, signal: ctl.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return Buffer.from(await res.arrayBuffer());
+    return { buf: Buffer.from(await res.arrayBuffer()), contentType: res.headers.get('content-type') || '' };
   } finally {
     clearTimeout(timer);
   }
+}
+const rrFetch = async (url, timeoutMs) => (await rrFetchWithType(url, timeoutMs)).buf;
+
+// What came back for the card index, before it is trusted as JSON. A host
+// in trouble (a maintenance page, a bot check, a captive portal on the venue
+// wifi) answers HTTP 200 with an HTML page, and JSON.parse on that surfaced
+// as "Unexpected token '<', "<!DOCTYPE"... Is the internet up?" while the
+// internet was up (Sam, 2026-09-16). Returns the problem in plain words, or
+// null when the body reads as JSON. Exported for the tests.
+export function indexBodyProblem(buf, contentType = '') {
+  const head = buf.subarray(0, 512).toString('utf8').replace(/^﻿/, '').trimStart();
+  const type = String(contentType || '').toLowerCase();
+  if (head.startsWith('[') || head.startsWith('{')) return null;
+  if (/^<!doctype|^<html|^<\?xml|^</i.test(head) || type.includes('text/html')) {
+    return 'Rift Registry answered with a web page instead of the card list (the site may be busy, under maintenance, or this network is showing a sign-in page); try again in a minute';
+  }
+  if (!head) return 'Rift Registry answered with an empty card list';
+  return `Rift Registry answered with something other than the card list (${type || 'unknown content type'})`;
+}
+
+// The index, checked before it is parsed. A page instead of the list gets
+// one more try after a pause, since a busy host or a bot check often clears
+// on the second request; the same answer twice is reported as it is.
+async function fetchIndex() {
+  let problem = null;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt) await new Promise((r) => setTimeout(r, 2500));
+    const { buf, contentType } = await rrFetchWithType(`${RR_ORIGIN}/data/cards.json`, 30_000);
+    problem = indexBodyProblem(buf, contentType);
+    if (!problem) return buf;
+  }
+  throw new Error(problem);
 }
 
 // Only Rift Registry origins are fetched: uncovered cards carry TCGPlayer
@@ -264,9 +296,14 @@ export async function syncCardDb() {
   progress.errors = 0;
   progress.lastError = null;
   try {
-    const buf = await rrFetch(`${RR_ORIGIN}/data/cards.json`, 30_000);
-    const list = JSON.parse(buf.toString('utf8'));
-    if (!Array.isArray(list) || !list.length || !list[0].cardId) throw new Error('unexpected index shape');
+    const buf = await fetchIndex();
+    let list;
+    try {
+      list = JSON.parse(buf.toString('utf8'));
+    } catch {
+      throw new Error('the card list from Rift Registry could not be read (it was cut short or malformed); try again in a minute');
+    }
+    if (!Array.isArray(list) || !list.length || !list[0].cardId) throw new Error('the card list from Rift Registry is not in the shape this app expects');
     await writeIndex(buf);
     indexCards(list);
     indexUpdatedAt = new Date().toISOString();

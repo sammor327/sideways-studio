@@ -214,6 +214,77 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-16b (out of band: two clears, the card row, the decklist highlight, the index check)
+
+Sam's four asks, in one pass.
+
+**Two clears.** CLEAR was one button and one action: every program
+graphic off. It is now two. CLEAR PROGRAM is the old button and the old
+`clear` action (red, the on-air recovery, preview untouched). CLEAR
+PREVIEW is a new `clearpreview` action: every preview graphic off, data
+kept, nothing on air changes until TAKE. Both sit under TAKE in the
+150px bus column; the tip about all three is TAKE's hover text.
+
+**Card row** (`web/scenes/cardrow/`, key `cardrow`, an Overlay in the
+Other fold): one to four cards side by side, centred, each over a name
+plate in the popup's grammar (same box, same plate, same trim, same
+designed look). Card width steps with the count (520 / 470 / 430 / 380
+design px) so one card is a feature and four are a line-up; a
+battlefield swaps its box to landscape on the loaded file's own
+orientation, the popup's rule. State is four positional slots
+(`scenes.cardrow.cards`, each `{cardId, cardName, cardType}`) plus
+`focus`, the slot index the row highlights (-1 = even row). A patch
+sends the slots as an array: a hole leaves a slot alone, `null` empties
+it, so the panel can swap card 2 without re-sending the rest. A row
+with no card can never be on. The panel edits it under Match data ›
+Card row: four searches (the popup's search box, one per slot), a
+thumbnail and an empty button each, and a star per slot. Picking into
+any slot switches the row on in preview (the staging rule). The
+highlight scales the slot in place (transform, so the neighbours never
+reflow) by 1.16 with a lift and a glow while the others shrink to 0.86
+and fade to 0.62, on two seek clocks per slot (`--big`, `--small`).
+
+**Decklist highlight.** `scenes.decklist.focus` is a card id. The plate
+lifts that card out: scaled up around its own centre (small cards grow
+more than big ones, to about 330 design px wide; the legend only nudges
+to 1.06; a battlefield pill 1.35), lifted 26px, a white glow and an
+accent ring, and everything else on the plate and the backdrop blurs
+3px and darkens to 0.55, on one seek clock (`--k`). The lifted card is
+measured on screen and its grown box shifted back inside the frame, so
+a top-row card grows downward rather than off the top (verified: a
+grid card at the top edge landed at y=12 with a 93px shift). The dim
+walks the plate and skips the path down to the target, which is raised
+(`.focus-path`, z-index) so the grown card paints over every neighbour
+it crosses, dimmed siblings being their own stacking layers. Panel: on
+the Decklist card, "Highlight a card" lists the plate's cards in plate
+order from the same parse the summary reads, with ‹ › to step and Off.
+
+**Both highlights are cues** (`{action:'focus', scene, cardId|slot}`),
+landing in both banks like the clock and the replay, so an operator
+steps through cards on air with no TAKE per card. A bank patch may
+still clear them (the deck Clear button does).
+
+**The index check.** "Could not check for new sets: Unexpected token
+'<', "<!DOCTYPE"... Is the internet up?" while the internet was up: the
+host answered HTTP 200 with a page (busy, maintenance, a bot check, or
+a venue captive portal) and the app parsed it blind. `fetchIndex` now
+checks the body before parsing (`indexBodyProblem`, tested), tries once
+more after 2.5s when a page came back, and reports it in plain words;
+a malformed list and a wrong shape get their own words too. The panel
+appends "Is the internet up?" only when the error reads like no
+connection. Verified today that the live URL serves JSON, so the page
+was transient.
+
+Verified on a scratch instance (port 4718, own data dir): the four
+pickers fill the row, the star grows the picked card and shrinks the
+rest in the preview monitor, TAKE airs it, the transparent scene URL
+draws it at 1920x1080, the deck highlight's geometry read correct from
+the DOM, the panel select follows the cue, CLEAR PREVIEW emptied
+preview and left the row on air. Not run this pass: the kill-and-
+restart reconnect path and a real hidden tab. `test/state-cardrow.
+test.js` and `test/carddb-index.test.js` pin the state rules and the
+body check. 111 tests. Version 0.13.0, not yet released.
+
 ### 2026-09-16a (out of band: the download buttons answer)
 
 Sam: "can we add a confirmation pop up when the download button is pressed

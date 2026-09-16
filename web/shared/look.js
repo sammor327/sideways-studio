@@ -17,7 +17,7 @@
 // Accent A and B keep living at theme.accentA/B (they predate this module and
 // every scene reads them); a scene override may replace them.
 
-export const LOOK_SCENES = ['scorebug', 'cardpopup', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
+export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result'];
 
@@ -29,6 +29,7 @@ export const EXPERIMENTAL_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate
 export const SCENE_LABELS = {
   scorebug: 'Score bug',
   cardpopup: 'Card popup',
+  cardrow: 'Card row',
   igo1v1: 'In-game overlay 1v1',
   igo2v2: 'In-game overlay 2v2',
   igodual: 'In-game overlay, dual columns',
@@ -122,6 +123,11 @@ export const DESIGNED = {
     background: { kind: 'solid', color: '#0a0a0a', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
   cardpopup: {
+    colors: { ink: '#0c0f12', plate: '#0a0a0a', frame: '#000000', text: '#ffffff', textMuted: '#8b98a5', trim: '' },
+    background: { kind: 'solid', color: '#0a0a0a', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  // The card row shares the popup's ground: its name plates are the popup's.
+  cardrow: {
     colors: { ink: '#0c0f12', plate: '#0a0a0a', frame: '#000000', text: '#ffffff', textMuted: '#8b98a5', trim: '' },
     background: { kind: 'solid', color: '#0a0a0a', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },

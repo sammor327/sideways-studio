@@ -1,0 +1,133 @@
+/* Card row: up to four cards centred on the frame, each over a name plate
+   in the card popup's grammar (same box, same plate, same trim), so the two
+   read as one family when a show cuts between them.
+
+   Motion contract: --t is the row's in/out seek clock (0 = off-stage, 1 =
+   settled). Each slot carries --big (this card is the highlight) and
+   --small (another card is), both 0 to 1 on their own seek clocks. Every
+   read is var(--x, default): a clock that never ran renders the settled
+   row. Scale and lift are plain multiplies, no CSS trig or min/max. */
+
+.row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  display: flex;
+  justify-content: center;
+  /* Centred, so a landscape battlefield sits level with the portraits
+     rather than hanging from the top of the row. */
+  align-items: center;
+  gap: calc(44 * var(--u));
+  opacity: var(--t, 1);
+  transform: translateY(calc(-50% + (1 - var(--t, 1)) * 60 * var(--u)));
+  perspective: calc(1600 * var(--u));
+}
+.row.off { display: none; }
+
+/* A slot is a card and its plate. The highlight scales the slot in place
+   around its centre and lifts it; the others shrink a little and fade, so
+   the highlighted card reads as the only one in focus. */
+.slot {
+  flex: none;
+  width: calc(var(--w) * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  transform-origin: 50% 50%;
+  transform:
+    translateY(calc(var(--big, 0) * -22 * var(--u)))
+    scale(calc((0.92 + 0.08 * var(--t, 1)) * (1 + var(--big, 0) * 0.16 - var(--small, 0) * 0.14)));
+  opacity: calc(1 - var(--small, 0) * 0.38);
+}
+
+.card-box {
+  position: relative;
+  width: calc(var(--w) * var(--u));
+  height: calc(var(--h) * var(--u));
+  background: var(--ss-ink, var(--tes-ink));
+  border-bottom: calc(5 * var(--u)) solid transparent;
+  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
+  box-shadow:
+    0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.55),
+    0 0 calc(var(--big, 0) * 46 * var(--u)) rgba(255, 255, 255, calc(var(--big, 0) * 0.32));
+}
+/* Battlefields are landscape cards stored portrait: the slot swaps the box
+   to landscape and rotates the art (onload check, never per-card). */
+.card-box.bf { width: calc(var(--w) * var(--u)); height: calc(var(--w) * 744 / 1039 * var(--u)); }
+
+.card-box > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.card-box.bf > img {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--w) * 744 / 1039 * var(--u));
+  height: calc(var(--w) * var(--u));
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+.card-box > img.hidden { display: none; }
+
+/* End of the image fallback chain: a named placeholder panel, never a broken
+   img glyph on program output. */
+.card-fallback {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: calc(var(--w) * 0.07 * var(--u));
+  background: linear-gradient(160deg, var(--ss-ink, #10151b), var(--ss-plate, #0a0d10));
+  color: var(--ss-text, #e8edf1);
+  font: italic 700 calc(var(--w) * 0.085 * var(--u))/1.25 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.5 * var(--u));
+}
+.card-fallback.on { display: flex; }
+
+/* The name plate takes the look's ground like the popup's. Type scales
+   with the card so a four-card row keeps its plates in proportion. */
+.name-plate {
+  background: var(--ss-bg-color, var(--tes-plate));
+  color: var(--ss-text, #fff);
+  min-width: calc(var(--w) * 0.7 * var(--u));
+  max-width: calc(var(--w) * 1.22 * var(--u));
+  padding: calc(var(--w) * 0.024 * var(--u)) calc(var(--w) * 0.06 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  border-bottom: calc(4 * var(--u)) solid transparent;
+  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
+}
+html[data-bg="gradient"] .name-plate {
+  background: linear-gradient(var(--ss-bg-angle, 160deg), var(--ss-bg-color), var(--ss-bg-color2));
+}
+html[data-bg="image"] .name-plate, html[data-bg="plate"] .name-plate {
+  background: var(--ss-bg-image) center / cover no-repeat, var(--ss-bg-color);
+}
+html[data-bg="transparent"] .name-plate { background: transparent; }
+.card-name {
+  font: italic 700 calc(var(--w) * 0.058 * var(--u))/1.15 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: calc(var(--w) * 1.1 * var(--u));
+  text-overflow: ellipsis;
+}
+.card-type {
+  font: 500 calc(var(--w) * 0.032 * var(--u))/1 var(--tes-font);
+  color: var(--ss-text-muted, #8b98a5);
+  text-transform: uppercase;
+  letter-spacing: calc(2 * var(--u));
+}
+.card-type:empty { display: none; }

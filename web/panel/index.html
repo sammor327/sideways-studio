@@ -575,6 +575,45 @@
         </div>
       </div>
     </details>
+
+    <details class="field-section fold" data-sec="cardrow" id="cardrowSection">
+      <summary><h4 class="section-label">Card row</h4></summary>
+
+      <div class="field-row" data-field="cardrow">
+        <span class="row-label" title="Up to four cards side by side, each over its name plate. Picking the first card switches the card row on in preview; TAKE airs it. Highlight enlarges one card and shrinks the others, on air at once.">Cards</span>
+        <div class="cell span2 cardrow-slots" id="cardrowSlots">
+          <div class="cardrow-slot picker-wrap" data-slot="0">
+            <img class="card-thumb hidden" alt="" id="rowThumb0">
+            <input id="rowCard0" placeholder="Card 1&hellip;" autocomplete="off" aria-label="Card row, card 1">
+            <button type="button" class="row-focus" id="rowFocus0" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 1">&#9733;</button>
+            <button type="button" class="clear-x" id="rowClear0" title="Empty this slot" aria-label="Empty card row slot 1">&times;</button>
+            <ul class="results" id="rowCard0Results"></ul>
+          </div>
+          <div class="cardrow-slot picker-wrap" data-slot="1">
+            <img class="card-thumb hidden" alt="" id="rowThumb1">
+            <input id="rowCard1" placeholder="Card 2&hellip;" autocomplete="off" aria-label="Card row, card 2">
+            <button type="button" class="row-focus" id="rowFocus1" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 2">&#9733;</button>
+            <button type="button" class="clear-x" id="rowClear1" title="Empty this slot" aria-label="Empty card row slot 2">&times;</button>
+            <ul class="results" id="rowCard1Results"></ul>
+          </div>
+          <div class="cardrow-slot picker-wrap" data-slot="2">
+            <img class="card-thumb hidden" alt="" id="rowThumb2">
+            <input id="rowCard2" placeholder="Card 3&hellip;" autocomplete="off" aria-label="Card row, card 3">
+            <button type="button" class="row-focus" id="rowFocus2" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 3">&#9733;</button>
+            <button type="button" class="clear-x" id="rowClear2" title="Empty this slot" aria-label="Empty card row slot 3">&times;</button>
+            <ul class="results" id="rowCard2Results"></ul>
+          </div>
+          <div class="cardrow-slot picker-wrap" data-slot="3">
+            <img class="card-thumb hidden" alt="" id="rowThumb3">
+            <input id="rowCard3" placeholder="Card 4&hellip;" autocomplete="off" aria-label="Card row, card 4">
+            <button type="button" class="row-focus" id="rowFocus3" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 4">&#9733;</button>
+            <button type="button" class="clear-x" id="rowClear3" title="Empty this slot" aria-label="Empty card row slot 4">&times;</button>
+            <ul class="results" id="rowCard3Results"></ul>
+          </div>
+          <p class="hint">Picking the first card switches the card row on in preview; TAKE airs it. The star highlights a card on air at once, no TAKE needed; the same star again evens the row out.</p>
+        </div>
+      </div>
+    </details>
   </div>
 </aside>
 
@@ -585,8 +624,9 @@
     <div class="monitor preview-mon"><iframe src="/monitor/?mode=preview" title="Preview monitor"></iframe></div>
   </div>
   <div class="transition-col">
-    <button id="takeBtn" class="take" title="TAKE puts preview on air. CLEAR hides every graphic on air, scores stay.">TAKE</button>
-    <button id="clearBtn" class="clear" title="CLEAR hides every graphic on air, scores stay. TAKE puts preview back on air.">CLEAR</button>
+    <button id="takeBtn" class="take" title="TAKE puts preview on air. CLEAR PROGRAM hides every graphic on air, scores stay. CLEAR PREVIEW takes every graphic out of preview.">TAKE</button>
+    <button id="clearBtn" class="clear" title="Hides every graphic on air, scores stay. Preview is untouched, so TAKE puts it back.">CLEAR PROGRAM</button>
+    <button id="clearPreviewBtn" class="clear clear-preview" title="Takes every graphic out of preview, data kept. Nothing on air changes until TAKE.">CLEAR PREVIEW</button>
     <div class="onair-list hidden" id="onAirList">
       <span class="onair-list-label">On air now</span>
       <div class="air-rows" id="onAirRows"></div>
@@ -667,6 +707,11 @@
           <div class="scene-name">Card popup <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardOnAir">ON AIR</button></div>
           <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
         </div>
+        <div class="scene-row" data-scene="cardrow">
+          <div class="scene-name">Card row <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardrowOnAir">ON AIR</button></div>
+          <button id="toggleCardrow" class="scene-toggle" disabled>OFF</button>
+          <p class="scene-note" id="cardrowNote">One to four cards side by side, each over its name plate. Pick them under Match data &rsaquo; Card row; the star there highlights one on air.</p>
+        </div>
         <div class="scene-row" data-scene="decklist">
           <div class="scene-name">Decklist <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="deckOnAir">ON AIR</button></div>
           <button id="toggleDeck" class="scene-toggle">OFF</button>
@@ -717,6 +762,14 @@
   <section class="card features-card foldable" id="featuresCard" data-fold="features" data-size="features">
     <h2 class="fold-head"><button type="button" class="fold-btn" aria-expanded="true" aria-controls="featuresCard">Graphic features</button></h2>
     <p class="hint" id="featuresHint">Put a graphic in preview to see its options here.</p>
+    <div class="feature-group hidden" data-scene="cardrow">
+      <h3>Card row</h3>
+      <div class="scene-options"><span class="hint">The cards and the highlight star are under Match data &rsaquo; Card row. The highlight is a cue: it acts on air at once.</span></div>
+    </div>
+    <div class="feature-group hidden" data-scene="decklist">
+      <h3>Decklist</h3>
+      <div class="scene-options"><span class="hint">The plate background, the sideboard rack and Highlight a card are on the Decklist card. The highlight is a cue: it acts on air at once.</span></div>
+    </div>
     <div class="feature-group hidden" data-scene="igo1v1">
       <h3>In-game overlay 1v1</h3>
       <div class="scene-options">
@@ -952,6 +1005,14 @@
       <label class="inline"><input type="checkbox" id="deckBackground" checked> Plate background</label>
       <label class="inline"><input type="checkbox" id="deckSideboard" checked> Sideboard rack</label>
     </div>
+    <div class="deck-focus" id="deckFocusRow">
+      <label class="inline" title="Lifts one card out of the plate, larger and glowing, and blurs and darkens the rest. A cue: it acts on air at once, no TAKE needed.">Highlight a card
+        <select id="deckFocus" aria-label="Highlight a card on the decklist"><option value="">None</option></select>
+      </label>
+      <button type="button" class="clear-mini" id="deckFocusPrev" title="Highlight the previous card in the list">&lsaquo;</button>
+      <button type="button" class="clear-mini" id="deckFocusNext" title="Highlight the next card in the list">&rsaquo;</button>
+      <button type="button" class="clear-mini" id="deckFocusOff" title="Back to the plain plate">Off</button>
+    </div>
     <details class="deck-paste">
       <summary>Paste a list straight into preview</summary>
       <textarea id="deckList" rows="8" spellcheck="false" placeholder="Legend: Ahri, Nine-Tailed Fox&#10;Champion: Ahri, Alluring&#10;Battlefields:&#10;Sunken Temple&#10;Runes:&#10;6 Calm&#10;6 Mind&#10;Main:&#10;3 Stupefy"></textarea>
@@ -1055,6 +1116,10 @@
         <input class="url-input" id="cardpopupUrl" readonly>
         <button data-copy="cardpopupUrl">Copy</button>
       </div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Card row source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="cardrowUrl" readonly><button data-copy="cardrowUrl">Copy</button></div>
     </div>
     <div class="url-row">
       <span class="url-label">In-game overlay 1v1 source, 1920 × 1080, 60 fps</span>

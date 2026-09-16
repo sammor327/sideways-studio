@@ -155,6 +155,11 @@ button.clear {
   cursor: pointer;
 }
 button.clear:hover { border-color: #e33; }
+/* Two clears (2026-09-16): CLEAR PROGRAM keeps the red of the on-air
+   recovery; CLEAR PREVIEW is the quiet one, it changes nothing on air. */
+button.clear { font-size: 12px; letter-spacing: 0.5px; line-height: 1.25; }
+button.clear-preview { border-color: #2a323b; color: #b8c4cf; }
+button.clear-preview:hover { border-color: var(--tes-blue); }
 
 /* What is on air, listed under CLEAR: one row per graphic, the X drops that
    one. A long show can have more rows than the column is tall, so the rows
@@ -941,3 +946,26 @@ details.field-section > .field-row { margin-top: 7px; }
 .br-match .win-btn { padding: 2px 6px; font-size: 11px; }
 .br-match .win-btn.on { background: var(--tes-green); color: #0a0d12; border-color: transparent; }
 .br-match .id { grid-column: 1 / -1; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6c7783; }
+
+/* --- card row: four slots under Match data, a search each, the star is
+   the highlight cue --- */
+.cardrow-slots { display: flex; flex-direction: column; gap: 6px; }
+.cardrow-slot { display: flex; align-items: center; gap: 6px; position: relative; }
+.cardrow-slot input { flex: 1 1 auto; min-width: 0; }
+.cardrow-slot .results { min-width: 260px; }
+button.row-focus {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 34px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+  color: #8b98a5;
+}
+button.row-focus.on { color: #06110a; background: var(--tes-grad); border-color: transparent; }
+button.row-focus:disabled { opacity: 0.4; }
+
+/* --- decklist highlight: the card list in plate order, step arrows, off --- */
+.deck-focus { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.deck-focus label.inline { flex: 1 1 200px; min-width: 0; }
+.deck-focus select { flex: 1 1 auto; min-width: 0; max-width: 100%; }

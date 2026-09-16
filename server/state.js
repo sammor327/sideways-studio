@@ -60,6 +60,10 @@ function defaultTimer() {
   return { running: false, startedAt: 0, elapsed: 0, countdown: 0 };
 }
 
+// One slot of the card row: the same three fields the popup's card carries.
+export const ROW_SLOTS = 4;
+const emptyRowCard = () => ({ cardId: '', cardName: '', cardType: '' });
+
 function defaultBank() {
   return {
     event: {
@@ -125,7 +129,16 @@ function defaultBank() {
       // the plate's own full-bleed backdrop (off = only the cards paint, for
       // keying over the feed). deckName labels a list loaded from the saved
       // library. replay is a counter the "replay intro" cue bumps.
-      decklist: { visible: false, list: '', showSideboard: true, background: true, deckName: '', replay: 0 },
+      // focus is the card id the plate highlights (lifted and enlarged, the
+      // rest blurred and dimmed); empty is no highlight. Driven by the focus
+      // cue, so it lands in both banks and acts on air without a TAKE.
+      decklist: { visible: false, list: '', showSideboard: true, background: true, deckName: '', replay: 0, focus: '' },
+      // Card row: up to four cards side by side, each with a name plate. The
+      // four slots are positional (an empty slot has no card id) so the panel
+      // can edit one without re-sending the rest. focus is the slot index the
+      // row enlarges while the others shrink and dim; -1 is an even row. Like
+      // the decklist's, it is a cue and lands in both banks.
+      cardrow: { visible: false, cards: [emptyRowCard(), emptyRowCard(), emptyRowCard(), emptyRowCard()], focus: -1 },
       // --- from the September 2026 broadcast scouting (listed with the rest since 0.10.0) ---
       // Portrait pillars: a pillarboxed portrait table cam with a compact
       // game-state bar over it (the Yu-Gi-Oh grammar). handCam opens a
@@ -246,6 +259,12 @@ function mergeBank(bank, raw) {
   for (const key of Object.keys(fresh.scenes)) {
     bank.scenes[key] = { ...fresh.scenes[key], ...bank.scenes[key] };
   }
+  // The card row's slots are positional: a save always carries four, each
+  // with the full card shape, whatever an older or hand-edited file held.
+  const rowCards = Array.isArray(bank.scenes.cardrow.cards) ? bank.scenes.cardrow.cards : [];
+  bank.scenes.cardrow.cards = Array.from({ length: ROW_SLOTS }, (_, i) => ({ ...emptyRowCard(), ...(rowCards[i] || {}) }));
+  bank.scenes.cardrow.focus = clampInt(bank.scenes.cardrow.focus, -1, ROW_SLOTS - 1);
+  if (typeof bank.scenes.decklist.focus !== 'string') bank.scenes.decklist.focus = '';
 }
 
 // Load saved state; migrate pre-bus saves (Loop 0/1 kept event/match/scenes at
@@ -516,6 +535,26 @@ function applyBankPatch(bank, patch) {
       // (same rule as a popup with no card): otherwise the panel shows a
       // disabled ON toggle and an ON AIR pill over a blank graphic.
       if (!bank.scenes.decklist.list.trim()) bank.scenes.decklist.visible = false;
+      // The highlight is a cue (the focus action) and lands in both banks;
+      // a bank patch may still clear or set it, for the panel's reset paths.
+      if (d.focus !== undefined) bank.scenes.decklist.focus = cleanCardId(d.focus);
+    }
+    if (patch.scenes.cardrow && typeof patch.scenes.cardrow === 'object') {
+      const r = patch.scenes.cardrow;
+      const row = bank.scenes.cardrow;
+      if (r.visible !== undefined) row.visible = Boolean(r.visible);
+      // Slots patch by position: an array with holes or fewer entries leaves
+      // the other slots as they are, and null empties a slot.
+      if (Array.isArray(r.cards)) {
+        r.cards.slice(0, ROW_SLOTS).forEach((c, i) => {
+          if (c === null) row.cards[i] = emptyRowCard();
+          else if (c && typeof c === 'object') applyCard(row.cards[i], c);
+        });
+        for (const c of row.cards) if (!c.cardId) Object.assign(c, emptyRowCard());
+      }
+      if (r.focus !== undefined) row.focus = clampInt(r.focus, -1, ROW_SLOTS - 1);
+      // A row with no card can never be on, the popup's rule.
+      if (!row.cards.some((c) => c.cardId)) row.visible = false;
     }
     if (patch.scenes.pov && typeof patch.scenes.pov === 'object') {
       const p = patch.scenes.pov;
@@ -721,6 +760,30 @@ export function applyUpdate(patch) {
   }
   if (patch.action === 'clear') {
     for (const scene of Object.values(state.program.scenes)) scene.visible = false;
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // CLEAR for the preview bank: every graphic out of preview, data kept, so
+  // the next TAKE airs a clean frame. Program is untouched.
+  if (patch.action === 'clearpreview') {
+    for (const scene of Object.values(state.preview.scenes)) scene.visible = false;
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // Highlight a card on a graphic that is up: the decklist lifts the card
+  // with that id out of the plate, the card row enlarges the slot at that
+  // index. A cue like the clock, so it lands in both banks and acts on air
+  // at once; stepping through a deck on air needs no TAKE per card.
+  if (patch.action === 'focus') {
+    if (patch.scene === 'decklist') {
+      const id = cleanCardId(patch.cardId ?? '');
+      for (const bank of [state.preview, state.program]) bank.scenes.decklist.focus = id;
+    } else if (patch.scene === 'cardrow') {
+      const slot = clampInt(patch.slot ?? -1, -1, ROW_SLOTS - 1);
+      for (const bank of [state.preview, state.program]) bank.scenes.cardrow.focus = slot;
+    } else {
+      return { ok: false, error: 'unknown scene' };
+    }
     bump();
     return { ok: true, version: state.version };
   }

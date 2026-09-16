@@ -66,6 +66,8 @@ const SCENE_FIELDS = {
   bracket: ['bracket', 'eventName'],
   standings: ['standings', 'eventName', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
+  // The card row draws its own slots under Match data › Card row.
+  cardrow: ['cardrow'],
 };
 const SCENE_NAMES = {
   scorebug: 'the score bug',
@@ -82,6 +84,7 @@ const SCENE_NAMES = {
   showdown: 'the showdown',
   decklist: 'the decklist',
   cardpopup: 'the card popup',
+  cardrow: 'the card row',
   cornertag: 'the corner tag',
   lowerthird: 'the lower third',
   headtohead: 'the match card',
@@ -94,7 +97,7 @@ const SCENE_NAMES = {
 // Short names for the on-air list, which lives in the narrow column between
 // the monitors and has no room for "In-game overlay, portrait pillars".
 const SCENE_SHORT = {
-  scorebug: 'Score bug', cardpopup: 'Card popup', igo1v1: '1v1 overlay', igo2v2: '2v2 overlay',
+  scorebug: 'Score bug', cardpopup: 'Card popup', cardrow: 'Card row', igo1v1: '1v1 overlay', igo2v2: '2v2 overlay',
   igodual: 'Dual columns', igobars: '2v2 bars', pov: 'POV', decklist: 'Decklist',
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
@@ -230,6 +233,7 @@ function renderScenes(s) {
   if (document.activeElement !== $('deckSideboard')) $('deckSideboard').checked = dk.showSideboard;
   if (document.activeElement !== $('deckBackground')) $('deckBackground').checked = dk.background !== false;
   renderDeckLibrary();
+  if (document.activeElement !== $('deckFocus')) $('deckFocus').value = currentDeckFocus();
 
   const cp = s.preview.scenes.cardpopup;
   const cpAir = s.program.scenes.cardpopup.visible;
@@ -592,6 +596,7 @@ function render(s) {
   renderClock(m.timer);
 
   renderScenes(s);
+  renderCardrow(s);
   renderOnAir(s);
   renderLook(s.theme);
   renderExtras(s);
@@ -605,7 +610,11 @@ function render(s) {
 // --- bus controls ---
 
 $('takeBtn').addEventListener('click', () => post({ action: 'take' }));
+// Two clears (Sam, 2026-09-16): CLEAR PROGRAM is the on-air recovery, every
+// graphic off air with preview untouched; CLEAR PREVIEW empties the preview
+// bank so the next TAKE airs a clean frame, with nothing on air changing.
 $('clearBtn').addEventListener('click', () => post({ action: 'clear' }));
+$('clearPreviewBtn').addEventListener('click', () => post({ action: 'clearpreview' }));
 
 // What is on air, named under CLEAR. CLEAR is the whole-show recovery; this
 // list is the aimed one, so the operator drops the graphic that should not be
@@ -724,7 +733,7 @@ $('resetMatch').addEventListener('click', () => {
       choseFirst: '', result: { winner: '', note: '' },
     },
     scenes: {
-      scorebug: { visible: false }, cardpopup: { visible: false },
+      scorebug: { visible: false }, cardpopup: { visible: false }, cardrow: { visible: false },
       igo1v1: { visible: false }, igo2v2: { visible: false }, igodual: { visible: false }, igobars: { visible: false },
       pov: { visible: false },
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
@@ -767,6 +776,11 @@ $('toggleCard').addEventListener('click', () => {
   if (!state) return;
   const cp = state.preview.scenes.cardpopup;
   if (cp.card.cardId) post({ scenes: { cardpopup: { visible: !cp.visible } } });
+});
+$('toggleCardrow').addEventListener('click', () => {
+  if (!state) return;
+  const cr = state.preview.scenes.cardrow;
+  if (cr.cards.some((c) => c.cardId)) post({ scenes: { cardrow: { visible: !cr.visible } } });
 });
 
 // The IGOs and the POV overlay all live on the screen edges and would draw
@@ -1095,6 +1109,7 @@ for (const [p, side] of SIDES) wireCardSearch(p, side);
 $('outputUrl').value = `${location.origin}/output/`;
 $('scorebugUrl').value = `${location.origin}/scenes/scorebug/?transparent=1`;
 $('cardpopupUrl').value = `${location.origin}/scenes/cardpopup/?transparent=1`;
+$('cardrowUrl').value = `${location.origin}/scenes/cardrow/?transparent=1`;
 $('igoUrl').value = `${location.origin}/scenes/igo1v1/?transparent=1`;
 $('igo2Url').value = `${location.origin}/scenes/igo2v2/?transparent=1`;
 $('igoDualUrl').value = `${location.origin}/scenes/igodual/?transparent=1`;
@@ -1197,6 +1212,110 @@ $('cardSearch').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && results.length) stageCard(0);
   if (e.key === 'Escape') { results = []; renderResults(); }
 });
+
+// --- card row: four slots, each its own search, and the highlight star ---
+//
+// Slots are positional so an operator can swap card 2 without touching the
+// rest: a pick sends the four slots with one changed, an empty sends null in
+// that slot. Picking into any slot switches the row on in preview (the
+// popup's staging rule); the star is the focus cue and acts on air at once.
+
+function wireRowSlot(i) {
+  const input = $(`rowCard${i}`);
+  const list = $(`rowCard${i}Results`);
+  let hits = [];
+  let timer = null;
+  const close = () => { list.classList.remove('open'); list.replaceChildren(); };
+  const current = () => (state ? state.preview.scenes.cardrow.cards[i].cardName || '' : '');
+  const slotsWith = (card) => state.preview.scenes.cardrow.cards.map((c, k) => (k === i ? card : c));
+  const pick = (card) => {
+    if (!state) return;
+    post({ scenes: { cardrow: { visible: true, cards: slotsWith({ cardId: card.cardId, cardName: card.cardName, cardType: card.cardType }) } } });
+    input.value = card.cardName;
+    hits = [];
+    close();
+  };
+  const draw = () => {
+    list.replaceChildren(...hits.map((card) => {
+      const li = document.createElement('li');
+      const img = document.createElement('img');
+      img.src = `/cardart/thumb/${card.cardId}.webp`;
+      img.alt = '';
+      img.onerror = () => img.classList.add('hidden');
+      const meta = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = card.cardName;
+      const sub = document.createElement('span');
+      sub.textContent = [card.cardType, card.cardId].filter(Boolean).join(' · ');
+      meta.append(name, sub);
+      li.append(img, meta);
+      li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(card); });
+      return li;
+    }));
+    placeList(input, list);
+    list.classList.toggle('open', hits.length > 0);
+  };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { hits = []; draw(); return; }
+    timer = setTimeout(async () => {
+      try {
+        const data = await (await fetch(`/api/cards/search?q=${encodeURIComponent(q)}`)).json();
+        hits = data.indexed ? data.results : [];
+        draw();
+      } catch { /* the server comes back; the next keystroke searches again */ }
+    }, 200);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && hits.length) pick(hits[0]);
+    if (e.key === 'Escape') { hits = []; draw(); }
+  });
+  input.addEventListener('blur', () => setTimeout(() => {
+    close();
+    if (document.activeElement !== input && state) input.value = current();
+  }, 150));
+  $(`rowClear${i}`).addEventListener('click', () => {
+    if (!state) return;
+    post({ scenes: { cardrow: { cards: slotsWith(null) } } });
+    input.value = '';
+  });
+  $(`rowFocus${i}`).addEventListener('click', () => {
+    if (!state) return;
+    const now = state.preview.scenes.cardrow.focus;
+    post({ action: 'focus', scene: 'cardrow', slot: now === i ? -1 : i });
+  });
+}
+for (let i = 0; i < 4; i += 1) wireRowSlot(i);
+
+function renderCardrow(s) {
+  const cr = s.preview.scenes.cardrow;
+  const any = cr.cards.some((c) => c.cardId);
+  const btn = $('toggleCardrow');
+  btn.textContent = cr.visible ? 'ON' : 'OFF';
+  btn.classList.toggle('on', cr.visible);
+  btn.disabled = !any;
+  $('cardrowOnAir').classList.toggle('hidden', !s.program.scenes.cardrow.visible);
+  cr.cards.forEach((c, i) => {
+    setIfIdle(`rowCard${i}`, c.cardName || '');
+    const thumb = $(`rowThumb${i}`);
+    if (c.cardId) {
+      const src = `/cardart/thumb/${c.cardId}.webp`;
+      if (thumb.getAttribute('src') !== src) {
+        thumb.onerror = () => thumb.classList.add('hidden');
+        thumb.onload = () => thumb.classList.remove('hidden');
+        thumb.src = src;
+      }
+    } else {
+      thumb.classList.add('hidden');
+      thumb.removeAttribute('src');
+    }
+    $(`rowClear${i}`).disabled = !c.cardId;
+    const star = $(`rowFocus${i}`);
+    star.disabled = !c.cardId;
+    star.classList.toggle('on', cr.focus === i && Boolean(c.cardId));
+  });
+}
 
 // --- theme controls ---
 
@@ -1382,7 +1501,12 @@ $('dbSync').addEventListener('click', async () => {
   const wasSynced = before ? before.lastSync : null;
   const s = await dbSettled((st) => st.progress.phase === 'idle' && (st.lastSync !== wasSynced || st.progress.lastError));
   if (s.progress.lastError) {
-    alert(`Could not check for new sets: ${s.progress.lastError}. Is the internet up?`);
+    // "Is the internet up?" only when the failure looks like no connection.
+    // A page served instead of the card list, or a bad status, is the host's
+    // problem, and the message the server wrote already says so.
+    const err = String(s.progress.lastError);
+    const offline = /fetch failed|ENOTFOUND|ECONN|EAI_AGAIN|aborted|timed? ?out|network/i.test(err);
+    alert(`Could not check for new sets: ${err}.${offline ? ' Is the internet up?' : ''}`);
     return;
   }
   // Files came down, or the list itself changed: the progress bar showed it
@@ -1418,13 +1542,20 @@ let deckTimer = null;
 let summarisedList = null;
 
 async function summariseDeck(list) {
-  if (!list.trim()) { $('deckSummary').textContent = 'Nothing pasted yet.'; return; }
+  if (!list.trim()) {
+    $('deckSummary').textContent = 'Nothing pasted yet.';
+    deckCards = [];
+    renderDeckFocus();
+    return;
+  }
   try {
     const d = await (await fetch('/api/decklist/parse', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ list }),
     })).json();
+    deckCards = focusableCards(d);
+    renderDeckFocus();
     const bits = [`${d.counts.main} main`];
     if (d.counts.sideboard) bits.push(`${d.counts.sideboard} sideboard`);
     if (d.counts.runes) bits.push(`${d.counts.runes} runes`);
@@ -1433,6 +1564,8 @@ async function summariseDeck(list) {
       + (d.warnings.length ? ' ' + d.warnings[0] : '');
   } catch {
     $('deckSummary').textContent = 'Could not read that list.';
+    deckCards = [];
+    renderDeckFocus();
   }
 }
 
@@ -1457,13 +1590,64 @@ $('deckBackground').addEventListener('change', () => {
 $('deckClear').addEventListener('click', () => {
   if (!confirm('Clear the decklist in preview?')) return;
   $('deckList').value = '';
-  post({ scenes: { decklist: { list: '', visible: false, deckName: '' } } });
+  post({ scenes: { decklist: { list: '', visible: false, deckName: '', focus: '' } } });
   summariseDeck('');
 });
 
 $('deckReplay').addEventListener('click', () => {
   post({ action: 'replay', scene: 'decklist' });
 });
+
+// --- decklist highlight ---
+//
+// The select lists the cards the plate draws, in plate order, from the same
+// parse the summary reads. The highlight is the focus cue, both banks at
+// once, so ‹ › step through a deck on air with no TAKE per card.
+let deckCards = [];
+
+function focusableCards(d) {
+  const out = [];
+  const seen = new Set();
+  const add = (card, group) => {
+    if (!card || !card.cardId || seen.has(card.cardId)) return;
+    seen.add(card.cardId);
+    out.push({ cardId: card.cardId, label: `${group}: ${card.name}` });
+  };
+  add(d.legend, 'Legend');
+  for (const c of d.main) add(c, 'Main');
+  for (const c of d.battlefields) add(c, 'Battlefield');
+  add(d.champion, 'Champion');
+  for (const c of d.sideboard) add(c, 'Sideboard');
+  return out;
+}
+
+function currentDeckFocus() {
+  const focus = state ? state.preview.scenes.decklist.focus || '' : '';
+  return deckCards.some((c) => c.cardId === focus) ? focus : '';
+}
+
+function renderDeckFocus() {
+  const sel = $('deckFocus');
+  sel.replaceChildren(
+    Object.assign(document.createElement('option'), { value: '', textContent: 'None' }),
+    ...deckCards.map((c) => Object.assign(document.createElement('option'), { value: c.cardId, textContent: c.label })),
+  );
+  sel.value = currentDeckFocus();
+  const none = !deckCards.length;
+  for (const id of ['deckFocus', 'deckFocusPrev', 'deckFocusNext', 'deckFocusOff']) $(id).disabled = none;
+}
+
+const deckFocusTo = (cardId) => post({ action: 'focus', scene: 'decklist', cardId });
+$('deckFocus').addEventListener('change', () => deckFocusTo($('deckFocus').value));
+$('deckFocusOff').addEventListener('click', () => deckFocusTo(''));
+function stepDeckFocus(dir) {
+  if (!deckCards.length) return;
+  const at = deckCards.findIndex((c) => c.cardId === currentDeckFocus());
+  const next = at < 0 ? (dir > 0 ? 0 : deckCards.length - 1) : (at + dir + deckCards.length) % deckCards.length;
+  deckFocusTo(deckCards[next].cardId);
+}
+$('deckFocusPrev').addEventListener('click', () => stepDeckFocus(-1));
+$('deckFocusNext').addEventListener('click', () => stepDeckFocus(1));
 
 // --- saved decks ---
 //
@@ -2341,6 +2525,11 @@ function toggleScene(key) {
     else { $('stagedSection').open = true; $('cardSearch').focus(); }
     return;
   }
+  if (key === 'cardrow') {
+    if (prev.scenes.cardrow.cards.some((c) => c.cardId)) post({ scenes: { cardrow: { visible: true } } });
+    else { $('cardrowSection').open = true; $('rowCard0').focus(); }
+    return;
+  }
   if (key === 'decklist') {
     if (prev.scenes.decklist.list.trim()) setFullScene('decklist', true);
     return;
@@ -2384,6 +2573,7 @@ function renderThumbs(s) {
     thumb.classList.toggle('in-preview', inPreview);
     thumb.classList.toggle('on-air', onAir);
     const cantShow = (key === 'cardpopup' && !s.preview.scenes.cardpopup.card.cardId)
+      || (key === 'cardrow' && !s.preview.scenes.cardrow.cards.some((c) => c.cardId))
       || (key === 'decklist' && !s.preview.scenes.decklist.list.trim());
     thumb.classList.toggle('disabled', cantShow);
     thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : (cantShow ? 'Nothing staged' : 'Click to preview'));
