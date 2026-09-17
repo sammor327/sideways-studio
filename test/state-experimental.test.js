@@ -61,7 +61,7 @@ describe('experimental overlay fields', () => {
     } });
     const sc = getState().preview.scenes;
     assert.deepEqual(sc.igoportrait, { visible: true, mode: 'webcam', topBar: true, handCam: true, cardWell: false });
-    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', showdown: false });
+    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', handArt: true, showdown: false });
     applyUpdate({ scenes: { igorows: { handStyle: 'lanes', showdown: true }, handfan: { visible: true, side: 'right', opponent: false, showdown: true } } });
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
     assert.deepEqual(getState().preview.scenes.handfan, { visible: true, side: 'right', opponent: false, showdown: true, identity: true, clock: true });
@@ -79,12 +79,15 @@ describe('experimental overlay fields', () => {
     const dual = getState().preview.scenes.igodual;
     assert.deepEqual(dual, {
       visible: true, mode: 'legend', track: true, clock: true, eventBlock: true, cardSlot: true,
-      hand: true, handStyle: 'lanes',
+      hand: true, handStyle: 'lanes', handArt: true,
     });
     applyUpdate({ scenes: { igodual: { handStyle: 'fan' } } });
     assert.equal(getState().preview.scenes.igodual.handStyle, 'lanes', 'an unknown hand style is ignored');
     applyUpdate({ scenes: { igodual: { hand: 0 } } });
     assert.equal(getState().preview.scenes.igodual.hand, false);
+    applyUpdate({ scenes: { igodual: { handArt: 0 }, igorows: { handArt: false } } });
+    assert.equal(getState().preview.scenes.igodual.handArt, false);
+    assert.equal(getState().preview.scenes.igorows.handArt, false);
   });
 
   it('cleans the up-next tables, casters and seeds on the event', () => {

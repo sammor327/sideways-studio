@@ -199,7 +199,7 @@ function renderScenes(s) {
   $('igoDualOnAir').classList.toggle('hidden', !s.program.scenes.igodual.visible);
   if (document.activeElement !== $('igoDualMode')) $('igoDualMode').value = dualPrev.mode;
   if (document.activeElement !== $('igoDualHandStyle')) $('igoDualHandStyle').value = dualPrev.handStyle || 'list';
-  for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot'], ['igoDualHand', 'hand']]) {
+  for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot'], ['igoDualHand', 'hand'], ['igoDualHandArt', 'handArt']]) {
     if (document.activeElement !== $(id)) $(id).checked = dualPrev[flag];
   }
 
@@ -842,7 +842,7 @@ $('togglePov').addEventListener('click', () => toggleEdgeScene('pov'));
 $('igoDualMode').addEventListener('change', () => {
   post({ scenes: { igodual: { mode: $('igoDualMode').value } } });
 });
-for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot'], ['igoDualHand', 'hand']]) {
+for (const [id, flag] of [['igoDualTrack', 'track'], ['igoDualEvent', 'eventBlock'], ['igoDualClock', 'clock'], ['igoDualCard', 'cardSlot'], ['igoDualHand', 'hand'], ['igoDualHandArt', 'handArt']]) {
   $(id).addEventListener('change', () => post({ scenes: { igodual: { [flag]: $(id).checked } } }));
 }
 $('igoDualHandStyle').addEventListener('change', () => post({ scenes: { igodual: { handStyle: $('igoDualHandStyle').value } } }));
@@ -2002,6 +2002,7 @@ for (const [id, flag] of [['igoPortraitTop', 'topBar'], ['igoPortraitHand', 'han
 $('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mode: $('igoRowsMode').value } } }));
 $('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
 $('igoRowsHandStyle').addEventListener('change', () => post({ scenes: { igorows: { handStyle: $('igoRowsHandStyle').value } } }));
+$('igoRowsHandArt').addEventListener('change', () => post({ scenes: { igorows: { handArt: $('igoRowsHandArt').checked } } }));
 $('igoRowsShowdown').addEventListener('change', () => post({ scenes: { igorows: { showdown: $('igoRowsShowdown').checked } } }));
 $('toggleHandfan').addEventListener('click', () => {
   if (!state) return;
@@ -2580,6 +2581,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('igoRowsMode')) $('igoRowsMode').value = rw.mode;
   if (document.activeElement !== $('igoRowsHand')) $('igoRowsHand').checked = rw.hand;
   if (document.activeElement !== $('igoRowsHandStyle')) $('igoRowsHandStyle').value = rw.handStyle || 'list';
+  if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
   const hf = prev.scenes.handfan;
   if (document.activeElement !== $('handfanSide')) $('handfanSide').value = hf.side || 'left';

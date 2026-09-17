@@ -3,7 +3,8 @@ import { SeekClock, bump } from '../../stage/seekclock.js';
 import {
   chainLoad, clearArt, cardSteps, legendSteps, heroSteps, battlefieldSteps, rotateIfPortrait,
 } from '../../stage/art.js';
-import { handEls, handKey, handTotal, handUp } from '../../stage/exp.js';
+import { handEls, handKey, handTotal, handUp, HandScroller } from '../../stage/exp.js';
+import { groupHand } from '../../shared/handlist.js';
 
 const $ = (id) => document.getElementById(id);
 const dual = $('dual');
@@ -14,6 +15,7 @@ const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 // What each slot currently shows, so a state push that changes nothing
 // about a slot never restarts its image load.
 const shown = { legend: {}, hero: {}, bf: {}, card: null, hand: {} };
+const scrollers = { l: new HandScroller($('lhandView'), $('lhandCards')), r: new HandScroller($('rhandView'), $('rhandCards')) };
 
 function loadLegend(p, side) {
   const key = `${side.legendCardId || ''}|${side.legendSlug || ''}`;
@@ -174,24 +176,26 @@ function fitName(el, raw) {
   return setText(el, text);
 }
 
-// A player's cards in hand, in the bottom of their own column. Returns
-// whether the block is up, which is what stands the event block or the
-// docked card down: a side with nothing listed keeps what it had, so
+// A player's cards in hand, in the bottom of their own column, always in
+// the order they were typed. `up` (handUp) is what stands the event block
+// or the docked card down: a side with nothing listed keeps what it had, so
 // switching the hand on before the spotter types never empties a column.
-// Past the row budget (eight rows above the clock, eleven without) the
-// rows tighten a step instead of clipping, counted from the list rather
-// than measured, because a browser source that is not drawing reports no
-// layout at all.
-function renderHand(p, side, up, lanes) {
+// Past the row budget (eight rows above the clock, with or without art) the
+// rows tighten a step, counted from the rows rather than measured, because
+// a browser source that is not drawing reports no layout at all; a hand
+// still longer than its box then scrolls through its cards.
+function renderHand(p, side, up, lanes, art) {
   const block = $(`${p}handBlock`);
   const list = side.hand || [];
   block.classList.toggle('hidden', !up);
-  block.classList.toggle('compact', list.length > (lanes ? 5 : 8));
+  block.classList.toggle('typed', lanes);
+  block.classList.toggle('compact', groupHand(list).length > 8);
   setText($(`${p}handCount`), up ? String(handTotal(side)) : '');
-  const key = handKey(list, lanes);
+  const key = handKey(list, art);
   if (shown.hand[p] !== key) {
     shown.hand[p] = key;
-    $(`${p}handCards`).replaceChildren(...handEls(list, lanes, { art: false }));
+    $(`${p}handCards`).replaceChildren(...handEls(list, { art }));
+    scrollers[p].restart();
   }
 }
 
@@ -238,10 +242,11 @@ const params = initStage({
     setText($('roundTitle'), bank.event.roundTitle || '');
     // The hand takes the bottom of each column from whatever was there.
     const lanes = scene.handStyle === 'lanes';
+    const art = scene.handArt !== false;
     const leftHand = handUp(scene, m.left);
     const rightHand = handUp(scene, m.right);
-    renderHand('l', m.left, leftHand, lanes);
-    renderHand('r', m.right, rightHand, lanes);
+    renderHand('l', m.left, leftHand, lanes, art);
+    renderHand('r', m.right, rightHand, lanes, art);
 
     $('eventBlock').classList.toggle('hidden', !scene.eventBlock || leftHand);
     // The clock outlived the block it used to sit in: with the hand up it

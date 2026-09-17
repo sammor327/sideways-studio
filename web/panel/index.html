@@ -809,12 +809,13 @@
         <label class="inline"><input type="checkbox" id="igoDualClock" checked> Clock</label>
         <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
         <label class="inline" title="Each player's cards in hand fill the bottom of their own column. The event block and the docked card stand down under it, and come back when a side has no cards listed"><input type="checkbox" id="igoDualHand"> Cards in hand</label>
-        <label class="inline" title="A flat list, or lanes grouped by what each card can do: reactions, actions, then units and gear">Hand as
+        <label class="inline" title="The hand in the order the cards were typed, copies on one row with a count (2x, 3x). Marked by type colours each row by what the card can do: reactions green, actions blue. A hand longer than its box scrolls: five seconds at the top, down to the last card, five seconds there, back up">Hand as
           <select id="igoDualHandStyle">
             <option value="list">List</option>
-            <option value="lanes">Lanes by type</option>
+            <option value="lanes">Marked by type</option>
           </select>
         </label>
+        <label class="inline" title="A strip of each card's art beside its name, in either hand style"><input type="checkbox" id="igoDualHandArt" checked> Card art</label>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="igobars">
@@ -860,13 +861,14 @@
           </select>
         </label>
         <label class="inline" title="The cards-in-hand list from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
-        <label class="inline" title="A flat list, or lanes grouped by what each card can do: reactions, actions, then units and gear">Hand as
+        <label class="inline" title="The hand in the order the cards were typed, copies on one row with a count (2x, 3x). Marked by type colours each row by what the card can do: reactions green, actions blue. A hand longer than its box scrolls: five seconds at the top, down to the last card, five seconds there, back up">Hand as
           <select id="igoRowsHandStyle">
             <option value="list">List</option>
-            <option value="lanes">Lanes by type</option>
+            <option value="lanes">Marked by type</option>
           </select>
         </label>
-        <label class="inline" title="Lights the reactions lane and swaps the active-turn label for a Showdown pill"><input type="checkbox" id="igoRowsShowdown"> Showdown open</label>
+        <label class="inline" title="A strip of each card's art beside its name, in either hand style"><input type="checkbox" id="igoRowsHandArt" checked> Card art</label>
+        <label class="inline" title="Lights the reactions still in hand (with the hand marked by type) and swaps the active-turn label for a Showdown pill"><input type="checkbox" id="igoRowsShowdown"> Showdown open</label>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="arenabug">

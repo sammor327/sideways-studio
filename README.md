@@ -254,8 +254,12 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   Match data; each card is a row with its picture, and reactions and actions
   light up in the player's colour. Click a row to mark it played, its × to
   remove it.
-- The rows overlay's hand can be a plain list or **lanes by type**
-  (Reactions, Actions, Units and gear) with an art strip per card.
+- The rows overlay and the dual columns list a hand in the order the cards
+  were typed, copies on one row with a count (2x, 3x), as a plain list or
+  **marked by type** (reactions green, actions blue). **Card art** puts a
+  strip of each card's art beside its name in either style. A hand longer
+  than its box scrolls: five seconds at the top, down to the last card, five
+  seconds there, back up.
 - **The between-games set** (0.11.0): a **corner tag** ("Up next · match ·
   clock", top right, over anything), a **lower third** (casters, an
   interview name with a credential line, or "coming up"), the **match card**

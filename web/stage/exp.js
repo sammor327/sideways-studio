@@ -2,6 +2,8 @@
 // arena bug, the slate): clock arithmetic, canvas-gauged text fitting, the
 // domain rune glyphs and the legend catalog lookup the tiles use for them.
 import { setText } from './stage.js';
+import { animEnabled } from './seekclock.js';
+import { groupHand, scrollAt, scrollTravelMs } from '../shared/handlist.js';
 
 // Wall-clock arithmetic from a timer's three numbers, the same as the dual
 // overlay draws, so every output shows the same time without a server tick.
@@ -106,20 +108,33 @@ export function applyVisibility({ root, clock, visible, shown, first }) {
 //
 // The rows overlay and the dual columns build the same rows from the same
 // hand entries; only the metrics differ, so the markup lives here and each
-// scene's CSS sizes it for its own column.
+// scene's CSS sizes it for its own column. The hand is never sorted: it
+// lists in the order the spotter typed it, copies of a card share one row
+// with a count (web/shared/handlist.js), and the hand style only changes
+// how a row is marked, which is a class on the block rather than other DOM.
 
-// One row per card: an art strip in lanes style, the name, then the energy
-// cost and the power runes. A card on the chain greys out and says so.
-function cardRow(c, lanes) {
+// One row per card: the count, the card's art when asked for, the name,
+// then the energy cost and the power runes. The row carries the card's kind
+// so the marked style can colour reactions and actions. A card on the chain
+// greys out and says so.
+function cardRow(c, art) {
   const row = document.createElement('div');
-  row.className = `card${c.played ? ' played' : ''}${lanes ? ' with-art' : ''}`;
-  if (lanes) {
+  const kind = String(c.kind || 'other').replace(/[^a-z]/g, '');
+  row.className = `card kind-${kind}${c.played ? ' played' : ''}${art ? ' with-art' : ''}`;
+  const qty = document.createElement('span');
+  qty.className = 'qty';
+  qty.textContent = `${c.qty || 1}x`;
+  row.append(qty);
+  if (art) {
+    // A picture that will not load keeps its box, so the names stay in one
+    // column down the list.
     const img = document.createElement('img');
     img.className = 'strip';
-    img.src = `/cardart/thumb/${c.cardId}.webp`;
     img.alt = '';
     img.draggable = false;
-    img.onerror = () => img.classList.add('hidden');
+    img.onerror = () => img.classList.add('missing');
+    if (c.cardId) img.src = `/cardart/thumb/${c.cardId}.webp`;
+    else img.classList.add('missing');
     row.append(img);
   }
   const nm = document.createElement('span');
@@ -144,32 +159,6 @@ function cardRow(c, lanes) {
   return row;
 }
 
-// Lanes: reactions, then actions, then everything else, each with its own
-// header and count; the reactions lane carries the live rule.
-const LANES = [
-  ['reaction', 'Reactions', (c) => c.kind === 'reaction'],
-  ['action', 'Actions', (c) => c.kind === 'action'],
-  ['other', 'Units and gear', (c) => c.kind !== 'reaction' && c.kind !== 'action'],
-];
-function laneEls(list, art) {
-  const out = [];
-  for (const [cls, label, pick] of LANES) {
-    const cards = list.filter(pick);
-    if (!cards.length) continue;
-    const lane = document.createElement('div');
-    lane.className = `lane ${cls}`;
-    const h = document.createElement('div');
-    h.className = 'lh';
-    h.append(
-      Object.assign(document.createElement('span'), { className: 'label', textContent: label }),
-      Object.assign(document.createElement('span'), { className: 'lcnt', textContent: String(cards.filter((c) => !c.played).length) }),
-    );
-    lane.append(h, ...cards.map((c) => cardRow(c, art)));
-    out.push(lane);
-  }
-  return out;
-}
-
 // How many cards a side is holding: the spotter's count when they gave one,
 // otherwise the length of the list they typed.
 export const handTotal = (side) => (side && side.handCount > 0 ? side.handCount : ((side && side.hand) || []).length);
@@ -180,18 +169,71 @@ export const handTotal = (side) => (side && side.handCount > 0 ? side.handCount 
 // graphic have to agree on this, so both ask here.
 export const handUp = (cfg, side) => Boolean(cfg && cfg.hand && handTotal(side) > 0);
 
-// The rows one hand draws, flat or in lanes. Lanes carry an art strip per
-// card where there is room for one: the dual columns' block is a third the
-// height of the rows column's and asks for `art: false`, so the grouping
-// survives in a box that the strips would have cost four cards.
-export function handEls(list, lanes, { art = true } = {}) {
-  return lanes ? laneEls(list, art) : list.map((c) => cardRow(c, false));
+// The rows one hand draws: every card in the order it was typed, copies on
+// one row. `art` puts a strip of the card's art beside each name.
+export function handEls(list, { art = true } = {}) {
+  return groupHand(list).map((c) => cardRow(c, art));
 }
 
 // Everything the rows depend on, in one string: a scene rebuilds only when
 // this changes, so a score bump never restarts an image load.
-export function handKey(list, lanes) {
-  return `${lanes ? 'L' : 'F'}:` + list
+export function handKey(list, art) {
+  return `${art ? 'A' : 'N'}:` + list
     .map((c) => `${c.cardId}|${c.cardName}|${c.energy}|${(c.domains || []).join(',')}|${c.kind}|${c.played ? 1 : 0}`)
     .join(';');
+}
+
+// A hand longer than its box scrolls, so every card gets its time on
+// screen: five seconds at the top, down to the last card, five seconds
+// there, back up, and round again. `view` is the box that clips and `list`
+// the element inside it that moves (its CSS reads --scroll). The position
+// is wall-clock arithmetic on a timer, the seek clock's rule, so a source
+// that was starved of frames lands where it should be, not where it stopped.
+//
+// The overflow is measured rather than counted: the art, the compact step
+// and the clock all change how many rows fit. A graphic that is not drawing
+// measures no overflow, which is the right answer for it, and the reading
+// is taken again every tick, so a hand that comes to fit rests at the top.
+export class HandScroller {
+  constructor(view, list) {
+    this.view = view;
+    this.list = list;
+    this.t0 = Date.now();
+    this.overflow = 0;
+    this.timer = null;
+    this.tick = this.tick.bind(this);
+    this.tick();
+  }
+
+  // The cards changed: back to the top for the full first hold.
+  restart() {
+    clearTimeout(this.timer);
+    this.overflow = 0;
+    this.tick();
+  }
+
+  write(px) {
+    const v = `${px.toFixed(1)}px`;
+    if (this.list.style.getPropertyValue('--scroll') !== v) this.list.style.setProperty('--scroll', v);
+  }
+
+  tick() {
+    // Rects, not offsetHeight: a column share can land on a half pixel, and
+    // a rounded reading would stop the last card that far short.
+    const view = this.view.getBoundingClientRect().height;
+    const overflow = view > 0 ? Math.max(0, Math.ceil(this.list.getBoundingClientRect().height - view)) : 0;
+    if (overflow <= 1) {
+      this.overflow = 0;
+      this.write(0);
+      this.timer = setTimeout(this.tick, 500);
+      return;
+    }
+    // A list that has only now stopped fitting starts its cycle at the top.
+    if (!this.overflow) this.t0 = Date.now();
+    this.overflow = overflow;
+    const travel = animEnabled() ? scrollTravelMs(overflow, view) : 0;
+    const at = scrollAt(Date.now() - this.t0, overflow, travel);
+    this.write(at.offset);
+    this.timer = setTimeout(this.tick, at.moving ? 40 : Math.max(40, Math.min(500, at.next)));
+  }
 }

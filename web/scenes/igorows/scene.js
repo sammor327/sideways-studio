@@ -1,7 +1,7 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, heroSteps } from '../../stage/art.js';
-import { fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal } from '../../stage/exp.js';
+import { fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -9,6 +9,7 @@ const inOut = new SeekClock(root, '--t', 550);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 const shown = { hero: {}, hand: {} };
+const scrollers = { l: new HandScroller($('lhandView'), $('lhand')), r: new HandScroller($('rhandView'), $('rhand')) };
 let lastState = null;
 
 function loadHero(p, side) {
@@ -45,16 +46,21 @@ function renderDots(el, seriesLength, gameWins, animate) {
   });
 }
 
-function renderHand(p, side, on, lanes) {
+// One player's cards in hand, always in the order they were typed; lanes
+// mark each card's type on its row, and a hand too long for its share of
+// the column scrolls through.
+function renderHand(p, side, on, lanes, art) {
   const block = $(`${p}handBlock`);
   const list = side.hand || [];
   const show = on && handTotal(side) > 0;
   block.classList.toggle('hidden', !show);
+  block.classList.toggle('typed', lanes);
   setText($(`${p}handCount`), show ? String(handTotal(side)) : '');
-  const key = handKey(list, lanes);
+  const key = handKey(list, art);
   if (shown.hand[p] === key) return;
   shown.hand[p] = key;
-  $(`${p}hand`).replaceChildren(...handEls(list, lanes));
+  $(`${p}hand`).replaceChildren(...handEls(list, { art }));
+  scrollers[p].restart();
 }
 
 function proLine(side) {
@@ -94,8 +100,9 @@ const params = initStage({
     renderSide('r', m.right, m, animate);
     root.classList.toggle('showdown', Boolean(scene.showdown));
     const lanes = scene.handStyle === 'lanes';
-    renderHand('l', m.left, scene.hand, lanes);
-    renderHand('r', m.right, scene.hand, lanes);
+    const art = scene.handArt !== false;
+    renderHand('l', m.left, scene.hand, lanes, art);
+    renderHand('r', m.right, scene.hand, lanes, art);
 
     const round = [bank.event.roundTitle, m.turn > 0 ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
     setText($('round'), round);

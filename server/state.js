@@ -113,9 +113,10 @@ function defaultBank() {
       // hand claims the bottom of both columns for that player's cards in
       // hand, in the rows overlay's two styles; whatever a column had down
       // there stands down under it, and comes back when the hand goes off.
+      // handArt puts each card's art beside its name, in either style.
       igodual: {
         visible: false, mode: 'legend', track: true, clock: true, eventBlock: true, cardSlot: true,
-        hand: false, handStyle: 'list',
+        hand: false, handStyle: 'list', handArt: true,
       },
       // The 2v2 bars (the Singapore showmatch grammar): a bar per team
       // across the top and bottom edges with a legend / team camera /
@@ -150,8 +151,10 @@ function defaultBank() {
       // card on the right.
       igoportrait: { visible: false, mode: 'legend', topBar: true, handCam: false, cardWell: true },
       // Rows: slim bars top and bottom and a left column with both cameras
-      // and the cards-in-hand list (the Magic grammar).
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', showdown: false },
+      // and the cards-in-hand list (the Magic grammar). handStyle 'list' or
+      // 'lanes', which marks each card's type on its row (neither style sorts
+      // the hand); handArt puts each card's art beside its name.
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false },
       // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
       // stage and player cameras. Exclusive with the score bug in the panel.
       arenabug: { visible: false, clock: true },
@@ -571,9 +574,9 @@ function applyBankPatch(bank, patch) {
       if (p.showRight !== undefined) bank.scenes.pov.showRight = Boolean(p.showRight);
     }
     const IGO_FLAGS = {
-      igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand'],
+      igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand', 'handArt'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
-      igorows: ['hand'],
+      igorows: ['hand', 'handArt'],
     };
     for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {

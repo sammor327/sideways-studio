@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.18.0 (2026-09-17)
+
+- Cards in hand, on the rows and dual-column overlays: the hand keeps the order you typed it in. It is no longer split into Reactions, Actions and Units and gear.
+- Copies of a card share one row with a count on the left: 3x, 2x, 1x. A copy played onto the chain gets its own greyed row.
+- A hand too long for its space scrolls: five seconds at the top, down to the last card, five seconds there, then back up, and round again.
+- New Card art switch beside "Hand as": a strip of each card's art beside its name, in either hand style. It starts on.
+- "Lanes by type" is now "Marked by type": the same list, with reactions marked green and actions blue. On the rows overlay, Showdown open lights the reactions still in hand.
+- Rows overlay: a short hand keeps its full height and a long one gets the rest of the column; two long hands share it evenly.
+
 ## 0.17.0 (2026-09-17)
 
 - Match data: Legend, Battlefield and Champion now read like Featured card, with the card's picture beside its name and an X to clear it. The same goes for the 2v2 teammate lines and the showdown's battlefield.

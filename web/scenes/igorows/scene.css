@@ -68,20 +68,28 @@
 
 /* --- hidden information --- */
 
-/* Both players' blocks flow in one column between the cameras, the divider
-   between them, so a long hand pushes the other block down instead of
-   over it; what cannot fit clips at the bottom rather than overlapping. */
-.infos { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u)); display: flex; flex-direction: column; gap: calc(14 * var(--u)); overflow: hidden; }
-.info { display: flex; flex-direction: column; gap: calc(14 * var(--u)); flex: none; }
-.info.bot { margin-top: auto; }
-.divider { flex: none; height: calc(1 * var(--u)); background: var(--ss-frame, #26303c); }
-.hand { display: flex; flex-direction: column; }
+/* Both players' blocks share the column between the cameras: player 1's
+   from the top with the divider under it, player 2's from the bottom. Each
+   takes the height its hand needs. When the two need more than the column,
+   a short hand keeps its height and a long one gets the rest (two long
+   hands split it), and a hand cut short scrolls through its cards
+   (HandScroller in stage/exp.js). The grid does the sharing: its
+   minmax(0, auto) rows grow evenly until each reaches its content, and the
+   1fr row between them takes whatever is left. */
+.infos { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u)); display: grid; grid-template-rows: minmax(0, auto) auto 1fr minmax(0, auto); overflow: hidden; }
+.info { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.info.top { grid-row: 1; }
+.info.bot { grid-row: 4; }
+.divider { grid-row: 2; height: calc(1 * var(--u)); margin: calc(14 * var(--u)) 0; background: var(--ss-frame, #26303c); }
+.hand { display: flex; flex-direction: column; min-height: 0; }
 .hand.hidden { display: none; }
-.hand .h { display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.06); padding: calc(6 * var(--u)) calc(10 * var(--u)); margin-bottom: calc(4 * var(--u)); }
+.hand .h { flex: none; display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.06); padding: calc(6 * var(--u)) calc(10 * var(--u)); margin-bottom: calc(4 * var(--u)); }
 .hand .h .label { color: var(--ss-text, #fff); }
 .hand .cnt { font: 700 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); }
-.card { display: flex; justify-content: space-between; align-items: center; gap: calc(8 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(15 * var(--u))/1.2 var(--tes-font); color: var(--ss-text, #fff); }
-.card .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hand .cards { min-height: 0; overflow: hidden; }
+.hand .scroll { transform: translateY(calc(-1 * var(--scroll, 0px))); }
+.card { display: flex; align-items: center; gap: calc(8 * var(--u)); padding: calc(6 * var(--u)) calc(10 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(15 * var(--u))/1.2 var(--tes-font); color: var(--ss-text, #fff); }
+.card .nm { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .cost { display: flex; align-items: center; gap: calc(4 * var(--u)); flex: 0 0 auto; }
 .card .e { font: 700 calc(14 * var(--u))/calc(20 * var(--u)) var(--tes-font); width: calc(20 * var(--u)); height: calc(20 * var(--u)); border-radius: 50%; background: var(--ss-ink, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); text-align: center; color: var(--ss-text, #fff); }
 .card .e:empty { display: none; }
@@ -122,21 +130,22 @@
 .round { font: 800 calc(22 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; color: var(--ss-text, #fff); margin-left: calc(16 * var(--u)); padding-left: calc(20 * var(--u)); border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); white-space: nowrap; }
 .round:empty { display: none; }
 
-/* --- hand lanes (handStyle: lanes) and the showdown pill --- */
-.card.with-art { grid-template-columns: calc(56 * var(--u)) 1fr auto; padding: calc(4 * var(--u)) calc(6 * var(--u)) calc(4 * var(--u)) 0; }
-.card { display: grid; grid-template-columns: 1fr auto; }
-.card .strip { width: calc(56 * var(--u)); height: calc(34 * var(--u)); object-fit: cover; object-position: center 22%; border-radius: calc(3 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
-.card .strip.hidden { display: none; }
+/* --- hand rows: the count, the art, the type marks; the showdown pill ---
+   Copies of a card share a row, counted at its left. With art on, each row
+   carries a strip of the card's art beside the name. Lanes (handStyle:
+   lanes) keep the typed order and mark each row instead of grouping:
+   reactions green, actions blue, and an open showdown lights the reactions
+   still in hand. */
+.card .qty { flex: 0 0 auto; min-width: calc(24 * var(--u)); font: 700 calc(15 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-accent-b, #1bef19); }
+.card.with-art { padding-top: calc(4 * var(--u)); padding-bottom: calc(4 * var(--u)); }
+.card .strip { flex: 0 0 auto; width: calc(48 * var(--u)); height: calc(28 * var(--u)); object-fit: cover; object-position: center 22%; border-radius: calc(3 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); background: var(--ss-ink, #10151d); }
+.card .strip.missing { visibility: hidden; }
 .card.played { opacity: 0.35; }
 .card.played .nm::after { content: ' · on the chain'; color: var(--ss-accent-b, #1bef19); font-size: calc(11 * var(--u)); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; }
-.lane { margin-top: calc(8 * var(--u)); }
-.lane .lh { display: flex; justify-content: space-between; align-items: center; padding: calc(5 * var(--u)) calc(10 * var(--u)); background: rgba(255, 255, 255, 0.06); border-left: calc(3 * var(--u)) solid var(--ss-frame, #26303c); }
-.lane.reaction .lh { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.10); }
-.lane.action .lh { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.10); }
-.lane .lh .label { color: var(--ss-text, #fff); }
-.lane .lcnt { font: 700 calc(16 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
-.lane.reaction .lcnt { color: var(--ss-accent-b, #1bef19); }
-.showdown .lane.reaction .lh { box-shadow: 0 0 calc(14 * var(--u)) rgba(27, 239, 25, 0.35); }
+.hand.typed .card { border-left: calc(3 * var(--u)) solid transparent; padding-left: calc(7 * var(--u)); }
+.hand.typed .card.kind-reaction { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.08); }
+.hand.typed .card.kind-action { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.08); }
+.showdown .hand.typed .card.kind-reaction:not(.played) { box-shadow: inset 0 0 calc(14 * var(--u)) rgba(27, 239, 25, 0.35); }
 .sd-pill { display: none; align-items: center; gap: calc(6 * var(--u)); padding: calc(3 * var(--u)) calc(8 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-accent-b, #1bef19); border-radius: calc(999 * var(--u)); font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
 .sd-pill i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); border-radius: 50%; background: var(--ss-accent-b, #1bef19); box-shadow: 0 0 calc(8 * var(--u)) var(--ss-accent-b, #1bef19); }
 .showdown .sd-pill { display: inline-flex; }

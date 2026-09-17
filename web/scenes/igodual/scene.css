@@ -358,8 +358,8 @@
    an empty hand is never an empty column.
 
    Room for eight rows above the clock, eleven without it; a longer hand
-   tightens a step (.compact) rather than clipping, and the header count is
-   the true number either way. */
+   tightens a step (.compact), then scrolls, and the header count is the
+   true number either way. */
 .hand {
   position: absolute;
   left: calc(34 * var(--u));
@@ -397,17 +397,38 @@
   color: var(--side-accent);
 }
 .hand .cards { min-height: 0; overflow: hidden; }
+.hand .scroll { transform: translateY(calc(-1 * var(--scroll, 0px))); }
 .hand .card {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   align-items: center;
-  gap: calc(8 * var(--u));
+  gap: calc(6 * var(--u));
   padding: calc(6 * var(--u)) calc(8 * var(--u));
   border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.08);
   font: 400 calc(15 * var(--u))/1.2 var(--tes-font);
   color: var(--ss-text, #fff);
 }
-.hand .nm { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hand .nm { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Copies share a row, counted at its left; with art on, a strip of the
+   card's art sits between the count and the name. */
+.hand .qty {
+  flex: 0 0 auto;
+  min-width: calc(20 * var(--u));
+  font: 700 calc(14 * var(--u))/1 var(--tes-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--side-accent);
+}
+.hand .card.with-art { padding-top: calc(4 * var(--u)); padding-bottom: calc(4 * var(--u)); }
+.hand .strip {
+  flex: 0 0 auto;
+  width: calc(38 * var(--u));
+  height: calc(24 * var(--u));
+  object-fit: cover;
+  object-position: center 22%;
+  border-radius: calc(3 * var(--u));
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-ink, #12161b);
+}
+.hand .strip.missing { visibility: hidden; }
 .hand .cost { display: flex; align-items: center; gap: calc(4 * var(--u)); flex: 0 0 auto; }
 .hand .e {
   width: calc(20 * var(--u));
@@ -431,30 +452,21 @@
   text-transform: uppercase;
 }
 
-/* Lanes: the same grouping the rows overlay uses, so reactions read green
-   and actions blue on both overlays. No art strip here: the rows overlay
-   has a column to spend on one, this block would pay four cards for it. */
-.hand .lane { margin-top: calc(8 * var(--u)); }
-.hand .lane .lh {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: calc(4 * var(--u)) calc(10 * var(--u));
-  background: rgba(255, 255, 255, 0.06);
-  border-left: calc(3 * var(--u)) solid var(--ss-frame, #26303c);
-}
-.hand .lane.reaction .lh { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.10); }
-.hand .lane.action .lh { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.10); }
-.hand .lane .lcnt { font: 700 calc(14 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #c9d2da); }
-.hand .lane.reaction .lcnt { color: var(--ss-accent-b, #1bef19); }
+/* Lanes: the hand keeps the order it was typed in and each row is marked
+   with its type, the same marks as the rows overlay: reactions green,
+   actions blue. */
+.hand.typed .card { border-left: calc(3 * var(--u)) solid transparent; padding-left: calc(5 * var(--u)); }
+.hand.typed .card.kind-reaction { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.08); }
+.hand.typed .card.kind-action { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.08); }
 
-/* A hand past the row budget: one tighter step, the last thing tried
-   before anything would clip. */
+/* A hand past the row budget: one tighter step first; a hand still too
+   long for the box scrolls (HandScroller in stage/exp.js). */
 .hand.compact .card { padding: calc(2 * var(--u)) calc(8 * var(--u)); font-size: calc(13 * var(--u)); }
+.hand.compact.typed .card { padding-left: calc(5 * var(--u)); }
+.hand.compact .qty { font-size: calc(12 * var(--u)); }
+.hand.compact .strip { width: calc(32 * var(--u)); height: calc(20 * var(--u)); }
 .hand.compact .e { width: calc(16 * var(--u)); height: calc(16 * var(--u)); font-size: calc(11 * var(--u)); line-height: calc(14 * var(--u)); }
 .hand.compact .rune { width: calc(14 * var(--u)); height: calc(14 * var(--u)); }
-.hand.compact .lane { margin-top: calc(4 * var(--u)); }
-.hand.compact .lane .lh { padding: calc(3 * var(--u)) calc(10 * var(--u)); }
 
 /* --- docked featured card (right column, lower third) --- */
 
