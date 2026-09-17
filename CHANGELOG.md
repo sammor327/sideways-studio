@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.18.1 (2026-09-17)
+
+- Cards in hand: a hand can list up to 20 cards. It was 12.
+- Fixed: after about nine cards, the "Add a card" search list opened below the bottom of the panel, where it could not be clicked. It now opens right under the search box however long the hand is.
+- A full hand says so: the search box reads "Hand full: 20 cards" until you remove a card.
+- Hand fan and showdown: a long hand still fits. The fan keeps its width and the cards overlap more, and the showdown's small cards step down a size past 14.
+
 ## 0.18.0 (2026-09-17)
 
 - Cards in hand, on the rows and dual-column overlays: the hand keeps the order you typed it in. It is no longer split into Reactions, Actions and Units and gear.

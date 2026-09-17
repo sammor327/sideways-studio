@@ -331,15 +331,19 @@
       </div>
 
       <div class="field-row" data-field="hand">
-        <span class="row-label" title="The dual-column overlay, the rows overlay and the hand fan show these cards. Search a card and press Enter to add it. Click a card to mark it played onto the chain (it greys on air); click its × to remove it. Reactions and actions light up in the player's colour. The hand count minus the cards listed here is shown as unknown cards.">Cards in hand</span>
-        <div class="cell picker-wrap hand-cell" data-side="left">
-          <input id="lhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card in hand">
-          <ul class="results" id="lhandResults"></ul>
+        <span class="row-label" title="The dual-column overlay, the rows overlay and the hand fan show these cards. Search a card and press Enter to add it, up to 20 cards. Click a card to mark it played onto the chain (it greys on air); click its × to remove it. Reactions and actions light up in the player's colour. The hand count minus the cards listed here is shown as unknown cards.">Cards in hand</span>
+        <div class="cell hand-cell" data-side="left">
+          <div class="picker-wrap">
+            <input id="lhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card in hand">
+            <ul class="results" id="lhandResults"></ul>
+          </div>
           <div class="hand-chips" id="lhandChips"></div>
         </div>
-        <div class="cell picker-wrap hand-cell" data-side="right">
-          <input id="rhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 2 add a card in hand">
-          <ul class="results" id="rhandResults"></ul>
+        <div class="cell hand-cell" data-side="right">
+          <div class="picker-wrap">
+            <input id="rhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 2 add a card in hand">
+            <ul class="results" id="rhandResults"></ul>
+          </div>
           <div class="hand-chips" id="rhandChips"></div>
         </div>
       </div>

@@ -416,7 +416,8 @@ function applySide(side, patch) {
   if (patch.handCount !== undefined) side.handCount = clampInt(patch.handCount, 0, 20);
   if (patch.holds !== undefined) side.holds = cleanStr(patch.holds, 80);
   if (patch.handUnknown !== undefined) side.handUnknown = clampInt(patch.handUnknown, 0, 20);
-  if (Array.isArray(patch.hand)) side.hand = patch.hand.map(cleanHandCard).filter(Boolean).slice(0, 12);
+  // Up to 20 listed cards, the most the hand count itself takes.
+  if (Array.isArray(patch.hand)) side.hand = patch.hand.map(cleanHandCard).filter(Boolean).slice(0, 20);
   if (patch.legend !== undefined) side.legend = cleanStr(patch.legend, 60);
   if (patch.legendSlug !== undefined) {
     const s = cleanStr(patch.legendSlug, 60);

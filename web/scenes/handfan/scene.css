@@ -36,7 +36,7 @@
 .fc {
   position: relative; flex: none;
   width: calc(var(--cw) * var(--u)); height: calc(var(--cw) * 1.4 * var(--u));
-  margin: 0 calc(var(--cw) * -0.115 * var(--u));
+  margin: 0 calc(var(--mx, calc(var(--cw) * -0.115)) * var(--u));
   border-radius: calc(10 * var(--u)); overflow: hidden;
   border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
   box-shadow: 0 calc(10 * var(--u)) calc(30 * var(--u)) rgba(0, 0, 0, 0.6);
@@ -124,7 +124,9 @@
 /* --- opponent's hand, top right --- */
 
 .toplabel { position: absolute; right: calc(40 * var(--u)); top: calc(70 * var(--u)); }
-.topfan { position: absolute; right: calc(40 * var(--u)); top: calc(100 * var(--u)); display: flex; gap: calc(6 * var(--u)); }
+.topfan { position: absolute; right: calc(40 * var(--u)); top: calc(100 * var(--u)); display: flex; }
+/* --tg is the space between cards, negative past twelve so a longer hand overlaps within the same row. */
+.topfan .fc + .fc { margin-left: calc(var(--tg, 6) * var(--u)); }
 .topfan.hidden, .toplabel.hidden { display: none; }
 .topfan .fc { width: calc(96 * var(--u)); height: calc(134 * var(--u)); margin: 0; border-radius: calc(6 * var(--u)); transform: none; }
 .topfan .fc .badge { font-size: calc(8 * var(--u)); padding: calc(2 * var(--u)) calc(4 * var(--u)); left: calc(4 * var(--u)); top: calc(4 * var(--u)); }

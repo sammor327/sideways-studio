@@ -2148,6 +2148,13 @@ function renderHandChips(p, sd) {
   const hand = sd.hand || [];
   const unknown = Math.max(0, (sd.handCount || 0) - hand.length);
   const box = $(`${p}handChips`);
+  // A full hand says so in its search box rather than ignoring the pick.
+  const search = $(`${p}handSearch`);
+  const full = hand.length >= 20;
+  if (search.disabled !== full) {
+    search.disabled = full;
+    search.placeholder = full ? 'Hand full: 20 cards' : 'Add a card\u2026';
+  }
   const sdOpen = Boolean(state && state.preview.match.showdown && state.preview.match.showdown.active);
   const key = `${JSON.stringify(hand)}#${unknown}${sdOpen ? '#open' : ''}`;
   if (box.dataset.key === key) return;
@@ -2222,7 +2229,7 @@ function wireHandSearch(p, side) {
   const add = (card) => {
     if (!state) return;
     const current = state.preview.match[side].hand || [];
-    if (current.length >= 12) return;
+    if (current.length >= 20) return;
     const hand = [...current, { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [], kind: card.kind || '' }];
     // Listing more cards than the count says raises the count, since the
     // cards are in the hand. A count of 0 stays 0: "as many as are listed".

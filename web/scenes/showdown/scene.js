@@ -77,7 +77,10 @@ function renderHand(p, side) {
     th.append(img);
     return th;
   });
-  for (let i = 0; i < Math.min(unknown, 12); i += 1) nodes.push(Object.assign(document.createElement('div'), { className: 'th unknown' }));
+  for (let i = 0; i < Math.min(unknown, 20 - cards.length); i += 1) nodes.push(Object.assign(document.createElement('div'), { className: 'th unknown' }));
+  // Past fourteen (two rows) the thumbs step down a size so a hand of
+  // twenty still takes about two rows' height over the camera.
+  $(`${p}hand`).classList.toggle('many', nodes.length > 14);
   $(`${p}hand`).replaceChildren(...nodes);
 }
 

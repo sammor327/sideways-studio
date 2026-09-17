@@ -37,6 +37,11 @@ describe('experimental overlay fields', () => {
     assert.equal(getState().preview.match.left.hand[0].kind, '');
     assert.equal(getState().preview.match.left.hand[0].played, false);
     assert.equal(getState().preview.match.left.handUnknown, 20);
+    const many = Array.from({ length: 25 }, (_, i) => ({ cardId: 'OGN-076', cardName: `Card ${i + 1}` }));
+    applyUpdate({ match: { left: { hand: many } } });
+    const kept = getState().preview.match.left.hand;
+    assert.equal(kept.length, 20, 'a hand lists up to 20 cards');
+    assert.equal(kept[19].cardName, 'Card 20', 'the first twenty, in order');
   });
 
   it('refuses a country code that is not two or three letters', () => {

@@ -37,7 +37,12 @@ function cardEl(c, small) {
 // Card width shrinks with the hand so twelve cards still fit between the
 // two tags; the fan's rotation and lift come from each card's distance
 // from the middle, and so does its slot offset, which the entrance pulls
-// to zero so the hand arrives as one stacked deck.
+// to zero so the hand arrives as one stacked deck. Past twelve cards (a
+// hand goes to twenty) the cards overlap more instead of spreading, so the
+// fan keeps a twelve-card fan's width (FAN_SPAN) and the turn and lift at
+// its ends stay a twelve-card fan's too.
+const FAN_SPAN = 1220;
+const FAN_EDGE = 5.5;
 function renderFan(cards, unknown) {
   const key = handKey(cards, unknown);
   if (key === fanKey) return;
@@ -55,17 +60,21 @@ function renderFan(cards, unknown) {
   fan.style.setProperty('--cw', String(cw));
   const mid = (n - 1) / 2;
   // One card's slot: its width less the overlap on each side.
-  const pitch = cw * 0.77;
+  const pitch = n > 1 ? Math.min(cw * 0.77, (FAN_SPAN - cw) / (n - 1)) : cw * 0.77;
+  fan.style.setProperty('--mx', ((pitch - cw) / 2).toFixed(2));
+  const spread = mid > FAN_EDGE ? FAN_EDGE / mid : 1;
   fan.replaceChildren(...cards.map((c, i) => {
     const el = cardEl(c, false);
     const d = i - mid;
     el.style.setProperty('--dx', (d * pitch).toFixed(1));
-    el.style.setProperty('--rot', (d * 4).toFixed(2));
-    el.style.setProperty('--lift', (Math.abs(d) * Math.abs(d) * 2.2).toFixed(1));
+    el.style.setProperty('--rot', (d * 4 * spread).toFixed(2));
+    el.style.setProperty('--lift', (d * d * 2.2 * spread * spread).toFixed(1));
     return el;
   }));
 }
 
+const TOP_CARD = 96;
+const TOP_ROW = 12 * TOP_CARD + 11 * 6;
 function renderTop(side, on) {
   const cards = side.hand || [];
   const unknown = Math.max((side.handCount || 0) - cards.length, 0);
@@ -77,11 +86,14 @@ function renderTop(side, on) {
   if (key === topKey) return;
   topKey = key;
   const slots = cards.map((c) => cardEl(c, true));
-  for (let i = 0; i < Math.min(unknown, 12); i += 1) {
+  for (let i = 0; i < Math.min(unknown, 20 - cards.length); i += 1) {
     const u = document.createElement('div');
     u.className = 'fc unknown';
     slots.push(u);
   }
+  // Twelve small cards fill the row; more overlap to stay in that width.
+  const n = slots.length;
+  $('topfan').style.setProperty('--tg', n > 12 ? ((TOP_ROW - TOP_CARD) / (n - 1) - TOP_CARD).toFixed(2) : '6');
   $('topfan').replaceChildren(...slots);
 }
 
