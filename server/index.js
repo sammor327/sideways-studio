@@ -13,7 +13,7 @@ import {
   startAppWindow, windowConnected, windowGone,
 } from './appwindow.js';
 import {
-  runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest, onBeforeHandover,
+  runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest, onBeforeHandover, isNewer,
 } from './updater.js';
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
@@ -664,6 +664,57 @@ const bannerSources = (base) => {
   console.log('');
 };
 
+// Is another copy of this app on the port, and what to do about it. Only
+// one version runs at a time (Sam, 2026-09-16): a newer copy starting up
+// asks an older one to quit and waits for the port, so an update never
+// leaves the old build serving graphics beside the new one; an older copy
+// finding a newer one running bows out; the same version twice is a double
+// launch and the second one stops. Anything else on the port is somebody
+// else's program, and the app says so rather than crashing on EADDRINUSE.
+async function portOwner() {
+  try {
+    const res = await fetch(`http://127.0.0.1:${PORT}/api/app/status`, { cache: 'no-store', signal: AbortSignal.timeout(1500) });
+    if (!res.ok) return { kind: 'other' };
+    const s = await res.json();
+    return typeof s.version === 'string' && Object.hasOwn(s, 'dataDir') ? { kind: 'sideways', version: s.version } : { kind: 'other' };
+  } catch (err) {
+    // Refused means nobody is listening; anything else (a hang, a non-HTTP
+    // service) is something to steer clear of.
+    const code = err && (err.cause?.code || err.code || err.name);
+    return code === 'ECONNREFUSED' ? { kind: 'free' } : { kind: 'other' };
+  }
+}
+
+async function claimPort() {
+  const owner = await portOwner();
+  if (owner.kind === 'free') return true;
+  if (owner.kind === 'other') {
+    console.error(`  Port ${PORT} is in use by another program. Close it, or start with --port=<number>.`);
+    setTimeout(() => process.exit(1), 300).unref();
+    return false;
+  }
+  if (isNewer(owner.version, APP_VERSION)) {
+    console.log(`  Sideways Studio ${owner.version} is already running on localhost:${PORT}, and it is newer than this ${APP_VERSION}. Use that one.`);
+    setTimeout(() => process.exit(0), 300).unref();
+    return false;
+  }
+  if (owner.version === APP_VERSION) {
+    console.log(`  Sideways Studio ${owner.version} is already running on localhost:${PORT}. Use that one; this second copy is stopping.`);
+    setTimeout(() => process.exit(0), 300).unref();
+    return false;
+  }
+  console.log(`  Sideways Studio ${owner.version} is still running on localhost:${PORT}; asking it to stop so ${APP_VERSION} can take over.`);
+  await fetch(`http://127.0.0.1:${PORT}/api/app/quit`, { method: 'POST', signal: AbortSignal.timeout(1500) }).catch(() => {});
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 400));
+    if ((await portOwner()).kind === 'free') return true;
+  }
+  console.error(`  The older copy did not stop. Close it (or end SidewaysStudio.exe in Task Manager) and start again.`);
+  setTimeout(() => process.exit(1), 300).unref();
+  return false;
+}
+
 // Everything that has to happen before the first request, then listen. Kept
 // as one function rather than top-level await so the same source compiles to
 // the CommonJS bundle the packaged exe is built from.
@@ -700,6 +751,20 @@ async function start() {
       if (m && BG_SLOTS.includes(m[1])) bgFiles.set(m[1], f);
     }
   } catch { /* no theme dir yet */ }
+
+  // One copy at a time. A second launch, or a new version starting while the
+  // old one is still shutting down, must not end up as two apps fighting
+  // over one port (or crashing on it).
+  if (!(await claimPort())) return;
+
+  server.on('error', (err) => {
+    if (err && err.code === 'EADDRINUSE') {
+      console.error(`  Port ${PORT} is in use by another program. Close it, or start with --port=<number>.`);
+    } else {
+      console.error(`  The server could not start: ${err && err.message}`);
+    }
+    setTimeout(() => process.exit(1), 300).unref();
+  });
 
   server.listen(PORT, '127.0.0.1', async () => {
     const base = `http://localhost:${PORT}`;

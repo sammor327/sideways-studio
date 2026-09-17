@@ -6,6 +6,11 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.14.1 (2026-09-16)
+
+- Updating is a clean handover: the new version waits for the old one to shut down before it takes its place, and if the old one lingers it is closed. Only one copy of the app runs at a time; a second launch says so and stops, and an older build started beside a newer one stops too.
+- The control panel reloads itself once the new version is up, so the "Update ready, restarting" bar goes away on its own instead of sitting there until the next check.
+
 ## 0.14.0 (2026-09-16)
 
 - The app window has a "What's new" card with the notes for every release, the version you are on first.

@@ -34,7 +34,13 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **Patch notes in the launcher, 2026-09-16, 0.14.0**:
+Current status: **One copy at a time and the clean handover, 2026-09-16,
+0.14.1 in the tree**: the swap script waits for the old process to be gone
+(then ends it), a starting copy claims the port (asks an older copy to quit,
+bows out to a newer one, stops on a double launch, names a foreign
+program), and the panel reloads itself when the new build answers so the
+update bar clears (LOOP.md 2026-09-16d). Before that: **Patch notes in the
+launcher, 2026-09-16, 0.14.0**:
 `CHANGELOG.md` is the one source of release notes; the app window shows
 it under "What's new" (running version first, the rest folded), the
 release script publishes the version's section as the GitHub notes and

@@ -1777,12 +1777,25 @@ function renderUpdate(u) {
   $('updateSkip').classList.toggle('hidden', busy || u.required || u.phase === 'error');
 }
 
+// The version this panel was served by. When the app comes back after an
+// update it is a different build, and this page's script is the old one, so
+// the panel reloads itself rather than run stale code against a new server
+// with the "Update ready, restarting" bar still up (Sam, 2026-09-16).
+let servedVersion = null;
+
 async function pollUpdate(interval = 300000) {
   try {
-    renderUpdate(await (await fetch('/api/update/status', { cache: 'no-store' })).json());
+    const u = await (await fetch('/api/update/status', { cache: 'no-store' })).json();
+    if (servedVersion === null) servedVersion = u.currentVersion;
+    else if (u.currentVersion !== servedVersion) { location.reload(); return; }
+    renderUpdate(u);
   } catch { /* the app may be restarting into the new version */ }
   clearTimeout(updatePollTimer);
-  const fast = updateInfo && ['downloading', 'verifying', 'checking'].includes(updateInfo.phase);
+  // Fast while a download runs, and stays fast through the restart ('ready'
+  // is the last phase the old build reports before it exits), so the new
+  // build is noticed within a second of coming up rather than at the next
+  // five-minute poll.
+  const fast = updateInfo && ['downloading', 'verifying', 'ready', 'checking'].includes(updateInfo.phase);
   updatePollTimer = setTimeout(() => pollUpdate(interval), fast ? 500 : interval);
 }
 

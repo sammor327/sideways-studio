@@ -214,6 +214,40 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-16d (out of band: one copy at a time, the clean handover, 0.14.1)
+
+Sam: when a patch installs, shut the previous version down, make sure
+only one version of the app runs at a time, and re-hide the update bar
+once the install is done. Three guards, two of them new.
+
+**The swap script waits.** `swapAndRestart` used to sleep two seconds and
+swap. `swapScript()` (exported, tested) now polls `tasklist` for the old
+process id before it moves anything, up to about 40 seconds, then
+`taskkill /t /f` and a beat more, so the new exe never starts while the old
+one still holds the port and the window.
+
+**The new copy claims the port** (`claimPort` in server/index.js, before
+`listen`): it asks `/api/app/status` on the port. Refused means free.
+Another Sideways Studio that is older gets `/api/app/quit` and up to 20
+seconds to let go (the update path); a newer one wins and this copy stops
+with a line saying so; the same version is a double launch and the second
+copy stops; anything else on the port is somebody else's program, named
+plainly, and `server.on('error')` catches EADDRINUSE the same way instead
+of crashing. Verified from source on 4718: a second 0.14.1 stopped itself
+with "already running"; a copy posing as 0.99.0 asked 0.14.1 to quit, took
+the port, and answered status as itself.
+
+**The panel reloads itself.** Its update poll now stays fast through the
+`ready` phase (it used to fall back to the five-minute interval the moment
+the download finished, which is why "Update ready, restarting" sat there),
+and the first status answer from a different `currentVersion` reloads the
+page, so the panel runs the new build's script against the new server and
+the bar goes with the old page. The app window needs nothing: the new exe
+opens a fresh window and the old one is killed on handover.
+
+Not exercised end to end here: the real exe-to-exe swap (needs a published
+release to install from). 116 tests.
+
 ### 2026-09-16c (out of band: patch notes in the launcher, 0.14.0)
 
 Sam: "Can we create a patch notes portion on the launcher and write

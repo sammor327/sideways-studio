@@ -70,7 +70,7 @@ export function updateStatus() {
 
 // "0.10.2" > "0.9.9". Anything unparseable sorts as older so a malformed
 // manifest can never trigger an update.
-function isNewer(candidate, current) {
+export function isNewer(candidate, current) {
   const parse = (v) => String(v).trim().replace(/^v/, '').split('.').map((n) => Number.parseInt(n, 10));
   const a = parse(candidate);
   const b = parse(current);
@@ -217,18 +217,40 @@ export async function downloadUpdate(manifest) {
 // renamed, so the handover is: rename the running file out of the way, move
 // the new one into its place, start it. A tiny batch file does that after we
 // have exited, then deletes itself.
-export async function swapAndRestart() {
-  const script = path.join(APP_ROOT, 'sideways-update.cmd');
-  const cmd = [
+//
+// "After we have exited" is checked, not assumed (2026-09-16): the script
+// waits for this process id to be gone before it swaps anything, up to
+// about 40 seconds, and then ends it by force, so the new copy never starts
+// while the old one still holds the port and the window. The new copy also
+// checks for a running copy on its own (server/index.js claimPort), so the
+// two guards back each other up.
+export function swapScript({ exe = EXE, newExe = NEW_EXE, oldExe = OLD_EXE, pid = process.pid } = {}) {
+  return [
     '@echo off',
-    'ping -n 3 127.0.0.1 >nul',
-    `move /y "${EXE}" "${OLD_EXE}" >nul 2>&1`,
-    `move /y "${NEW_EXE}" "${EXE}" >nul 2>&1`,
-    `if not exist "${EXE}" move /y "${OLD_EXE}" "${EXE}" >nul 2>&1`,
-    `start "" "${EXE}"`,
+    'set /a tries=0',
+    ':wait',
+    `tasklist /fi "PID eq ${pid}" 2>nul | find "${pid}" >nul`,
+    'if errorlevel 1 goto swap',
+    'set /a tries+=1',
+    'if %tries% geq 40 goto force',
+    'ping -n 2 127.0.0.1 >nul',
+    'goto wait',
+    ':force',
+    `taskkill /pid ${pid} /t /f >nul 2>&1`,
+    'ping -n 2 127.0.0.1 >nul',
+    ':swap',
+    `move /y "${exe}" "${oldExe}" >nul 2>&1`,
+    `move /y "${newExe}" "${exe}" >nul 2>&1`,
+    `if not exist "${exe}" move /y "${oldExe}" "${exe}" >nul 2>&1`,
+    `start "" "${exe}"`,
     '(goto) 2>nul & del "%~f0"',
     '',
   ].join('\r\n');
+}
+
+export async function swapAndRestart() {
+  const script = path.join(APP_ROOT, 'sideways-update.cmd');
+  const cmd = swapScript();
   await writeFile(script, cmd);
   spawn('cmd.exe', ['/c', script], {
     cwd: APP_ROOT,
