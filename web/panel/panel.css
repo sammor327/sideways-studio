@@ -969,3 +969,22 @@ button.row-focus:disabled { opacity: 0.4; }
 .deck-focus { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .deck-focus label.inline { flex: 1 1 200px; min-width: 0; }
 .deck-focus select { flex: 1 1 auto; min-width: 0; max-width: 100%; }
+
+/* The highlight picker: a button carrying the picked card's thumbnail and
+   name, over the results list the card searches use, so every card in the
+   list shows its art. */
+.deck-focus-pick { flex: 1 1 200px; min-width: 0; position: relative; }
+.deck-focus-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px 4px 5px;
+  text-align: left;
+  font-size: 13px;
+}
+.deck-focus-btn span:first-of-type { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deck-focus-btn .caret { flex: 0 0 auto; color: #8b98a5; font-size: 11px; }
+.deck-focus-pick .results { min-width: 280px; max-height: 320px; overflow-y: auto; }
+.deck-focus-pick .results li.current { background: #1a2027; box-shadow: inset 3px 0 0 var(--tes-green); }
+button.focus-toggle.on { color: #06110a; background: var(--tes-grad); border-color: transparent; }

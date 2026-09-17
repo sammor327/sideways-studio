@@ -147,11 +147,13 @@ CLEAR PREVIEW takes every graphic out of preview (data kept) so the next
 TAKE airs a clean frame.
 
 Two graphics take a highlight: the card row (one to four cards side by
-side; the star beside a slot grows and lifts that card while the others
-shrink and dim) and the decklist (Highlight a card on the Decklist card
-lifts one card out of the plate, larger and glowing, with the rest blurred
-and darkened; ‹ › step through the list). Both are cues like the clock:
-they act on air at once, no TAKE needed.
+side over the look's ground, or over nothing with Background off; the star
+beside a slot grows and lifts that card while the others shrink and dim)
+and the decklist (Highlight a card on the Decklist card lifts one card out
+of the plate, larger and glowing, with the rest blurred and darkened; the
+picker shows each card's art, ‹ › step through the list, and Highlight
+on/off flicks it away and back with the card kept). Both are cues like the
+clock: they act on air at once, no TAKE needed.
 
 ## Looks
 

@@ -80,6 +80,33 @@ describe('decklist highlight', () => {
     assert.equal(getState().preview.scenes.decklist.focus, '');
     assert.equal(getState().program.scenes.decklist.focus, 'OGN-002', 'a preview edit leaves program alone');
   });
+
+  it('flicks off and back on with the card kept', () => {
+    applyUpdate({ action: 'focus', scene: 'decklist', cardId: 'OGN-002' });
+    assert.equal(getState().program.scenes.decklist.focusOn, true);
+    applyUpdate({ action: 'focus', scene: 'decklist', on: false });
+    let d = getState().program.scenes.decklist;
+    assert.equal(d.focusOn, false);
+    assert.equal(d.focus, 'OGN-002', 'off keeps the card');
+    applyUpdate({ action: 'focus', scene: 'decklist', on: true });
+    assert.equal(getState().preview.scenes.decklist.focusOn, true);
+    // Picking a card while off switches the highlight back on.
+    applyUpdate({ action: 'focus', scene: 'decklist', on: false });
+    applyUpdate({ action: 'focus', scene: 'decklist', cardId: 'OGN-003' });
+    d = getState().program.scenes.decklist;
+    assert.equal(d.focusOn, true);
+    assert.equal(d.focus, 'OGN-003');
+  });
+});
+
+describe('card row background', () => {
+  it('is on by design and switches off as a bank field', () => {
+    assert.equal(getState().preview.scenes.cardrow.background, true);
+    applyUpdate({ scenes: { cardrow: { background: false } } });
+    assert.equal(getState().preview.scenes.cardrow.background, false);
+    applyUpdate({ scenes: { cardrow: { background: 'yes' } } });
+    assert.equal(getState().preview.scenes.cardrow.background, true);
+  });
 });
 
 describe('the two clears', () => {

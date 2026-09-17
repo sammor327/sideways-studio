@@ -8,6 +8,8 @@ here. Write the section before running `npm run release`.
 
 ## 0.14.1 (2026-09-16)
 
+- Card row: no more name plates under the cards, and a background behind them (the arrow shards in your accent colours, dimmed; change or switch it off under Graphic features and the Look card).
+- Decklist highlight: "Highlight on/off" flicks the highlight away and back without losing the card, and the card picker shows each card's art beside its name.
 - Updating is a clean handover: the new version waits for the old one to shut down before it takes its place, and if the old one lingers it is closed. Only one copy of the app runs at a time; a second launch says so and stops, and an older build started beside a newer one stops too.
 - The control panel reloads itself once the new version is up, so the "Update ready, restarting" bar goes away on its own instead of sitting there until the next check.
 

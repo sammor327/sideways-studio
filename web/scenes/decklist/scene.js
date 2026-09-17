@@ -539,7 +539,9 @@ function runStateMode() {
       target = content;
       // The highlight is a cue in both banks; a change while the plate is up
       // plays out and in, and any path that (re)shows the plate applies it.
-      const wantFocus = typeof sc.focus === 'string' ? sc.focus : '';
+      // focusOn off keeps the card but shows the plain plate, so the panel
+      // can flick the highlight without losing its place.
+      const wantFocus = typeof sc.focus === 'string' && sc.focusOn !== false ? sc.focus : '';
       const focusChanged = wantFocus !== focusId;
       focusId = wantFocus;
       if (focusChanged && !first && visibleNow && !changed) syncFocus(true);

@@ -214,6 +214,39 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-16e (out of band: card row plates off and a ground, highlight toggle and art picker; still 0.14.1)
+
+Sam: drop the card name under each card in the row ("the card speaks
+plenty well for itself"), give the row a background graphic, make the deck
+highlight a toggle rather than an off switch, and show card art in the
+picker.
+
+**Card row.** Name plates gone, the scene rewritten without them (the
+fallback panel is now the one place a name ever prints, for missing art).
+The frame carries the shared ground layers (stage/ground.css) painted by
+the look, like the decklist's backdrop, behind `scenes.cardrow.background`
+(bank field, default on; a Background switch under Graphic features; the
+row is tagged Full frame). Designed ground: the arrow shards in the
+accents over near-black, grain 45, dim 62. Tried the TES plate photo first
+and rejected it: its glowing arrow sits top left where the decklist's
+legend covers it, and the row leaves that corner bare; tried the shards
+undimmed and they fought the art. Card widths grew a step (560 / 500 / 450
+/ 390) with the plates gone.
+
+**Decklist highlight.** `scenes.decklist.focusOn` (default true) beside
+`focus`: the focus cue with `on: false|true` flicks it with the card
+kept, a card id switches it back on. The scene shows the plain plate when
+off. Panel: the select is gone; a picker button carries the picked card's
+thumbnail and name over the results list every card search uses, so each
+row has its art (a native select cannot draw an image in an option), the
+current card marked; "Highlight on/off" replaces Off and lights green
+while a highlight is up.
+
+Verified from source (4718): four cards over the dimmed shards with the
+star highlight, the picker's 15 rows each with a thumbnail and the current
+card marked, the toggle posting `focusOn: false` with the card kept. 118
+tests.
+
 ### 2026-09-16d (out of band: one copy at a time, the clean handover, 0.14.1)
 
 Sam: when a patch installs, shut the previous version down, make sure

@@ -708,9 +708,9 @@
           <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
         </div>
         <div class="scene-row" data-scene="cardrow">
-          <div class="scene-name">Card row <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardrowOnAir">ON AIR</button></div>
+          <div class="scene-name">Card row <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="cardrowOnAir">ON AIR</button></div>
           <button id="toggleCardrow" class="scene-toggle" disabled>OFF</button>
-          <p class="scene-note" id="cardrowNote">One to four cards side by side, each over its name plate. Pick them under Match data &rsaquo; Card row; the star there highlights one on air.</p>
+          <p class="scene-note" id="cardrowNote">One to four cards side by side over the look's ground (an overlay with Background off). Pick them under Match data &rsaquo; Card row; the star there highlights one on air.</p>
         </div>
         <div class="scene-row" data-scene="decklist">
           <div class="scene-name">Decklist <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="deckOnAir">ON AIR</button></div>
@@ -764,7 +764,10 @@
     <p class="hint" id="featuresHint">Put a graphic in preview to see its options here.</p>
     <div class="feature-group hidden" data-scene="cardrow">
       <h3>Card row</h3>
-      <div class="scene-options"><span class="hint">The cards and the highlight star are under Match data &rsaquo; Card row. The highlight is a cue: it acts on air at once.</span></div>
+      <div class="scene-options">
+        <label class="inline" title="On: the look's ground paints behind the cards (the TES plate photo by design; change it under Look). Off: only the cards paint, for keying over the feed."><input type="checkbox" id="cardrowBackground" checked> Background</label>
+        <span class="hint">The cards and the highlight star are under Match data &rsaquo; Card row. The highlight is a cue: it acts on air at once.</span>
+      </div>
     </div>
     <div class="feature-group hidden" data-scene="decklist">
       <h3>Decklist</h3>
@@ -1006,12 +1009,18 @@
       <label class="inline"><input type="checkbox" id="deckSideboard" checked> Sideboard rack</label>
     </div>
     <div class="deck-focus" id="deckFocusRow">
-      <label class="inline" title="Lifts one card out of the plate, larger and glowing, and blurs and darkens the rest. A cue: it acts on air at once, no TAKE needed.">Highlight a card
-        <select id="deckFocus" aria-label="Highlight a card on the decklist"><option value="">None</option></select>
-      </label>
+      <span class="url-label" title="Lifts one card out of the plate, larger and glowing, and blurs and darkens the rest. A cue: it acts on air at once, no TAKE needed.">Highlight a card</span>
+      <div class="picker-wrap deck-focus-pick">
+        <button type="button" class="deck-focus-btn" id="deckFocusBtn" aria-haspopup="listbox" aria-expanded="false" title="Pick the card to highlight">
+          <img id="deckFocusThumb" class="card-thumb hidden" alt="">
+          <span id="deckFocusName">None</span>
+          <span class="caret">&#9662;</span>
+        </button>
+        <ul class="results" id="deckFocusList" role="listbox"></ul>
+      </div>
       <button type="button" class="clear-mini" id="deckFocusPrev" title="Highlight the previous card in the list">&lsaquo;</button>
       <button type="button" class="clear-mini" id="deckFocusNext" title="Highlight the next card in the list">&rsaquo;</button>
-      <button type="button" class="clear-mini" id="deckFocusOff" title="Back to the plain plate">Off</button>
+      <button type="button" class="clear-mini focus-toggle" id="deckFocusToggle" title="Switch the highlight off and back on without losing the card">Highlight on</button>
     </div>
     <details class="deck-paste">
       <summary>Paste a list straight into preview</summary>

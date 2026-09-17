@@ -233,7 +233,7 @@ function renderScenes(s) {
   if (document.activeElement !== $('deckSideboard')) $('deckSideboard').checked = dk.showSideboard;
   if (document.activeElement !== $('deckBackground')) $('deckBackground').checked = dk.background !== false;
   renderDeckLibrary();
-  if (document.activeElement !== $('deckFocus')) $('deckFocus').value = currentDeckFocus();
+  renderDeckFocus();
 
   const cp = s.preview.scenes.cardpopup;
   const cpAir = s.program.scenes.cardpopup.visible;
@@ -782,6 +782,9 @@ $('toggleCardrow').addEventListener('click', () => {
   const cr = state.preview.scenes.cardrow;
   if (cr.cards.some((c) => c.cardId)) post({ scenes: { cardrow: { visible: !cr.visible } } });
 });
+$('cardrowBackground').addEventListener('change', () => {
+  post({ scenes: { cardrow: { background: $('cardrowBackground').checked } } });
+});
 
 // The IGOs and the POV overlay all live on the screen edges and would draw
 // over each other, so switching one on switches the others off in preview.
@@ -1296,6 +1299,7 @@ function renderCardrow(s) {
   btn.classList.toggle('on', cr.visible);
   btn.disabled = !any;
   $('cardrowOnAir').classList.toggle('hidden', !s.program.scenes.cardrow.visible);
+  if (document.activeElement !== $('cardrowBackground')) $('cardrowBackground').checked = cr.background !== false;
   cr.cards.forEach((c, i) => {
     setIfIdle(`rowCard${i}`, c.cardName || '');
     const thumb = $(`rowThumb${i}`);
@@ -1611,7 +1615,7 @@ function focusableCards(d) {
   const add = (card, group) => {
     if (!card || !card.cardId || seen.has(card.cardId)) return;
     seen.add(card.cardId);
-    out.push({ cardId: card.cardId, label: `${group}: ${card.name}` });
+    out.push({ cardId: card.cardId, name: card.name, group, label: `${group}: ${card.name}` });
   };
   add(d.legend, 'Legend');
   for (const c of d.main) add(c, 'Main');
@@ -1626,20 +1630,89 @@ function currentDeckFocus() {
   return deckCards.some((c) => c.cardId === focus) ? focus : '';
 }
 
-function renderDeckFocus() {
-  const sel = $('deckFocus');
-  sel.replaceChildren(
-    Object.assign(document.createElement('option'), { value: '', textContent: 'None' }),
-    ...deckCards.map((c) => Object.assign(document.createElement('option'), { value: c.cardId, textContent: c.label })),
+// The picker is a button (thumbnail + name) over the same results list the
+// card searches use, so each card shows its art beside its name; a native
+// select cannot draw an image in an option (Sam, 2026-09-16).
+const focusList = $('deckFocusList');
+const closeFocusList = () => {
+  focusList.classList.remove('open');
+  focusList.replaceChildren();
+  $('deckFocusBtn').setAttribute('aria-expanded', 'false');
+};
+function openFocusList() {
+  const current = currentDeckFocus();
+  const item = (cardId, name, sub, icon) => {
+    const li = document.createElement('li');
+    if (icon) {
+      const img = document.createElement('img');
+      img.src = icon;
+      img.alt = '';
+      img.onerror = () => img.classList.add('hidden');
+      li.append(img);
+    }
+    const meta = document.createElement('div');
+    const strong = document.createElement('strong');
+    strong.textContent = name;
+    meta.append(strong);
+    if (sub) {
+      const span = document.createElement('span');
+      span.textContent = sub;
+      meta.append(span);
+    }
+    li.append(meta);
+    li.setAttribute('role', 'option');
+    li.setAttribute('aria-selected', String(cardId === current));
+    if (cardId === current) li.classList.add('current');
+    li.addEventListener('mousedown', (e) => { e.preventDefault(); deckFocusTo(cardId); closeFocusList(); });
+    return li;
+  };
+  focusList.replaceChildren(
+    item('', 'None', 'the plain plate', null),
+    ...deckCards.map((c) => item(c.cardId, c.name, c.group, `/cardart/thumb/${c.cardId}.webp`)),
   );
-  sel.value = currentDeckFocus();
+  placeList($('deckFocusBtn'), focusList);
+  focusList.classList.add('open');
+  $('deckFocusBtn').setAttribute('aria-expanded', 'true');
+}
+
+function renderDeckFocus() {
+  const current = currentDeckFocus();
+  const card = deckCards.find((c) => c.cardId === current) || null;
+  $('deckFocusName').textContent = card ? card.name : 'None';
+  const thumb = $('deckFocusThumb');
+  if (card) {
+    const src = `/cardart/thumb/${card.cardId}.webp`;
+    if (thumb.getAttribute('src') !== src) {
+      thumb.onerror = () => thumb.classList.add('hidden');
+      thumb.onload = () => thumb.classList.remove('hidden');
+      thumb.src = src;
+    }
+  } else {
+    thumb.classList.add('hidden');
+    thumb.removeAttribute('src');
+  }
+  const on = state ? state.preview.scenes.decklist.focusOn !== false : true;
+  const toggle = $('deckFocusToggle');
+  toggle.textContent = on ? 'Highlight on' : 'Highlight off';
+  toggle.classList.toggle('on', on && Boolean(card));
   const none = !deckCards.length;
-  for (const id of ['deckFocus', 'deckFocusPrev', 'deckFocusNext', 'deckFocusOff']) $(id).disabled = none;
+  for (const id of ['deckFocusBtn', 'deckFocusPrev', 'deckFocusNext']) $(id).disabled = none;
+  toggle.disabled = none || !card;
+  if (focusList.classList.contains('open')) openFocusList();
 }
 
 const deckFocusTo = (cardId) => post({ action: 'focus', scene: 'decklist', cardId });
-$('deckFocus').addEventListener('change', () => deckFocusTo($('deckFocus').value));
-$('deckFocusOff').addEventListener('click', () => deckFocusTo(''));
+$('deckFocusBtn').addEventListener('click', () => {
+  if (focusList.classList.contains('open')) closeFocusList(); else openFocusList();
+});
+$('deckFocusBtn').addEventListener('keydown', (e) => { if (e.key === 'Escape') closeFocusList(); });
+$('deckFocusBtn').addEventListener('blur', () => setTimeout(closeFocusList, 150));
+// The toggle flicks the highlight off and back on with the card kept: the
+// plain plate while the casters talk, the same card back with one click.
+$('deckFocusToggle').addEventListener('click', () => {
+  if (!state) return;
+  post({ action: 'focus', scene: 'decklist', on: state.preview.scenes.decklist.focusOn === false });
+});
 function stepDeckFocus(dir) {
   if (!deckCards.length) return;
   const at = deckCards.findIndex((c) => c.cardId === currentDeckFocus());

@@ -1,12 +1,30 @@
-/* Card row: up to four cards centred on the frame, each over a name plate
-   in the card popup's grammar (same box, same plate, same trim), so the two
-   read as one family when a show cuts between them.
+/* Card row: up to four cards centred on the frame, over the look's ground
+   when the background is on (the TES plate photo by design, the same full
+   bleed the decklist uses) or over nothing, for keying. No name plates: the
+   card is its own caption (Sam, 2026-09-16).
 
    Motion contract: --t is the row's in/out seek clock (0 = off-stage, 1 =
    settled). Each slot carries --big (this card is the highlight) and
    --small (another card is), both 0 to 1 on their own seek clocks. Every
    read is var(--x, default): a clock that never ran renders the settled
    row. Scale and lift are plain multiplies, no CSS trig or min/max. */
+
+.rowframe {
+  position: absolute;
+  inset: 0;
+  opacity: var(--t, 1);
+}
+.rowframe.off { display: none; }
+/* The flat fill under the backdrop means a failed image is a dark frame,
+   never a hole; with the background off nothing but the cards paint. */
+.rowframe.with-bg { background: var(--ss-ink, #0d0d0d); }
+.backdrop.hidden { display: none; }
+.backdrop .g-shards, .backdrop .g-shade, .backdrop .g-glint {
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: right center;
+  mask-position: right center;
+}
 
 .row {
   position: absolute;
@@ -15,26 +33,19 @@
   top: 50%;
   display: flex;
   justify-content: center;
-  /* Centred, so a landscape battlefield sits level with the portraits
-     rather than hanging from the top of the row. */
+  /* Centred, so a landscape battlefield sits level with the portraits. */
   align-items: center;
-  gap: calc(44 * var(--u));
-  opacity: var(--t, 1);
+  gap: calc(48 * var(--u));
   transform: translateY(calc(-50% + (1 - var(--t, 1)) * 60 * var(--u)));
   perspective: calc(1600 * var(--u));
 }
-.row.off { display: none; }
 
-/* A slot is a card and its plate. The highlight scales the slot in place
-   around its centre and lifts it; the others shrink a little and fade, so
-   the highlighted card reads as the only one in focus. */
+/* A slot is one card. The highlight scales it in place around its centre
+   and lifts it; the others shrink a little and fade, so the highlighted card
+   reads as the only one in focus. */
 .slot {
   flex: none;
   width: calc(var(--w) * var(--u));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(16 * var(--u));
   transform-origin: 50% 50%;
   transform:
     translateY(calc(var(--big, 0) * -22 * var(--u)))
@@ -46,12 +57,13 @@
   position: relative;
   width: calc(var(--w) * var(--u));
   height: calc(var(--h) * var(--u));
+  border-radius: calc(var(--w) * 0.045 * var(--u));
+  overflow: hidden;
   background: var(--ss-ink, var(--tes-ink));
-  border-bottom: calc(5 * var(--u)) solid transparent;
-  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
   box-shadow:
-    0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.55),
-    0 0 calc(var(--big, 0) * 46 * var(--u)) rgba(255, 255, 255, calc(var(--big, 0) * 0.32));
+    0 calc(18 * var(--u)) calc(44 * var(--u)) rgba(0, 0, 0, 0.6),
+    0 0 calc(var(--big, 0) * 46 * var(--u)) rgba(255, 255, 255, calc(var(--big, 0) * 0.32)),
+    0 0 0 calc(var(--big, 0) * 3 * var(--u)) var(--tes-green, #1bef19);
 }
 /* Battlefields are landscape cards stored portrait: the slot swaps the box
    to landscape and rotates the art (onload check, never per-card). */
@@ -75,7 +87,8 @@
 .card-box > img.hidden { display: none; }
 
 /* End of the image fallback chain: a named placeholder panel, never a broken
-   img glyph on program output. */
+   img glyph on program output. With no plate under the card, this is the
+   one place a card's name ever prints. */
 .card-fallback {
   position: absolute;
   inset: 0;
@@ -91,43 +104,3 @@
   letter-spacing: calc(1.5 * var(--u));
 }
 .card-fallback.on { display: flex; }
-
-/* The name plate takes the look's ground like the popup's. Type scales
-   with the card so a four-card row keeps its plates in proportion. */
-.name-plate {
-  background: var(--ss-bg-color, var(--tes-plate));
-  color: var(--ss-text, #fff);
-  min-width: calc(var(--w) * 0.7 * var(--u));
-  max-width: calc(var(--w) * 1.22 * var(--u));
-  padding: calc(var(--w) * 0.024 * var(--u)) calc(var(--w) * 0.06 * var(--u));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(3 * var(--u));
-  border-bottom: calc(4 * var(--u)) solid transparent;
-  border-image: var(--ss-trim-grad, var(--tes-grad)) 1;
-}
-html[data-bg="gradient"] .name-plate {
-  background: linear-gradient(var(--ss-bg-angle, 160deg), var(--ss-bg-color), var(--ss-bg-color2));
-}
-html[data-bg="image"] .name-plate, html[data-bg="plate"] .name-plate {
-  background: var(--ss-bg-image) center / cover no-repeat, var(--ss-bg-color);
-}
-html[data-bg="transparent"] .name-plate { background: transparent; }
-.card-name {
-  font: italic 700 calc(var(--w) * 0.058 * var(--u))/1.15 var(--tes-font);
-  text-transform: uppercase;
-  letter-spacing: calc(1 * var(--u));
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  max-width: calc(var(--w) * 1.1 * var(--u));
-  text-overflow: ellipsis;
-}
-.card-type {
-  font: 500 calc(var(--w) * 0.032 * var(--u))/1 var(--tes-font);
-  color: var(--ss-text-muted, #8b98a5);
-  text-transform: uppercase;
-  letter-spacing: calc(2 * var(--u));
-}
-.card-type:empty { display: none; }

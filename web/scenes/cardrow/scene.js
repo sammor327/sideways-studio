@@ -1,10 +1,11 @@
-// Card row: one to four cards side by side, each over its name plate, for
-// "here are the three cards that matter" moments. A highlighted slot grows
-// and lifts while the others shrink and dim, driven by the focus cue so an
-// operator can step through the row on air without a TAKE per card.
+// Card row: one to four cards side by side, for "here are the three cards
+// that matter" moments, over the look's ground when its background is on. A
+// highlighted slot grows and lifts while the others shrink and dim, driven
+// by the focus cue so an operator can step through the row on air without a
+// TAKE per card. No name plates: the card is its own caption.
 //
-// Motion contract (SPEC): --t is the in/out seek clock on the row; each slot
-// carries --big (its own highlight, 0 to 1) and --small (someone else is
+// Motion contract (SPEC): --t is the in/out seek clock on the frame; each
+// slot carries --big (its own highlight, 0 to 1) and --small (someone else is
 // highlighted, 0 to 1), all written by wall-clock seek clocks. CSS only
 // multiplies, and every read is var(--x, default) so a clock that never ran
 // renders the settled row.
@@ -12,15 +13,17 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 
 const $ = (id) => document.getElementById(id);
+const frame = $('frame');
 const row = $('row');
-const inOut = new SeekClock(row, '--t', 700);
+const backdrop = $('backdrop');
+const inOut = new SeekClock(frame, '--t', 700);
 
 // Riftbound scans are 744x1039 portrait.
 const CARD_RATIO = 744 / 1039;
 // Base card width by how many are up: one card is a feature, four are a
 // line-up. The row centres them with a fixed gap; a highlight scales in
 // place (transform), so the neighbours never reflow under it.
-const WIDTHS = { 1: 520, 2: 470, 3: 430, 4: 380 };
+const WIDTHS = { 1: 560, 2: 500, 3: 450, 4: 390 };
 const FOCUS_MS = 450;
 
 let shown = null;
@@ -56,7 +59,7 @@ function loadArt(slot) {
   img.src = `/cardart/full/${card.cardId}.webp`;
 }
 
-function slotEl(card, width) {
+function slotEl(width) {
   const el = document.createElement('div');
   el.className = 'slot';
   el.style.setProperty('--w', width);
@@ -65,13 +68,7 @@ function slotEl(card, width) {
     <div class="card-box">
       <img alt="" draggable="false" class="hidden">
       <div class="card-fallback"><span class="fallback-name"></span></div>
-    </div>
-    <div class="name-plate">
-      <span class="card-name"></span>
-      <span class="card-type"></span>
     </div>`;
-  setText(el.querySelector('.card-name'), card.cardName || 'No card');
-  setText(el.querySelector('.card-type'), card.cardType || '');
   return el;
 }
 
@@ -82,7 +79,7 @@ function build(cards) {
   const up = cards.map((card, pos) => ({ card, pos })).filter((s) => s.card.cardId);
   const width = WIDTHS[Math.min(4, Math.max(1, up.length))];
   slots = up.map(({ card, pos }) => {
-    const el = slotEl(card, width);
+    const el = slotEl(width);
     const slot = {
       pos, card, el,
       big: new SeekClock(el, '--big', FOCUS_MS), small: new SeekClock(el, '--small', FOCUS_MS),
@@ -114,6 +111,11 @@ function applyFocus(pos, animate) {
   }
 }
 
+function setBackground(on) {
+  backdrop.classList.toggle('hidden', !on);
+  frame.classList.toggle('with-bg', on);
+}
+
 const params = initStage({
   scene: 'cardrow',
   onState(state, first) {
@@ -125,6 +127,7 @@ const params = initStage({
     const hasCards = cards.some((c) => c.cardId);
     const visible = (params.force || Boolean(cfg.visible)) && hasCards;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
+    setBackground(cfg.background !== false);
 
     const rebuilt = key !== rowKey;
     if (rebuilt) {
@@ -142,15 +145,15 @@ const params = initStage({
     if (first) {
       // Fresh loads (including OBS "shutdown when hidden" reloads) snap to
       // the current state, no entrance replay.
-      row.classList.toggle('off', !visible);
+      frame.classList.toggle('off', !visible);
       inOut.seek(visible ? 1 : 0);
     } else if (visible) {
       // Entrance, including a re-entrance when the cards on air change.
-      row.classList.remove('off');
+      frame.classList.remove('off');
       inOut.play({ from: 0, to: 1 });
     } else {
       inOut.play({ from: 1, to: 0 }).then(() => {
-        if (!shown) row.classList.add('off');
+        if (!shown) frame.classList.add('off');
       });
     }
   },

@@ -7,11 +7,19 @@
 <link rel="stylesheet" href="/assets/brand.css">
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
 <link rel="stylesheet" href="./scene.css">
 </head>
 <body>
 <div class="stage">
-  <div class="row off" id="row"></div>
+  <div class="rowframe off" id="frame">
+    <div class="ground backdrop hidden" id="backdrop">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="row" id="row"></div>
+  </div>
   <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
   <div class="stage-diag" id="hiddenHint">Card row is hidden: pick cards under Match data › Card row and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
 </div>

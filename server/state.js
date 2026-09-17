@@ -132,13 +132,17 @@ function defaultBank() {
       // focus is the card id the plate highlights (lifted and enlarged, the
       // rest blurred and dimmed); empty is no highlight. Driven by the focus
       // cue, so it lands in both banks and acts on air without a TAKE.
-      decklist: { visible: false, list: '', showSideboard: true, background: true, deckName: '', replay: 0, focus: '' },
+      // focusOn switches the highlight off and back on without losing the
+      // card, so an operator can flick it while talking (Sam, 2026-09-16).
+      decklist: { visible: false, list: '', showSideboard: true, background: true, deckName: '', replay: 0, focus: '', focusOn: true },
       // Card row: up to four cards side by side, each with a name plate. The
       // four slots are positional (an empty slot has no card id) so the panel
       // can edit one without re-sending the rest. focus is the slot index the
       // row enlarges while the others shrink and dim; -1 is an even row. Like
       // the decklist's, it is a cue and lands in both banks.
-      cardrow: { visible: false, cards: [emptyRowCard(), emptyRowCard(), emptyRowCard(), emptyRowCard()], focus: -1 },
+      // background paints the look's ground behind the row (the TES plate
+      // photo by design); off, only the cards paint, for keying over a feed.
+      cardrow: { visible: false, cards: [emptyRowCard(), emptyRowCard(), emptyRowCard(), emptyRowCard()], focus: -1, background: true },
       // --- from the September 2026 broadcast scouting (listed with the rest since 0.10.0) ---
       // Portrait pillars: a pillarboxed portrait table cam with a compact
       // game-state bar over it (the Yu-Gi-Oh grammar). handCam opens a
@@ -265,6 +269,8 @@ function mergeBank(bank, raw) {
   bank.scenes.cardrow.cards = Array.from({ length: ROW_SLOTS }, (_, i) => ({ ...emptyRowCard(), ...(rowCards[i] || {}) }));
   bank.scenes.cardrow.focus = clampInt(bank.scenes.cardrow.focus, -1, ROW_SLOTS - 1);
   if (typeof bank.scenes.decklist.focus !== 'string') bank.scenes.decklist.focus = '';
+  if (typeof bank.scenes.decklist.focusOn !== 'boolean') bank.scenes.decklist.focusOn = true;
+  if (typeof bank.scenes.cardrow.background !== 'boolean') bank.scenes.cardrow.background = true;
 }
 
 // Load saved state; migrate pre-bus saves (Loop 0/1 kept event/match/scenes at
@@ -538,6 +544,7 @@ function applyBankPatch(bank, patch) {
       // The highlight is a cue (the focus action) and lands in both banks;
       // a bank patch may still clear or set it, for the panel's reset paths.
       if (d.focus !== undefined) bank.scenes.decklist.focus = cleanCardId(d.focus);
+      if (d.focusOn !== undefined) bank.scenes.decklist.focusOn = Boolean(d.focusOn);
     }
     if (patch.scenes.cardrow && typeof patch.scenes.cardrow === 'object') {
       const r = patch.scenes.cardrow;
@@ -553,6 +560,7 @@ function applyBankPatch(bank, patch) {
         for (const c of row.cards) if (!c.cardId) Object.assign(c, emptyRowCard());
       }
       if (r.focus !== undefined) row.focus = clampInt(r.focus, -1, ROW_SLOTS - 1);
+      if (r.background !== undefined) row.background = Boolean(r.background);
       // A row with no card can never be on, the popup's rule.
       if (!row.cards.some((c) => c.cardId)) row.visible = false;
     }
@@ -776,8 +784,16 @@ export function applyUpdate(patch) {
   // at once; stepping through a deck on air needs no TAKE per card.
   if (patch.action === 'focus') {
     if (patch.scene === 'decklist') {
-      const id = cleanCardId(patch.cardId ?? '');
-      for (const bank of [state.preview, state.program]) bank.scenes.decklist.focus = id;
+      // A card id picks and switches the highlight on; `on` alone flicks it
+      // off or back on with the card kept.
+      for (const bank of [state.preview, state.program]) {
+        const d = bank.scenes.decklist;
+        if (patch.cardId !== undefined) {
+          d.focus = cleanCardId(patch.cardId);
+          d.focusOn = true;
+        }
+        if (patch.on !== undefined) d.focusOn = Boolean(patch.on);
+      }
     } else if (patch.scene === 'cardrow') {
       const slot = clampInt(patch.slot ?? -1, -1, ROW_SLOTS - 1);
       for (const bank of [state.preview, state.program]) bank.scenes.cardrow.focus = slot;

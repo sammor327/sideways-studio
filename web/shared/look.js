@@ -126,10 +126,13 @@ export const DESIGNED = {
     colors: { ink: '#0c0f12', plate: '#0a0a0a', frame: '#000000', text: '#ffffff', textMuted: '#8b98a5', trim: '' },
     background: { kind: 'solid', color: '#0a0a0a', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
-  // The card row shares the popup's ground: its name plates are the popup's.
+  // The card row's ground, when its background is on: the TES arrow shards
+  // in the event's accents over near-black, with grain. Not the plate photo:
+  // its glowing arrow sits top left where the decklist's legend covers it,
+  // and the row leaves that corner bare.
   cardrow: {
-    colors: { ink: '#0c0f12', plate: '#0a0a0a', frame: '#000000', text: '#ffffff', textMuted: '#8b98a5', trim: '' },
-    background: { kind: 'solid', color: '#0a0a0a', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+    colors: { ink: '#0d0d0d', plate: '#1c1c1c', frame: '#000000', text: '#ffffff', textMuted: '#d8dee4', trim: '' },
+    background: { kind: 'shards', color: '#0d0d0d', color2: '#000000', angle: 180, image: '', grain: 45, dim: 62 },
   },
   decklist: {
     colors: { ink: '#0d0d0d', plate: '#1c1c1c', frame: '#000000', text: '#ffffff', textMuted: '#d8dee4', trim: '' },
