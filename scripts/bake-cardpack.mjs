@@ -158,12 +158,11 @@ const fullId = contentId(full);
 const fullSize = await writePack(path.join(PACKS, 'cards-full.pack'), full, { cards: full.length, id: fullId }, secret);
 const fullSha = createHash('sha256').update(await readFile(path.join(PACKS, 'cards-full.pack'))).digest('hex');
 
-// The manifest an installed copy reads to find the full pack. The URL names
-// this version's release; scripts/release.mjs repoints it at an older release
-// when the pack has not changed, so the asset is uploaded once per set, not
-// once per build.
+// What the manifest says about the pack itself. Deliberately no URL: a bake
+// happens before the version it ships in is decided, and naming a release here
+// published v0.19.0 with a manifest pointing at a v0.18.1 asset that does not
+// exist. scripts/build-exe.mjs stamps the URL, the way it does for update.json.
 await writeFile(path.join(PACKS, 'library.json'), JSON.stringify({
-  url: `https://github.com/${OWNER}/${REPO}/releases/download/v${version}/cards-full.pack`,
   sha256: fullSha,
   size: fullSize,
   id: fullId,

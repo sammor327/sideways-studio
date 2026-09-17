@@ -243,8 +243,13 @@ await writeFile(path.join(DIST, 'SidewaysStudio.exe.sha256'), `${sha256}  Sidewa
 // release script has one folder to publish from.
 try {
   await cp(path.join(PACKS, 'cards-full.pack'), path.join(DIST, 'cards-full.pack'));
-  await cp(path.join(PACKS, 'library.json'), path.join(DIST, 'library.json'));
-  const pack = JSON.parse(await readFile(path.join(DIST, 'library.json'), 'utf8'));
+  // The URL is stamped here rather than at bake time, for the same reason
+  // update.json's is: the bake runs before anyone has decided which version
+  // this becomes, and a manifest naming the wrong release points every install
+  // at an asset that is not there.
+  const pack = JSON.parse(await readFile(path.join(PACKS, 'library.json'), 'utf8'));
+  pack.url = `https://github.com/${OWNER}/${REPO}/releases/download/v${VERSION}/cards-full.pack`;
+  await writeFile(path.join(DIST, 'library.json'), JSON.stringify(pack, null, 2) + NL);
   console.log(`      full art pack ${Math.round(pack.size / 1024 / 1024 * 10) / 10} MB, ${pack.cards} cards`);
 } catch {
   console.warn('      no packs/cards-full.pack: this release publishes no full card art.');
