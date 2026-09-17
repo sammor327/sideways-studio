@@ -14,6 +14,7 @@ import {
 } from './appwindow.js';
 import {
   runLaunchCheck, updateStatus, checkForUpdate, skipVersion, installLatest, onBeforeHandover, isNewer,
+  finishUpdatePid, finishUpdate,
 } from './updater.js';
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
@@ -721,6 +722,14 @@ async function claimPort() {
 // as one function rather than top-level await so the same source compiles to
 // the CommonJS bundle the packaged exe is built from.
 async function start() {
+  // An update handing over (server/updater.js): the copy that was just
+  // replaced started this one to wait for it, swap the files and start the
+  // new version. Nothing else of the app runs here.
+  const handoverFrom = finishUpdatePid();
+  if (handoverFrom !== null) {
+    await finishUpdate({ pid: handoverFrom });
+    process.exit(0);
+  }
   // Decided first, because it changes what the next line is allowed to do: a
   // launch-time update prompt printed into a console nobody can see would sit
   // there waiting for a keystroke that can never arrive. In window mode the

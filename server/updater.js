@@ -17,7 +17,8 @@
 // signed yet (roadmap Part 15).
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { APP_ROOT, APP_VERSION, DATA_DIR, isPackaged } from './runtime.js';
 
@@ -103,10 +104,13 @@ async function writeState(next) {
 let lastManifest = null;
 export const getManifest = () => lastManifest;
 
-// A previous update left the replaced binary behind; it is unlocked now.
+// A previous update left the replaced binary behind; it is unlocked now. So
+// is the batch file of a handover that never finished (0.14.1 and 0.15.0 could
+// hang in it, see finishUpdate).
 export async function cleanupOldBinary() {
   await rm(OLD_EXE, { force: true }).catch(() => {});
   await rm(NEW_EXE, { force: true }).catch(() => {});
+  await rm(path.join(APP_ROOT, 'sideways-update.cmd'), { force: true }).catch(() => {});
 }
 
 function validManifest(m) {
@@ -215,30 +219,112 @@ export async function downloadUpdate(manifest) {
 
 // Windows will not let a running exe be deleted, but it will let it be
 // renamed, so the handover is: rename the running file out of the way, move
-// the new one into its place, start it. A tiny batch file does that after we
-// have exited, then deletes itself.
+// the new one into its place, start it. That runs after we have exited, in a
+// process of its own.
 //
-// "After we have exited" is checked, not assumed (2026-09-16): the script
-// waits for this process id to be gone before it swaps anything, up to
-// about 40 seconds, and then ends it by force, so the new copy never starts
-// while the old one still holds the port and the window. The new copy also
-// checks for a running copy on its own (server/index.js claimPort), so the
-// two guards back each other up.
-export function swapScript({ exe = EXE, newExe = NEW_EXE, oldExe = OLD_EXE, pid = process.pid } = {}) {
+// "After we have exited" is checked, not assumed: the handover waits for this
+// process id to be gone before it swaps anything, up to 40 seconds, so the new
+// copy does not start while the old one still holds the port and the window.
+// The new copy also checks for a running copy on its own (server/index.js
+// claimPort, which asks a lingering one to quit), so the two guards back each
+// other up.
+//
+// The process that does it is this same exe, started again with
+// --finish-update=<pid> (2026-09-16). 0.14.1 and 0.15.0 waited in a batch
+// file with `tasklist | find`, and on a machine whose default terminal is
+// Windows Terminal that hung for good: the batch file runs detached, with no
+// console, so every program it starts is given a new console, Windows
+// Terminal takes that console over, and in the takeover `find` lost its pipe
+// and sat reading the keyboard of a window titled find "<pid>" (Sam; reproduced
+// only with an Explorer-launched copy, and Ctrl+Z then Enter in that window
+// released it). Windows PowerShell cannot stand in: started detached it exits
+// without running anything. Node needs no console, so the wait and the renames
+// happen in JavaScript, and the new version is started with cmd's built-in
+// `start`, which gives it a console of its own the way a double-click does.
+export const FINISH_UPDATE_FLAG = '--finish-update=';
+
+// null when this launch is not a handover; 0 when it is one with an unusable
+// pid (swap without waiting).
+export function finishUpdatePid(argv = process.argv) {
+  const arg = argv.find((a) => a.startsWith(FINISH_UPDATE_FLAG));
+  if (!arg) return null;
+  const pid = Number.parseInt(arg.slice(FINISH_UPDATE_FLAG.length), 10);
+  return Number.isInteger(pid) && pid > 0 ? pid : 0;
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// process.kill(pid, 0) tests without signalling; EPERM means it exists but
+// belongs to someone else, which still counts as running.
+function isRunning(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err) {
+    return err.code === 'EPERM';
+  }
+}
+
+async function renameWithRetry(from, to, tries = 8) {
+  for (let i = 0; i < tries; i += 1) {
+    try {
+      await rename(from, to);
+      return true;
+    } catch {
+      // An antivirus scan of a freshly written exe can hold it for a moment.
+      await sleep(500);
+    }
+  }
+  return false;
+}
+
+// `start` is built into cmd, so this starts no console program of its own:
+// the new version gets its console from `start`, as from a double-click.
+export function startCommandLine(exe) {
+  return `"start "" "${exe}""`;
+}
+
+function launchDetached(command, args, cwd, extra = {}) {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(command, args, { cwd, detached: true, stdio: 'ignore', windowsHide: true, ...extra });
+    } catch {
+      resolve(false);
+      return;
+    }
+    child.once('spawn', () => { child.unref(); resolve(true); });
+    child.once('error', () => resolve(false));
+  });
+}
+
+export function launchInstalled(exe) {
+  return launchDetached('cmd.exe', ['/d', '/s', '/c', startCommandLine(exe)], path.dirname(exe), { windowsVerbatimArguments: true });
+}
+
+// The --finish-update process: wait, swap, start the new version.
+export async function finishUpdate({ pid, exe = EXE, newExe = NEW_EXE, oldExe = OLD_EXE, waitMs = 40_000, launch = launchInstalled } = {}) {
+  const deadline = Date.now() + waitMs;
+  while (pid && isRunning(pid) && Date.now() < deadline) await sleep(250);
+  let swapped = false;
+  if (existsSync(newExe)) {
+    await rm(oldExe, { force: true }).catch(() => {});
+    if (!existsSync(exe) || await renameWithRetry(exe, oldExe)) {
+      swapped = await renameWithRetry(newExe, exe);
+      if (!swapped && !existsSync(exe)) await renameWithRetry(oldExe, exe);
+    }
+  }
+  await launch(exe);
+  return swapped;
+}
+
+// The last resort when this exe cannot be started a second time. No wait
+// loop: anything it polled with would be a console program and hit the hang
+// above, so it gives the old copy a few seconds and swaps.
+export function swapScript({ exe = EXE, newExe = NEW_EXE, oldExe = OLD_EXE } = {}) {
   return [
     '@echo off',
-    'set /a tries=0',
-    ':wait',
-    `tasklist /fi "PID eq ${pid}" 2>nul | find "${pid}" >nul`,
-    'if errorlevel 1 goto swap',
-    'set /a tries+=1',
-    'if %tries% geq 40 goto force',
-    'ping -n 2 127.0.0.1 >nul',
-    'goto wait',
-    ':force',
-    `taskkill /pid ${pid} /t /f >nul 2>&1`,
-    'ping -n 2 127.0.0.1 >nul',
-    ':swap',
+    'ping -n 4 127.0.0.1 >nul',
     `move /y "${exe}" "${oldExe}" >nul 2>&1`,
     `move /y "${newExe}" "${exe}" >nul 2>&1`,
     `if not exist "${exe}" move /y "${oldExe}" "${exe}" >nul 2>&1`,
@@ -248,16 +334,15 @@ export function swapScript({ exe = EXE, newExe = NEW_EXE, oldExe = OLD_EXE, pid 
   ].join('\r\n');
 }
 
+export async function handover({ pid = process.pid, cwd = APP_ROOT, command = process.execPath, args = [`${FINISH_UPDATE_FLAG}${pid}`] } = {}) {
+  if (await launchDetached(command, args, cwd)) return 'helper';
+  const script = path.join(cwd, 'sideways-update.cmd');
+  await writeFile(script, swapScript());
+  return (await launchDetached('cmd.exe', ['/c', script], cwd)) ? 'batch' : 'none';
+}
+
 export async function swapAndRestart() {
-  const script = path.join(APP_ROOT, 'sideways-update.cmd');
-  const cmd = swapScript();
-  await writeFile(script, cmd);
-  spawn('cmd.exe', ['/c', script], {
-    cwd: APP_ROOT,
-    detached: true,
-    stdio: 'ignore',
-    windowsHide: true,
-  }).unref();
+  await handover();
 }
 
 // One keystroke, with a visible countdown. Resolves to the default if nobody

@@ -6,6 +6,11 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.15.1 (2026-09-16)
+
+- Updating from 0.14.1 or 0.15.0: if a window titled "find" and a number opens and nothing happens, click that window, press Ctrl+Z, then Enter. The update finishes and the app restarts. You only need this once, for this update.
+- Fixed: installing an update could stop at that "find" window and never restart the app, on computers where Windows Terminal is the default terminal. From this version on, the app finishes its own updates with no extra windows.
+
 ## 0.15.0 (2026-09-16)
 
 - Match card and player profile: the legends are now the full high-resolution figure art, sharp at that size, instead of a small close-up stretched to fill the space.
