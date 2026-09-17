@@ -68,7 +68,7 @@ function renderFan(cards, unknown) {
 
 function renderTop(side, on) {
   const cards = side.hand || [];
-  const unknown = Math.max(side.handUnknown || 0, (side.handCount || 0) - cards.length, 0);
+  const unknown = Math.max((side.handCount || 0) - cards.length, 0);
   $('topfan').classList.toggle('hidden', !on);
   $('topLabel').classList.toggle('hidden', !on);
   const total = cards.length + unknown;
@@ -149,7 +149,7 @@ const params = initStage({
     const total = Math.max(featured.handCount || 0, cards.length);
     setText($('count'), String(total));
     setText($('countLabel'), `cards in hand${reactions ? ` · ${reactions} reaction${reactions === 1 ? '' : 's'}` : ''}`);
-    renderFan(cards, featured.handUnknown || 0);
+    renderFan(cards, 0);
     renderTop(other, Boolean(scene.opponent));
 
     setText($('round'), [bank.event.roundTitle, m.turn > 0 ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · '));

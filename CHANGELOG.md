@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.17.0 (2026-09-17)
+
+- Match data: Legend, Battlefield and Champion now read like Featured card, with the card's picture beside its name and an X to clear it. The same goes for the 2v2 teammate lines and the showdown's battlefield.
+- Match data: Record sits right under the player name, and the fold it came from is now called Extended player details.
+- Match data: Points and Game wins are the same size, so their plus and minus buttons line up.
+- Hands and showdown: the Unknown cards counter is gone. Set the hand count, list the cards you can see, and the rest are shown as unknown cards by themselves. Listing more cards than the count raises the count.
+- Hands and showdown: cards in hand are rows with the card's picture, like Featured card. Reactions and actions light up in the player's colour, blue for Player 1 and green for Player 2.
+- Hands and showdown: a line marks where the turn and showdown controls start.
+
 ## 0.16.0 (2026-09-17)
 
 - Favorites: every graphic has a star beside its name. Star one and it moves into a Favorites fold at the top of the Graphics card, above 1v1; click the star again and it goes back where it was. Favorites opens on its own when it holds anything, and your stars are remembered on this computer.

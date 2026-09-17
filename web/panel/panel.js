@@ -56,8 +56,8 @@ const SCENE_FIELDS = {
     'champion', 'championText', 'archetype', 'handCount', 'hand', 'turn', 'roundTitle'],
   arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
   slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds', 'schedule', 'format', 'commands', 'sponsors', 'nextEvent', 'champion', 'name', 'country', 'legend', 'record'],
-  handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'handUnknown', 'roundTitle', 'timer', 'turn'],
-  showdown: ['name', 'country', 'legend', 'hand', 'handCount', 'handUnknown', 'showdown'],
+  handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'roundTitle', 'timer', 'turn'],
+  showdown: ['name', 'country', 'legend', 'hand', 'handCount', 'showdown'],
   // The starter kit (2026-09-15).
   cornertag: ['name', 'roundTitle', 'eventName', 'countdown'],
   lowerthird: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'bestFinish', 'eventName', 'roundTitle', 'casters'],
@@ -126,8 +126,7 @@ function sceneDraws(scene, field, side, bank) {
     if (!cfg.cardWell && field === 'card') return false;
   }
   if (scene === 'igorows' && !cfg.hand && ['hand', 'handCount'].includes(field)) return false;
-  if (scene === 'showdown' && !cfg.hands && ['hand', 'handCount', 'handUnknown'].includes(field)) return false;
-  if (scene === 'handfan' && !cfg.opponent && field === 'handUnknown') return false;
+  if (scene === 'showdown' && !cfg.hands && ['hand', 'handCount'].includes(field)) return false;
   if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
   if (scene === 'slate') {
     if (field === 'seeds' && cfg.mode !== 'upnext') return false;
@@ -264,22 +263,37 @@ function renderScenes(s) {
   }
 }
 
-// A side's featured card: thumbnail beside the search box, and a Clear that is
-// only live when there is something to clear.
-function renderFeaturedCard(p, card) {
-  const thumb = $(`${p}cardThumb`);
-  $(`${p}cardClear`).disabled = !card.cardId;
-  if (!card.cardId) {
+// What a picker holds, the way the featured card shows it (Sam, 2026-09-17):
+// the card beside the search box, and a Clear that is only live when there is
+// something to clear. `base` is the input's id; its thumbnail and button are
+// `<base>Thumb` and `<base>Clear`.
+function renderPickThumb(base, src, filled) {
+  const thumb = $(`${base}Thumb`);
+  $(`${base}Clear`).disabled = !filled;
+  if (!src) {
     thumb.classList.add('hidden');
     thumb.removeAttribute('src');
     return;
   }
-  const src = `/cardart/thumb/${card.cardId}.webp`;
   if (thumb.getAttribute('src') !== src) {
     thumb.onerror = () => thumb.classList.add('hidden');
     thumb.onload = () => thumb.classList.remove('hidden');
     thumb.src = src;
   }
+}
+const cardThumbSrc = (cardId) => (cardId ? `/cardart/thumb/${cardId}.webp` : '');
+// Battlefields and champions are stored by name on most lines; the catalog
+// the picker searched knows the card behind the name.
+const catalogCardId = (catalog, name) => {
+  const hit = name ? catalog.find((c) => c.cardName === name) : null;
+  return hit ? hit.cardId : '';
+};
+// A legend shows its card; one picked before the card ids were kept falls
+// back to its icon.
+const legendThumbSrc = (cardId, slug) => cardThumbSrc(cardId) || (slug ? `/legendart/icon/${slug}.webp` : '');
+
+function renderFeaturedCard(p, card) {
+  renderPickThumb(`${p}card`, cardThumbSrc(card.cardId), Boolean(card.cardId));
 }
 
 // --- the look: colours and backgrounds, global or per graphic ---
@@ -592,6 +606,12 @@ function render(s) {
     setIfIdle(`${p}champion2`, sd.champion2 || '');
     setIfIdle(`${p}bf2`, sd.battlefield2 || '');
     setIfIdle(`${p}seed`, sd.seed || '');
+    renderPickThumb(`${p}legend`, legendThumbSrc(sd.legendCardId, sd.legendSlug), Boolean(sd.legend));
+    renderPickThumb(`${p}legend2`, legendThumbSrc(sd.legendCardId2, sd.legendSlug2), Boolean(sd.legend2));
+    renderPickThumb(`${p}bf`, cardThumbSrc(sd.battlefieldCardId || catalogCardId(battlefieldCatalog, sd.battlefield)), Boolean(sd.battlefield));
+    renderPickThumb(`${p}bf2`, cardThumbSrc(catalogCardId(battlefieldCatalog, sd.battlefield2)), Boolean(sd.battlefield2));
+    renderPickThumb(`${p}champion`, cardThumbSrc(catalogCardId(championCatalog, sd.champion)), Boolean(sd.champion));
+    renderPickThumb(`${p}champion2`, cardThumbSrc(catalogCardId(championCatalog, sd.champion2)), Boolean(sd.champion2));
   }
   $('seriesLength').value = String(m.seriesLength);
   setIfIdle('eventName', s.preview.event.name || '');
@@ -671,7 +691,6 @@ function paintCounter(side, field, value) {
   const p = side === 'left' ? 'l' : 'r';
   if (field === 'score') setIfIdle(`${p}score`, String(value));
   else if (field === 'handCount') $(`${p}handOut`).textContent = value;
-  else if (field === 'handUnknown') $(`${p}unknownOut`).textContent = value;
   else $(`${p}winsOut`).textContent = value;
 }
 
@@ -682,10 +701,11 @@ for (const btn of document.querySelectorAll('.counter button')) {
     // Optimistic: mutate the local copy immediately so rapid clicks stack
     // instead of re-sending the same stale value.
     const m = state.preview.match;
-    const max = field === 'score' ? 8 : (['handCount', 'handUnknown'].includes(field) ? 20 : winsNeeded(m.seriesLength));
+    const max = field === 'score' ? 8 : (field === 'handCount' ? 20 : winsNeeded(m.seriesLength));
     const next = Math.min(max, Math.max(0, m[side][field] + Number(step)));
     m[side][field] = next;
     paintCounter(side, field, next);
+    if (field === 'handCount') renderHandChips(side === 'left' ? 'l' : 'r', m[side]);
     post({ match: { [side]: { [field]: next } } });
   });
 }
@@ -910,6 +930,7 @@ async function loadCatalogs() {
     battlefieldCatalog = (await (await fetch('/api/battlefields', { cache: 'no-store' })).json()).battlefields;
     championCatalog = (await (await fetch('/api/champions', { cache: 'no-store' })).json()).champions;
     catalogsReady = battlefieldCatalog.length > 0 && championCatalog.length > 0;
+    if (state) render(state);
   } catch {
     catalogsReady = false;
     setTimeout(loadCatalogs, 3000);
@@ -983,6 +1004,10 @@ function wirePicker(inputId, listId, { search, renderItem, onPick, onClear, curr
     close();
     if (document.activeElement !== input && state) input.value = current();
   }, 150));
+  // The X beside the field clears the assignment, the same as emptying the
+  // search by hand.
+  const clearBtn = $(`${inputId}Clear`);
+  if (clearBtn) clearBtn.addEventListener('click', () => { onClear(); input.value = ''; close(); });
 }
 
 // idField is the card id the legend art resolves against on the POV, the
@@ -2004,10 +2029,13 @@ let sdPick = null;
 wirePicker('sdBattlefield', 'sdBattlefieldResults', {
   search: (q) => battlefieldCatalog.filter((b) => b.cardName.toLowerCase().includes(q)),
   renderItem: (b) => ({ label: b.cardName, icon: `/cardart/thumb/${b.cardId}.webp` }),
-  onPick: (b) => { sdPick = { battlefield: b.cardName, battlefieldCardId: b.cardId }; },
-  onClear: () => { sdPick = null; },
+  onPick: (b) => { sdPick = { battlefield: b.cardName, battlefieldCardId: b.cardId }; if (state) renderShowdown(state); },
+  // Cleared is a pick too: the next Open names no battlefield, where a null
+  // pick would put the last showdown's one back.
+  onClear: () => { sdPick = { battlefield: '', battlefieldCardId: '' }; if (state) renderShowdown(state); },
   current: () => (sdPick ? sdPick.battlefield : (state.preview.match.showdown.battlefield || '')),
 });
+$('sdBattlefield').addEventListener('blur', () => setTimeout(() => { if (state) renderShowdown(state); }, 200));
 $('sdOpen').addEventListener('click', () => {
   if (!state) return;
   const typed = $('sdBattlefield').value.trim();
@@ -2033,6 +2061,10 @@ function renderShowdown(s) {
   $('sdUnplay').disabled = !active || !(sd.chain || []).length;
   if (document.activeElement !== $('sdPriority')) $('sdPriority').value = sd.priority || '';
   if (document.activeElement !== $('sdBattlefield') && !sdPick) $('sdBattlefield').value = sd.battlefield || '';
+  {
+    const bf = sdPick || sd;
+    renderPickThumb('sdBattlefield', cardThumbSrc(bf.battlefieldCardId || catalogCardId(battlefieldCatalog, bf.battlefield)), Boolean(bf.battlefield));
+  }
   const chain = sd.chain || [];
   const key = JSON.stringify(chain);
   if ($('sdChain').dataset.key !== key) {
@@ -2102,54 +2134,83 @@ for (const [p, side] of SIDES) {
   }
 }
 
-// Cards in hand: the server's ranked search, one chip per card, click to
-// remove. The list is posted whole so the sanitizer sees the same shape the
-// scene reads.
-function renderHandChips(p, hand) {
+// Cards in hand: the server's ranked search, then one row per card the way
+// the featured card reads (Sam, 2026-09-17): the card, its name, an X. A
+// reaction or an action lights up in its player's colour, blue for Player 1
+// and green for Player 2, since those are the cards a showdown turns on. The
+// list is posted whole so the sanitizer sees the same shape the scene reads.
+// The hand count less the cards listed is the unknown cards, worked out here
+// and on the graphics alike; there is no second number to keep in step.
+const KIND_LETTER = { reaction: 'R', action: 'A', unit: 'U', champion: 'C', gear: 'G', spell: 'S' };
+const KIND_WORD = { reaction: 'Reaction', action: 'Action', unit: 'Unit', champion: 'Champion', gear: 'Gear', spell: 'Spell' };
+function renderHandChips(p, sd) {
+  const hand = sd.hand || [];
+  const unknown = Math.max(0, (sd.handCount || 0) - hand.length);
   const box = $(`${p}handChips`);
-  const key = JSON.stringify(hand) + (state && state.preview.match.showdown && state.preview.match.showdown.active ? '#open' : '');
+  const sdOpen = Boolean(state && state.preview.match.showdown && state.preview.match.showdown.active);
+  const key = `${JSON.stringify(hand)}#${unknown}${sdOpen ? '#open' : ''}`;
   if (box.dataset.key === key) return;
   box.dataset.key = key;
   const side = p === 'l' ? 'left' : 'right';
-  const KIND_LETTER = { reaction: 'R', action: 'A', unit: 'U', champion: 'C', gear: 'G', spell: 'S' };
-  box.replaceChildren(...hand.map((c, i) => {
-    const chip = document.createElement('span');
-    chip.className = `hand-chip${c.played ? ' played' : ''}`;
-    chip.title = c.played ? 'On the chain: click to take it back into the hand' : 'Click to mark it played onto the chain';
+  const rows = hand.map((c, i) => {
+    const row = document.createElement('div');
+    const hot = c.kind === 'reaction' || c.kind === 'action';
+    row.className = `hand-card ${side}${hot ? ' hot' : ''}${c.played ? ' played' : ''}`;
+    row.title = c.played ? 'On the chain: click to take it back into the hand' : 'Click to mark it played onto the chain';
+    const img = document.createElement('img');
+    img.className = 'card-thumb';
+    img.alt = '';
+    img.onerror = () => img.classList.add('hidden');
+    img.src = cardThumbSrc(c.cardId);
+    row.append(img);
+    const name = document.createElement('span');
+    name.className = 'nm';
+    name.textContent = c.cardName || c.cardId;
+    row.append(name);
     if (c.kind) {
       const k = document.createElement('span');
       k.className = `k ${c.kind}`;
       k.textContent = KIND_LETTER[c.kind] || '';
-      chip.append(k);
+      k.title = KIND_WORD[c.kind] || '';
+      row.append(k);
     }
-    chip.append(document.createTextNode(c.cardName || c.cardId));
     if (c.energy !== null && c.energy !== undefined) {
       const small = document.createElement('small');
       small.textContent = String(c.energy);
-      chip.append(small);
+      small.title = `${c.energy} energy`;
+      row.append(small);
     }
-    const x = document.createElement('span');
-    x.className = 'x';
-    x.textContent = '×';
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'clear-x';
+    x.textContent = '\u00d7';
     x.title = 'Remove from hand';
+    x.setAttribute('aria-label', `Remove ${c.cardName || c.cardId} from the hand`);
     x.addEventListener('click', (e) => {
       e.stopPropagation();
       if (!state) return;
       const next = (state.preview.match[side].hand || []).filter((_, j) => j !== i);
       post({ match: { [side]: { hand: next } } });
     });
-    chip.append(x);
-    const sdOpen = Boolean(state && state.preview.match.showdown && state.preview.match.showdown.active);
-    if (sdOpen && !c.played) { chip.classList.add('playable'); chip.title = 'Play onto the chain'; }
-    chip.addEventListener('click', () => {
+    row.append(x);
+    if (sdOpen && !c.played) { row.classList.add('playable'); row.title = 'Play onto the chain'; }
+    row.addEventListener('click', () => {
       if (!state) return;
       const open = Boolean(state.preview.match.showdown && state.preview.match.showdown.active);
       if (open && !c.played) { post({ action: 'chain', op: 'play', side, index: i }); return; }
       const next = (state.preview.match[side].hand || []).map((card, j) => (j === i ? { ...card, played: !card.played } : card));
       post({ match: { [side]: { hand: next } } });
     });
-    return chip;
-  }));
+    return row;
+  });
+  if (unknown > 0) {
+    const row = document.createElement('div');
+    row.className = 'hand-card unknown';
+    row.title = 'The hand count less the cards listed above. The graphics draw these as unknown cards.';
+    row.textContent = `+ ${unknown} unknown card${unknown === 1 ? '' : 's'}`;
+    rows.push(row);
+  }
+  box.replaceChildren(...rows);
 }
 function wireHandSearch(p, side) {
   const input = $(`${p}handSearch`);
@@ -2161,7 +2222,11 @@ function wireHandSearch(p, side) {
     if (!state) return;
     const current = state.preview.match[side].hand || [];
     if (current.length >= 12) return;
-    post({ match: { [side]: { hand: [...current, { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [], kind: card.kind || '' }] } } });
+    const hand = [...current, { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [], kind: card.kind || '' }];
+    // Listing more cards than the count says raises the count, since the
+    // cards are in the hand. A count of 0 stays 0: "as many as are listed".
+    const count = state.preview.match[side].handCount || 0;
+    post({ match: { [side]: { hand, ...(count > 0 && hand.length > count ? { handCount: hand.length } : {}) } } });
     input.value = '';
     hits = [];
     close();
@@ -2584,8 +2649,7 @@ function renderExtras(s) {
     setIfIdle(`${p}bestFinish`, sd.bestFinish || '');
     setIfIdle(`${p}finishes`, sd.finishes || '');
     $(`${p}handOut`).textContent = sd.handCount || 0;
-    $(`${p}unknownOut`).textContent = sd.handUnknown || 0;
-    renderHandChips(p, sd.hand || []);
+    renderHandChips(p, sd);
   }
   $('turnOut').textContent = prev.match.turn || 0;
   if (document.activeElement !== $('activeSide')) $('activeSide').value = prev.match.activeSide || '';

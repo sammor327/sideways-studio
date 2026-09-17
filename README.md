@@ -212,7 +212,7 @@ Six more graphics come from the September 2026 scouting of Pokémon,
 Yu-Gi-Oh, One Piece, Magic and Flesh and Blood broadcasts. They are listed
 under Graphics with everything else (the pillars, rows, hand fan and
 showdown under 1v1, the arena bug and the slate under Other); their fields
-sit in Match data's Player details, Hands and showdown, and Event folds,
+sit in Match data's Extended player details, Hands and showdown, and Event folds,
 and their source URLs are in Setup's browser source links.
 
 - **Portrait pillars** (`/scenes/igoportrait/`): a portrait table camera
@@ -248,9 +248,12 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   cards fanned along the bottom edge, each badged Reaction, Action, Unit,
   Champion or Gear (the app reads that off the card's own text), with the
   other player's known cards small at the top and dashed slots for the
-  unknown ones. "Showdown open" lights the reactions; a card marked played
+  unknown ones (the hand count less the cards listed; there is no separate
+  unknown counter). "Showdown open" lights the reactions; a card marked played
   greys out and says so. Cards go in through the Cards in hand search in
-  Match data; click a chip to mark it played, its × to remove it.
+  Match data; each card is a row with its picture, and reactions and actions
+  light up in the player's colour. Click a row to mark it played, its × to
+  remove it.
 - The rows overlay's hand can be a plain list or **lanes by type**
   (Reactions, Actions, Units and gear) with an art strip per card.
 - **The between-games set** (0.11.0): a **corner tag** ("Up next · match ·

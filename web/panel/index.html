@@ -69,6 +69,12 @@
       <div class="cell" data-side="right"><input id="rname" maxlength="40" autocomplete="off" aria-label="Player 2 name"></div>
     </div>
 
+    <div class="field-row" data-field="record">
+      <span class="row-label" title="Swiss record, printed as typed: 8-2-0.">Record</span>
+      <div class="cell" data-side="left"><input id="lrecord" maxlength="12" autocomplete="off" placeholder="8-2-0" aria-label="Player 1 record"></div>
+      <div class="cell" data-side="right"><input id="rrecord" maxlength="12" autocomplete="off" placeholder="7-3-0" aria-label="Player 2 record"></div>
+    </div>
+
     <div class="field-row" data-field="score">
       <span class="row-label">Points</span>
       <div class="cell" data-side="left">
@@ -113,12 +119,16 @@
 
     <div class="field-row" data-field="legend">
       <span class="row-label">Legend</span>
-      <div class="cell picker-wrap" data-side="left">
+      <div class="cell picker-wrap card-cell" data-side="left">
+        <img id="llegendThumb" class="card-thumb hidden" alt="">
         <input id="llegend" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 1 legend">
+        <button id="llegendClear" class="clear-x" title="Clear the legend" aria-label="Clear Player 1 legend">&times;</button>
         <ul class="results" id="llegendResults"></ul>
       </div>
-      <div class="cell picker-wrap" data-side="right">
+      <div class="cell picker-wrap card-cell" data-side="right">
+        <img id="rlegendThumb" class="card-thumb hidden" alt="">
         <input id="rlegend" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 2 legend">
+        <button id="rlegendClear" class="clear-x" title="Clear the legend" aria-label="Clear Player 2 legend">&times;</button>
         <ul class="results" id="rlegendResults"></ul>
       </div>
     </div>
@@ -131,24 +141,32 @@
 
     <div class="field-row" data-field="battlefield">
       <span class="row-label">Battlefield</span>
-      <div class="cell picker-wrap" data-side="left">
+      <div class="cell picker-wrap card-cell" data-side="left">
+        <img id="lbfThumb" class="card-thumb hidden" alt="">
         <input id="lbf" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 battlefield">
+        <button id="lbfClear" class="clear-x" title="Clear the battlefield" aria-label="Clear Player 1 battlefield">&times;</button>
         <ul class="results" id="lbfResults"></ul>
       </div>
-      <div class="cell picker-wrap" data-side="right">
+      <div class="cell picker-wrap card-cell" data-side="right">
+        <img id="rbfThumb" class="card-thumb hidden" alt="">
         <input id="rbf" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 battlefield">
+        <button id="rbfClear" class="clear-x" title="Clear the battlefield" aria-label="Clear Player 2 battlefield">&times;</button>
         <ul class="results" id="rbfResults"></ul>
       </div>
     </div>
 
     <div class="field-row" data-field="champion">
       <span class="row-label">Champion</span>
-      <div class="cell picker-wrap" data-side="left">
+      <div class="cell picker-wrap card-cell" data-side="left">
+        <img id="lchampionThumb" class="card-thumb hidden" alt="">
         <input id="lchampion" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 1 champion unit">
+        <button id="lchampionClear" class="clear-x" title="Clear the champion" aria-label="Clear Player 1 champion">&times;</button>
         <ul class="results" id="lchampionResults"></ul>
       </div>
-      <div class="cell picker-wrap" data-side="right">
+      <div class="cell picker-wrap card-cell" data-side="right">
+        <img id="rchampionThumb" class="card-thumb hidden" alt="">
         <input id="rchampion" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 2 champion unit">
+        <button id="rchampionClear" class="clear-x" title="Clear the champion" aria-label="Clear Player 2 champion">&times;</button>
         <ul class="results" id="rchampionResults"></ul>
       </div>
     </div>
@@ -176,13 +194,7 @@
     </div>
 
     <details class="field-section fold" data-sec="details">
-      <summary><h4 class="section-label">Player details</h4></summary>
-
-      <div class="field-row" data-field="record">
-        <span class="row-label" title="Swiss record, printed as typed: 8-2-0.">Record</span>
-        <div class="cell" data-side="left"><input id="lrecord" maxlength="12" autocomplete="off" placeholder="8-2-0" aria-label="Player 1 record"></div>
-        <div class="cell" data-side="right"><input id="rrecord" maxlength="12" autocomplete="off" placeholder="7-3-0" aria-label="Player 2 record"></div>
-      </div>
+      <summary><h4 class="section-label">Extended player details</h4></summary>
 
       <div class="field-row" data-field="country">
         <span class="row-label" title="Two or three letters, shown as a chip beside the name.">Country</span>
@@ -250,36 +262,48 @@
 
       <div class="field-row" data-field="legend2">
         <span class="row-label sub">Legend</span>
-        <div class="cell picker-wrap" data-side="left">
+        <div class="cell picker-wrap card-cell" data-side="left">
+          <img id="llegend2Thumb" class="card-thumb hidden" alt="">
           <input id="llegend2" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 1 teammate legend">
+          <button id="llegend2Clear" class="clear-x" title="Clear the legend" aria-label="Clear Player 1 teammate legend">&times;</button>
           <ul class="results" id="llegend2Results"></ul>
         </div>
-        <div class="cell picker-wrap" data-side="right">
+        <div class="cell picker-wrap card-cell" data-side="right">
+          <img id="rlegend2Thumb" class="card-thumb hidden" alt="">
           <input id="rlegend2" placeholder="Search legends&hellip;" autocomplete="off" aria-label="Player 2 teammate legend">
+          <button id="rlegend2Clear" class="clear-x" title="Clear the legend" aria-label="Clear Player 2 teammate legend">&times;</button>
           <ul class="results" id="rlegend2Results"></ul>
         </div>
       </div>
 
       <div class="field-row" data-field="champion2">
         <span class="row-label sub" title="The teammate's champion unit, printed under their legend on the 2v2 bars overlay.">Champion</span>
-        <div class="cell picker-wrap" data-side="left">
+        <div class="cell picker-wrap card-cell" data-side="left">
+          <img id="lchampion2Thumb" class="card-thumb hidden" alt="">
           <input id="lchampion2" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 1 teammate champion unit">
+          <button id="lchampion2Clear" class="clear-x" title="Clear the champion" aria-label="Clear Player 1 teammate champion">&times;</button>
           <ul class="results" id="lchampion2Results"></ul>
         </div>
-        <div class="cell picker-wrap" data-side="right">
+        <div class="cell picker-wrap card-cell" data-side="right">
+          <img id="rchampion2Thumb" class="card-thumb hidden" alt="">
           <input id="rchampion2" placeholder="Search champion units&hellip;" autocomplete="off" aria-label="Player 2 teammate champion unit">
+          <button id="rchampion2Clear" class="clear-x" title="Clear the champion" aria-label="Clear Player 2 teammate champion">&times;</button>
           <ul class="results" id="rchampion2Results"></ul>
         </div>
       </div>
 
       <div class="field-row" data-field="battlefield2">
         <span class="row-label sub">Battlefield</span>
-        <div class="cell picker-wrap" data-side="left">
+        <div class="cell picker-wrap card-cell" data-side="left">
+          <img id="lbf2Thumb" class="card-thumb hidden" alt="">
           <input id="lbf2" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 teammate battlefield">
+          <button id="lbf2Clear" class="clear-x" title="Clear the battlefield" aria-label="Clear Player 1 teammate battlefield">&times;</button>
           <ul class="results" id="lbf2Results"></ul>
         </div>
-        <div class="cell picker-wrap" data-side="right">
+        <div class="cell picker-wrap card-cell" data-side="right">
+          <img id="rbf2Thumb" class="card-thumb hidden" alt="">
           <input id="rbf2" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 teammate battlefield">
+          <button id="rbf2Clear" class="clear-x" title="Clear the battlefield" aria-label="Clear Player 2 teammate battlefield">&times;</button>
           <ul class="results" id="rbf2Results"></ul>
         </div>
       </div>
@@ -289,7 +313,7 @@
       <summary><h4 class="section-label">Hands and showdown</h4></summary>
 
       <div class="field-row" data-field="handCount">
-        <span class="row-label" title="Cards in hand as a number, for a TO who counts but cannot spot. 0 hides it.">Hand count</span>
+        <span class="row-label" title="How many cards the player holds. Cards you have not listed below are drawn as unknown cards, so there is nothing else to count. Listing more cards than this raises it. 0 hides it.">Hand count</span>
         <div class="cell" data-side="left">
           <div class="counter">
             <button data-step="-1" data-side="left" data-field="handCount" aria-label="Player 1 hand count down">&minus;</button>
@@ -307,7 +331,7 @@
       </div>
 
       <div class="field-row" data-field="hand">
-        <span class="row-label" title="The dual-column overlay, the rows overlay and the hand fan show these cards. Search a card and press Enter to add it. Click a chip to mark it played onto the chain (it greys on air); click its × to remove it. R and A mark reactions and actions.">Cards in hand</span>
+        <span class="row-label" title="The dual-column overlay, the rows overlay and the hand fan show these cards. Search a card and press Enter to add it. Click a card to mark it played onto the chain (it greys on air); click its × to remove it. Reactions and actions light up in the player's colour. The hand count minus the cards listed here is shown as unknown cards.">Cards in hand</span>
         <div class="cell picker-wrap hand-cell" data-side="left">
           <input id="lhandSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card in hand">
           <ul class="results" id="lhandResults"></ul>
@@ -320,23 +344,7 @@
         </div>
       </div>
 
-      <div class="field-row" data-field="handUnknown">
-        <span class="row-label" title="Cards in hand the spotter has not seen: drawn as dashed slots on the hand fan. The hand count minus the listed cards is used when this is 0.">Unknown cards</span>
-        <div class="cell" data-side="left">
-          <div class="counter">
-            <button data-step="-1" data-side="left" data-field="handUnknown" aria-label="Player 1 unknown cards down">&minus;</button>
-            <output id="lunknownOut">0</output>
-            <button data-step="1" data-side="left" data-field="handUnknown" aria-label="Player 1 unknown cards up">+</button>
-          </div>
-        </div>
-        <div class="cell" data-side="right">
-          <div class="counter">
-            <button data-step="-1" data-side="right" data-field="handUnknown" aria-label="Player 2 unknown cards down">&minus;</button>
-            <output id="runknownOut">0</output>
-            <button data-step="1" data-side="right" data-field="handUnknown" aria-label="Player 2 unknown cards up">+</button>
-          </div>
-        </div>
-      </div>
+      <hr class="section-rule">
 
       <div class="field-row" data-field="turn">
         <span class="row-label" title="The turn counter and whose turn it is. Cues: they act on air at once, no TAKE needed.">Turn</span>
@@ -357,7 +365,7 @@
         <span class="row-label" title="Open a showdown at a battlefield; then clicking a card in either Cards in hand plays it onto the chain. Cues: everything here acts on air at once.">Showdown</span>
         <div class="cell span2 sd-cell">
           <div class="row sd-row">
-            <div class="picker-wrap sd-bf"><input id="sdBattlefield" placeholder="Battlefield&hellip;" autocomplete="off" aria-label="Showdown battlefield"><ul class="results" id="sdBattlefieldResults"></ul></div>
+            <div class="picker-wrap sd-bf card-cell"><img id="sdBattlefieldThumb" class="card-thumb hidden" alt=""><input id="sdBattlefield" placeholder="Battlefield&hellip;" autocomplete="off" aria-label="Showdown battlefield"><button id="sdBattlefieldClear" class="clear-x" title="Clear the battlefield" aria-label="Clear the showdown battlefield">&times;</button><ul class="results" id="sdBattlefieldResults"></ul></div>
             <button id="sdOpen">Open</button>
             <button id="sdClose" class="danger-ghost">Close</button>
           </div>

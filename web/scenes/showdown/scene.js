@@ -60,7 +60,7 @@ function renderChain(el, chain, big, slot, animate) {
 // greyed, unknown ones dashed.
 function renderHand(p, side) {
   const cards = side.hand || [];
-  const unknown = Math.max(side.handUnknown || 0, (side.handCount || 0) - cards.length, 0);
+  const unknown = Math.max((side.handCount || 0) - cards.length, 0);
   const key = cards.map((c) => `${c.cardId}|${c.kind}|${c.played ? 1 : 0}`).join(';') + `#${unknown}`;
   const reactions = cards.filter((c) => c.kind === 'reaction' && !c.played).length;
   setText($(`${p}handLabel`), `${cards.length + unknown} in hand${reactions ? ` · ${reactions} reaction${reactions === 1 ? '' : 's'} left` : ''}`);

@@ -1031,3 +1031,80 @@ button.row-focus:disabled { opacity: 0.4; }
 .deck-focus-pick .results { min-width: 280px; max-height: 320px; overflow-y: auto; }
 .deck-focus-pick .results li.current { background: #1a2027; box-shadow: inset 3px 0 0 var(--tes-green); }
 button.focus-toggle.on { color: #06110a; background: var(--tes-grad); border-color: transparent; }
+
+/* --- match data, 2026-09-17 --- */
+
+/* Points is a typed box and game wins a read-out: one size for both, so the
+   plus and minus buttons line up down the column. */
+.counter output, .counter .score-entry {
+  box-sizing: border-box;
+  display: inline-block;
+  width: 46px;
+  min-width: 46px;
+  height: 38px;
+  padding: 0;
+  line-height: 36px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+.counter output { border: 1px solid #1e242b; background: #0c0f12; }
+
+/* Every picker reads like the featured card: the card, its name, an X. */
+.card-cell .card-thumb.hidden { display: none; }
+.sd-bf.card-cell { display: flex; align-items: center; gap: 6px; }
+
+/* Where the turn and showdown controls start under the hands. */
+.section-rule {
+  width: 100%;
+  height: 0;
+  margin: 10px 0 3px;
+  border: 0;
+  border-top: 1px solid #2a323b;
+}
+
+/* Cards in hand: a row per card, the featured card's shape. */
+.hand-chips { flex-direction: column; flex-wrap: nowrap; gap: 3px; }
+.hand-card {
+  --side: var(--tes-blue);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 0 2px 3px;
+  border: 1px solid #1e242b;
+  border-left: 3px solid #2a323b;
+  background: #0c0f12;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.hand-card.right { --side: var(--tes-green); }
+.hand-card:hover { border-color: #3a444f; }
+.hand-card .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hand-card .k { flex: 0 0 auto; font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; padding: 1px 4px; border-radius: 2px; background: #2a323b; color: #b8c4cf; }
+.hand-card small { flex: 0 0 auto; color: #8b98a5; }
+.hand-card .clear-x { border-color: transparent; background: none; color: #8b98a5; }
+.hand-card .clear-x:hover { color: #e08b8b; border-color: #5a2a2a; }
+/* Reactions and actions: lit in the player's colour. */
+.hand-card.hot {
+  border-color: var(--side);
+  border-left-color: var(--side);
+  background: color-mix(in srgb, var(--side) 14%, #0c0f12);
+}
+.hand-card.hot .nm { color: #fff; font-weight: 700; }
+.hand-card.hot .k { background: var(--side); color: #06110a; }
+.hand-card.played { opacity: 0.5; }
+.hand-card.played .nm { text-decoration: line-through; }
+.hand-card.playable:hover { outline: 1px solid var(--side); }
+.hand-card.unknown {
+  justify-content: center;
+  padding: 5px 6px;
+  border: 1px dashed #3a444f;
+  background: none;
+  color: #8b98a5;
+  font-size: 12px;
+  cursor: default;
+}
+/* Two hands of different lengths both start at the top of the row. */
+.field-row[data-field="hand"] { align-items: start; }
+.field-row[data-field="hand"] > .row-label { padding-top: 9px; }
