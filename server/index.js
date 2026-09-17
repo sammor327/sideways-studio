@@ -19,7 +19,7 @@ import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fo
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
 import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
-import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readIconArt } from './legends.js';
+import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readFullArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
 import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
@@ -497,12 +497,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Legend art: hero tier (local design PNGs) and icon tier (RR cutouts,
-  // cached). Unknown slugs 404; scene fallback chains take it from there.
-  const legendArt = url.pathname.match(/^\/legendart\/(hero|icon)\/([a-z0-9-]{1,60})\.(png|webp)$/);
+  // Legend art: hero tier (local design PNGs), full tier (whole-figure
+  // cutouts for the large placements) and icon tier (RR cutouts, cached).
+  // Unknown slugs 404; scene fallback chains take it from there.
+  const legendArt = url.pathname.match(/^\/legendart\/(hero|full|icon)\/([a-z0-9-]{1,60})\.(png|webp)$/);
   if (legendArt && req.method === 'GET') {
     const [, tier, slug] = legendArt;
-    const data = tier === 'hero' ? await readHeroArt(slug) : await readIconArt(slug);
+    const read = { hero: readHeroArt, full: readFullArt, icon: readIconArt }[tier];
+    const data = await read(slug);
     if (!data) {
       res.writeHead(404, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
       res.end('no art');

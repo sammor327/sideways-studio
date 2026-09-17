@@ -6,6 +6,12 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.15.0 (2026-09-16)
+
+- Match card and player profile: the legends are now the full high-resolution figure art, sharp at that size, instead of a small close-up stretched to fill the space.
+- The card popup's search and staged card, and the card row's four card slots, moved from Match data into Graphic features, beside each graphic's other options.
+- Click the Card popup or Card row picture (or its OFF button) with nothing picked and its section opens in Graphic features, ready to search. The card popup's search also shows while the dual-column or portrait pillar overlay is in preview with Dock featured card on.
+
 ## 0.14.1 (2026-09-16)
 
 - Card row: no more name plates under the cards, and a background behind them (the arrow shards in your accent colours, dimmed; change or switch it off under Graphic features and the Look card).

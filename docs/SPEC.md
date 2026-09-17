@@ -187,7 +187,9 @@ preview opens Graphic features the same way it opens the Match data folds
 holding its fields. The control band is three columns: Graphics, then
 Graphic features over Decklist, then Look above Setup. Match data has no
 field focus bar any more; its folds are Player details, 2v2 teams, Hands
-and showdown, Event, and Staged card (the card popup's search). TAKE and
+and showdown, and Event. The card popup's search and staged card and the
+card row's slots moved into Graphic features (2026-09-16); a click on either
+graphic with nothing picked arms its group there. TAKE and
 CLEAR are pinned to the top of their column with the tip as TAKE's hover
 text, and the on-air list fills the column from the bottom.
 

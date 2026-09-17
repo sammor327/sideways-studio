@@ -1,20 +1,25 @@
-// Legend catalog: derived from the card index (type Legend), joined to two
+// Legend catalog: derived from the card index (type Legend), joined to three
 // art tiers. Hero tier: the 261x242 IGO holder PNGs from the design
 // resources (bundling Riot art is fine: official Riot project, Sam
-// 2026-08-10). Icon tier: Rift Registry 256px alpha cutouts, proxied and
-// cached like card art. Slugs follow RR's legend-slug convention
-// (slugified card name: "Master Yi, Wuju Bladesman" -> master-yi-wuju-bladesman).
+// 2026-08-10). Full tier: the whole figure, transparent, baked from
+// FlipDeck's high-resolution legend art by scripts/bake-legend-full.py for
+// the placements that draw a legend a thousand pixels across (2026-09-16).
+// Icon tier: Rift Registry 256px alpha cutouts, proxied and cached like card
+// art. Slugs follow RR's legend-slug convention (slugified card name:
+// "Master Yi, Wuju Bladesman" -> master-yi-wuju-bladesman).
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { allCards } from './carddb.js';
 import { readBlob, writeBlob, storedIds } from './cardstore.js';
 import { isPackaged, readAsset, readAssetIndex } from './runtime.js';
 
-// The packaged build carries the hero art inside the exe (SPEC amendment
-// 2026-08-10: official Riot project, bundling Riot art is permitted), so the
-// folder below only matters when running from source.
+// The packaged build carries the hero and full art inside the exe (SPEC
+// amendment 2026-08-10: official Riot project, bundling Riot art is
+// permitted), so the folders below only matter when running from source.
 const HERO_DIR = process.env.SIDEWAYS_HERO_DIR
   || 'C:\\Users\\sammo\\source\\repos\\sammor327\\flipdeck\\overlaysoftware\\RESOURCES\\IGO-LEGENDS';
+const FULL_DIR = process.env.SIDEWAYS_LEGEND_FULL_DIR
+  || 'C:\\Users\\sammo\\source\\repos\\sammor327\\flipdeck\\overlaysoftware\\RESOURCES\\LEGENDS-FULL';
 const FETCH_HEADERS = {
   'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
   referer: 'https://riftregistry.com/',
@@ -31,23 +36,31 @@ export const slugify = (name) =>
 const champKey = (s) => String(s).toUpperCase().replace(/[^A-Z]/g, '');
 
 let heroByChamp = new Map();
+let fullByChamp = new Map();
 const cachedIcons = new Set();
 
-export async function initLegends() {
-  heroByChamp = new Map();
+// Champion key -> that champion's art files in variant order. A folder inside
+// the exe cannot be listed, so the build writes an index of the filenames
+// next to the art it embedded.
+async function indexArt(indexKey, dir, ext, label) {
+  const byChamp = new Map();
   try {
-    // A folder inside the exe cannot be listed, so the build writes an index
-    // of the hero filenames next to the art it embedded.
-    const names = readAssetIndex('hero/_index.json')
-      || (await readdir(HERO_DIR)).filter((f) => f.toLowerCase().endsWith('.png'));
+    const names = readAssetIndex(indexKey)
+      || (await readdir(dir)).filter((f) => f.toLowerCase().endsWith(ext));
     for (const f of [...names].sort()) {
-      const key = champKey(f.replace(/\d+\.png$/i, ''));
-      if (!heroByChamp.has(key)) heroByChamp.set(key, []);
-      heroByChamp.get(key).push(f);
+      const key = champKey(f.slice(0, -ext.length).replace(/\d+$/, ''));
+      if (!byChamp.has(key)) byChamp.set(key, []);
+      byChamp.get(key).push(f);
     }
   } catch (err) {
-    console.warn('hero art folder unreadable:', err.message);
+    console.warn(`${label} art folder unreadable:`, err.message);
   }
+  return byChamp;
+}
+
+export async function initLegends() {
+  heroByChamp = await indexArt('hero/_index.json', HERO_DIR, '.png', 'hero');
+  fullByChamp = await indexArt('legendfull/_index.json', FULL_DIR, '.webp', 'full legend');
   // Which cutouts are already cached. Done after the hero index is built
   // because the slugs come from the catalog, which reads both.
   for (const slug of await storedIds('legend', listLegends().map((l) => l.slug))) {
@@ -88,6 +101,7 @@ export function listLegends() {
     const idx = variantIndex.get(champion) || 0;
     variantIndex.set(champion, idx + 1);
     const heroFiles = heroByChamp.get(champion) || [];
+    const fullFiles = fullByChamp.get(champion) || [];
     return {
       slug: slugify(l.name),
       name: l.name,
@@ -95,6 +109,7 @@ export function listLegends() {
       domains: l.domains || [],
       champion,
       heroFile: heroFiles[idx] || heroFiles[0] || null,
+      fullFile: fullFiles[idx] || fullFiles[0] || null,
     };
   });
 }
@@ -130,6 +145,20 @@ export async function readHeroArt(slug) {
   if (isPackaged) return null;
   try {
     return await readFile(path.join(HERO_DIR, legend.heroFile));
+  } catch {
+    return null;
+  }
+}
+
+// Full figure bytes: embedded in the exe, or read off disk when run from source.
+export async function readFullArt(slug) {
+  const legend = bySlug().get(slug);
+  if (!legend || !legend.fullFile) return null;
+  const embedded = readAsset(`legendfull/${legend.fullFile}`);
+  if (embedded) return embedded;
+  if (isPackaged) return null;
+  try {
+    return await readFile(path.join(FULL_DIR, legend.fullFile));
   } catch {
     return null;
   }

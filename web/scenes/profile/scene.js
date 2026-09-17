@@ -1,21 +1,24 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
-import { chainLoad, clearArt, heroSteps } from '../../stage/art.js';
+import { chainLoad, clearArt, fullSteps, markTier } from '../../stage/art.js';
 import { renderRunes, loadLegendDomains, legendDomains, applyVisibility } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 700);
 
+// The art column is 1100px of legend: the whole figure where one is baked,
+// the hero crop otherwise.
 let heroKey = null;
 function loadHero(side) {
   const key = side.legendSlug || '';
   if (heroKey === key) return;
   heroKey = key;
   const img = $('hero');
-  const steps = heroSteps(side);
+  const steps = fullSteps(side);
+  delete img.parentElement.dataset.tier;
   if (!steps.length) { clearArt(img); return; }
-  chainLoad(img, steps);
+  chainLoad(img, steps, markTier);
 }
 
 // "Event · Result" per line; a line with no separator prints as the event.

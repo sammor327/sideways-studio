@@ -30,6 +30,10 @@ const EXE = path.join(DIST, 'SidewaysStudio.exe');
 // (SPEC amendment 2026-08-10, official Riot project).
 const HERO_DIR = process.env.SIDEWAYS_HERO_DIR
   || 'C:\\Users\\sammo\\source\\repos\\sammor327\\flipdeck\\overlaysoftware\\RESOURCES\\IGO-LEGENDS';
+// And the full-figure legend art for the large placements, baked from
+// FlipDeck's high-resolution files by scripts/bake-legend-full.py.
+const FULL_DIR = process.env.SIDEWAYS_LEGEND_FULL_DIR
+  || 'C:\\Users\\sammo\\source\\repos\\sammor327\\flipdeck\\overlaysoftware\\RESOURCES\\LEGENDS-FULL';
 
 const VERSION = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).version;
 
@@ -130,7 +134,19 @@ try {
 const heroIndex = path.join(BUILD, 'hero-index.json');
 await writeFile(heroIndex, JSON.stringify(heroNames));
 assets['hero/_index.json'] = heroIndex;
-console.log(`      ${webCount} web files, ${heroNames.length} hero images`);
+
+let fullNames = [];
+try {
+  fullNames = (await readdir(FULL_DIR)).filter((f) => f.toLowerCase().endsWith('.webp'));
+  for (const name of fullNames) assets[`legendfull/${name}`] = path.join(FULL_DIR, name);
+} catch {
+  console.warn(`      WARNING: full legend art folder unreadable (${FULL_DIR}).`);
+  console.warn('      Run py scripts/bake-legend-full.py; until then the large placements use the hero crops.');
+}
+const fullIndex = path.join(BUILD, 'legendfull-index.json');
+await writeFile(fullIndex, JSON.stringify(fullNames));
+assets['legendfull/_index.json'] = fullIndex;
+console.log(`      ${webCount} web files, ${heroNames.length} hero images, ${fullNames.length} full legend figures`);
 
 step(4, 'generating the single-executable blob');
 const seaConfig = path.join(BUILD, 'sea-config.json');

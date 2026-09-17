@@ -1,6 +1,6 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
-import { chainLoad, clearArt, cardSteps, heroSteps } from '../../stage/art.js';
+import { chainLoad, clearArt, cardSteps, fullSteps, markTier } from '../../stage/art.js';
 import { renderRunes, loadLegendDomains, legendDomains, applyVisibility } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
@@ -9,14 +9,17 @@ const inOut = new SeekClock(root, '--t', 700);
 
 const shown = { hero: {}, card: {} };
 
+// Each side is 760px of legend: the whole figure where one is baked, the hero
+// crop otherwise.
 function loadHero(p, side) {
   const key = side.legendSlug || '';
   if (shown.hero[p] === key) return;
   shown.hero[p] = key;
   const img = $(`${p}hero`);
-  const steps = heroSteps(side);
+  const steps = fullSteps(side);
+  delete img.parentElement.dataset.tier;
   if (!steps.length) { clearArt(img); return; }
-  chainLoad(img, steps);
+  chainLoad(img, steps, markTier);
 }
 
 // The two key cards: the legend card and the champion's card, from the side's

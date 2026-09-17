@@ -66,8 +66,11 @@ const SCENE_FIELDS = {
   bracket: ['bracket', 'eventName'],
   standings: ['standings', 'eventName', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
-  // The card row draws its own slots under Match data › Card row.
-  cardrow: ['cardrow'],
+  // The card popup and the card row carry their content in their own
+  // Graphic features groups (the search, the four slots), not in Match data;
+  // listed so putting them in preview unfolds that card.
+  cardpopup: [],
+  cardrow: [],
 };
 const SCENE_NAMES = {
   scorebug: 'the score bug',
@@ -240,7 +243,7 @@ function renderScenes(s) {
   const cardBtn = $('toggleCard');
   cardBtn.textContent = cp.visible ? 'ON' : 'OFF';
   cardBtn.classList.toggle('on', cp.visible);
-  cardBtn.disabled = !cp.card.cardId;
+  cardBtn.title = cp.card.cardId ? '' : 'Nothing staged: opens the card search under Graphic features';
   $('cardOnAir').classList.toggle('hidden', !cpAir);
 
   const thumb = $('stagedThumb');
@@ -614,7 +617,10 @@ $('takeBtn').addEventListener('click', () => post({ action: 'take' }));
 // graphic off air with preview untouched; CLEAR PREVIEW empties the preview
 // bank so the next TAKE airs a clean frame, with nothing on air changing.
 $('clearBtn').addEventListener('click', () => post({ action: 'clear' }));
-$('clearPreviewBtn').addEventListener('click', () => post({ action: 'clearpreview' }));
+$('clearPreviewBtn').addEventListener('click', () => {
+  armedFeatures.clear();
+  post({ action: 'clearpreview' });
+});
 
 // What is on air, named under CLEAR. CLEAR is the whole-show recovery; this
 // list is the aimed one, so the operator drops the graphic that should not be
@@ -772,16 +778,10 @@ $('toggleScorebug').addEventListener('click', () => {
   post({ scenes: { scorebug: { visible: !state.preview.scenes.scorebug.visible } } });
 });
 
-$('toggleCard').addEventListener('click', () => {
-  if (!state) return;
-  const cp = state.preview.scenes.cardpopup;
-  if (cp.card.cardId) post({ scenes: { cardpopup: { visible: !cp.visible } } });
-});
-$('toggleCardrow').addEventListener('click', () => {
-  if (!state) return;
-  const cr = state.preview.scenes.cardrow;
-  if (cr.cards.some((c) => c.cardId)) post({ scenes: { cardrow: { visible: !cr.visible } } });
-});
+// With nothing staged these open their Graphic features group to pick cards
+// (toggleScene), the same as a click on the picture.
+$('toggleCard').addEventListener('click', () => toggleScene('cardpopup'));
+$('toggleCardrow').addEventListener('click', () => toggleScene('cardrow'));
 $('cardrowBackground').addEventListener('change', () => {
   post({ scenes: { cardrow: { background: $('cardrowBackground').checked } } });
 });
@@ -1174,8 +1174,8 @@ function renderResults() {
     li.addEventListener('keydown', (e) => { if (e.key === 'Enter') stageCard(i); });
     return li;
   }));
-  // The staged card sits at the foot of the data column, so its list opens
-  // upward when there is no room below.
+  // The search can sit low in Graphic features, so its list opens upward when
+  // there is no room below.
   placeList($('cardSearch'), list);
   list.classList.toggle('open', results.length > 0);
 }
@@ -1297,7 +1297,7 @@ function renderCardrow(s) {
   const btn = $('toggleCardrow');
   btn.textContent = cr.visible ? 'ON' : 'OFF';
   btn.classList.toggle('on', cr.visible);
-  btn.disabled = !any;
+  btn.title = any ? '' : 'No cards picked: opens the card row slots under Graphic features';
   $('cardrowOnAir').classList.toggle('hidden', !s.program.scenes.cardrow.visible);
   if (document.activeElement !== $('cardrowBackground')) $('cardrowBackground').checked = cr.background !== false;
   cr.cards.forEach((c, i) => {
@@ -2608,12 +2608,12 @@ function toggleScene(key) {
   if (key === 'arenabug') { post({ scenes: { arenabug: { visible: true }, scorebug: { visible: false } } }); return; }
   if (key === 'cardpopup') {
     if (prev.scenes.cardpopup.card.cardId) post({ scenes: { cardpopup: { visible: true } } });
-    else { $('stagedSection').open = true; $('cardSearch').focus(); }
+    else armFeature('cardpopup', 'cardSearch');
     return;
   }
   if (key === 'cardrow') {
     if (prev.scenes.cardrow.cards.some((c) => c.cardId)) post({ scenes: { cardrow: { visible: true } } });
-    else { $('cardrowSection').open = true; $('rowCard0').focus(); }
+    else armFeature('cardrow', 'rowCard0');
     return;
   }
   if (key === 'decklist') {
@@ -2658,12 +2658,17 @@ function renderThumbs(s) {
     const onAir = Boolean(s.program.scenes[key] && s.program.scenes[key].visible);
     thumb.classList.toggle('in-preview', inPreview);
     thumb.classList.toggle('on-air', onAir);
-    const cantShow = (key === 'cardpopup' && !s.preview.scenes.cardpopup.card.cardId)
-      || (key === 'cardrow' && !s.preview.scenes.cardrow.cards.some((c) => c.cardId))
-      || (key === 'decklist' && !s.preview.scenes.decklist.list.trim());
+    // An empty card popup or card row still answers a click (it opens its
+    // picker), so it dims but keeps the pointer; an empty decklist does not.
+    const empty = (key === 'cardpopup' && !s.preview.scenes.cardpopup.card.cardId)
+      || (key === 'cardrow' && !s.preview.scenes.cardrow.cards.some((c) => c.cardId));
+    const cantShow = key === 'decklist' && !s.preview.scenes.decklist.list.trim();
+    thumb.classList.toggle('empty', empty);
     thumb.classList.toggle('disabled', cantShow);
-    thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : (cantShow ? 'Nothing staged' : 'Click to preview'));
-    thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview` : `Put ${SCENE_NAMES[key] || key} in preview`;
+    const idle = empty ? 'Pick a card' : (cantShow ? 'Nothing staged' : 'Click to preview');
+    thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : idle);
+    thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview`
+      : (empty ? `Pick cards for ${SCENE_NAMES[key] || key} under Graphic features` : `Put ${SCENE_NAMES[key] || key} in preview`);
   }
   renderFeatures(s);
   renderSections(s);
@@ -2671,11 +2676,47 @@ function renderThumbs(s) {
 
 // The Graphic features card shows the options of whatever is in preview,
 // so an operator edits the graphic they are looking at, not a list of all.
+//
+// The card popup and the card row hold their content there too (the search
+// and the staged card, the four slots), and neither goes into preview empty,
+// so a click on either with nothing picked arms its group: it shows until a
+// pick puts the graphic in preview, the same click comes again, or CLEAR
+// PREVIEW. The popup's search also shows while an overlay that docks the
+// staged card is in preview with its dock on, since that is where it lands.
+const armedFeatures = new Set();
+
+function armFeature(key, inputId) {
+  if (armedFeatures.has(key)) {
+    armedFeatures.delete(key);
+    if (state) renderFeatures(state);
+    return;
+  }
+  armedFeatures.add(key);
+  foldCard($('featuresCard'), true);
+  if (state) renderFeatures(state);
+  const input = $(inputId);
+  input.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  input.focus({ preventScroll: true });
+}
+
+function featureShown(key, s) {
+  const scenes = s.preview.scenes;
+  if (scenes[key] && scenes[key].visible) {
+    armedFeatures.delete(key);
+    return true;
+  }
+  if (armedFeatures.has(key)) return true;
+  if (key === 'cardpopup') {
+    return Boolean((scenes.igodual.visible && scenes.igodual.cardSlot)
+      || (scenes.igoportrait.visible && scenes.igoportrait.cardWell));
+  }
+  return false;
+}
+
 function renderFeatures(s) {
   let any = false;
   for (const group of document.querySelectorAll('.feature-group')) {
-    const key = group.dataset.scene;
-    const on = Boolean(s.preview.scenes[key] && s.preview.scenes[key].visible);
+    const on = featureShown(group.dataset.scene, s);
     group.classList.toggle('hidden', !on);
     any = any || on;
   }

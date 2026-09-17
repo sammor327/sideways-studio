@@ -96,6 +96,14 @@ at build time, so a change to the panel or a scene needs a rebuild before the
 packaged app shows it. Running from source picks those files up off disk
 immediately, so develop with `npm start` and rebuild to ship.
 
+The legend art rides along from outside the repo (it is Riot art): the hero
+crops from `SIDEWAYS_HERO_DIR` and the full-figure cutouts the match card and
+player profile draw from `SIDEWAYS_LEGEND_FULL_DIR`. The full figures are
+baked from FlipDeck's high-resolution legend PNGs with
+`py scripts/bake-legend-full.py` (about 8 MB for 49 legends); rerun it when a
+new legend's art arrives, and add an alias there if its filename does not
+reduce to the champion's name.
+
 The exe is not code-signed. Locally built it runs without complaint, but a
 copy sent over the internet will trip SmartScreen ("Windows protected your
 PC": More info, then Run anyway) until it is signed.
@@ -133,8 +141,11 @@ preview opens its fold. Each row still carries an Overlay or Full frame
 tag. Graphic features, Decklist, Look and Setup fold from their heading
 too, and every control card can be dragged taller or shorter by the grip
 along its bottom edge (double-click puts it back); the browser remembers
-the folds and the heights. The card popup's search and staged card live in
-Match data, under Event, and the card row's four slots sit under them.
+the folds and the heights. The card popup's search and staged card, and the
+card row's four slots, live in Graphic features with each graphic's options.
+Neither graphic goes into preview empty, so clicking one with nothing picked
+opens its group there to pick from; the popup's search also shows while the
+dual-column or portrait pillar overlay is in preview docking the staged card.
 TAKE, CLEAR PROGRAM and CLEAR PREVIEW stay at the top of their column
 and the tip about them is TAKE's hover text; what is on air fills the
 column from the bottom.

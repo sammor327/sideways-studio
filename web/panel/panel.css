@@ -693,6 +693,7 @@ footer p { margin: 0; }
 .scene-thumb.in-preview .thumb-tag { color: var(--tes-green); }
 .scene-thumb.on-air .thumb-tag { color: #ff8a8a; }
 .scene-thumb.disabled { opacity: 0.5; cursor: default; }
+.scene-thumb.empty { opacity: 0.5; }
 .graphics-card .scene-options { grid-column: 2 / -1; padding-left: 0; }
 /* A line under a graphic's name: what it is and when it airs. It turns into
    a warning while the graphic is up with nothing to show. */
@@ -812,6 +813,7 @@ details.scene-section > .scene-group { margin-top: 10px; }
 .feature-group.hidden { display: none; }
 .feature-group h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .feature-group .scene-options { padding-left: 0; }
+.feature-group .search-wrap > input { width: 100%; }
 
 /* --- foldable control cards: the heading folds its card away ---
    The control band holds more than a short screen shows at once, so Graphic
@@ -947,8 +949,8 @@ details.field-section > .field-row { margin-top: 7px; }
 .br-match .win-btn.on { background: var(--tes-green); color: #0a0d12; border-color: transparent; }
 .br-match .id { grid-column: 1 / -1; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6c7783; }
 
-/* --- card row: four slots under Match data, a search each, the star is
-   the highlight cue --- */
+/* --- card row: four slots under Graphic features, a search each, the star
+   is the highlight cue --- */
 .cardrow-slots { display: flex; flex-direction: column; gap: 6px; }
 .cardrow-slot { display: flex; align-items: center; gap: 6px; position: relative; }
 .cardrow-slot input { flex: 1 1 auto; min-width: 0; }

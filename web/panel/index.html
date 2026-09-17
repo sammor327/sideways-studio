@@ -548,72 +548,6 @@
         </div>
       </div>
     </details>
-
-    <details class="field-section fold" data-sec="staged" id="stagedSection">
-      <summary><h4 class="section-label">Staged card</h4></summary>
-
-      <div class="field-row" data-field="stagedSearch">
-        <span class="row-label" title="Search any card; Enter stages the top result. Staging switches the card popup on in preview, and TAKE airs it.">Search</span>
-        <div class="cell span2 search-wrap">
-          <input id="cardSearch" placeholder="Type at least 2 letters&hellip;" autocomplete="off" aria-label="Search a card to stage">
-          <ul class="results" id="cardResults"></ul>
-        </div>
-      </div>
-
-      <div class="field-row" data-field="stagedCard">
-        <span class="row-label" title="The card the card popup shows. Staging one switches the popup on in preview; TAKE airs it.">Popup</span>
-        <div class="cell span2">
-          <div class="staged" id="stagedBox">
-            <img id="stagedThumb" alt="" class="hidden">
-            <div class="staged-meta">
-              <span class="staged-label">Staged card</span>
-              <strong id="stagedName">Nothing staged</strong>
-              <span class="muted" id="stagedType"></span>
-            </div>
-          </div>
-          <p class="hint">Staging a card switches the card popup on in preview. TAKE airs it.</p>
-        </div>
-      </div>
-    </details>
-
-    <details class="field-section fold" data-sec="cardrow" id="cardrowSection">
-      <summary><h4 class="section-label">Card row</h4></summary>
-
-      <div class="field-row" data-field="cardrow">
-        <span class="row-label" title="Up to four cards side by side, each over its name plate. Picking the first card switches the card row on in preview; TAKE airs it. Highlight enlarges one card and shrinks the others, on air at once.">Cards</span>
-        <div class="cell span2 cardrow-slots" id="cardrowSlots">
-          <div class="cardrow-slot picker-wrap" data-slot="0">
-            <img class="card-thumb hidden" alt="" id="rowThumb0">
-            <input id="rowCard0" placeholder="Card 1&hellip;" autocomplete="off" aria-label="Card row, card 1">
-            <button type="button" class="row-focus" id="rowFocus0" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 1">&#9733;</button>
-            <button type="button" class="clear-x" id="rowClear0" title="Empty this slot" aria-label="Empty card row slot 1">&times;</button>
-            <ul class="results" id="rowCard0Results"></ul>
-          </div>
-          <div class="cardrow-slot picker-wrap" data-slot="1">
-            <img class="card-thumb hidden" alt="" id="rowThumb1">
-            <input id="rowCard1" placeholder="Card 2&hellip;" autocomplete="off" aria-label="Card row, card 2">
-            <button type="button" class="row-focus" id="rowFocus1" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 2">&#9733;</button>
-            <button type="button" class="clear-x" id="rowClear1" title="Empty this slot" aria-label="Empty card row slot 2">&times;</button>
-            <ul class="results" id="rowCard1Results"></ul>
-          </div>
-          <div class="cardrow-slot picker-wrap" data-slot="2">
-            <img class="card-thumb hidden" alt="" id="rowThumb2">
-            <input id="rowCard2" placeholder="Card 3&hellip;" autocomplete="off" aria-label="Card row, card 3">
-            <button type="button" class="row-focus" id="rowFocus2" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 3">&#9733;</button>
-            <button type="button" class="clear-x" id="rowClear2" title="Empty this slot" aria-label="Empty card row slot 3">&times;</button>
-            <ul class="results" id="rowCard2Results"></ul>
-          </div>
-          <div class="cardrow-slot picker-wrap" data-slot="3">
-            <img class="card-thumb hidden" alt="" id="rowThumb3">
-            <input id="rowCard3" placeholder="Card 4&hellip;" autocomplete="off" aria-label="Card row, card 4">
-            <button type="button" class="row-focus" id="rowFocus3" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 4">&#9733;</button>
-            <button type="button" class="clear-x" id="rowClear3" title="Empty this slot" aria-label="Empty card row slot 4">&times;</button>
-            <ul class="results" id="rowCard3Results"></ul>
-          </div>
-          <p class="hint">Picking the first card switches the card row on in preview; TAKE airs it. The star highlights a card on air at once, no TAKE needed; the same star again evens the row out.</p>
-        </div>
-      </div>
-    </details>
   </div>
 </aside>
 
@@ -705,12 +639,13 @@
         </div>
         <div class="scene-row popup-row" data-scene="cardpopup">
           <div class="scene-name">Card popup <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardOnAir">ON AIR</button></div>
-          <button id="toggleCard" class="scene-toggle" disabled>OFF</button>
+          <button id="toggleCard" class="scene-toggle">OFF</button>
+          <p class="scene-note" id="cardpopupNote">One card flies in over the feed. Search it under Graphic features &rsaquo; Card popup; with nothing staged, a click here opens that search.</p>
         </div>
         <div class="scene-row" data-scene="cardrow">
           <div class="scene-name">Card row <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="cardrowOnAir">ON AIR</button></div>
-          <button id="toggleCardrow" class="scene-toggle" disabled>OFF</button>
-          <p class="scene-note" id="cardrowNote">One to four cards side by side over the look's ground (an overlay with Background off). Pick them under Match data &rsaquo; Card row; the star there highlights one on air.</p>
+          <button id="toggleCardrow" class="scene-toggle">OFF</button>
+          <p class="scene-note" id="cardrowNote">One to four cards side by side over the look's ground (an overlay with Background off). Pick them under Graphic features &rsaquo; Card row; with nothing picked, a click here opens the slots.</p>
         </div>
         <div class="scene-row" data-scene="decklist">
           <div class="scene-name">Decklist <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="deckOnAir">ON AIR</button></div>
@@ -762,11 +697,57 @@
   <section class="card features-card foldable" id="featuresCard" data-fold="features" data-size="features">
     <h2 class="fold-head"><button type="button" class="fold-btn" aria-expanded="true" aria-controls="featuresCard">Graphic features</button></h2>
     <p class="hint" id="featuresHint">Put a graphic in preview to see its options here.</p>
+    <div class="feature-group hidden" data-scene="cardpopup">
+      <h3>Card popup</h3>
+      <div class="search-wrap">
+        <input id="cardSearch" placeholder="Search any card&hellip;" autocomplete="off" aria-label="Search a card to stage" title="Search any card; Enter stages the top result. Staging switches the card popup on in preview, and TAKE airs it.">
+        <ul class="results" id="cardResults"></ul>
+      </div>
+      <div class="staged" id="stagedBox">
+        <img id="stagedThumb" alt="" class="hidden">
+        <div class="staged-meta">
+          <span class="staged-label">Staged card</span>
+          <strong id="stagedName">Nothing staged</strong>
+          <span class="muted" id="stagedType"></span>
+        </div>
+      </div>
+      <span class="hint">Staging a card switches the card popup on in preview; TAKE airs it. The dual-column and portrait pillar overlays dock this same card when their Dock featured card is on.</span>
+    </div>
     <div class="feature-group hidden" data-scene="cardrow">
       <h3>Card row</h3>
+      <div class="cardrow-slots" id="cardrowSlots">
+        <div class="cardrow-slot picker-wrap" data-slot="0">
+          <img class="card-thumb hidden" alt="" id="rowThumb0">
+          <input id="rowCard0" placeholder="Card 1&hellip;" autocomplete="off" aria-label="Card row, card 1">
+          <button type="button" class="row-focus" id="rowFocus0" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 1">&#9733;</button>
+          <button type="button" class="clear-x" id="rowClear0" title="Empty this slot" aria-label="Empty card row slot 1">&times;</button>
+          <ul class="results" id="rowCard0Results"></ul>
+        </div>
+        <div class="cardrow-slot picker-wrap" data-slot="1">
+          <img class="card-thumb hidden" alt="" id="rowThumb1">
+          <input id="rowCard1" placeholder="Card 2&hellip;" autocomplete="off" aria-label="Card row, card 2">
+          <button type="button" class="row-focus" id="rowFocus1" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 2">&#9733;</button>
+          <button type="button" class="clear-x" id="rowClear1" title="Empty this slot" aria-label="Empty card row slot 2">&times;</button>
+          <ul class="results" id="rowCard1Results"></ul>
+        </div>
+        <div class="cardrow-slot picker-wrap" data-slot="2">
+          <img class="card-thumb hidden" alt="" id="rowThumb2">
+          <input id="rowCard2" placeholder="Card 3&hellip;" autocomplete="off" aria-label="Card row, card 3">
+          <button type="button" class="row-focus" id="rowFocus2" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 3">&#9733;</button>
+          <button type="button" class="clear-x" id="rowClear2" title="Empty this slot" aria-label="Empty card row slot 3">&times;</button>
+          <ul class="results" id="rowCard2Results"></ul>
+        </div>
+        <div class="cardrow-slot picker-wrap" data-slot="3">
+          <img class="card-thumb hidden" alt="" id="rowThumb3">
+          <input id="rowCard3" placeholder="Card 4&hellip;" autocomplete="off" aria-label="Card row, card 4">
+          <button type="button" class="row-focus" id="rowFocus3" title="Highlight this card on air: it grows and lifts, the others shrink. Click again for an even row." aria-label="Highlight card 4">&#9733;</button>
+          <button type="button" class="clear-x" id="rowClear3" title="Empty this slot" aria-label="Empty card row slot 4">&times;</button>
+          <ul class="results" id="rowCard3Results"></ul>
+        </div>
+      </div>
       <div class="scene-options">
         <label class="inline" title="On: the look's ground paints behind the cards (the TES plate photo by design; change it under Look). Off: only the cards paint, for keying over the feed."><input type="checkbox" id="cardrowBackground" checked> Background</label>
-        <span class="hint">The cards and the highlight star are under Match data &rsaquo; Card row. The highlight is a cue: it acts on air at once.</span>
+        <span class="hint">Picking a card switches the card row on in preview; TAKE airs it. The star highlights a card on air at once, no TAKE needed; the same star again evens the row out.</span>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="decklist">

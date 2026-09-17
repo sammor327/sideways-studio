@@ -63,6 +63,23 @@ export function heroSteps(side) {
   ] : [];
 }
 
+// A large legend placement (the match card's sides, the profile's art
+// column): the whole figure, transparent and sharp at a thousand pixels, then
+// the hero crop and the icon as above for a legend with no full art yet.
+export function fullSteps(side) {
+  return side.legendSlug ? [
+    { src: `/legendart/full/${side.legendSlug}.webp`, cls: 'full-tier' },
+    ...heroSteps(side),
+  ] : [];
+}
+
+// Which tier a slot ended up showing, on the slot itself, so its CSS can
+// drop the backing fill behind a transparent figure.
+export function markTier(img) {
+  const tier = img.classList.contains('full-tier') ? 'full' : (img.classList.contains('icon-tier') ? 'icon' : 'hero');
+  if (img.parentElement) img.parentElement.dataset.tier = tier;
+}
+
 // A battlefield strip: full art, then the thumb. Battlefield art is stored
 // portrait, so the crop-and-rotate is decided by the loaded file's own
 // dimensions, never a per-card flag.
