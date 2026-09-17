@@ -214,6 +214,35 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-16c (out of band: patch notes in the launcher, 0.14.0)
+
+Sam: "Can we create a patch notes portion on the launcher and write
+patchnotes with every release?" One file, three readers.
+
+**`CHANGELOG.md`** at the repo root is the source: `## <version> (date)`
+sections, bullets in the operator's words, newest first (the parser sorts
+anyway). Written back to 0.10.0 from the loop log. `web/shared/patchnotes.js`
+parses it (sections, bullets, paragraphs, numeric version order) for the
+three readers, tested in `test/patchnotes.test.js`, which also fails when
+the version in package.json has no section, so `npm test` catches a
+forgotten entry before the release script does.
+
+**The launcher.** The app window's left column is now a stack: browser
+sources over a "What's new" card (`/api/patchnotes` serves the file, bundled
+into the exe by build-exe.mjs as the `CHANGELOG.md` asset and read off disk
+from source). The running version opens first with a "this version" tag;
+"All releases (n)" lists the rest folded. No notes in the build reads as a
+line, not a blank card.
+
+**The release script** takes the version's section as the GitHub release
+body and the manifest's `notes` (the update prompt's text), through a
+`--notes-file` so multi-line notes survive the Windows command line, and
+refuses to publish a version with no section, printing the heading to
+write. `--notes "..."` still overrides for a one-line hotfix.
+
+Verified from source at the window's 1280x860: the card, the tag, the
+toggle, the fold. 114 tests.
+
 ### 2026-09-16b (out of band: two clears, the card row, the decklist highlight, the index check)
 
 Sam's four asks, in one pass.

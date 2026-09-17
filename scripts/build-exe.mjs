@@ -114,6 +114,9 @@ step(3, 'collecting assets');
 const assets = {};
 for (const f of await walk(path.join(ROOT, 'web'))) assets[`web/${f.rel}`] = f.full;
 const webCount = Object.keys(assets).length;
+// The patch notes ride along so the app window can show "What's new"
+// offline; the server reads them back with readAsset('CHANGELOG.md').
+assets['CHANGELOG.md'] = path.join(ROOT, 'CHANGELOG.md');
 
 let heroNames = [];
 try {

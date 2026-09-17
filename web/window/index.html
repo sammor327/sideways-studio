@@ -71,11 +71,18 @@
 
   <main class="body">
 
+    <div class="stack">
     <section class="card sources">
       <h2>Browser sources <span class="muted">1920 &times; 1080, 60 fps</span></h2>
       <ul id="sourceList"></ul>
       <p class="hint">In OBS or vMix add each one as a browser source at 1920 &times; 1080, 60 fps, with a transparent background. Card data and art are saved on this computer, so the graphics keep working with no internet at the venue.</p>
     </section>
+
+    <section class="card notes">
+      <h2>What's new <span class="muted" id="notesSub"></span><span class="grow"></span><button id="notesAll" class="hidden">All releases</button></h2>
+      <div id="notesBody" class="notes-body"><p class="hint">Loading the patch notes…</p></div>
+    </section>
+    </div>
 
     <section class="card console">
       <h2>

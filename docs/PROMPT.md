@@ -34,8 +34,15 @@ commit.
 My feedback for this loop:
 - [Sam: write feedback here, or "no feedback, run the loop"]
 
-Current status: **Two clears, the card row, the decklist highlight and
-the index check, 2026-09-16, 0.13.0 in the tree and not yet released**:
+Current status: **Patch notes in the launcher, 2026-09-16, 0.14.0**:
+`CHANGELOG.md` is the one source of release notes; the app window shows
+it under "What's new" (running version first, the rest folded), the
+release script publishes the version's section as the GitHub notes and
+the update prompt and refuses a version without one, and `npm test`
+fails when package.json's version has no section (LOOP.md 2026-09-16c).
+Write the section before every release. Before that: **Two clears, the
+card row, the decklist highlight and the index check, 2026-09-16,
+0.13.0, released**:
 CLEAR is CLEAR PROGRAM plus a new CLEAR PREVIEW (`clearpreview` action);
 a new `cardrow` graphic puts one to four cards side by side with a
 highlighted slot grown and lifted (Match data › Card row, star per slot);

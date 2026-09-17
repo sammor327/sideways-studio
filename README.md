@@ -43,6 +43,15 @@ A release can be marked `required`. Those install themselves, behind a
 progress curtain in the window, and that is the lever for pushing an urgent
 fix.
 
+Every release carries patch notes. They live in `CHANGELOG.md`, one
+`## <version> (date)` section per release with the changes as bullets in
+plain words. The app window shows them under **What's new** (the version
+you are running first, the rest behind **All releases**), the update bar
+quotes them, and `npm run release` uses the section for the version being
+published as the GitHub release notes; it refuses to publish a version
+that has no section, and `npm test` fails on the same gap. Write the
+section, bump the version, then release.
+
 In `--console` mode the same choice is a keystroke with a 15 second
 countdown, and an unanswered prompt starts the version already installed:
 

@@ -17,6 +17,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseChangelog, sectionFor, sectionText } from '../web/shared/patchnotes.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -29,7 +30,7 @@ const SLUG = `${OWNER}/${REPO}`;
 const args = process.argv.slice(2);
 const required = args.includes('--required');
 const notesIdx = args.indexOf('--notes');
-const notes = notesIdx >= 0 ? (args[notesIdx + 1] || '') : '';
+const notesArg = notesIdx >= 0 ? (args[notesIdx + 1] || '') : '';
 const skipBuild = args.includes('--no-build');
 
 // execFileSync returns null when stdio is inherited, so do not assume a string.
@@ -38,6 +39,23 @@ const gh = (a, opts = {}) => (execFileSync('gh', a, { encoding: 'utf8', ...opts 
 const { version } = JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8'));
 const tag = `v${version}`;
 console.log(`Releasing Sideways Studio ${tag}${required ? ' (required)' : ''}`);
+
+// 0. The notes come from CHANGELOG.md: the section for this version is the
+//    GitHub release's body and the update prompt's text, so every release
+//    carries its own notes and the app window can show them. No section,
+//    no release. --notes still wins when passed, for a one-line hotfix.
+let notes = notesArg;
+const changelog = parseChangelog(await readFile(path.join(ROOT, 'CHANGELOG.md'), 'utf8').catch(() => ''));
+const section = sectionFor(changelog, version);
+if (!section && !notes) {
+  console.error(`\n  CHANGELOG.md has no "## ${version}" section. Write the patch notes first:`);
+  console.error(`\n    ## ${version} (${new Date().toISOString().slice(0, 10)})`);
+  console.error('    - What changed, in the operator\'s words.');
+  console.error('\n  (or pass --notes "..." for a one-line release)');
+  process.exit(1);
+}
+if (!notes) notes = sectionText(section);
+console.log(`  notes: ${section ? `CHANGELOG.md ## ${version}` : '--notes'}, ${notes.split('\n').length} line(s)`);
 
 // 1. The repo has to exist and be public, or nobody can download the update.
 try {
@@ -101,13 +119,17 @@ execFileSync('git', ['push', 'origin', branch], { stdio: 'inherit', cwd: ROOT })
 
 // 6. Publish. update.json must be an asset on the release, because
 //    /releases/latest/download/update.json is the URL every client polls.
+const notesFile = path.join(DIST, 'release-notes.md');
+await writeFile(notesFile, (notes || `Sideways Studio ${version}`) + String.fromCharCode(10));
 gh([
   'release', 'create', tag,
   EXE, MANIFEST, path.join(DIST, 'SidewaysStudio.exe.sha256'),
   '--repo', SLUG,
   '--target', head,
   '--title', `Sideways Studio ${version}`,
-  '--notes', notes || `Sideways Studio ${version}`,
+  // A file rather than an argument: multi-line notes do not survive the
+  // Windows command line intact.
+  '--notes-file', notesFile,
 ], { stdio: 'inherit' });
 
 console.log('');

@@ -10,6 +10,7 @@
 // until it lands the server is holding a timeout, and if it never lands the
 // console window comes back so the operator is not left with nothing.
 import { ALL_SOURCES } from '../shared/sources.js';
+import { parseChangelog } from '../shared/patchnotes.js';
 
 const $ = (id) => document.getElementById(id);
 const BASE = location.origin;
@@ -349,6 +350,78 @@ function connect() {
   ws.onerror = () => ws.close();
 }
 
+// --- patch notes ------------------------------------------------------------
+// CHANGELOG.md, bundled with the app, parsed with the same module the release
+// script uses. The version this copy is running opens first; the rest fold
+// away under "All releases" so the card stays short on a fresh install.
+
+let notesShowAll = false;
+let notesSections = [];
+
+function noteSection(section, open) {
+  const box = document.createElement('details');
+  box.className = 'note';
+  box.open = open;
+  const head = document.createElement('summary');
+  const ver = document.createElement('strong');
+  ver.textContent = section.version;
+  head.append(ver);
+  if (section.version === appStatus.version) {
+    const tag = document.createElement('span');
+    tag.className = 'note-tag';
+    tag.textContent = 'this version';
+    head.append(tag);
+  }
+  if (section.date) {
+    const when = document.createElement('span');
+    when.className = 'muted';
+    when.textContent = section.date;
+    head.append(when);
+  }
+  box.append(head);
+  for (const p of section.paragraphs) {
+    const para = document.createElement('p');
+    para.textContent = p;
+    box.append(para);
+  }
+  if (section.bullets.length) {
+    const ul = document.createElement('ul');
+    for (const b of section.bullets) {
+      const li = document.createElement('li');
+      li.textContent = b;
+      ul.append(li);
+    }
+    box.append(ul);
+  }
+  return box;
+}
+
+function renderNotes() {
+  const body = $('notesBody');
+  if (!notesSections.length) {
+    body.replaceChildren(Object.assign(document.createElement('p'), { className: 'hint', textContent: 'No patch notes came with this build.' }));
+    $('notesAll').classList.add('hidden');
+    return;
+  }
+  const mine = notesSections.findIndex((s) => s.version === appStatus.version);
+  // The running version first; if the notes do not know it, the newest.
+  const first = mine >= 0 ? mine : 0;
+  const shown = notesShowAll ? notesSections : [notesSections[first]];
+  body.replaceChildren(...shown.map((s, i) => noteSection(s, i === 0 || (notesShowAll && s.version === appStatus.version))));
+  $('notesSub').textContent = notesShowAll ? `${notesSections.length} releases` : (mine >= 0 ? '' : `latest: ${notesSections[0].version}`);
+  const btn = $('notesAll');
+  btn.classList.toggle('hidden', notesSections.length < 2);
+  btn.textContent = notesShowAll ? 'This version only' : `All releases (${notesSections.length})`;
+}
+
+$('notesAll').addEventListener('click', () => { notesShowAll = !notesShowAll; renderNotes(); });
+
+async function loadNotes() {
+  const data = await getJson('/api/patchnotes');
+  notesSections = data ? parseChangelog(data.markdown) : [];
+  renderNotes();
+}
+
 async function init() {
   renderSources();
   const status = await getJson('/api/app/status');
@@ -365,6 +438,7 @@ async function init() {
   pollCards();
   pollUpdate();
   drawLegend();
+  loadNotes();
   if (auto.checked) open('panel');
 }
 

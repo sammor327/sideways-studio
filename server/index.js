@@ -374,6 +374,19 @@ const server = http.createServer(async (req, res) => {
   // What the window needs to draw its header and its status rail. The source
   // list itself is not here: the window imports the same shared list the
   // console banner prints from (web/shared/sources.js).
+  // The patch notes: CHANGELOG.md, bundled into the exe beside the web files
+  // and read off disk from source. The window parses it (web/shared/
+  // patchnotes.js) and lists every release under "What's new".
+  if (url.pathname === '/api/patchnotes' && req.method === 'GET') {
+    let markdown = '';
+    const embedded = readAsset('CHANGELOG.md');
+    if (embedded) markdown = embedded.toString('utf8');
+    else if (!isPackaged) {
+      try { markdown = await readFile(path.join(APP_ROOT, 'CHANGELOG.md'), 'utf8'); } catch { /* no notes yet */ }
+    }
+    sendJson(res, 200, { version: APP_VERSION, markdown });
+    return;
+  }
   if (url.pathname === '/api/app/status' && req.method === 'GET') {
     sendJson(res, 200, {
       version: APP_VERSION,
