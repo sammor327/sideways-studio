@@ -11,6 +11,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { allCards } from './carddb.js';
 import { readBlob, writeBlob, storedIds } from './cardstore.js';
+import { libraryArt, libraryIds } from './cardlibrary.js';
 import { isPackaged, readAsset, readAssetIndex } from './runtime.js';
 
 // The packaged build carries the hero and full art inside the exe (SPEC
@@ -63,9 +64,11 @@ export async function initLegends() {
   fullByChamp = await indexArt('legendfull/_index.json', FULL_DIR, '.webp', 'full legend');
   // Which cutouts are already cached. Done after the hero index is built
   // because the slugs come from the catalog, which reads both.
-  for (const slug of await storedIds('legend', listLegends().map((l) => l.slug))) {
-    cachedIcons.add(slug);
-  }
+  const slugs = listLegends().map((l) => l.slug);
+  for (const slug of await storedIds('legend', slugs)) cachedIcons.add(slug);
+  // Cutouts the build carries count as cached: they are on this machine and
+  // they work with no connection, which is the whole point of baking them in.
+  for (const slug of libraryIds('legend', slugs)) cachedIcons.add(slug);
 }
 
 // Legends not yet in the Rift Registry index. Vendetta shipped 2026-07-31
@@ -172,6 +175,11 @@ export async function readIconArt(slug) {
   if (cachedIcons.has(slug)) {
     const buf = await readBlob('legend', slug);
     if (buf) return buf;
+    // Not in this machine's cache: the cutouts baked into the build are the
+    // other place it can be, and the only one for an operator who cannot
+    // reach Rift Registry.
+    const packed = await libraryArt('legend', slug);
+    if (packed) return packed;
     // Sealed with a key this build does not have, or lost its bytes: fetch it
     // again rather than serving nothing.
     cachedIcons.delete(slug);

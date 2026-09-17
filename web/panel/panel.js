@@ -1452,7 +1452,28 @@ function describeDb(s) {
   return describeDbState(s) + migrationNote(s);
 }
 
+// The pack download, which reports in bytes rather than files: it is one
+// request for the whole of the full art, not nine hundred.
+const dbFetch = (s) => (s.library && s.library.fetch) || { phase: 'idle' };
+const dbMb = (n) => `${Math.round((n / 1024 / 1024) * 10) / 10} MB`;
+
+// 0 to 1 for the bar, or null when there is nothing measurable to show.
+function dbProgressFraction(s) {
+  const f = dbFetch(s);
+  if (f.phase === 'downloading' && f.total) return f.done / f.total;
+  if (s.progress.phase !== 'idle' && s.progress.total) return s.progress.done / s.progress.total;
+  return null;
+}
+
 function describeDbState(s) {
+  const f = dbFetch(s);
+  if (f.phase === 'checking') return 'Looking for the card art download…';
+  if (f.phase === 'downloading') {
+    return f.total
+      ? `Downloading the card art that comes with this version: ${dbMb(f.done)} of ${dbMb(f.total)}`
+      : 'Downloading the card art that comes with this version…';
+  }
+  if (f.phase === 'verifying') return 'Checking the card art download…';
   if (s.progress.phase === 'index') return 'Downloading the card index…';
   if (s.progress.phase === 'thumbs') return `Downloading card thumbnails: ${s.progress.done} of ${s.progress.total}`;
   if (s.progress.phase === 'full') return `Downloading full card art: ${s.progress.done} of ${s.progress.total}`;
@@ -1460,11 +1481,24 @@ function describeDbState(s) {
   const bits = [`${s.cardCount} cards`, `${s.thumbsCached} thumbnails saved`];
   if (s.fullCached) bits.push(`${s.fullCached} full art files saved`);
   let text = bits.join(', ') + '.';
-  if (s.indexUpdatedAt) {
+  if (s.fromBundledIndex) {
+    // The card list came with the app rather than off the internet, which is
+    // the normal case: the card database is private, so new sets arrive with
+    // an app update. Saying "checked today" here would be a lie about a list
+    // that does not move on its own.
+    text += ' This card list came with the app; new sets arrive with app updates.';
+  } else if (s.indexUpdatedAt) {
     const days = Math.floor((Date.now() - Date.parse(s.indexUpdatedAt)) / 86400000);
     text += days < 1 ? ' Card list checked today.' : ` Card list from ${days === 1 ? 'yesterday' : `${days} days ago`}; it refreshes on launch when online.`;
   }
-  if (s.progress.lastError) text += ` Last download problem: ${s.progress.lastError}`;
+  if (f.lastError) text += ` Last card art download problem: ${f.lastError}`;
+  else if (s.progress.lastError && s.fromBundledIndex) {
+    // The launch check runs on its own and fails on every machine that cannot
+    // reach the card database, which is most of them. Reporting the site's
+    // error text here would read as something broken and something to fix, and
+    // it is neither. Say what happened and that it does not matter.
+    text += ' The last check for new sets could not reach the card database, which is expected; every card here still works.';
+  } else if (s.progress.lastError) text += ` Last download problem: ${s.progress.lastError}`;
   else if (s.progress.errors) text += ` ${s.progress.errors} files failed last run, run the download again to retry.`;
   return text;
 }
@@ -1476,14 +1510,13 @@ async function pollDbStatus() {
     // A finished first-run download is what fills the catalogs the pickers read.
     if (s.indexed && !catalogsReady) loadCatalogs();
     $('dbStatus').textContent = describeDb(s);
-    const busy = s.progress.phase !== 'idle';
+    const busy = s.progress.phase !== 'idle' || dbFetch(s).phase !== 'idle';
     $('dbSync').disabled = busy;
     $('dbSync').textContent = s.indexed ? 'Check for new sets' : 'Download card database';
     $('dbPrefetchFull').disabled = busy || !s.indexed;
-    $('dbProgressWrap').classList.toggle('hidden', !busy || !s.progress.total);
-    if (busy && s.progress.total) {
-      $('dbProgress').style.width = `${Math.round((s.progress.done / s.progress.total) * 100)}%`;
-    }
+    const fraction = dbProgressFraction(s);
+    $('dbProgressWrap').classList.toggle('hidden', !busy || fraction === null);
+    if (fraction !== null) $('dbProgress').style.width = `${Math.round(fraction * 100)}%`;
     clearTimeout(dbPollTimer);
     dbPollTimer = setTimeout(pollDbStatus, busy ? 700 : 5000);
   } catch {
@@ -1541,6 +1574,14 @@ $('dbSync').addEventListener('click', async () => {
   const wasSynced = before ? before.lastSync : null;
   const s = await dbSettled((st) => st.progress.phase === 'idle' && (st.lastSync !== wasSynced || st.progress.lastError));
   if (s.progress.lastError) {
+    // The card database is private, so this check fails for everyone but the
+    // person who runs it, and it is not a fault they can do anything about:
+    // their cards came with the app and still work. Say that instead of an
+    // error about a site they were never going to reach (Sam, 2026-09-17).
+    if (s.indexed && s.library && s.library.bundled) {
+      alert(`The card list that came with this version is what you have: ${dbCount(s.cardCount, 'card')}, and every one of them works offline. New sets arrive with app updates, so there is nothing to do here.`);
+      return;
+    }
     // "Is the internet up?" only when the failure looks like no connection.
     // A page served instead of the card list, or a bad status, is the host's
     // problem, and the message the server wrote already says so.

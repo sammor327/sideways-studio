@@ -19,7 +19,7 @@ import {
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
 import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
-import { initCardDb, cardDbStatus, syncCardDb, autoRefreshCardDb, prefetchFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
+import { initCardDb, cardDbStatus, cardDbBusy, syncCardDb, autoRefreshCardDb, fillFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readFullArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
@@ -454,7 +454,7 @@ const server = http.createServer(async (req, res) => {
   // Downloads can take minutes on venue wifi, so both start async and return
   // immediately; the panel follows along via /api/cards/status polling.
   if (url.pathname === '/api/cards/sync' && req.method === 'POST') {
-    const busy = cardDbStatus().progress.phase !== 'idle';
+    const busy = cardDbBusy();
     if (!busy) syncCardDb();
     res.writeHead(busy ? 409 : 200, { 'content-type': 'application/json' });
     res.end(JSON.stringify(busy ? { ok: false, error: 'a download is already running' } : { ok: true, started: true }));
@@ -463,7 +463,7 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/api/cards/prefetch-full' && req.method === 'POST') {
     const status = cardDbStatus();
-    const busy = status.progress.phase !== 'idle';
+    const busy = cardDbBusy();
     const err = busy ? 'a download is already running' : (!status.indexed ? 'download the card database first' : null);
     if (err) {
       sendJson(res, 409, { ok: false, error: err });
@@ -475,7 +475,10 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, { ok: true, started: false, complete: true, fullCached: status.fullCached, fullAvailable: status.fullAvailable });
       return;
     }
-    prefetchFullArt();
+    // Starts the published pack download or, for the one machine that can
+    // reach Rift Registry, the card-by-card fetch. Async either way: an 80 MB
+    // pack on venue wifi is minutes, and the panel follows the progress.
+    fillFullArt();
     sendJson(res, 200, { ok: true, started: true });
     return;
   }

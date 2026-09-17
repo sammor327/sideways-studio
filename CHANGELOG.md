@@ -6,6 +6,12 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.19.0 (2026-09-17)
+
+- Every card comes with the app. The card list, all 932 card thumbnails and the legend cutouts are inside Sideways Studio itself: open it on a machine that has never been online and card search, the pickers, the decklist and every graphic already work.
+- "Download card database" is no longer a thing anyone has to press. It stays for checking whether a new set has appeared, and a check that cannot reach the card database now says so plainly instead of reporting an error: your cards came with the app, and new sets arrive with app updates.
+- "Download all card art for offline use" fetches one file from the release rather than nine hundred separate images, and it is kept when you update, so you download the full art once and never again.
+
 ## 0.18.1 (2026-09-17)
 
 - Cards in hand: a hand can list up to 20 cards. It was 12.

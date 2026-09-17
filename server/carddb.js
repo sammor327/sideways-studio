@@ -12,6 +12,10 @@ import {
   initStore, readIndex, writeIndex, indexWrittenAt, readBlob, writeBlob,
   storedIds, migrateIndex, migrateArt, legacyArtPending,
 } from './cardstore.js';
+import {
+  initLibrary, bundledIndex, bundledIndexBuiltAt, libraryArt, libraryIds,
+  libraryStatus, fetchFullPack, hasFullPack,
+} from './cardlibrary.js';
 
 const TIERS = ['thumb', 'full'];
 
@@ -24,6 +28,10 @@ const FETCH_HEADERS = {
 let cards = [];
 const byId = new Map();
 let lastSync = null;
+// True when the card list in memory is the one baked into this build rather
+// than one this machine downloaded. The panel says so, because "checked today"
+// would be a lie about a list that only moves when the app updates.
+let fromBundledIndex = false;
 // When the index file on disk was last written: the age the auto-refresh
 // and the panel reason about. Survives restarts, unlike lastSync.
 let indexUpdatedAt = null;
@@ -69,14 +77,29 @@ export function artAvailability(list) {
 
 export async function initCardDb() {
   await initStore();
+  await initLibrary();
   // An install from a build before the store existed has a plaintext
   // cards.json. Move it in rather than making the operator download the index
   // again because the format changed under them.
-  const raw = (await readIndex()) || (await migrateIndex());
+  let raw = (await readIndex()) || (await migrateIndex());
+  let writtenAt = raw ? await indexWrittenAt() : null;
+  // Whichever list is newer wins. For everyone who cannot reach Rift Registry
+  // that is always the one baked into the build, and it is how a new set
+  // reaches them at all: it arrives with the app update. For the one operator
+  // who can, a list they synced after this build was baked stays theirs.
+  const bakedAt = bundledIndexBuiltAt();
+  if (!raw || (bakedAt && writtenAt && Date.parse(bakedAt) > Date.parse(writtenAt))) {
+    const baked = await bundledIndex();
+    if (baked) {
+      raw = baked;
+      writtenAt = bakedAt;
+      fromBundledIndex = true;
+    }
+  }
   if (raw) {
     try {
       indexCards(JSON.parse(raw.toString('utf8')));
-      indexUpdatedAt = await indexWrittenAt();
+      indexUpdatedAt = writtenAt;
     } catch {
       // Unreadable index: same as not having one. The panel offers the
       // download and the sync writes over it.
@@ -85,6 +108,9 @@ export async function initCardDb() {
   const ids = cards.map((c) => c.cardId);
   for (const tier of TIERS) {
     for (const id of await storedIds(tier, ids)) cached[tier].add(id);
+    // Art the build carries counts as saved: it is on this machine, it works
+    // offline, and the panel must never offer to download it again.
+    for (const id of libraryIds(tier, ids)) cached[tier].add(id);
   }
 }
 
@@ -118,6 +144,13 @@ export function allCards() {
   return cards;
 }
 
+// One question for every caller that must not start a second download on top
+// of a first: the per-card runs and the pack fetch are tracked separately, and
+// either one busy means busy.
+export function cardDbBusy() {
+  return progress.phase !== 'idle' || libraryStatus().fetch.phase !== 'idle';
+}
+
 export function cardDbStatus() {
   return {
     indexed: cards.length > 0,
@@ -128,8 +161,10 @@ export function cardDbStatus() {
     fullAvailable: available.full,
     lastSync,
     indexUpdatedAt,
+    fromBundledIndex,
     progress,
     migration,
+    library: libraryStatus(),
   };
 }
 
@@ -307,6 +342,7 @@ export async function syncCardDb() {
     await writeIndex(buf);
     indexCards(list);
     indexUpdatedAt = new Date().toISOString();
+    fromBundledIndex = false;
     progress.done = 1;
     await prefetchTier('thumb', 'thumbs');
     lastSync = new Date().toISOString();
@@ -319,7 +355,33 @@ export async function syncCardDb() {
   }
 }
 
-// "Download everything for offline": every card's full art onto disk.
+// "Download everything for offline". Two ways to get there, tried in the
+// order that works for the most people: the published pack, which is one
+// request to GitHub and the only route open to anyone who cannot reach Rift
+// Registry, then card by card from Rift Registry for the operator who can and
+// who wants art newer than the last bake.
+export async function fillFullArt() {
+  if (!cards.length) return { ok: false, error: 'download the card database first' };
+  if (cardDbBusy()) return { ok: false, error: 'a download is already running' };
+  if (!hasFullPack()) {
+    const pack = await fetchFullPack();
+    if (pack.ok) {
+      for (const id of libraryIds('full', cards.map((c) => c.cardId))) cached.full.add(id);
+      return { ok: true, source: 'pack', cards: pack.cards };
+    }
+    // No pack to be had: that is normal running from source, and it is what an
+    // operator with a card the build predates sees too. Rift Registry is the
+    // other way, and it works for exactly one person.
+    if (missingArt('full').length === 0) return { ok: true, source: 'pack', already: true };
+    const direct = await prefetchFullArt();
+    if (direct.ok) return { ok: true, source: 'rift-registry', errors: direct.errors };
+    return { ok: false, error: `${pack.error}, and fetching the art card by card failed too (${direct.error})` };
+  }
+  const direct = await prefetchFullArt();
+  return direct.ok ? { ok: true, source: 'rift-registry', errors: direct.errors } : direct;
+}
+
+// Every card's full art onto disk, one request per card, from Rift Registry.
 export async function prefetchFullArt() {
   if (progress.phase !== 'idle') return { ok: false, error: 'sync already running' };
   if (!cards.length) return { ok: false, error: 'download the card database first' };
@@ -388,8 +450,13 @@ export async function getArtBytes(tier, cardId) {
   if (cached[tier].has(card.cardId)) {
     const buf = await readBlob(tier, card.cardId);
     if (buf) return buf;
-    // Counted as cached but unopenable: a blob from a build with a different
-    // key, or one that lost its bytes. Drop the claim and fetch it again.
+    // Not in this machine's own cache: the build's library is the other place
+    // it can be, and for everyone who cannot reach Rift Registry it is the
+    // only one.
+    const packed = await libraryArt(tier, card.cardId);
+    if (packed) return packed;
+    // Counted as cached but in neither place: a blob from a build with a
+    // different key, or one that lost its bytes. Drop the claim and fetch it.
     cached[tier].delete(card.cardId);
   }
   try {

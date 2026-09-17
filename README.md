@@ -21,10 +21,20 @@ window and carries on exactly as it did before: the show never stops for
 this.
 
 The app is one self-contained file: the server, the control panel, every
-scene and the legend art are inside it. On first run it creates a `data`
-folder beside itself for the card database, downloaded fonts and the event
-autosave, so the whole thing is portable. Copy the exe and its `data` folder
-to a USB stick or the venue PC and it works there, offline.
+scene, the legend art and the whole card library are inside it. Every card,
+every thumbnail and every legend cutout comes with the app, so card search,
+the pickers, the decklist and the graphics work the first time it is opened,
+on a machine that has never been online. New sets arrive with app updates.
+
+The one thing not in the exe is the full-resolution card art, which is about
+80 MB: press **Download all card art for offline use** in the control panel
+once and it is kept in the `data` folder from then on, including across every
+future update.
+
+On first run the app creates that `data` folder beside itself for the card
+art, downloaded fonts and the event autosave, so the whole thing is portable.
+Copy the exe and its `data` folder to a USB stick or the venue PC and it
+works there, offline.
 
 `SIDEWAYS_PORT` overrides the port. `--console` runs it the old way, in a
 console window with every URL printed and the control panel opened in your

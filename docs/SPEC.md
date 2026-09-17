@@ -244,6 +244,15 @@ state owns content. All mutations pass the server-side whitelist sanitizer in
 - Catalog + art via a **first-run "download card database" step** pulling from
   Rift Registry public surfaces onto the user's machine (we distribute code,
   not Riot's assets), cached for offline venues. "Check for new sets" refresh.
+- **Amendment 2026-09-17 (Sam):** Rift Registry is private and stays private,
+  so that download only ever works for its operator: everyone else is answered
+  with a sign-in page and has no cards at all. **The library therefore ships
+  with the build.** `scripts/bake-cardpack.mjs` seals it with the release key
+  into two packs (`server/cardpack.js`): the index, thumbnails and legend
+  cutouts inside the exe, the full art as a release asset fetched once and kept
+  across updates. Read order everywhere is store, then library, then Rift
+  Registry. A new set reaches an operator by way of an app update, and a failed
+  "check for new sets" is reported as nothing to do rather than as an error.
 - **Amendment 2026-08-10 (Sam):** this is an official Riot project; bundling
   Riot assets is permitted. IGO hero art (261x242 holder PNGs) is served
   from `flipdeck/overlaysoftware/RESOURCES/IGO-LEGENDS/` (override with

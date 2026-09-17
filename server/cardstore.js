@@ -17,6 +17,7 @@ import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes } f
 import { mkdir, readdir, readFile, rename, rm, stat, unlink, utimes, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DATA_DIR } from './runtime.js';
+import { CARD_SECRET } from './cardsecret.js';
 
 const DB_DIR = path.join(DATA_DIR, 'carddb');
 const STORE_DIR = path.join(DB_DIR, 'store');
@@ -36,20 +37,10 @@ const LEGACY = {
   legend: path.join(DB_DIR, 'legends'),
 };
 
-// Substituted in as a literal by scripts/build-exe.mjs, which reads it from
-// .carddb-key: gitignored, generated once, and the same for every release.
-// Change it and every installed copy's cache turns unreadable and downloads
-// itself again, so the build script guards that file rather than regenerating.
-//
-// From source there is no build step, so source runs share the development key
-// below. It sits in a public repo deliberately: a cache built by `npm start`
-// belongs to a developer, and inventing a second hiding place for it would
-// only obscure where the real secret lives.
-const BUILD_SECRET = process.env.SIDEWAYS_CARDDB_KEY || '';
-const DEV_SECRET = 'sideways-studio development card store; not the shipped key';
-const SECRET = BUILD_SECRET || DEV_SECRET;
-
-export const usingBuildKey = Boolean(BUILD_SECRET);
+// The sealing secret lives in cardsecret.js: the packs that ship with the
+// app are sealed with the same one, and two copies of that comment drifting
+// apart is exactly the kind of mistake that costs every install its cache.
+const SECRET = CARD_SECRET;
 
 // Two keys from one secret: one seals file contents, one names the files.
 // Split so a name can never be used to say anything about the bytes.

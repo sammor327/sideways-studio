@@ -24,6 +24,10 @@ const require = createRequire(import.meta.url);
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BUILD = path.join(ROOT, 'build');
 const DIST = path.join(ROOT, 'dist');
+// Baked by scripts/bake-cardpack.mjs and deliberately outside build/ and
+// dist/, which this script wipes: the library takes minutes and a connection
+// to Rift Registry to rebuild, and an ordinary exe build must not lose it.
+const PACKS = path.join(ROOT, 'packs');
 const EXE = path.join(DIST, 'SidewaysStudio.exe');
 
 // Same default as server/legends.js: the hero cutouts ship inside the build
@@ -148,6 +152,24 @@ await writeFile(fullIndex, JSON.stringify(fullNames));
 assets['legendfull/_index.json'] = fullIndex;
 console.log(`      ${webCount} web files, ${heroNames.length} hero images, ${fullNames.length} full legend figures`);
 
+// The card library. Rift Registry is private, so a build without this ships an
+// app with no cards at all for everyone who is not Sam: it is a warning worth
+// making loud rather than a line to scroll past (server/cardlibrary.js).
+const bundlePack = path.join(PACKS, 'cards-bundle.pack');
+try {
+  const { size } = await stat(bundlePack);
+  assets['cards/bundle.pack'] = bundlePack;
+  console.log(`      card library ${Math.round(size / 1024 / 1024 * 10) / 10} MB (index, thumbnails, legend cutouts)`);
+} catch {
+  console.warn('');
+  console.warn('      WARNING: packs/cards-bundle.pack is not there, so this build ships with NO');
+  console.warn('      cards. Anyone who cannot reach Rift Registry (which is everyone but Sam)');
+  console.warn('      gets an app with an empty card database. Run:');
+  console.warn('');
+  console.warn('          npm run bake:cards');
+  console.warn('');
+}
+
 step(4, 'generating the single-executable blob');
 const seaConfig = path.join(BUILD, 'sea-config.json');
 await writeFile(seaConfig, JSON.stringify({
@@ -214,6 +236,19 @@ await writeFile(path.join(DIST, 'update.json'), JSON.stringify({
   required: false,
 }, null, 2) + NL);
 await writeFile(path.join(DIST, 'SidewaysStudio.exe.sha256'), `${sha256}  SidewaysStudio.exe${NL}`);
+
+// The full art travels beside the exe as a release asset rather than inside
+// it: it is ~80 MB, it only changes when a set does, and an installed copy
+// keeps the one it has across every future update. Copied into dist/ so the
+// release script has one folder to publish from.
+try {
+  await cp(path.join(PACKS, 'cards-full.pack'), path.join(DIST, 'cards-full.pack'));
+  await cp(path.join(PACKS, 'library.json'), path.join(DIST, 'library.json'));
+  const pack = JSON.parse(await readFile(path.join(DIST, 'library.json'), 'utf8'));
+  console.log(`      full art pack ${Math.round(pack.size / 1024 / 1024 * 10) / 10} MB, ${pack.cards} cards`);
+} catch {
+  console.warn('      no packs/cards-full.pack: this release publishes no full card art.');
+}
 
 const size = exeBytes.length;
 console.log('');

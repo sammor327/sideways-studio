@@ -184,7 +184,12 @@ async function refreshCardDb(button) {
       await new Promise((r) => setTimeout(r, 1000));
       const s = await (await fetch('/api/cards/status', { cache: 'no-store' })).json();
       if (s.progress.phase === 'idle') {
-        if (s.progress.lastError) throw new Error(s.progress.lastError);
+        // A failed check is not a fault for anyone but the person who runs the
+        // card database: it is private, and everyone else's cards came with
+        // the app and still work. Nothing to report to them (Sam, 2026-09-17).
+        if (s.progress.lastError && !(s.indexed && s.library && s.library.bundled)) {
+          throw new Error(s.progress.lastError);
+        }
         break;
       }
       button.textContent = s.progress.total > 1 ? `Downloading ${s.progress.done} of ${s.progress.total}…` : 'Checking…';

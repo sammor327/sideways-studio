@@ -5,6 +5,8 @@ data/
 _psd-reference.png
 build/
 dist/
+# The baked card library: ~100 MB of Riot art, rebuilt by npm run bake:cards.
+packs/
 # The card-store secret baked into released builds. Never commit it, and
 # never lose it: see scripts/build-exe.mjs and server/cardstore.js.
 .carddb-key

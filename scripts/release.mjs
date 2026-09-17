@@ -102,6 +102,35 @@ manifest.required = required;
 await writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + String.fromCharCode(10));
 console.log(`  manifest: ${manifest.version}, sha256 ${manifest.sha256.slice(0, 16)}...`);
 
+// 4b. The card library. The full art pack is ~80 MB and only changes when a
+//     set does, so a release whose art is identical to the published one
+//     points its manifest at that older release's asset instead of uploading
+//     the same bytes again. The pack is built to be byte-stable for exactly
+//     this (scripts/bake-cardpack.mjs).
+const LIBRARY = path.join(DIST, 'library.json');
+const PACK = path.join(DIST, 'cards-full.pack');
+let uploadPack = false;
+let library = null;
+if (existsSync(LIBRARY) && existsSync(PACK)) {
+  library = JSON.parse(await readFile(LIBRARY, 'utf8'));
+  let published = null;
+  try {
+    const res = await fetch(`https://github.com/${SLUG}/releases/latest/download/library.json`, { redirect: 'follow' });
+    if (res.ok) published = JSON.parse(await res.text());
+  } catch { /* first release with a library, or GitHub is having a day */ }
+  if (published && published.id && published.id === library.id && typeof published.url === 'string') {
+    library.url = published.url;
+    await writeFile(LIBRARY, JSON.stringify(library, null, 2) + String.fromCharCode(10));
+    console.log(`  card art: unchanged, reusing ${published.url.split('/').slice(-2).join('/')} (${Math.round(library.size / 1024 / 1024)} MB not re-uploaded)`);
+  } else {
+    uploadPack = true;
+    console.log(`  card art: ${library.cards} cards, ${Math.round(library.size / 1024 / 1024)} MB, uploading with this release`);
+  }
+} else {
+  console.warn('  card art: dist/library.json is not there, so this release publishes none.');
+  console.warn('  Run npm run bake:cards, then build again.');
+}
+
 // 5. Push the commit the exe was built from, and pin the tag to it. Without
 //    --target GitHub tags whatever main is on the server, which is the
 //    PREVIOUS release when the commit has not been pushed yet (v0.4.0 landed
@@ -124,6 +153,8 @@ await writeFile(notesFile, (notes || `Sideways Studio ${version}`) + String.from
 gh([
   'release', 'create', tag,
   EXE, MANIFEST, path.join(DIST, 'SidewaysStudio.exe.sha256'),
+  ...(library ? [LIBRARY] : []),
+  ...(uploadPack ? [PACK] : []),
   '--repo', SLUG,
   '--target', head,
   '--title', `Sideways Studio ${version}`,
