@@ -86,11 +86,18 @@ button.update-go { background: var(--tes-grad); color: #06110a; border: none; fo
   /* Width-led: the monitors share what the data column leaves, capped at the
      height the old full-width layout gave them. */
   grid-template-columns: minmax(0, calc(34vh * 16 / 9)) 150px minmax(0, calc(34vh * 16 / 9));
+  /* Two rows: the labels, then the monitors with the transition column
+     between them, so TAKE starts level with the top of the two windows. */
+  grid-template-rows: auto auto;
   justify-content: center;
   align-items: stretch;
-  gap: 18px;
+  gap: 6px 18px;
 }
-.monitor-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.monitor-col { display: contents; }
+.monitor-col > .monitor-label { grid-row: 1; }
+.monitor-col > .monitor { grid-row: 2; min-width: 0; }
+.monitor-col:first-child > * { grid-column: 1; }
+.monitor-col:last-child > * { grid-column: 3; }
 .monitor-label {
   font-size: 12px;
   font-weight: 700;
@@ -122,18 +129,23 @@ button.update-go { background: var(--tes-grad); color: #06110a; border: none; fo
    fills it from the bottom, so the buttons never move as graphics come and
    go. The tip about them is TAKE's hover title. */
 .transition-col {
+  grid-row: 2;
+  grid-column: 2;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px;
   min-height: 0;
+  /* The monitors set the row's height; the column fills it and its lists
+     scroll inside, however many graphics are up. */
+  contain: size;
 }
 button.take {
   font-size: 22px;
   font-weight: 800;
   font-style: italic;
   letter-spacing: 2px;
-  padding: 20px 0;
+  padding: 15px 0;
   background: #1a2027;
   color: #8b98a5;
   border: 1px solid #2a323b;
@@ -157,14 +169,22 @@ button.clear {
 button.clear:hover { border-color: #e33; }
 /* Two clears (2026-09-16): CLEAR PROGRAM keeps the red of the on-air
    recovery; CLEAR PREVIEW is the quiet one, it changes nothing on air. */
-button.clear { font-size: 12px; letter-spacing: 0.5px; line-height: 1.25; }
+button.clear { font-size: 12px; letter-spacing: 0.5px; line-height: 1.25; padding: 9px 0; }
 button.clear-preview { border-color: #2a323b; color: #b8c4cf; }
 button.clear-preview:hover { border-color: var(--tes-blue); }
 
 /* What is on air, listed under CLEAR: one row per graphic, the X drops that
    one. A long show can have more rows than the column is tall, so the rows
    scroll rather than push the hint past the monitors. */
-.onair-list { display: flex; flex-direction: column; gap: 5px; min-height: 0; margin-top: auto; }
+.onair-list { display: flex; flex-direction: column; gap: 4px; min-height: 42px; margin-top: auto; }
+/* What is in preview, the same list in green. It sits under the buttons
+   and on air keeps the foot of the column, so neither list moves when the
+   other fills or empties. */
+.preview-list { margin-top: 0; }
+.preview-list .onair-list-label { color: var(--tes-green); }
+.preview-list .air-row { border-left-color: var(--tes-green); }
+.preview-list .air-x { border-color: #1d4d2a; color: var(--tes-green); }
+.preview-list .air-x:hover { background: var(--tes-green); border-color: var(--tes-green); color: #06110a; }
 .onair-list-label {
   font-size: 10px;
   font-weight: 800;
@@ -172,12 +192,13 @@ button.clear-preview:hover { border-color: var(--tes-blue); }
   text-transform: uppercase;
   color: #e33;
 }
-.air-rows { display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow-y: auto; }
+.air-rows { display: flex; flex-direction: column; gap: 3px; min-height: 0; overflow-y: auto; }
 .air-row {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 4px 3px 7px;
+  flex: 0 0 auto;
+  padding: 2px 4px 2px 7px;
   background: #1a2027;
   border-left: 3px solid #e33;
 }
@@ -727,6 +748,23 @@ details.scene-section[open] > summary::before { transform: rotate(90deg); }
 details.scene-section > summary:hover .group-label { color: #e8edf1; }
 details.scene-section > .scene-group { margin-top: 10px; }
 .sec-count { font-size: 11px; color: #8b98a5; }
+/* The star beside a graphic's name: starred, its row lives in Favorites. */
+.fav-star {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  font-size: 17px;
+  line-height: 1;
+  color: #5b6874;
+  cursor: pointer;
+}
+.fav-star:hover { color: #ffd34d; background: none; }
+.fav-star.on { color: #ffd34d; }
+.fav-star:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 2px; }
+.favorites-section .group-label { color: #ffd34d; }
+.fav-empty.hidden { display: none; }
 .sec-pill {
   font-size: 9px;
   font-weight: 800;
@@ -851,12 +889,15 @@ details.scene-section > .scene-group { margin-top: 10px; }
 .card-resizer {
   flex: 0 0 auto;
   position: sticky;
-  bottom: 0;
+  /* Sticky measures from inside the card's padding, so 0 left a 12px strip
+     under the grip where scrolled content showed through. The grip sits on
+     the card's bottom edge instead, in both the resting and stuck cases. */
+  bottom: -12px;
   z-index: 5;
   height: 10px;
   /* auto on top pushes the grip to the foot of a card taller than its
      content; sticky keeps it in view at the foot of one that scrolls. */
-  margin: auto -16px 0;
+  margin: auto -16px -12px;
   cursor: ns-resize;
   background: #12161b;
   border-top: 1px solid #1e242b;

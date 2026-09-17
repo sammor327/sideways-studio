@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.16.0 (2026-09-17)
+
+- Favorites: every graphic has a star beside its name. Star one and it moves into a Favorites fold at the top of the Graphics card, above 1v1; click the star again and it goes back where it was. Favorites opens on its own when it holds anything, and your stars are remembered on this computer.
+- In preview: the column between the monitors lists what is in preview, in green, above the red "On air now" list. The X beside a name takes that one graphic out of preview; nothing on air changes.
+- TAKE now starts level with the top of the Preview and Program windows, and the buttons under it are a little tighter to make room for the two lists.
+- Fixed: the drag handle at the bottom of each card left a thin strip under it where scrolled content showed through.
+
 ## 0.15.1 (2026-09-16)
 
 - Updating from 0.14.1 or 0.15.0: if a window titled "find" and a number opens and nothing happens, click that window, press Ctrl+Z, then Enter. The update finishes and the app restarts. You only need this once, for this update.

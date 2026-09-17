@@ -628,30 +628,41 @@ $('clearPreviewBtn').addEventListener('click', () => {
 // so TAKE puts a graphic back.
 const takeOffAir = (key) => post({ action: 'off', scene: key });
 
-let onAirShown = null;
+// The same list for the preview bank, in green above it (Sam, 2026-09-17):
+// what the next TAKE will air, and the X takes that one graphic back out of
+// preview without touching anything on air.
+const takeOutOfPreview = (key) => post({ scenes: { [key]: { visible: false } } });
+
+const BUS_LISTS = [
+  { bank: 'program', list: 'onAirList', rows: 'onAirRows', drop: takeOffAir, tip: (name) => `Take ${name} off air` },
+  { bank: 'preview', list: 'previewList', rows: 'previewRows', drop: takeOutOfPreview, tip: (name) => `Take ${name} out of preview` },
+];
+const busShown = {};
 
 function renderOnAir(s) {
-  const keys = Object.keys(s.program.scenes).filter((key) => s.program.scenes[key].visible);
-  const signature = keys.join(',');
-  if (signature === onAirShown) return;
-  onAirShown = signature;
-  $('onAirList').classList.toggle('hidden', !keys.length);
-  $('onAirRows').replaceChildren(...keys.map((key) => {
-    const row = document.createElement('div');
-    row.className = 'air-row';
-    const name = document.createElement('span');
-    name.className = 'air-name';
-    name.textContent = SCENE_SHORT[key] || key;
-    const off = document.createElement('button');
-    off.type = 'button';
-    off.className = 'air-x';
-    off.textContent = '\u00d7';
-    off.title = `Take ${SCENE_NAMES[key] || key} off air`;
-    off.setAttribute('aria-label', off.title);
-    off.addEventListener('click', () => takeOffAir(key));
-    row.append(name, off);
-    return row;
-  }));
+  for (const { bank, list, rows, drop, tip } of BUS_LISTS) {
+    const keys = Object.keys(s[bank].scenes).filter((key) => s[bank].scenes[key].visible);
+    const signature = keys.join(',');
+    if (signature === busShown[bank]) continue;
+    busShown[bank] = signature;
+    $(list).classList.toggle('hidden', !keys.length);
+    $(rows).replaceChildren(...keys.map((key) => {
+      const row = document.createElement('div');
+      row.className = 'air-row';
+      const name = document.createElement('span');
+      name.className = 'air-name';
+      name.textContent = SCENE_SHORT[key] || key;
+      const off = document.createElement('button');
+      off.type = 'button';
+      off.className = 'air-x';
+      off.textContent = '\u00d7';
+      off.title = tip(SCENE_NAMES[key] || key);
+      off.setAttribute('aria-label', off.title);
+      off.addEventListener('click', () => drop(key));
+      row.append(name, off);
+      return row;
+    }));
+  }
 }
 
 // --- match data (all edits land in the preview bank) ---
@@ -2645,6 +2656,11 @@ for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
   const badge = row.querySelector('.onair');
   badge.title = `Take ${SCENE_NAMES[key] || key} off air`;
   badge.addEventListener('click', () => takeOffAir(key));
+  const star = document.createElement('button');
+  star.type = 'button';
+  star.className = 'fav-star';
+  star.addEventListener('click', () => toggleFavorite(key));
+  row.querySelector('.scene-name').prepend(star);
 }
 
 function renderThumbs(s) {
@@ -2729,14 +2745,11 @@ function renderFeatures(s) {
 // scrolls past the 2v2 layouts. They start closed on every load; a fold's
 // heading counts what is in preview and on air inside it, and a graphic put
 // in preview opens its fold (revealNewGraphics).
-for (const sec of document.querySelectorAll('details.scene-section')) {
-  const n = sec.querySelectorAll('.scene-row[data-scene]').length;
-  sec.querySelector('.sec-count').textContent = `${n} graphic${n === 1 ? '' : 's'}`;
-}
-
 function renderSections(s) {
   for (const sec of document.querySelectorAll('details.scene-section')) {
     const keys = [...sec.querySelectorAll('.scene-row[data-scene]')].map((row) => row.dataset.scene);
+    // Counted on every paint: a starred graphic moves between folds.
+    sec.querySelector('.sec-count').textContent = `${keys.length} graphic${keys.length === 1 ? '' : 's'}`;
     const inPreview = keys.filter((key) => s.preview.scenes[key] && s.preview.scenes[key].visible).length;
     const onAir = keys.filter((key) => s.program.scenes[key] && s.program.scenes[key].visible).length;
     const prev = sec.querySelector('.sec-pill.prev');
@@ -2747,6 +2760,61 @@ function renderSections(s) {
     air.classList.toggle('hidden', !onAir);
   }
 }
+
+// --- favorites: a starred graphic moves to the fold at the top ---
+//
+// The star beside a graphic's name moves its row into Favorites, above 1v1,
+// and the same star sends it home to where it was listed. The row moves
+// rather than being copied, so there is one picture, one switch and one ON
+// AIR badge per graphic wherever it sits. Which graphics are starred is one
+// operator's convenience, kept in this browser like the folds, never in
+// match state.
+const FAVORITES_KEY = 'sidewaysStudio.favorites';
+const sceneRows = [...document.querySelectorAll('.scene-row[data-scene]')];
+// Where each row was listed, so an unstarred one goes back in its old place.
+const sceneHome = new Map(sceneRows.map((row, order) => [row.dataset.scene, { row, group: row.parentElement, order }]));
+
+let favorites = [];
+try {
+  const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+  if (Array.isArray(saved)) favorites = [...new Set(saved.filter((key) => sceneHome.has(key)))];
+} catch { /* storage blocked or corrupt: nothing starred */ }
+
+function placeFavorites() {
+  const favGroup = $('favoritesGroup');
+  for (const key of favorites) favGroup.append(sceneHome.get(key).row);
+  for (const [key, home] of sceneHome) {
+    const starred = favorites.includes(key);
+    const name = SCENE_NAMES[key] || key;
+    const star = home.row.querySelector('.fav-star');
+    star.textContent = starred ? '\u2605' : '\u2606';
+    star.classList.toggle('on', starred);
+    star.setAttribute('aria-pressed', starred ? 'true' : 'false');
+    star.title = starred ? `Take ${name} out of Favorites` : `Add ${name} to Favorites`;
+    star.setAttribute('aria-label', star.title);
+    if (starred || home.row.parentElement === home.group) continue;
+    // Back home, ahead of the first neighbour that was listed after it.
+    const next = [...home.group.querySelectorAll('.scene-row[data-scene]')]
+      .find((other) => sceneHome.get(other.dataset.scene).order > home.order);
+    home.group.insertBefore(home.row, next || null);
+  }
+  $('favoritesEmpty').classList.toggle('hidden', favorites.length > 0);
+  if (state) renderSections(state);
+}
+
+function toggleFavorite(key) {
+  const starred = favorites.includes(key);
+  favorites = starred ? favorites.filter((k) => k !== key) : [...favorites, key];
+  try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)); } catch { /* this session only */ }
+  placeFavorites();
+  // The row just left for the top of the card: show where it went.
+  if (!starred) $('favoritesGroup').closest('details').open = true;
+}
+
+placeFavorites();
+// Favorites is the one fold that starts open: it holds what the operator
+// asked to keep at hand.
+if (favorites.length) $('favoritesGroup').closest('details').open = true;
 
 // --- resizable cards: drag the bottom edge ---
 //

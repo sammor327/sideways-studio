@@ -561,6 +561,10 @@
     <button id="takeBtn" class="take" title="TAKE puts preview on air. CLEAR PROGRAM hides every graphic on air, scores stay. CLEAR PREVIEW takes every graphic out of preview.">TAKE</button>
     <button id="clearBtn" class="clear" title="Hides every graphic on air, scores stay. Preview is untouched, so TAKE puts it back.">CLEAR PROGRAM</button>
     <button id="clearPreviewBtn" class="clear clear-preview" title="Takes every graphic out of preview, data kept. Nothing on air changes until TAKE.">CLEAR PREVIEW</button>
+    <div class="onair-list preview-list hidden" id="previewList">
+      <span class="onair-list-label">In preview</span>
+      <div class="air-rows" id="previewRows"></div>
+    </div>
     <div class="onair-list hidden" id="onAirList">
       <span class="onair-list-label">On air now</span>
       <div class="air-rows" id="onAirRows"></div>
@@ -575,7 +579,14 @@
 <main class="controls">
   <section class="card graphics-card" data-size="graphics">
     <h2>Graphics</h2>
-    <p class="hint">Each picture shows the preview data as it stands. Click one to put that graphic in preview, click it again to take it out. Its options appear under Graphic features.</p>
+    <p class="hint">Each picture shows the preview data as it stands. Click one to put that graphic in preview, click it again to take it out. Its options appear under Graphic features. The star beside a name keeps that graphic in Favorites.</p>
+
+    <details class="scene-section favorites-section" data-group="favorites">
+      <summary><h4 class="section-label group-label">Favorites <span class="muted">the graphics you starred</span></h4><span class="sec-count"></span><span class="sec-pill prev hidden"></span><span class="sec-pill air hidden"></span></summary>
+      <div class="scene-group" id="favoritesGroup">
+        <p class="hint fav-empty" id="favoritesEmpty">Nothing starred yet. Click the star beside a graphic's name to keep it here.</p>
+      </div>
+    </details>
 
     <details class="scene-section" data-group="1v1">
       <summary><h4 class="section-label group-label">1v1 <span class="muted">one player a side</span></h4><span class="sec-count"></span><span class="sec-pill prev hidden"></span><span class="sec-pill air hidden"></span></summary>
