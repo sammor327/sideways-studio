@@ -155,7 +155,7 @@ function defaultBank() {
       // and the cards-in-hand list (the Magic grammar). handStyle 'list' or
       // 'lanes', which marks each card's type on its row (neither style sorts
       // the hand); handArt puts each card's art beside its name.
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true },
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true },
       // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
       // stage and player cameras. Exclusive with the score bug in the panel.
       arenabug: { visible: false, clock: true },
@@ -598,7 +598,7 @@ function applyBankPatch(bank, patch) {
     const IGO_FLAGS = {
       igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand', 'handArt'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
-      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter'],
+      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo'],
     };
     for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {

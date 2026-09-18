@@ -6,6 +6,12 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.21.0 (2026-09-18)
+
+- Rows overlay: your event logo now sits in the middle of the left column, between the two cameras. No logo uploaded? It shows the event name instead.
+- When a hand is listed under Cards in hand, the logo slides out of the way, and it slides back in once the hands are cleared.
+- Switch it off with the new Event logo checkbox next to Active turn, Points and Turn counter.
+
 ## 0.20.0 (2026-09-18)
 
 - New graphic: Sponsor plate. A 3:1 plate that rotates through your sponsors and fits itself into whichever in-game overlay is up, in that overlay's colours: over the logo panel on the 1v1 and 2v2 sidebars, over the event block on the dual columns and portrait pillars, in a spare corner on the rows, 2v2 bars and arena bug, above the column on the POV. Or pin it to any corner.

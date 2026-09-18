@@ -158,3 +158,23 @@
 .sd-pill i { width: calc(6 * var(--u)); height: calc(6 * var(--u)); border-radius: 50%; background: var(--ss-accent-b, #1bef19); box-shadow: 0 0 calc(8 * var(--u)) var(--ss-accent-b, #1bef19); }
 .showdown .sd-pill { display: inline-flex; }
 .showdown .active-label { display: none; }
+
+/* --- event logo ---
+   The theme logo (or the event name, when no logo is uploaded) centred in
+   the column between the two cameras. --lg is its own clock: 1 settled in
+   place, 0 slid out to the left behind the column edge. It stands down
+   while either player's hand is listed. */
+.logo-well {
+  position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u));
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; overflow: hidden;
+}
+.logo-well.gone { display: none; }
+.logo-well > * {
+  opacity: var(--lg, 1);
+  transform: translateX(calc((1 - var(--lg, 1)) * -340 * var(--u)));
+}
+.logo-img { max-width: 100%; max-height: calc(220 * var(--u)); object-fit: contain; }
+.logo-img.hidden { display: none; }
+.logo-name { font: 800 calc(30 * var(--u))/1.1 var(--tes-font); text-transform: uppercase; text-align: center; color: var(--ss-text, #fff); overflow-wrap: anywhere; }
+.logo-name:empty { display: none; }

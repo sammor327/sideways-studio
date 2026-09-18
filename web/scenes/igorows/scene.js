@@ -6,6 +6,7 @@ import { fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 550);
+const logoClock = new SeekClock($('logoWell'), '--lg', 450);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 const shown = { hero: {}, hand: {} };
@@ -79,6 +80,35 @@ function renderSide(p, side, m, animate) {
   loadHero(p, side);
 }
 
+// The event logo: the theme logo, or the event name when none is uploaded.
+// It holds the middle of the column until a hand is listed, then slides out
+// the way the column came in, and back when the hands clear.
+let shownLogo = null;
+function renderLogo(state, bank, scene, handIn, first) {
+  const logo = state.theme.logo || '';
+  const img = $('eventLogo');
+  if (img.getAttribute('src') !== (logo || null)) {
+    if (logo) img.src = logo; else img.removeAttribute('src');
+  }
+  img.classList.toggle('hidden', !logo);
+  setText($('eventName'), logo ? '' : (bank.event.name || ''));
+  const up = scene.eventLogo !== false && Boolean(logo || bank.event.name) && !handIn;
+  if (up === shownLogo) return;
+  shownLogo = up;
+  const well = $('logoWell');
+  if (first) {
+    well.classList.toggle('gone', !up);
+    logoClock.seek(up ? 1 : 0);
+  } else if (up) {
+    well.classList.remove('gone');
+    logoClock.play({ from: 0, to: 1 });
+  } else {
+    logoClock.play({ from: 1, to: 0 }).then(() => {
+      if (!shownLogo) well.classList.add('gone');
+    });
+  }
+}
+
 let shownVisible = null;
 
 const params = initStage({
@@ -107,6 +137,8 @@ const params = initStage({
     const art = scene.handArt !== false;
     renderHand('l', m.left, scene.hand, lanes, art);
     renderHand('r', m.right, scene.hand, lanes, art);
+    const handIn = Boolean(scene.hand) && (handTotal(m.left) > 0 || handTotal(m.right) > 0);
+    renderLogo(state, bank, scene, handIn, first);
 
     const turnOn = scene.turnCounter !== false && m.turn > 0;
     const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
