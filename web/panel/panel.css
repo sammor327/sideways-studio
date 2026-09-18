@@ -518,7 +518,6 @@ textarea {
 textarea:focus { outline: 2px solid var(--tes-blue); }
 
 /* --- look card --- */
-.look-card select#lookScope { font-size: 13px; padding: 5px 8px; max-width: 220px; }
 .preset-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .preset { padding: 5px 10px; font-size: 12.5px; border-radius: 999px; }
 .look-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; }
@@ -610,8 +609,8 @@ footer p { margin: 0; }
   body { overflow: auto; }
   .workspace { grid-template-columns: 480px minmax(0, 1fr); }
   .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* Two columns would leave the third stack in a half-width hole, so Look and
-     Setup take the full width side by side instead. */
+  /* Two columns would leave the third column in a half-width hole, so the
+     Decklist takes the full width under the other two instead. */
   .controls > .side-stack { grid-column: 1 / -1; flex-direction: row; }
   .controls > .side-stack > .card { flex: 1 1 0; }
   .controls .card { max-height: 560px; }
@@ -845,7 +844,7 @@ details.scene-section > .scene-group { margin-top: 10px; }
   min-width: 0;
 }
 .column-stack .card { flex: 0 1 auto; }
-.column-stack .deck-card { flex: 1 1 auto; }
+.column-stack .deck-card, .column-stack .features-card { flex: 1 1 auto; }
 .features-card h2 { margin-bottom: 0; }
 .feature-group { padding-top: 8px; border-top: 1px solid #1e242b; display: flex; flex-direction: column; gap: 6px; }
 .feature-group.hidden { display: none; }
@@ -855,7 +854,7 @@ details.scene-section > .scene-group { margin-top: 10px; }
 
 /* --- foldable control cards: the heading folds its card away ---
    The control band holds more than a short screen shows at once, so Graphic
-   features, Decklist, Look and Setup each fold from their heading.
+   features and Decklist fold from their heading (Setup too, on the look tab).
    Which ones are folded is one operator's convenience, kept in this browser
    rather than in match state. */
 .fold-btn {

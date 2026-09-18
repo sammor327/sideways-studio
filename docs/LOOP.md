@@ -214,6 +214,72 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-18c (out of band: Setup joins the look tab, the Decklist gets a column; not released)
+
+Sam, straight after the Look builder: move Setup to the new page too, and give
+the Decklist its own column where Look and Setup used to be. The tab is now
+labelled "Look and setup" (it holds both). Studio control band = Graphics |
+Graphic features | Decklist, each full height (`.column-stack .features-card`
+joined the deck card's grow rule; the Decklist sits in the old
+`.column-stack.side-stack`, so under 1500px it takes the full width under the
+other two). On the look tab the left column is `div.look-side` = Look card
+over the Setup card, scrolling as one; Setup keeps its fold, loses its resize
+grip there (no `data-size`), and every id is unchanged so the database
+buttons, copy links and update check are wired as before. The deck editor's
+"Check for new sets" pointer names the new place. Replayable as
+patch_setup.py + patch_setup_docs.py after the 2026-09-18 scripts.
+
+### 2026-09-18 (out of band: the Look builder tab; not released)
+
+Sam: a dedicated look-building section as its own tab at the top, the look
+controls attached down the side like Match data, and "as many scenes as
+possible laid out" on the right to see how each change alters them.
+
+Built: header tabs Studio | Look builder (`body[data-view]`, `#look` in the
+URL keeps the tab across a reload, via `history.replaceState` so no history
+steps). The Studio's Look card MOVED into the new view's left column
+(`aside#lookCard.look-panel`, every control id unchanged, so panel.js wires
+and paints it exactly as before; the Studio side stack is now Setup alone).
+`web/panel/lookbuilder.js` + `lookbuilder.css` own the tab and the grid: 30
+tiles from `web/shared/looktiles.js` in three groups (in-game overlays;
+bugs, cards and plates; full screen), each a scene iframe with
+`?transparent=1&preview=1&force=1&anim=0&tile=<key>[&sample=1]`, scaled by
+one `--tile-scale` measured off the first tile. Tiles load through an
+IntersectionObserver (root = the grid, 400px margin) and are REPLACED with
+fresh iframes when the Studio tab comes back, so the builder costs nothing
+during a show. A tile click sets the scope through the existing select +
+a synthetic change event (panel.js's own handler does the switch). Change
+flash: per scene, `resolveLook` + font + logo signature compared across
+renders. Faded = an edit made now would not reach it. Enlarge dialog with
+prev/next/Esc and "Edit this graphic". Footer's first line swaps to "Look
+edits are not cued" on this tab (the Studio line is exactly wrong there).
+
+Stage: `?tile=` isolates the scene (every other scene visible:false, so the
+popup does not stand down for the dual columns' card slot and the sponsor
+does not dock) and applies the tile's `vary`; `?sample=1` swaps both banks
+for `GET /api/sample` (held state applied once it lands; a failed fetch
+falls back to the event's data). The sample keeps the event's own name when
+one is set. `server/sample.js` builds the sample through a new
+`buildBank(patch)` export in state.js (defaults + the real whitelist), so it
+always has the current shape; players are made up, cards are real names
+resolved against the index at request time (Diana vs Draven semifinal,
+FlipDeck's transcribed Diana list as the decklist, an 8-player bracket with
+the semifinal live, 16 standings rows, a two-card showdown chain). Cached
+per card-index identity, copied per caller. 7 tests in
+`test/lookbuilder.test.js`; 183 pass.
+
+Verified on a scratch server (port 4735, own data dir): every tile draws
+filled; tile click, Ember preset on the bracket (only it flashed, badge +
+fade), a global accent edit (29 tiles flashed, bracket did not), enlarge,
+Your preview, size and backdrop, Studio tab unloads every tile, footer swap.
+Gotcha: the in-app browser pane does not lay out while hidden, so the
+IntersectionObserver and ResizeObserver only fire after a screenshot; and
+navigating the pane to the same URL with a new hash does not reload modules.
+
+Open for Sam: looks still air as they are edited (unchanged behaviour, now
+said in the toolbar and footer). A draft look that only the tiles see until
+an "Apply to air" would need the theme in the bus or a draft slot in state.
+
 ### 2026-09-16e (out of band: card row plates off and a ground, highlight toggle and art picker; still 0.14.1)
 
 Sam: drop the card name under each card in the row ("the card speaks

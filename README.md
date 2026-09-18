@@ -130,7 +130,8 @@ npm start
   (1920 x 1080, 60 fps)
 
 Every graphic also has its own browser-source URL, listed with a Copy button
-in the panel's Setup card and printed when the server starts.
+under Setup on the panel's Look and setup tab, and printed when the server
+starts.
 
 `npm start -- --open` also opens the panel in your default browser, and
 `npm start -- --window` opens the app window the packaged build opens (from
@@ -148,7 +149,8 @@ Graphics are listed in three folds: 1v1, 2v2 and Other (the bugs, the card
 popup, the card row and the full screens). They start closed; a fold's heading says how
 many of its graphics are in preview or on air, and putting a graphic in
 preview opens its fold. Each row still carries an Overlay or Full frame
-tag. Graphic features, Decklist, Look and Setup fold from their heading
+tag. The Studio's control band is three columns: Graphics, Graphic
+features and Decklist. Graphic features and Decklist fold from their heading
 too, and every control card can be dragged taller or shorter by the grip
 along its bottom edge (double-click puts it back); the browser remembers
 the folds and the heights. The card popup's search and staged card, and the
@@ -178,7 +180,24 @@ clock: they act on air at once, no TAKE needed.
 
 ## Looks
 
-The Look card in the control panel recolours every graphic: pick a preset
+The **Look and setup** tab at the top of the control panel (beside
+Studio) is where looks are made: the look controls run down the left the way
+Match data does in the Studio, with Setup (the card database, browser source
+links and updates) under them, and every graphic is laid out on the right as a
+live tile, 30 in all (each graphic once, plus the variants worth judging a
+look on: the slate's four screens, the lower third's three, the showdown's
+strip and takeover, the dual columns with cards in hand). Tiles draw a
+built-in sample match by default, so no graphic is judged empty; "Your
+preview" switches them to the preview bank. Behind sets what shows through
+the overlays (a transparency grid, dark, light, or a felt table), Size sets
+the tile size, and the arrow on a tile enlarges it (Left and Right step
+through, Esc closes). Click a tile to point the controls at that graphic;
+"Back to all graphics" returns. A tile flashes when an edit changes it, and
+the ones an edit would not reach fade (a graphic with its own look, while
+editing all graphics). Tiles load as they scroll into view and unload when
+you go back to the Studio.
+
+The look controls recolour every graphic: pick a preset
 (Turn'em Sideways, Regional gold, Ember, Arctic, Mono) or set the accents,
 ground, panels, frame, text and trim colours and a background (the arrow
 shards, a solid, a gradient, an uploaded image, the TES plate photo, or
@@ -337,3 +356,9 @@ npm run decklist:batch -- --csv=... --strict --resume
 - `?transparent=1` — transparent background for compositing over program
 - `?anim=0` — kill switch: all motion snaps to settled state
 - `?theme=` — reserved for the theming part
+- `?tile=<key>` — the Look and setup tab's tiles: this graphic on its own (every
+  other graphic off, so nothing docks) in that tile's variant
+  (`web/shared/looktiles.js`). Panel use only, never a browser source.
+- `?sample=1` — draw the built-in sample match (`GET /api/sample`,
+  `server/sample.js`) instead of the event's data; the look stays live.
+  Panel use only.

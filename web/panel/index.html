@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="/assets/brand.css">
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="./panel.css">
+<link rel="stylesheet" href="./lookbuilder.css">
 </head>
 <body>
 <header>
@@ -15,6 +16,10 @@
     <h1>SIDEWAYS <span>STUDIO</span></h1>
     <p>Riftbound broadcast graphics</p>
   </div>
+  <nav class="view-tabs" role="tablist" aria-label="Views">
+    <button type="button" class="view-tab on" role="tab" id="tabStudio" data-view="studio" aria-selected="true">Studio</button>
+    <button type="button" class="view-tab" role="tab" id="tabLook" data-view="look" aria-selected="false" tabindex="-1">Look and setup</button>
+  </nav>
   <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
 </header>
 
@@ -1036,6 +1041,10 @@
     </div>
   </section>
 
+  </div>
+
+  <div class="column-stack side-stack">
+
   <section class="card deck-card foldable" id="deckCard" data-fold="deck" data-size="deck">
     <div class="deck-head fold-head">
       <h2><button type="button" class="fold-btn" aria-expanded="true" aria-controls="deckCard">Decklist</button></h2>
@@ -1079,22 +1088,40 @@
       <button id="deckClear" class="danger-ghost">Clear</button>
     </div>
   </section>
-
   </div>
+</main>
+</div>
+</div>
 
-  <div class="column-stack side-stack">
-  <section class="card look-card foldable" id="lookCard" data-fold="look" data-size="look">
-    <div class="deck-head fold-head">
-      <h2><button type="button" class="fold-btn" aria-expanded="true" aria-controls="lookCard">Look</button></h2>
+<!-- The Look builder (2026-09-18, Sam): the look controls down the left, the
+     way Match data sits in the Studio (the Studio's old Look card, same ids),
+     and every graphic laid out on the right as a live tile so one edit shows
+     on all of them at once (lookbuilder.js). -->
+<div class="look-view" id="lookView">
+  <div class="look-side">
+  <aside class="card look-panel" id="lookCard">
+    <div class="data-head">
+      <h2>Look</h2>
       <select id="lookScope" aria-label="Which graphics this look applies to"></select>
+    </div>
+    <div class="look-scope">
+      <p class="look-scope-line" id="lookScopeLine">Editing the look for all graphics.</p>
+      <button type="button" class="link-btn hidden" id="lookAllGraphics">Back to all graphics</button>
     </div>
     <label class="inline hidden" id="lookOwnRow" title="Off: this graphic follows the look for all graphics. On: it keeps its own colours and background.">
       <input type="checkbox" id="lookOwn"> Own look for this graphic
     </label>
-    <div class="preset-row" id="presetRow"></div>
-    <div class="look-grid" id="lookColors"></div>
-    <div class="look-bg">
-      <label>Background
+    <section class="look-sec">
+      <h3 class="look-sec-title">Presets</h3>
+      <div class="preset-row" id="presetRow"></div>
+    </section>
+    <section class="look-sec">
+      <h3 class="look-sec-title">Colours</h3>
+      <div class="look-grid" id="lookColors"></div>
+    </section>
+    <section class="look-sec look-bg">
+      <h3 class="look-sec-title">Background</h3>
+      <label>Paints with
         <select id="bgKind">
           <option value="">Designed</option>
           <option value="shards">Arrow shards</option>
@@ -1122,8 +1149,9 @@
         <label class="inline slider">Grain <input type="range" id="bgGrain" min="0" max="100"></label>
         <label class="inline slider">Darken <input type="range" id="bgDim" min="0" max="100"></label>
       </div>
-    </div>
-    <div id="lookGlobalOnly">
+    </section>
+    <section class="look-sec" id="lookGlobalOnly">
+      <h3 class="look-sec-title">Font and logo</h3>
       <label>Display font
         <select id="fontSelect"><option value="">TES default</option></select>
       </label>
@@ -1136,12 +1164,14 @@
         </div>
       </div>
       <p class="hint" id="logoHint">PNG or SVG with a transparent background, landscape, about 720 &times; 440 or larger, under 2 MB. It is scaled to fit, never cropped: 360 &times; 220 on the 2v2 sidebar, 272 &times; 152 on the 1v1, 120 &times; 110 in the dual-column event block.</p>
-    </div>
-    <div class="row"><button id="themeReset">Reset to designed look</button></div>
+    </section>
+    <div class="row look-foot"><button id="themeReset">Reset to designed look</button></div>
     <p class="hint">Cleared colours fall back to each graphic's designed look. The look is not cued: changes air at once.</p>
-  </section>
+  </aside>
 
-  <section class="card setup-card foldable" id="setupCard" data-fold="setup" data-size="setup">
+  <!-- Setup (2026-09-18, Sam): the card database, the browser source links
+       and updates, moved here from the Studio with the look. -->
+  <section class="card setup-card foldable" id="setupCard" data-fold="setup">
     <h2 class="fold-head"><button type="button" class="fold-btn" aria-expanded="true" aria-controls="setupCard">Setup</button></h2>
     <p id="dbStatus">Checking…</p>
     <div class="progress hidden" id="dbProgressWrap"><div class="progress-bar" id="dbProgress"></div></div>
@@ -1289,8 +1319,32 @@
 
   </section>
   </div>
-</main>
-</div>
+
+  <section class="look-stage" aria-label="Every graphic in the current look">
+    <div class="look-toolbar">
+      <div class="seg" role="group" aria-label="What the graphics show">
+        <span class="seg-label">Data</span>
+        <button type="button" data-lb-data="sample" title="A made-up semifinal with every field filled, so no graphic is judged empty">Sample match</button>
+        <button type="button" data-lb-data="preview" title="The data in your preview bank, as the Studio's thumbnails show it">Your preview</button>
+      </div>
+      <div class="seg" role="group" aria-label="What sits behind the overlays">
+        <span class="seg-label">Behind</span>
+        <button type="button" data-lb-backdrop="checker" title="Transparent shows as a grid, like an editor">Grid</button>
+        <button type="button" data-lb-backdrop="dark">Dark</button>
+        <button type="button" data-lb-backdrop="light">Light</button>
+        <button type="button" data-lb-backdrop="table" title="A felt table, standing in for a table camera">Table</button>
+      </div>
+      <div class="seg" role="group" aria-label="Tile size">
+        <span class="seg-label">Size</span>
+        <button type="button" data-lb-size="s">S</button>
+        <button type="button" data-lb-size="m">M</button>
+        <button type="button" data-lb-size="l">L</button>
+      </div>
+      <nav class="look-jump" id="lookJump" aria-label="Jump to"></nav>
+      <span class="look-live" title="The look is not cued like a graphic: a change airs on every graphic that is up the moment it is made.">Edits air at once</span>
+    </div>
+    <div class="look-tiles" id="lookTiles"></div>
+  </section>
 </div>
 
 <footer>

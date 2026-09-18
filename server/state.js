@@ -780,6 +780,16 @@ export function getState() {
   return state;
 }
 
+// A bank built from the defaults through the same whitelist every edit
+// passes. server/sample.js builds the look builder's sample match with it,
+// so the sample always carries the current shape and only values the store
+// itself would accept.
+export function buildBank(patch) {
+  const bank = defaultBank();
+  applyBankPatch(bank, patch && typeof patch === 'object' ? patch : {});
+  return bank;
+}
+
 export function onChange(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);

@@ -23,6 +23,7 @@ import { LOOK_SCENES } from '../web/shared/look.js';
 import { initCardDb, cardDbStatus, cardDbBusy, syncCardDb, autoRefreshCardDb, fillFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readFullArt, readIconArt } from './legends.js';
 import { buildDeck } from './decklist.js';
+import { sampleBank } from './sample.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
 import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
 import { findBrowser, renderStill, shutdownStills } from './still.js';
@@ -97,6 +98,14 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/state' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     res.end(JSON.stringify(getState()));
+    return;
+  }
+
+  // The look builder's sample match (server/sample.js): scenes loaded with
+  // ?sample=1 draw it in place of the event's own data.
+  if (url.pathname === '/api/sample' && req.method === 'GET') {
+    res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+    res.end(JSON.stringify({ ok: true, bank: sampleBank() }));
     return;
   }
 

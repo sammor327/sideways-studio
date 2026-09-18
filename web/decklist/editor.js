@@ -263,7 +263,7 @@ function renderStatus() {
   else if (!names.length) message = 'Waiting for a list.';
   else if (unresolved.length) {
     message = `${plural(unresolved.length, 'name')} not in the card database: pick a fix below to unlock GENERATE PNG. `
-      + 'Brand-new cards need "Check for new sets" in the control panel\'s Setup card.';
+      + 'Brand-new cards need "Check for new sets" under Setup on the control panel\'s Look and setup tab.';
     tone = 'bad';
   } else if (pending.length || resolving) message = `Checking ${plural(pending.length || names.length, 'name')}…`;
   else { message = `All ${plural(names.length, 'name')} found.`; tone = 'good'; }

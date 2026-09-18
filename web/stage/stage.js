@@ -3,6 +3,7 @@
 // fetch on load and on every reconnect, keep the last good frame on any
 // failure, 60s belt-and-braces resync. URL params own presentation only.
 import { resolveLook, lookVars } from '../shared/look.js';
+import { tileBank } from '../shared/looktiles.js';
 
 export function stageParams() {
   const p = new URLSearchParams(location.search);
@@ -19,6 +20,14 @@ export function stageParams() {
     // graphic with the current data before switching it on. Never on a
     // broadcast URL.
     force: p.get('force') === '1',
+    // The panel's Look builder tiles: ?tile=<key> draws this graphic on its
+    // own (every other graphic off, so nothing docks or stands down) in that
+    // tile's variant (web/shared/looktiles.js), and ?sample=1 draws the
+    // built-in sample match (server/sample.js) instead of the event's data,
+    // so every graphic shows filled. The look stays live. Never on a
+    // broadcast URL.
+    tile: p.get('tile') || '',
+    sample: p.get('sample') === '1',
   };
 }
 
@@ -69,13 +78,48 @@ export function initStage({ scene = 'igodual', onState }) {
   let version = -1;
   let first = true;
 
+  // A tile's sample match arrives once per load; a state that lands before
+  // it is held and applied when it does. A failed fetch falls back to the
+  // event's own data rather than drawing nothing.
+  let sample = params.sample ? null : false;
+  let held = null;
+  if (params.sample) {
+    fetch('/api/sample', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => { sample = data && data.bank ? data.bank : false; })
+      .catch(() => { sample = false; })
+      .finally(() => {
+        const s = held;
+        held = null;
+        if (s) apply(s);
+      });
+  }
+
+  // What this scene draws: the state itself, or for a look builder tile the
+  // tile's bank in both slots. The sample keeps the event's own name when
+  // one is set, so the organizer judges the look on their own title.
+  function view(state) {
+    if (!params.tile && !params.sample) return state;
+    if (sample === null) return null;
+    const own = sceneBank(state, params);
+    let base = own;
+    if (sample) {
+      base = sample;
+      if (own && own.event && own.event.name) base = { ...sample, event: { ...sample.event, name: own.event.name } };
+    }
+    const bank = tileBank(base, params.tile, scene);
+    return { ...state, preview: bank, program: bank };
+  }
+
   function apply(state) {
     if (!state || !Number.isInteger(state.version) || state.version <= version) return;
+    const shown = view(state);
+    if (!shown) { held = state; return; }
     version = state.version;
     const wasFirst = first;
     first = false;
-    applyTheme(state.theme, scene);
-    onState(state, wasFirst);
+    applyTheme(shown.theme, scene);
+    onState(shown, wasFirst);
     if (wasFirst && scene !== 'decklist') markReadyWhenLoaded();
   }
 

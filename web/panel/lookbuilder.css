@@ -1,0 +1,324 @@
+/* The Look builder tab (2026-09-18, web/panel/lookbuilder.js). Loaded after
+   panel.css, whose look-card rules (.look-grid, .look-color, .look-row,
+   .preset-row, .logo-row) still style the controls it moved here. */
+
+/* --- the two tabs in the header --- */
+/* The tabs sit beside the name and take the free space after them, so
+   whatever follows (the connection status) keeps to the right edge. */
+.view-tabs {
+  display: flex;
+  gap: 6px;
+  margin-left: 32px;
+  margin-right: auto;
+}
+.view-tabs + .report-btn { margin-left: 0; }
+.view-tab {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #8b98a5;
+  background: transparent;
+  border: 1px solid #2a323b;
+}
+.view-tab:hover { color: #e8edf1; }
+.view-tab.on {
+  color: #06110a;
+  background: var(--tes-grad);
+  border-color: transparent;
+}
+.view-tab:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* One view at a time: the Studio (the workspace) or the builder. */
+body[data-view="look"] .workspace { display: none; }
+body:not([data-view="look"]) .look-view { display: none; }
+
+.look-view {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 440px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 20px;
+}
+
+/* --- left: the look controls over Setup, one column that scrolls as a
+   whole, full height like Match data --- */
+.look-side {
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.look-side > .card { flex: 0 0 auto; overflow: visible; }
+.look-panel { gap: 12px; }
+.look-panel .data-head select { font-size: 13px; padding: 5px 8px; max-width: 250px; }
+.look-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 11px;
+  background: #0c0f12;
+  border-left: 3px solid var(--tes-blue);
+}
+.look-scope-line { margin: 0; font-size: 12.5px; line-height: 1.45; color: #b8c4cf; }
+.look-scope .link-btn { align-self: flex-start; }
+.look-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-top: 11px;
+  border-top: 1px solid #1e242b;
+}
+.look-sec.hidden { display: none; }
+.look-sec-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #8b98a5;
+}
+.look-panel .look-grid { gap: 8px 16px; }
+.look-panel .look-row input[type="range"] { width: 130px; }
+.look-panel .look-foot { padding-top: 11px; border-top: 1px solid #1e242b; }
+
+/* --- right: the toolbar and the tiles --- */
+.look-stage {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.look-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 8px 12px;
+  background: #12161b;
+  border: 1px solid #1e242b;
+}
+.seg { display: inline-flex; align-items: center; }
+.seg-label {
+  margin-right: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #8b98a5;
+}
+.seg button {
+  padding: 4px 11px;
+  font-size: 12px;
+  margin-left: -1px;
+}
+.seg button.on {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  background: #1a2027;
+  border-color: var(--tes-blue);
+}
+.look-jump { display: inline-flex; gap: 6px; }
+.look-jump-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #b8c4cf;
+  border-radius: 999px;
+}
+/* The look is not cued: say so where the edits are made. */
+.look-live {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #ff8a8a;
+}
+.look-live::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e33;
+}
+
+.look-tiles {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 6px 18px 0;
+  --tile-min: 340px;
+  --tile-scale: 0.18;
+}
+.look-tiles.size-s { --tile-min: 250px; }
+.look-tiles.size-l { --tile-min: 500px; }
+.look-group-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 14px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #8b98a5;
+}
+.look-group-title:first-child { margin-top: 2px; }
+.look-group-count { font-size: 11px; color: #5d6975; letter-spacing: 1px; }
+.look-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr));
+  gap: 12px;
+}
+
+.look-tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #12161b;
+  border: 1px solid #1e242b;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.look-tile:hover, .look-tile:focus-visible { border-color: #3d4a57; }
+.look-tile.selected {
+  border-color: var(--tes-blue);
+  box-shadow: 0 0 0 1px var(--tes-blue);
+}
+/* An edit made now would not reach it: its own look under "all graphics",
+   or any other graphic while one is picked. */
+.look-tile.unreached .tile-frame { opacity: 0.42; transition: opacity 0.2s; }
+.look-tile.unreached:hover .tile-frame { opacity: 0.85; }
+.look-tile.changed { animation: tile-changed 1.3s ease-out; }
+@keyframes tile-changed {
+  0% { box-shadow: 0 0 0 3px var(--tes-green); border-color: var(--tes-green); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.tile-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+.tile-frame iframe, .zoom-frame iframe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  border: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+  background: transparent;
+}
+.tile-frame iframe { transform: scale(var(--tile-scale)); }
+.tile-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #5d6975;
+  pointer-events: none;
+}
+.look-tile.loaded .tile-loading { display: none; }
+
+.tile-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 6px 5px 10px;
+  border-top: 1px solid #1e242b;
+}
+.tile-names { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.tile-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #e8edf1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tile-variant { font-size: 11.5px; color: #8b98a5; white-space: nowrap; }
+.tile-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.tile-own {
+  display: none;
+  padding: 2px 6px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--tes-green);
+  border: 1px solid var(--tes-green);
+}
+.look-tile.own .tile-own { display: inline-block; }
+.tile-zoom { padding: 2px 8px; font-size: 14px; line-height: 1.2; }
+
+/* What sits behind the graphics: an editor's alpha grid, flat dark, flat
+   light, or a felt table standing in for a table camera. */
+.backdrop-checker .tile-frame, .zoom-box.backdrop-checker .zoom-frame {
+  background: repeating-conic-gradient(#20262d 0% 25%, #161b21 0% 50%) 0 0 / 16px 16px;
+}
+.backdrop-dark .tile-frame, .zoom-box.backdrop-dark .zoom-frame { background: #05070a; }
+.backdrop-light .tile-frame, .zoom-box.backdrop-light .zoom-frame { background: #dfe4e9; }
+.backdrop-table .tile-frame, .zoom-box.backdrop-table .zoom-frame {
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(255, 255, 255, 0.07), transparent 70%),
+    radial-gradient(ellipse at 50% 50%, #2c5647 0%, #1b382f 58%, #0f211b 100%);
+}
+
+/* --- enlarge --- */
+.look-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(6, 8, 10, 0.9);
+}
+.look-zoom[hidden] { display: none; }
+.zoom-box {
+  width: min(94vw, calc((100vh - 110px) * 16 / 9));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.zoom-head { display: flex; align-items: baseline; gap: 12px; }
+.zoom-title { font-size: 16px; }
+.zoom-variant { font-size: 13px; color: #8b98a5; }
+.zoom-actions { margin-left: auto; display: flex; gap: 8px; }
+.zoom-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid #2a323b;
+  --zoom-scale: 0.5;
+}
+.zoom-frame iframe { transform: scale(var(--zoom-scale)); }
+
+@media (max-width: 1500px) {
+  .look-view { grid-template-columns: 390px minmax(0, 1fr); }
+}
+@media (max-width: 1100px) {
+  .look-view { flex: none; grid-template-columns: minmax(0, 1fr); }
+  .look-side, .look-tiles { overflow: visible; }
+}

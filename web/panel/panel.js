@@ -1,6 +1,7 @@
 import {
   COLOR_HELP, COLOR_KEYS, COLOR_LABELS, DESIGNED, LOOK_SCENES, PRESETS, SCENE_LABELS, resolveLook,
 } from '../shared/look.js';
+import { renderLookBuilder } from './lookbuilder.js';
 import { setOffline } from '../shared/offline.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
@@ -631,6 +632,7 @@ function render(s) {
   renderCardrow(s);
   renderOnAir(s);
   renderLook(s.theme);
+  renderLookBuilder(s);
   renderExtras(s);
   revealNewGraphics(s);
 

@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.23.0 (2026-09-18)
+
+- New tab: Look and setup, beside Studio at the top of the panel. The look controls run down the left and every graphic is laid out on the right, 30 in all (including the slate's four screens, the lower third's three and both showdown styles), so you see a change on all of them at once.
+- The graphics there show a made-up sample match, so none of them is empty while you build a look. "Your preview" switches them to your own data. Pick what shows behind the overlays (grid, dark, light or a felt table) and the tile size; the arrow on a graphic opens it large.
+- Click a graphic to edit its own look. A graphic flashes when a change reaches it, and the ones a change will not reach fade out.
+- Setup (card database, browser source links, updates) moved to the same tab, under the look controls.
+- Studio: the Decklist has its own column now, beside Graphics and Graphic features.
+- Look changes still air the moment you make them, as before; the new tab says so.
+
 ## 0.22.0 (2026-09-18)
 
 - Rows overlay: upload or remove the event logo right from the rows options, with the recommended size beside the button (PNG or SVG, transparent background, about 720 x 440 or larger). It is the same logo as the one under Look, so it changes everywhere.
