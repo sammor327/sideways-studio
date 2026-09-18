@@ -1108,3 +1108,15 @@ button.focus-toggle.on { color: #06110a; background: var(--tes-grad); border-col
 /* Two hands of different lengths both start at the top of the row. */
 .field-row[data-field="hand"] { align-items: start; }
 .field-row[data-field="hand"] > .row-label { padding-top: 9px; }
+
+/* Sponsor plate: the sponsor list and the add row. */
+.scene-options input.num-mini { width: 64px; flex: none; padding: 3px 6px; }
+.sponsor-list { display: flex; flex-direction: column; gap: 4px; }
+.sponsor-row { display: flex; align-items: center; gap: 6px; }
+.sponsor-row input { flex: 1 1 auto; min-width: 0; }
+.sponsor-art { flex: 0 0 auto; width: 90px; height: 30px; border: 1px solid #26303c; border-radius: 3px; background: #0a0d12; display: grid; place-items: center; font-size: 10px; color: #6b7785; overflow: hidden; }
+.sponsor-art img { width: 100%; height: 100%; object-fit: contain; }
+.sponsor-add { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sponsor-add #sponsorName { flex: 1 1 140px; min-width: 0; }
+.sponsor-add .file-pick { font-size: 12px; display: inline-flex; flex-direction: row; align-items: center; gap: 6px; }
+.file-pick input { max-width: 180px; font-size: 11px; }

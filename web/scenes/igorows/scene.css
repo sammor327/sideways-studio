@@ -116,10 +116,18 @@
 .pname { font: 800 calc(34 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .pro { font: 500 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.4 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; }
 .pro:empty { display: none; }
-.box { position: relative; width: calc(120 * var(--u)); height: calc(56 * var(--u)); border-radius: calc(6 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); }
+/* The POINTS label sits on the side of the box nearest the frame centre:
+   under it on the top bar, over it on the bottom bar. A negative margin on
+   that side centres box and label together in the 75px bar. */
+.box { position: relative; width: calc(120 * var(--u)); height: calc(48 * var(--u)); border-radius: calc(6 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); }
+.bar.top .box { margin-top: calc(-16 * var(--u)); }
+.bar.bot .box { margin-bottom: calc(-16 * var(--u)); }
+.no-points .box { visibility: hidden; }
 .box .in { position: absolute; inset: calc(2 * var(--u)); background: var(--ss-ink, #10151d); border-radius: calc(4 * var(--u)); display: grid; place-items: center; }
-.box .num { font: 700 calc(40 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); transform: scale(calc(1 + 0.18 * var(--bump, 0))); }
-.box small { position: absolute; top: calc(-13 * var(--u)); left: 0; right: 0; text-align: center; font: 500 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.4 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+.box .num { font: 700 calc(36 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); transform: scale(calc(1 + 0.18 * var(--bump, 0))); }
+.box small { position: absolute; left: 0; right: 0; text-align: center; font: 800 calc(12 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text, #fff); }
+.bar.top .box small { top: calc(100% + 4 * var(--u)); }
+.bar.bot .box small { bottom: calc(100% + 4 * var(--u)); }
 .deck { display: flex; align-items: center; justify-content: flex-end; gap: calc(12 * var(--u)); min-width: 0; }
 .deck-lines { display: flex; flex-direction: column; align-items: flex-end; min-width: 0; }
 .deck .lg { font: 800 calc(22 * var(--u))/1.1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(520 * var(--u)); }

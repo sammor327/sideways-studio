@@ -1,0 +1,71 @@
+/* Sponsor plate (2026-09-18): one 3:1 plate that rotates through the event's
+   sponsors. It has no fixed place: web/shared/sponsor.js docks it into the
+   in-game overlay that is up (its logo panel, event block or a dead corner)
+   and the scene takes that overlay's look, so the plate reads as part of
+   whatever graphic it lands on. The dock sets --x, --y, --w, --h and
+   --radius in design pixels.
+
+   A sponsor with art shows the art, contained, on the plate colour (3:1 art
+   fills it edge to edge); one without shows its name. Consecutive sponsors
+   cross-fade on --a, written from the wall clock so every copy of the
+   source shows the same sponsor. The optional tag sits on the side of the
+   plate nearest the frame centre.
+
+   Motion: --t fades and lifts the plate in; every read is var(--t, 1). */
+
+.sponsor { position: absolute; inset: 0; }
+.sponsor.off { display: none; }
+.sponsor, .sponsor * { box-sizing: border-box; }
+
+.plate {
+  position: absolute;
+  left: calc(var(--x, 1566) * var(--u));
+  top: calc(var(--y, 24) * var(--u));
+  width: calc(var(--w, 330) * var(--u));
+  height: calc(var(--h, 110) * var(--u));
+  border-radius: calc(var(--radius, 8) * var(--u));
+  background: var(--ss-plate, #0a0d12);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  box-shadow: 0 calc(6 * var(--u)) calc(18 * var(--u)) rgba(0, 0, 0, 0.45);
+  opacity: var(--t, 1);
+  transform: translateY(calc((1 - var(--t, 1)) * 12 * var(--u))) scale(calc(0.96 + 0.04 * var(--t, 1)));
+}
+/* The accent edge the host overlays put on their own panels. */
+.plate::after {
+  content: '';
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: calc(3 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  border-radius: 0 0 calc(var(--radius, 8) * var(--u)) calc(var(--radius, 8) * var(--u));
+}
+.slides { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: var(--a, 0);
+}
+.slide img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.slide .nm {
+  padding: 0 calc(14 * var(--u));
+  font: 800 calc(30 * var(--u))/1.05 var(--tes-font);
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ss-text, #fff);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.tag {
+  position: absolute; left: calc(10 * var(--u));
+  padding: calc(4 * var(--u)) calc(8 * var(--u));
+  font: 800 calc(11 * var(--u))/1 var(--tes-font);
+  letter-spacing: calc(1.6 * var(--u));
+  text-transform: uppercase;
+  color: var(--ss-plate, #0a0d12);
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  border-radius: calc(2 * var(--u));
+  white-space: nowrap;
+}
+.tag:empty { display: none; }
+.plate.tag-above .tag { bottom: calc(100% + 4 * var(--u)); }
+.plate.tag-below .tag { top: calc(100% + 4 * var(--u)); }

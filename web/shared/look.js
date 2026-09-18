@@ -19,7 +19,7 @@
 
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
-  'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result'];
+  'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'sponsor'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -49,6 +49,7 @@ export const SCENE_LABELS = {
   bracket: 'Bracket',
   standings: 'Standings',
   result: 'Result',
+  sponsor: 'Sponsor plate',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -161,6 +162,12 @@ export const DESIGNED = {
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
   showdown: {
+    colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  // The sponsor plate wears the look of the overlay it docks into; this is
+  // its look with none up, or with its own override on.
+  sponsor: {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },

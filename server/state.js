@@ -13,6 +13,7 @@ import { DATA_DIR } from './runtime.js';
 import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } from '../web/shared/look.js';
 import { kindOf } from './carddb.js';
 import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
+import { SPONSOR_MAX, SPONSOR_POSITIONS } from '../web/shared/sponsor.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -154,7 +155,7 @@ function defaultBank() {
       // and the cards-in-hand list (the Magic grammar). handStyle 'list' or
       // 'lanes', which marks each card's type on its row (neither style sorts
       // the hand); handArt puts each card's art beside its name.
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false },
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true },
       // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
       // stage and player cameras. Exclusive with the score bug in the panel.
       arenabug: { visible: false, clock: true },
@@ -184,6 +185,12 @@ function defaultBank() {
       standings: { visible: false, page: 1 },
       // Result strip: the match winner and where they go next.
       result: { visible: false },
+      // Sponsor plate: a 3:1 plate rotating through items every `interval`
+      // seconds, docked into whichever in-game overlay is up (position
+      // 'auto') or pinned to a corner. every/duration: 0 minutes = up the
+      // whole time it is on, otherwise the first `duration` seconds of every
+      // `every` minutes. label is an optional tag such as "Presented by".
+      sponsor: { visible: false, items: [], interval: 10, position: 'auto', label: '', every: 0, duration: 20 },
     },
   };
 }
@@ -274,6 +281,20 @@ function mergeBank(bank, raw) {
   if (typeof bank.scenes.decklist.focus !== 'string') bank.scenes.decklist.focus = '';
   if (typeof bank.scenes.decklist.focusOn !== 'boolean') bank.scenes.decklist.focusOn = true;
   if (typeof bank.scenes.cardrow.background !== 'boolean') bank.scenes.cardrow.background = true;
+  bank.scenes.sponsor.items = cleanSponsorItems(bank.scenes.sponsor.items);
+}
+
+// A sponsor is a name and, optionally, art uploaded through
+// /api/sponsor/image (so the path is always one this server wrote).
+const SPONSOR_IMAGE = /^\/theme\/sponsor\/[a-f0-9]{12}\.(png|jpg|webp|svg)$/;
+export function cleanSponsorItems(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, SPONSOR_MAX).map((s) => {
+    if (!s || typeof s !== 'object') return null;
+    const name = cleanStr(s.name || '', 60);
+    const image = typeof s.image === 'string' && SPONSOR_IMAGE.test(s.image) ? s.image : '';
+    return name || image ? { name, image } : null;
+  }).filter(Boolean);
 }
 
 // Load saved state; migrate pre-bus saves (Loop 0/1 kept event/match/scenes at
@@ -577,7 +598,7 @@ function applyBankPatch(bank, patch) {
     const IGO_FLAGS = {
       igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand', 'handArt'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
-      igorows: ['hand', 'handArt'],
+      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter'],
     };
     for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {
@@ -665,6 +686,19 @@ function applyBankPatch(bank, patch) {
       const st = patch.scenes.standings;
       if (st.visible !== undefined) bank.scenes.standings.visible = Boolean(st.visible);
       if (st.page !== undefined) bank.scenes.standings.page = clampInt(st.page, 1, 4);
+    }
+    if (patch.scenes.sponsor && typeof patch.scenes.sponsor === 'object') {
+      const sp = patch.scenes.sponsor;
+      const cfg = bank.scenes.sponsor;
+      if (sp.visible !== undefined) cfg.visible = Boolean(sp.visible);
+      if (sp.items !== undefined) cfg.items = cleanSponsorItems(sp.items);
+      if (sp.interval !== undefined) cfg.interval = clampInt(sp.interval, 3, 120);
+      if (SPONSOR_POSITIONS.includes(sp.position)) cfg.position = sp.position;
+      if (sp.label !== undefined) cfg.label = cleanStr(sp.label, 30);
+      if (sp.every !== undefined) cfg.every = clampInt(sp.every, 0, 60);
+      if (sp.duration !== undefined) cfg.duration = clampInt(sp.duration, 5, 300);
+      // A plate with no sponsor has nothing to show, so it can never be on.
+      if (!cfg.items.length) cfg.visible = false;
     }
   }
 }

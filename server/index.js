@@ -5,6 +5,7 @@ import http from 'node:http';
 import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { exec } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { WebSocketServer } from 'ws';
 import { APP_ROOT, APP_VERSION, DATA_DIR, WEB_DIR, isPackaged, readAsset } from './runtime.js';
 import { captureConsole, onLog, recentLog } from './log.js';
@@ -210,6 +211,41 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 200, { ok: true });
     } catch (err) {
       sendJson(res, 400, { ok: false, error: err.message });
+    }
+    return;
+  }
+
+  // Sponsor art for the sponsor plate: raw image body, extension via query,
+  // 4MB. Each upload gets its own random name so replacing one sponsor's art
+  // never changes another's, and the panel puts the returned URL on the
+  // sponsor (state.js only accepts paths of this shape).
+  if (url.pathname === '/api/sponsor/image' && req.method === 'POST') {
+    const ext = String(url.searchParams.get('ext') || '').toLowerCase();
+    if (!LOGO_EXT.includes(ext)) {
+      sendJson(res, 400, { ok: false, error: 'sponsor art must be png, jpg, webp or svg' });
+      return;
+    }
+    try {
+      const body = await readBody(req, 4 * 1024 * 1024);
+      if (!body.length) throw new Error('empty upload');
+      await mkdir(path.join(DATA_DIR_THEME, 'sponsor'), { recursive: true });
+      const file = `${randomBytes(6).toString('hex')}.${ext}`;
+      await writeFile(path.join(DATA_DIR_THEME, 'sponsor', file), body);
+      sendJson(res, 200, { ok: true, url: `/theme/sponsor/${file}` });
+    } catch (err) {
+      sendJson(res, 400, { ok: false, error: err.message });
+    }
+    return;
+  }
+
+  const sponsorReq = url.pathname.match(/^\/theme\/sponsor\/([a-f0-9]{12})\.(png|jpg|webp|svg)$/);
+  if (sponsorReq && req.method === 'GET') {
+    try {
+      const data = await readFile(path.join(DATA_DIR_THEME, 'sponsor', `${sponsorReq[1]}.${sponsorReq[2]}`));
+      res.writeHead(200, { 'content-type': LOGO_MIME[sponsorReq[2]], 'cache-control': 'no-store' });
+      res.end(data);
+    } catch {
+      res.writeHead(404); res.end('no sponsor art');
     }
     return;
   }

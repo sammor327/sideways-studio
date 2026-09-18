@@ -93,8 +93,12 @@ const params = initStage({
 
     root.classList.toggle('mode-webcam', scene.mode === 'webcam');
     root.classList.toggle('mode-legend', scene.mode !== 'webcam');
-    root.classList.toggle('active-left', m.activeSide === 'left');
-    root.classList.toggle('active-right', m.activeSide === 'right');
+    // Each piece of the game state is the operator's to switch off: the
+    // active-turn mark, the points boxes, the turn in the round title.
+    const activeOn = scene.activeTurn !== false;
+    root.classList.toggle('active-left', activeOn && m.activeSide === 'left');
+    root.classList.toggle('active-right', activeOn && m.activeSide === 'right');
+    root.classList.toggle('no-points', scene.points === false);
 
     renderSide('l', m.left, m, animate);
     renderSide('r', m.right, m, animate);
@@ -104,7 +108,8 @@ const params = initStage({
     renderHand('l', m.left, scene.hand, lanes, art);
     renderHand('r', m.right, scene.hand, lanes, art);
 
-    const round = [bank.event.roundTitle, m.turn > 0 ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
+    const turnOn = scene.turnCounter !== false && m.turn > 0;
+    const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
     setText($('round'), round);
 
     const visible = params.force || scene.visible;

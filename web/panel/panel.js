@@ -4,6 +4,7 @@ import {
 import { setOffline } from '../shared/offline.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
+import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -66,6 +67,7 @@ const SCENE_FIELDS = {
   bracket: ['bracket', 'eventName'],
   standings: ['standings', 'eventName', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
+  sponsor: [],
   // The card popup and the card row carry their content in their own
   // Graphic features groups (the search, the four slots), not in Match data;
   // listed so putting them in preview unfolds that card.
@@ -95,6 +97,7 @@ const SCENE_NAMES = {
   bracket: 'the bracket',
   standings: 'the standings',
   result: 'the result strip',
+  sponsor: 'the sponsor plate',
 };
 
 // Short names for the on-air list, which lives in the narrow column between
@@ -105,6 +108,7 @@ const SCENE_SHORT = {
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', result: 'Result',
+  sponsor: 'Sponsor',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
@@ -125,7 +129,11 @@ function sceneDraws(scene, field, side, bank) {
     if (!cfg.topBar && ['seriesLength', 'score', 'gameWins', 'timer', 'turn'].includes(field)) return false;
     if (!cfg.cardWell && field === 'card') return false;
   }
-  if (scene === 'igorows' && !cfg.hand && ['hand', 'handCount'].includes(field)) return false;
+  if (scene === 'igorows') {
+    if (!cfg.hand && ['hand', 'handCount'].includes(field)) return false;
+    if (cfg.points === false && field === 'score') return false;
+    if (cfg.turnCounter === false && cfg.activeTurn === false && field === 'turn') return false;
+  }
   if (scene === 'showdown' && !cfg.hands && ['hand', 'handCount'].includes(field)) return false;
   if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
   if (scene === 'slate') {
@@ -776,7 +784,7 @@ $('resetMatch').addEventListener('click', () => {
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
-      bracket: { visible: false }, standings: { visible: false }, result: { visible: false },
+      bracket: { visible: false }, standings: { visible: false }, result: { visible: false }, sponsor: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -1158,6 +1166,7 @@ $('decklistUrl').value = `${location.origin}/scenes/decklist/?transparent=1`;
 $('igoPortraitUrl').value = `${location.origin}/scenes/igoportrait/?transparent=1`;
 $('igoRowsUrl').value = `${location.origin}/scenes/igorows/?transparent=1`;
 $('arenaUrl').value = `${location.origin}/scenes/arenabug/?transparent=1`;
+$('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
@@ -2044,6 +2053,9 @@ $('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mo
 $('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
 $('igoRowsHandStyle').addEventListener('change', () => post({ scenes: { igorows: { handStyle: $('igoRowsHandStyle').value } } }));
 $('igoRowsHandArt').addEventListener('change', () => post({ scenes: { igorows: { handArt: $('igoRowsHandArt').checked } } }));
+for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter']]) {
+  $(id).addEventListener('change', () => post({ scenes: { igorows: { [flag]: $(id).checked } } }));
+}
 $('igoRowsShowdown').addEventListener('change', () => post({ scenes: { igorows: { showdown: $('igoRowsShowdown').checked } } }));
 $('toggleHandfan').addEventListener('click', () => {
   if (!state) return;
@@ -2631,6 +2643,9 @@ function renderExtras(s) {
   if (document.activeElement !== $('igoRowsHandStyle')) $('igoRowsHandStyle').value = rw.handStyle || 'list';
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
+  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter']]) {
+    if (document.activeElement !== $(id)) $(id).checked = rw[flag] !== false;
+  }
   const hf = prev.scenes.handfan;
   if (document.activeElement !== $('handfanSide')) $('handfanSide').value = hf.side || 'left';
   if (document.activeElement !== $('handfanOpponent')) $('handfanOpponent').checked = Boolean(hf.opponent);
@@ -2641,6 +2656,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('showdownMode')) $('showdownMode').value = sdc.mode || 'strip';
   if (document.activeElement !== $('showdownHands')) $('showdownHands').checked = sdc.hands !== false;
   renderShowdown(s);
+  renderSponsor(s);
   if (document.activeElement !== $('arenaClock')) $('arenaClock').checked = prev.scenes.arenabug.clock;
   const sl = prev.scenes.slate;
   if (document.activeElement !== $('slateMode')) $('slateMode').value = sl.mode;
@@ -2741,6 +2757,11 @@ function toggleScene(key) {
     else armFeature('cardrow', 'rowCard0');
     return;
   }
+  if (key === 'sponsor') {
+    if (prev.scenes.sponsor.items.length) post({ scenes: { sponsor: { visible: true } } });
+    else armFeature('sponsor', 'sponsorName');
+    return;
+  }
   if (key === 'decklist') {
     if (prev.scenes.decklist.list.trim()) setFullScene('decklist', true);
     return;
@@ -2791,11 +2812,12 @@ function renderThumbs(s) {
     // An empty card popup or card row still answers a click (it opens its
     // picker), so it dims but keeps the pointer; an empty decklist does not.
     const empty = (key === 'cardpopup' && !s.preview.scenes.cardpopup.card.cardId)
-      || (key === 'cardrow' && !s.preview.scenes.cardrow.cards.some((c) => c.cardId));
+      || (key === 'cardrow' && !s.preview.scenes.cardrow.cards.some((c) => c.cardId))
+      || (key === 'sponsor' && !s.preview.scenes.sponsor.items.length);
     const cantShow = key === 'decklist' && !s.preview.scenes.decklist.list.trim();
     thumb.classList.toggle('empty', empty);
     thumb.classList.toggle('disabled', cantShow);
-    const idle = empty ? 'Pick a card' : (cantShow ? 'Nothing staged' : 'Click to preview');
+    const idle = empty ? (key === 'sponsor' ? 'Add a sponsor' : 'Pick a card') : (cantShow ? 'Nothing staged' : 'Click to preview');
     thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : idle);
     thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview`
       : (empty ? `Pick cards for ${SCENE_NAMES[key] || key} under Graphic features` : `Put ${SCENE_NAMES[key] || key} in preview`);
@@ -3162,3 +3184,117 @@ function connect() {
 
 fullFetch();
 connect();
+
+// --- the sponsor plate ---
+//
+// The sponsor list lives on the plate (bussed like everything else, so a
+// new sponsor goes to air on TAKE). Art uploads first and comes back as a
+// URL the server wrote; the sponsor is then added with it. The note over
+// the options says where the plate will land with preview as it is.
+function sponsorItems() {
+  return state ? state.preview.scenes.sponsor.items : [];
+}
+function postSponsorItems(items) {
+  post({ scenes: { sponsor: { items } } });
+}
+function sponsorError(msg) {
+  $('sponsorError').textContent = msg || '';
+  $('sponsorError').classList.toggle('hidden', !msg);
+}
+
+$('toggleSponsor').addEventListener('click', () => toggleScene('sponsor'));
+$('sponsorPosition').addEventListener('change', () => post({ scenes: { sponsor: { position: $('sponsorPosition').value } } }));
+for (const [id, field] of [['sponsorInterval', 'interval'], ['sponsorEvery', 'every'], ['sponsorDuration', 'duration']]) {
+  $(id).addEventListener('change', () => post({ scenes: { sponsor: { [field]: Number($(id).value) } } }));
+}
+{
+  const el = $('sponsorLabel');
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { sponsor: { label: el.value } } }); };
+  el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  el.addEventListener('blur', flush);
+}
+
+async function uploadSponsorArt(file) {
+  const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/svg+xml': 'svg' }[file.type];
+  if (!ext) throw new Error('Sponsor art must be a PNG, JPG, WebP or SVG.');
+  const res = await fetch(`/api/sponsor/image?ext=${ext}`, { method: 'POST', body: file });
+  const out = await res.json().catch(() => ({}));
+  if (!res.ok || !out.ok) throw new Error(out.error || 'The upload failed.');
+  return out.url;
+}
+
+$('sponsorAdd').addEventListener('click', async () => {
+  const name = $('sponsorName').value.trim();
+  const file = $('sponsorFile').files[0];
+  if (!name && !file) { sponsorError('Give the sponsor a name, art, or both.'); return; }
+  if (sponsorItems().length >= SPONSOR_MAX) { sponsorError(`The plate holds ${SPONSOR_MAX} sponsors.`); return; }
+  $('sponsorAdd').disabled = true;
+  try {
+    const image = file ? await uploadSponsorArt(file) : '';
+    // The first sponsor also puts the plate in preview, the way a first card
+    // puts the card row there.
+    const first = sponsorItems().length === 0;
+    post({ scenes: { sponsor: { items: [...sponsorItems(), { name, image }], ...(first ? { visible: true } : {}) } } });
+    $('sponsorName').value = '';
+    $('sponsorFile').value = '';
+    sponsorError('');
+  } catch (err) {
+    sponsorError(err.message);
+  } finally {
+    $('sponsorAdd').disabled = false;
+  }
+});
+
+function renderSponsor(s) {
+  const cfg = s.preview.scenes.sponsor;
+  if (document.activeElement !== $('sponsorPosition')) $('sponsorPosition').value = cfg.position || 'auto';
+  if (document.activeElement !== $('sponsorInterval')) $('sponsorInterval').value = cfg.interval;
+  if (document.activeElement !== $('sponsorEvery')) $('sponsorEvery').value = cfg.every;
+  if (document.activeElement !== $('sponsorDuration')) $('sponsorDuration').value = cfg.duration;
+  $('sponsorDuration').disabled = !(cfg.every > 0);
+  if (document.activeElement !== $('sponsorLabel')) $('sponsorLabel').value = cfg.label || '';
+  $('sponsorOnAir').classList.toggle('hidden', !s.program.scenes.sponsor.visible);
+  const btn = $('toggleSponsor');
+  btn.textContent = cfg.visible ? 'ON' : 'OFF';
+  btn.classList.toggle('on', cfg.visible);
+  const dock = sponsorDock(s.preview);
+  const where = dock.host ? `Docks into ${dock.label}` : (cfg.position === 'auto' ? `No in-game overlay in preview: sits in ${dock.label}` : `Pinned to ${dock.label}`);
+  const cycle = cfg.every > 0 ? `, up for ${cfg.duration} s every ${cfg.every} min` : '';
+  $('sponsorDock').textContent = `${where} at ${dock.w} x ${dock.h}${cycle}.`;
+  renderSponsorList(cfg.items);
+}
+
+let shownSponsors = '';
+function renderSponsorList(items) {
+  const key = JSON.stringify(items);
+  if (key === shownSponsors) return;
+  // Leave the list alone while one of its names is being typed in.
+  if ($('sponsorList').contains(document.activeElement)) return;
+  shownSponsors = key;
+  $('sponsorList').replaceChildren(...items.map((sp, i) => {
+    const row = document.createElement('div');
+    row.className = 'sponsor-row';
+    const art = document.createElement('div');
+    art.className = 'sponsor-art';
+    if (sp.image) art.append(Object.assign(document.createElement('img'), { src: sp.image, alt: '' }));
+    else art.textContent = 'No art';
+    const name = Object.assign(document.createElement('input'), { value: sp.name, maxLength: 60, placeholder: 'Name (shown when there is no art)' });
+    name.addEventListener('change', () => postSponsorItems(sponsorItems().map((it, k) => (k === i ? { ...it, name: name.value } : it))));
+    const move = (d) => {
+      const list = [...sponsorItems()];
+      const j = i + d;
+      if (j < 0 || j >= list.length) return;
+      [list[i], list[j]] = [list[j], list[i]];
+      postSponsorItems(list);
+    };
+    const up = Object.assign(document.createElement('button'), { className: 'clear-mini', textContent: '▲', title: 'Earlier in the rotation', disabled: i === 0 });
+    up.addEventListener('click', () => move(-1));
+    const down = Object.assign(document.createElement('button'), { className: 'clear-mini', textContent: '▼', title: 'Later in the rotation', disabled: i === items.length - 1 });
+    down.addEventListener('click', () => move(1));
+    const del = Object.assign(document.createElement('button'), { className: 'clear-mini', textContent: '×', title: 'Remove this sponsor' });
+    del.addEventListener('click', () => postSponsorItems(sponsorItems().filter((_, k) => k !== i)));
+    row.append(art, name, up, down, del);
+    return row;
+  }));
+}

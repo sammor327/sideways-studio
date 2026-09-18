@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.20.0 (2026-09-18)
+
+- New graphic: Sponsor plate. A 3:1 plate that rotates through your sponsors and fits itself into whichever in-game overlay is up, in that overlay's colours: over the logo panel on the 1v1 and 2v2 sidebars, over the event block on the dual columns and portrait pillars, in a spare corner on the rows, 2v2 bars and arena bug, above the column on the POV. Or pin it to any corner.
+- Add sponsors under Graphic features > Sponsor plate: upload art (600 x 200 is ideal) or just type a name. Reorder or remove them there, set how long each stays up, add a tag such as "Presented by", and optionally have it pop in on its own every few minutes.
+- The plate has its own browser source (put it above your in-game overlay) and is in the all-in-one output.
+- Rows overlay: Active turn, Points and Turn counter can each be switched off, like Cards in hand ("Hidden information" is now called "Cards in hand").
+- Rows overlay: the POINTS label sits toward the middle of the frame (under the box on the top bar, over it on the bottom), so the top one is no longer cut off, and it is bolder.
+
 ## 0.19.0 (2026-09-17)
 
 - Every card comes with the app. The card list, all 932 card thumbnails and the legend cutouts are inside Sideways Studio itself: open it on a machine that has never been online and card search, the pickers, the decklist and every graphic already work.

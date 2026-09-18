@@ -660,6 +660,11 @@
           <div class="scene-name">Arena score bug <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="arenaOnAir">ON AIR</button></div>
           <button id="toggleArena" class="scene-toggle">OFF</button>
         </div>
+        <div class="scene-row" data-scene="sponsor">
+          <div class="scene-name">Sponsor plate <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sponsorOnAir">ON AIR</button></div>
+          <button id="toggleSponsor" class="scene-toggle">OFF</button>
+          <p class="scene-note">A 3:1 plate that rotates through your sponsors and docks into whichever in-game overlay is up, in that overlay's colours. Add sponsors under Graphic features &rsaquo; Sponsor plate; with none added, a click here opens that list.</p>
+        </div>
         <div class="scene-row popup-row" data-scene="cardpopup">
           <div class="scene-name">Card popup <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardOnAir">ON AIR</button></div>
           <button id="toggleCard" class="scene-toggle">OFF</button>
@@ -864,7 +869,10 @@
             <option value="webcam">Webcam cutouts</option>
           </select>
         </label>
-        <label class="inline" title="The cards-in-hand list from the match data"><input type="checkbox" id="igoRowsHand" checked> Hidden information</label>
+        <label class="inline" title="The cards-in-hand list from the match data"><input type="checkbox" id="igoRowsHand" checked> Cards in hand</label>
+        <label class="inline" title="The accent bar under the active player's camera and the ACTIVE TURN label"><input type="checkbox" id="igoRowsActive" checked> Active turn</label>
+        <label class="inline" title="The points box on each player's bar"><input type="checkbox" id="igoRowsPoints" checked> Points</label>
+        <label class="inline" title="Turn N after the round title on the bottom bar"><input type="checkbox" id="igoRowsTurn" checked> Turn counter</label>
         <label class="inline" title="The hand in the order the cards were typed, copies on one row with a count (2x, 3x). Marked by type colours each row by what the card can do: reactions green, actions blue. A hand longer than its box scrolls: five seconds at the top, down to the last card, five seconds there, back up">Hand as
           <select id="igoRowsHandStyle">
             <option value="list">List</option>
@@ -874,6 +882,32 @@
         <label class="inline" title="A strip of each card's art beside its name, in either hand style"><input type="checkbox" id="igoRowsHandArt" checked> Card art</label>
         <label class="inline" title="Lights the reactions still in hand (with the hand marked by type) and swaps the active-turn label for a Showdown pill"><input type="checkbox" id="igoRowsShowdown"> Showdown open</label>
       </div>
+    </div>
+    <div class="feature-group hidden" data-scene="sponsor">
+      <h3>Sponsor plate</h3>
+      <p class="scene-note" id="sponsorDock"></p>
+      <div class="scene-options">
+        <label class="inline" title="Auto docks the plate into the in-game overlay that is up (its logo panel, event block or a spare corner); a corner pins it there whatever is up">Position
+          <select id="sponsorPosition">
+            <option value="auto">Auto: dock into the overlay</option>
+            <option value="tl">Top left</option>
+            <option value="tr">Top right</option>
+            <option value="bl">Bottom left</option>
+            <option value="br">Bottom right</option>
+          </select>
+        </label>
+        <label class="inline" title="Seconds each sponsor stays up before the next fades in">Rotate every <input type="number" id="sponsorInterval" class="num-mini" min="3" max="120"> s</label>
+        <label class="inline" title="0 keeps the plate up the whole time it is on. Otherwise it shows for the first N seconds of every M minutes, on its own">Show every <input type="number" id="sponsorEvery" class="num-mini" min="0" max="60"> min</label>
+        <label class="inline" title="How long each appearance lasts when Show every is above 0">for <input type="number" id="sponsorDuration" class="num-mini" min="5" max="300"> s</label>
+        <label class="inline" title="A small tag on the plate, such as Presented by. Empty for none">Tag <input id="sponsorLabel" maxlength="30" autocomplete="off" placeholder="Presented by"></label>
+      </div>
+      <div class="sponsor-list" id="sponsorList"></div>
+      <div class="sponsor-add">
+        <input id="sponsorName" maxlength="60" autocomplete="off" placeholder="Sponsor name">
+        <label class="file-pick" title="Art for the plate, best at 3:1 (for example 600 x 200). Without art the plate shows the name">Art <input type="file" id="sponsorFile" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label>
+        <button id="sponsorAdd">Add sponsor</button>
+      </div>
+      <p class="scene-note hidden" id="sponsorError"></p>
     </div>
     <div class="feature-group hidden" data-scene="arenabug">
       <h3>Arena score bug</h3>
@@ -1189,6 +1223,10 @@
     <div class="url-row">
       <span class="url-label">Arena score bug source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="arenaUrl" readonly><button data-copy="arenaUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Sponsor plate source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="sponsorUrl" readonly><button data-copy="sponsorUrl">Copy</button></div>
     </div>
     <div class="url-row">
       <span class="url-label">Slate source, 1920 &times; 1080, 60 fps</span>
