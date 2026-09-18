@@ -874,6 +874,12 @@
         <label class="inline" title="The points box on each player's bar"><input type="checkbox" id="igoRowsPoints" checked> Points</label>
         <label class="inline" title="Turn N after the round title on the bottom bar"><input type="checkbox" id="igoRowsTurn" checked> Turn counter</label>
         <label class="inline" title="The theme's event logo in the middle of the column (the event name when no logo is uploaded). It slides out while a hand is listed and back in when the hands clear"><input type="checkbox" id="igoRowsLogo" checked> Event logo</label>
+        <label class="inline" title="The round clock at the right end of the bottom bar, running from the match timer"><input type="checkbox" id="igoRowsClock" checked> Round clock</label>
+        <div class="row">
+          <label class="file-btn">Upload logo<input type="file" id="igoRowsLogoFile" accept=".png,.jpg,.jpeg,.webp,.svg" hidden></label>
+          <button id="igoRowsLogoRemove">Remove logo</button>
+        </div>
+        <p class="hint">Event logo: PNG or SVG with a transparent background, landscape, about 720 &times; 440 or larger, under 2 MB. On the rows it is scaled to fit 298 &times; 170, never cropped, with the round title under it. This is the same logo as Look &gt; Upload logo, so it changes on every graphic that shows one.</p>
         <label class="inline" title="The hand in the order the cards were typed, copies on one row with a count (2x, 3x). Marked by type colours each row by what the card can do: reactions green, actions blue. A hand longer than its box scrolls: five seconds at the top, down to the last card, five seconds there, back up">Hand as
           <select id="igoRowsHandStyle">
             <option value="list">List</option>

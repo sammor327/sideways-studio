@@ -37,7 +37,7 @@
       </div>
       <div class="infos">
       <div class="info top" id="linfo">
-        <div class="hand" id="lhandBlock">
+        <div class="hand gone" id="lhandBlock">
           <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="lhandCount"></span></div>
           <div class="cards" id="lhandView"><div class="scroll" id="lhand"></div></div>
         </div>
@@ -46,17 +46,19 @@
       <div class="divider"></div>
 
       <div class="info bot" id="rinfo">
-        <div class="hand" id="rhandBlock">
+        <div class="hand gone" id="rhandBlock">
           <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="rhandCount"></span></div>
           <div class="cards" id="rhandView"><div class="scroll" id="rhand"></div></div>
         </div>
       </div>
       </div>
-      <!-- The event logo holds the middle of the column while no hand is
-           listed, and slides out when the hands come in. -->
+      <!-- The event logo and the round under it hold the middle of the
+           column while no hand is listed, and slide out when the hands come
+           in. -->
       <div class="logo-well" id="logoWell">
         <img class="logo-img hidden" id="eventLogo" alt="" draggable="false">
         <div class="logo-name" id="eventName"></div>
+        <div class="logo-round" id="round"></div>
       </div>
       <div class="under bot">
         <div class="dots" id="rdots"></div>
@@ -79,14 +81,14 @@
         <span class="runes" id="lrunes"></span>
       </div>
     </div>
-    <!-- Bottom bar: player 2, plus the round title. -->
+    <!-- Bottom bar: player 2, plus the round clock. -->
     <div class="bar bot" id="bbar">
       <div class="who"><span class="chip" id="rcountry"></span><span class="pname" id="rname"></span><span class="pro" id="rpro"></span></div>
       <div class="box"><div class="in"><span class="num" id="rpts">0</span></div><small>Points</small></div>
       <div class="deck">
         <div class="deck-lines"><span class="lg" id="rlegend"></span><span class="ch" id="rchampion"></span></div>
         <span class="runes" id="rrunes"></span>
-        <span class="round" id="round"></span>
+        <span class="clock" id="clock">00:00</span>
       </div>
     </div>
   </div>

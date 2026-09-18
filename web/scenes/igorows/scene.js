@@ -1,12 +1,55 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, heroSteps } from '../../stage/art.js';
-import { fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
+import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 550);
-const logoClock = new SeekClock($('logoWell'), '--lg', 450);
+
+// Something that slides in from the column's left edge and back out: the
+// event logo and each player's hand. `set` returns when its move settles, so
+// one slide can wait for another: the hands come in once the logo is out,
+// the logo comes back once the hands are out. A move that is overtaken by
+// the opposite one never settles, so nothing waiting on it fires late.
+class Slider {
+  constructor(el, prop, ms) {
+    this.el = el;
+    this.prop = prop;
+    this.clock = new SeekClock(el, prop, ms);
+    this.on = null;
+  }
+
+  now() {
+    const v = parseFloat(this.el.style.getPropertyValue(this.prop));
+    return Number.isFinite(v) ? v : (this.on ? 0 : 1);
+  }
+
+  set(show, first, wait = Promise.resolve()) {
+    if (show === this.on) return Promise.resolve();
+    this.on = show;
+    if (first) {
+      this.el.classList.toggle('gone', !show);
+      this.clock.seek(show ? 1 : 0);
+      return Promise.resolve();
+    }
+    if (show) {
+      if (this.el.classList.contains('gone')) this.clock.seek(0);
+      this.clock.stop();
+      return wait.then(() => {
+        if (!this.on) return new Promise(() => {});
+        this.el.classList.remove('gone');
+        return this.clock.play({ from: this.now(), to: 1 });
+      });
+    }
+    return this.clock.play({ from: this.now(), to: 0 }).then(() => {
+      if (!this.on) this.el.classList.add('gone');
+    });
+  }
+}
+
+const logoSlide = new Slider($('logoWell'), '--lg', 450);
+const handSlide = { l: new Slider($('lhandBlock'), '--hs', 450), r: new Slider($('rhandBlock'), '--hs', 450) };
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 const shown = { hero: {}, hand: {} };
@@ -49,14 +92,14 @@ function renderDots(el, seriesLength, gameWins, animate) {
 
 // One player's cards in hand, always in the order they were typed; lanes
 // mark each card's type on its row, and a hand too long for its share of
-// the column scrolls through.
-function renderHand(p, side, on, lanes, art) {
+// the column scrolls through. Showing and hiding is the slider's (onState);
+// a hand on its way out keeps its last cards until it is off the column.
+function renderHand(p, side, show, lanes, art) {
   const block = $(`${p}handBlock`);
   const list = side.hand || [];
-  const show = on && handTotal(side) > 0;
-  block.classList.toggle('hidden', !show);
   block.classList.toggle('typed', lanes);
-  setText($(`${p}handCount`), show ? String(handTotal(side)) : '');
+  if (!show) return;
+  setText($(`${p}handCount`), String(handTotal(side)));
   const key = handKey(list, art);
   if (shown.hand[p] === key) return;
   shown.hand[p] = key;
@@ -80,34 +123,26 @@ function renderSide(p, side, m, animate) {
   loadHero(p, side);
 }
 
-// The event logo: the theme logo, or the event name when none is uploaded.
-// It holds the middle of the column until a hand is listed, then slides out
-// the way the column came in, and back when the hands clear.
-let shownLogo = null;
-function renderLogo(state, bank, scene, handIn, first) {
+// The event logo: the theme logo, or the event name when none is uploaded,
+// with the round title and turn under it. The logo answers to its own
+// switch; the round shows either way.
+function renderLogo(state, bank, scene, round) {
   const logo = state.theme.logo || '';
+  const logoOn = scene.eventLogo !== false;
   const img = $('eventLogo');
   if (img.getAttribute('src') !== (logo || null)) {
     if (logo) img.src = logo; else img.removeAttribute('src');
   }
-  img.classList.toggle('hidden', !logo);
-  setText($('eventName'), logo ? '' : (bank.event.name || ''));
-  const up = scene.eventLogo !== false && Boolean(logo || bank.event.name) && !handIn;
-  if (up === shownLogo) return;
-  shownLogo = up;
-  const well = $('logoWell');
-  if (first) {
-    well.classList.toggle('gone', !up);
-    logoClock.seek(up ? 1 : 0);
-  } else if (up) {
-    well.classList.remove('gone');
-    logoClock.play({ from: 0, to: 1 });
-  } else {
-    logoClock.play({ from: 1, to: 0 }).then(() => {
-      if (!shownLogo) well.classList.add('gone');
-    });
-  }
+  img.classList.toggle('hidden', !logoOn || !logo);
+  setText($('eventName'), logoOn && !logo ? (bank.event.name || '') : '');
+  setText($('round'), round);
+  return (logoOn && Boolean(logo || bank.event.name)) || Boolean(round);
 }
+
+let timerState = null;
+setInterval(() => {
+  if (!root.classList.contains('off')) setText($('clock'), clockText(timerState));
+}, 250);
 
 let shownVisible = null;
 
@@ -135,14 +170,28 @@ const params = initStage({
     root.classList.toggle('showdown', Boolean(scene.showdown));
     const lanes = scene.handStyle === 'lanes';
     const art = scene.handArt !== false;
-    renderHand('l', m.left, scene.hand, lanes, art);
-    renderHand('r', m.right, scene.hand, lanes, art);
-    const handIn = Boolean(scene.hand) && (handTotal(m.left) > 0 || handTotal(m.right) > 0);
-    renderLogo(state, bank, scene, handIn, first);
+    const handL = Boolean(scene.hand) && handTotal(m.left) > 0;
+    const handR = Boolean(scene.hand) && handTotal(m.right) > 0;
+    renderHand('l', m.left, handL, lanes, art);
+    renderHand('r', m.right, handR, lanes, art);
 
     const turnOn = scene.turnCounter !== false && m.turn > 0;
     const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
-    setText($('round'), round);
+    const logoUp = renderLogo(state, bank, scene, round) && !handL && !handR;
+    // The middle of the column holds one thing at a time: the outgoing
+    // side slides out before the incoming side slides in.
+    if (logoUp) {
+      const out = Promise.all([handSlide.l.set(false, first), handSlide.r.set(false, first)]);
+      logoSlide.set(true, first, out);
+    } else {
+      const out = logoSlide.set(false, first);
+      handSlide.l.set(handL, first, out);
+      handSlide.r.set(handR, first, out);
+    }
+
+    $('clock').classList.toggle('hidden', scene.clock === false);
+    timerState = m.timer || timerState;
+    setText($('clock'), clockText(timerState));
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);

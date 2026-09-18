@@ -583,6 +583,7 @@ function renderLook(t) {
     preview.replaceChildren(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'No logo' }));
   }
   $('logoRemove').disabled = !t.logo;
+  $('igoRowsLogoRemove').disabled = !t.logo;
 }
 
 // Never clobber a field the operator is typing in.
@@ -1410,11 +1411,13 @@ $('fontSelect').addEventListener('change', async () => {
   }
 });
 
-$('logoFile').addEventListener('change', async () => {
-  const file = $('logoFile').files[0];
+// The event logo can be uploaded from the Look card or from the rows
+// overlay's options; both write the one theme logo.
+async function uploadLogo(input) {
+  const file = input.files[0];
   if (!file) return;
   if (!(await checkUpload(file, LOGO_RULE))) {
-    $('logoFile').value = '';
+    input.value = '';
     return;
   }
   const ext = file.name.split('.').pop().toLowerCase().replace('jpeg', 'jpg');
@@ -1423,10 +1426,10 @@ $('logoFile').addEventListener('change', async () => {
     body: await file.arrayBuffer(),
   }).then((r) => r.json()).catch(() => ({ ok: false, error: 'upload failed' }));
   if (!res.ok) alert(`Logo upload failed: ${res.error}`);
-  $('logoFile').value = '';
-});
-
-$('logoRemove').addEventListener('click', () => post({ theme: { logo: '' } }));
+  input.value = '';
+}
+for (const id of ['logoFile', 'igoRowsLogoFile']) $(id).addEventListener('change', () => uploadLogo($(id)));
+for (const id of ['logoRemove', 'igoRowsLogoRemove']) $(id).addEventListener('click', () => post({ theme: { logo: '' } }));
 
 $('themeReset').addEventListener('click', () => {
   const cleared = {
@@ -2053,7 +2056,7 @@ $('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mo
 $('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
 $('igoRowsHandStyle').addEventListener('change', () => post({ scenes: { igorows: { handStyle: $('igoRowsHandStyle').value } } }));
 $('igoRowsHandArt').addEventListener('change', () => post({ scenes: { igorows: { handArt: $('igoRowsHandArt').checked } } }));
-for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo']]) {
+for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock']]) {
   $(id).addEventListener('change', () => post({ scenes: { igorows: { [flag]: $(id).checked } } }));
 }
 $('igoRowsShowdown').addEventListener('change', () => post({ scenes: { igorows: { showdown: $('igoRowsShowdown').checked } } }));
@@ -2643,7 +2646,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('igoRowsHandStyle')) $('igoRowsHandStyle').value = rw.handStyle || 'list';
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
-  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo']]) {
+  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock']]) {
     if (document.activeElement !== $(id)) $(id).checked = rw[flag] !== false;
   }
   const hf = prev.scenes.handfan;

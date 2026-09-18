@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.22.0 (2026-09-18)
+
+- Rows overlay: upload or remove the event logo right from the rows options, with the recommended size beside the button (PNG or SVG, transparent background, about 720 x 440 or larger). It is the same logo as the one under Look, so it changes everywhere.
+- Rows overlay: the hands slide in from the left edge of the column and back out. The logo slides out before a hand comes in, and comes back once the hands have gone.
+- Rows overlay: the round clock now sits at the right end of the bottom bar, with its own Round clock checkbox.
+- Rows overlay: the round title and turn sit under the event logo.
+
 ## 0.21.0 (2026-09-18)
 
 - Rows overlay: your event logo now sits in the middle of the left column, between the two cameras. No logo uploaded? It shows the event name instead.

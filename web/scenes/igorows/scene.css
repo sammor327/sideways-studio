@@ -82,7 +82,12 @@
 .info.bot { grid-row: 4; }
 .divider { grid-row: 2; height: calc(1 * var(--u)); margin: calc(14 * var(--u)) 0; background: var(--ss-frame, #26303c); }
 .hand { display: flex; flex-direction: column; min-height: 0; }
-.hand.hidden { display: none; }
+/* --hs slides a hand in from the left edge of the column and back out. */
+.hand.gone { display: none; }
+.hand {
+  opacity: var(--hs, 1);
+  transform: translateX(calc((1 - var(--hs, 1)) * -340 * var(--u)));
+}
 .hand .h { flex: none; display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.06); padding: calc(6 * var(--u)) calc(10 * var(--u)); margin-bottom: calc(4 * var(--u)); }
 .hand .h .label { color: var(--ss-text, #fff); }
 .hand .cnt { font: 700 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); }
@@ -135,8 +140,8 @@
 .deck .ch:empty { display: none; }
 .runes { display: flex; gap: calc(4 * var(--u)); }
 .deck .rune { width: calc(26 * var(--u)); height: calc(26 * var(--u)); }
-.round { font: 800 calc(22 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; color: var(--ss-text, #fff); margin-left: calc(16 * var(--u)); padding-left: calc(20 * var(--u)); border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); white-space: nowrap; }
-.round:empty { display: none; }
+.clock { font: 800 calc(26 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; letter-spacing: calc(1 * var(--u)); color: var(--ss-text, #fff); margin-left: calc(16 * var(--u)); padding-left: calc(20 * var(--u)); border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); white-space: nowrap; }
+.clock.hidden { display: none; }
 
 /* --- hand rows: the count, the art, the type marks; the showdown pill ---
    Copies of a card share a row, counted at its left. With art on, each row
@@ -161,12 +166,12 @@
 
 /* --- event logo ---
    The theme logo (or the event name, when no logo is uploaded) centred in
-   the column between the two cameras. --lg is its own clock: 1 settled in
-   place, 0 slid out to the left behind the column edge. It stands down
-   while either player's hand is listed. */
+   the column between the two cameras, the round title under it. --lg is its
+   own clock: 1 settled in place, 0 slid out to the left behind the column
+   edge. It stands down while either player's hand is listed. */
 .logo-well {
   position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u));
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(14 * var(--u));
   pointer-events: none; overflow: hidden;
 }
 .logo-well.gone { display: none; }
@@ -174,7 +179,9 @@
   opacity: var(--lg, 1);
   transform: translateX(calc((1 - var(--lg, 1)) * -340 * var(--u)));
 }
-.logo-img { max-width: 100%; max-height: calc(220 * var(--u)); object-fit: contain; }
+.logo-img { max-width: 100%; max-height: calc(170 * var(--u)); object-fit: contain; }
 .logo-img.hidden { display: none; }
 .logo-name { font: 800 calc(30 * var(--u))/1.1 var(--tes-font); text-transform: uppercase; text-align: center; color: var(--ss-text, #fff); overflow-wrap: anywhere; }
 .logo-name:empty { display: none; }
+.logo-round { font: 700 calc(18 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-text-muted, #9aa7b6); overflow-wrap: anywhere; }
+.logo-round:empty { display: none; }
