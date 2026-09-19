@@ -214,6 +214,55 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19q (out of band: the slate rework, one layout, switches that work)
+
+Sam: "for sideways studio, let's review the slate. Can we make it look
+consistent and develop it based off of the key learnings and make the
+toggles work?" Review of 0.40.0: the five screens were five layouts (an
+eyebrow and a 112px title on up next, a lockup and a 96px title on
+starting, no head at all on brb, the champion as the title on thanks), the
+clock in three sizes and two colours in three places, a different bottom on
+each; the four switches showed on every screen but only one screen read
+each (on up next three of the four did nothing, brb's clock ignored Break
+clock), the one line (`text`) was shared by brb, thanks and custom and only
+editable on custom, and brb's camera window never showed the camera: the
+window was transparent over an opaque full-frame ground (alpha 255 in a
+CDP still with a transparent page background).
+
+Rebuilt on one grid from web/shared/slate.js (SLATE_SCREENS: title, clock
+words, switches, line field): the family head (64px title + event · round,
+as standings/pairings), the screen's column x 80..1300, a rail x 1340..1840
+(clock card with the next thing named, a side panel, sponsors pinned to the
+foot) and the band y 1006 (the feature tables in the results ticker's shape,
+two a page, standing down while the results ticker is on) or the foot. From
+the Between the Games scouting (every hold carries a clock, the next thing
+named and a sponsor row; the better ones add the day with the current block,
+a rotating side panel, a tables ticker, chat commands; schedule and format
+slates): the side panel turns on the wall clock through next, schedule,
+standings, format, desk, commands, nextEvent, leaving out what the screen's
+own column shows, and its card follows the height of the page on show
+(eased) so a short page never leaves a tall empty plate; two new screens,
+schedule and format. Panel: only the switches the screen reads (data-switch,
+checked against SLATE_SCREENS by a test), the break clock's controls beside
+them (a second CD_CONTROLS set on the same cue), the clock words, one line
+input bound to the screen's own field, and slateGaps lines saying why a
+switch that is on shows nothing. The Match data dimming for the slate is
+slateFields. Found on the way: the sample's placeholder PLAYER ONE / PLAYER
+TWO would have aired as the next match (now unnamed, as in the RiftAtlas
+model); a `.s` class shared by the seeds strip and small lines painted
+plates behind the format and next-event lines; the rail's standings page
+overflowed because the page's flex gap sat between every row. The profile's
+camera well has the same opaque-window bug (and its figure sits over the
+well); flagged as its own task, not changed here.
+
+Verified on a scratch server (4820, `sideways-studio-slate`): stills of all
+seven screens from the look builder tiles and of edge cases (four tables,
+paged band, camera off, clock off, no champion, a 110-character line, an
+empty event), the Regional gold look, the entrance at --t 0.5; a headless
+panel test clicking every offered switch on every screen with real mouse
+events, 33 of 33 changing the preview; the clock's Set/Start from the slate
+group running on both banks; the camera hole at alpha 0 inside, 255 on the
+frame. 18 new tests in test/slate.test.js.
 ### 2026-09-19o (out of band: banishment on the trash graphic)
 
 Sam: "for the graveyard tool can we make sure to include what has been

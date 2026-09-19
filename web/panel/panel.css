@@ -916,6 +916,12 @@ details.scene-section > .scene-group { margin-top: 10px; }
    would draw empty legend slots, gone when there is nothing to say. */
 .feature-group p.hint:empty { display: none; }
 .feature-group p.hint.warn { color: #ffb347; }
+/* The slate (2026-09-19): one line per switch that is on with nothing to
+   show, and its break clock beside the switches. */
+.feature-group p.hint .ln { display: block; }
+.feature-group p.hint .ln + .ln { margin-top: 3px; }
+.slate-clock { align-items: center; }
+.slate-clock .label-mini { width: 150px; }
 
 /* --- foldable control cards: the heading folds its card away ---
    The control band holds more than a short screen shows at once, so Graphic

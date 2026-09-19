@@ -189,7 +189,7 @@ Studio) is where looks are made: the look controls run down the left the way
 Match data does in the Studio, with Setup (the card database, browser source
 links and updates) under them, and every graphic is laid out on the right as a
 live tile, 30 in all (each graphic once, plus the variants worth judging a
-look on: the slate's four screens, the lower third's four, the showdown's
+look on: the slate's seven screens, the lower third's four, the showdown's
 strip and takeover, the dual columns with cards in hand). Tiles draw a
 built-in sample match by default, so no graphic is judged empty; "Your
 preview" switches them to the preview bank. Behind sets what shows through
@@ -305,11 +305,25 @@ and their source URLs are in Setup's browser source links.
   points, a games box, and a name bar with legend thumbnails, country chips,
   records and the round title, plus an event and round-clock lozenge top
   left. It replaces the score bug in preview when switched on.
-- **Slate** (`/scenes/slate/`): full-frame hold screens. "Up next" lists the
-  feature tables typed in Match data (one line each, see the field's
-  tooltip), a standings strip from the seeds paste, the caster desk and the
-  break clock; the other screens print a line (Starting soon, Be right back,
-  Thanks for watching, or your own) with the same clock.
+- **Slate** (`/scenes/slate/`): full-frame hold screens, one layout on every
+  screen. The title and the event head it like the standings; the screen's
+  own content runs down the left; a rail on the right carries the break
+  clock (with what comes next named under it), a side panel that turns
+  through the event's details every few seconds (the match coming up, the
+  schedule, the seeds, the format, the desk, the chat commands, the next
+  event) and the sponsors (the Sponsor plate's logos, else the names under
+  Event); the feature tables run along the bottom in the Results ticker's
+  shape. Seven screens: **Up next** (the feature tables typed in Match data,
+  one line each, see the field's tooltip, with the seeds under them),
+  **Starting soon** (the clock large and the day's schedule), **Be right
+  back** (a window cut through the graphic for a camera source, your line
+  under it), **Thanks for watching** (the champion with their legend figure,
+  your line, the next event), **Today's schedule**, **Format** (best of,
+  points to win, who chose first, the format text) and a **Custom line**.
+  Graphic features › Slate lists only the switches the chosen screen uses
+  (Break clock, Camera window, Schedule, Side panel, Sponsors, Tables
+  ticker), with the break clock's own controls, and says why a switch that
+  is on shows nothing yet.
 
 The turn counter, the active side and the break clock are cues like the
 round clock: Next turn, Reset and the clock buttons act on air at once.
@@ -341,7 +355,7 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   rows come in one after another from the top, and a page change slides the
   old page out and the next one in from the side you paged toward), and a
   **result strip**. The slate's Starting soon, Be right back and Thanks
-  modes carry the day's schedule, a camera window and the champion.
+  screens carry the day's schedule, a camera window and the champion.
 - **Anchored corner tag and lower third** (0.36.0): with an in-game overlay up, the
   corner tag sits in the top right corner of the game area that overlay
   leaves and the lower third along the bottom of it, centred and made

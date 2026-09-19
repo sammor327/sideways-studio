@@ -13,88 +13,111 @@
 </head>
 <body>
 <div class="stage">
+  <!-- One layout for every screen (2026-09-19): the head across the top,
+       the screen's own column on the left, the rail on the right, the band
+       or the foot along the bottom. The mode class picks the left column. -->
   <div class="slate off mode-upnext" id="root">
-    <div class="ground">
-      <div class="g-fill"></div><div class="g-image"></div>
-      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
-      <div class="g-grain"></div><div class="g-dim"></div>
+    <!-- The ground and its shards, in one box so be right back can cut the
+         camera window out of both. -->
+    <div class="backdrop">
+      <div class="ground">
+        <div class="g-fill"></div><div class="g-image"></div>
+        <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+        <div class="g-grain"></div><div class="g-dim"></div>
+      </div>
+      <div class="k-shard s1"></div><div class="k-shard s2"></div>
     </div>
-    <div class="shard s1"></div><div class="shard s2"></div>
 
-    <!-- Up next: the feature tables and the seeds strip. -->
-    <div class="left" id="upnext">
-      <span class="label eyebrow" id="eyebrow"></span>
-      <div class="trim"></div>
-      <div class="title">Up next</div>
-      <div class="sub" id="sub"></div>
-      <div class="grid" id="tables"></div>
-      <div class="seeds" id="seedsBlock">
-        <span class="label">Standings</span>
-        <div class="strip" id="seeds"></div>
+    <!-- Thanks: the champion's figure behind the right of the left column. -->
+    <div class="figure" id="thanksArt"><img class="art hidden" id="thanksHero" alt="" draggable="false"></div>
+
+    <div class="head">
+      <div class="lead"><div class="title" id="title"></div><div class="sub" id="sub"></div></div>
+      <img class="logo hidden" id="logo" alt="" draggable="false">
+    </div>
+
+    <div class="main" id="main">
+      <!-- Up next: the feature tables, the seeds under them. -->
+      <div class="scr upnext">
+        <div class="tables" id="tables"></div>
+        <div class="empty hidden" id="tablesEmpty">No feature tables yet. Type them under Match data › Event › Up next in the control panel.</div>
+        <div class="seeds" id="seedsBlock"><span class="label">Standings</span><div class="strip" id="seeds"></div></div>
+      </div>
+
+      <!-- Starting soon: the clock is the hero, the day under it. -->
+      <div class="scr starting">
+        <div class="hero-clock" id="heroClock">
+          <span class="label" id="heroLabel"></span>
+          <div class="digits" id="heroDigits">00:00</div>
+          <div class="next" id="heroNext"></div>
+        </div>
+        <div class="sched" id="holdSched"><span class="label">Today's schedule</span><div class="rows" id="holdRows"></div></div>
+      </div>
+
+      <!-- Be right back: a window for a camera, the operator's line under it;
+           with the camera off, the line and the match coming up. -->
+      <div class="scr brb">
+        <div class="camwin" id="camwin"><div class="win"></div><div class="tag" id="camTag"></div></div>
+        <div class="msgline" id="brbLine"></div>
+        <div class="bigmsg" id="brbBig"></div>
+        <div class="tables solo" id="brbMatch"></div>
+      </div>
+
+      <!-- Thanks: the champion, the line, the next event. -->
+      <div class="scr thanks">
+        <div class="champ" id="champ">
+          <div class="k">Your champion</div>
+          <div class="nm" id="champName"></div>
+          <div class="lg" id="champLine"></div>
+        </div>
+        <div class="bigmsg" id="thanksBig">See you at the next one</div>
+        <div class="line" id="thanksLine"></div>
+        <div class="card nextev" id="nextBox"><span class="label">Next event</span><div class="v" id="nextName"></div><div class="s" id="nextWhen"></div></div>
+      </div>
+
+      <!-- Custom: the operator's own line. -->
+      <div class="scr custom">
+        <div class="trim"></div>
+        <div class="bigmsg" id="customMsg"></div>
+      </div>
+
+      <!-- Today's schedule, the whole day. -->
+      <div class="scr schedule">
+        <div class="sched big" id="daySched"><div class="rows" id="dayRows"></div></div>
+        <div class="empty hidden" id="dayEmpty">No schedule yet. Type it under Match data › Event › Schedule in the control panel.</div>
+      </div>
+
+      <!-- Format: best of, points to win, who chose first, the format text. -->
+      <div class="scr format">
+        <div class="facts" id="facts"></div>
+        <div class="fmt" id="fmtBig"></div>
       </div>
     </div>
 
-    <!-- Starting soon: the clock is the hero, the day's schedule under it. -->
-    <div class="hold" id="hold">
-      <div class="k-lockup"><img class="logo hidden" id="holdLogo" alt="" draggable="false"><span class="mark" id="holdMark"></span><span class="t"><span id="holdEvent"></span><small id="holdRound"></small></span></div>
-      <div class="trim"></div>
-      <div class="title">Starting soon</div>
-      <div class="bigclock" id="holdClock">00:00</div>
-      <div class="clocklabel" id="holdClockLabel"></div>
-      <div class="sched" id="sched"><span class="label">Today's schedule</span><div id="schedRows"></div></div>
-    </div>
-    <div class="holdside" id="holdSide">
-      <div class="panel fmt" id="fmtBox"><span class="label">Format</span><div class="fmtText" id="fmtText"></div></div>
-      <div class="panel next" id="holdNext"><span class="label" id="holdNextLabel">Feature match</span><div class="vs" id="holdVs"></div></div>
-      <div class="panel spons" id="holdSpons"><span class="label">Presented by</span><div class="k-spons" id="holdSponsors"></div></div>
-    </div>
-
-    <!-- Be right back: a camera window, the resume clock, the next match. -->
-    <div class="brb" id="brb">
-      <div class="camwin" id="camwin"><div class="win"></div><div class="tag" id="camTag"></div></div>
-      <div class="brbside">
-        <div class="panel"><span class="label">Stream resumes in</span><div class="bigclock accent" id="brbClock">00:00</div><div class="big">We'll be right back</div></div>
-        <div class="panel next" id="brbNext"><span class="label" id="brbNextLabel">Up next</span><div class="vs col" id="brbVs"></div></div>
-        <div class="panel cmd" id="cmdBox"><span class="label">Chat commands</span><div class="cmds" id="cmds"></div></div>
+    <div class="rail" id="rail">
+      <div class="card clock" id="clockCard">
+        <span class="label" id="clockLabel"></span>
+        <div class="digits" id="clockDigits">00:00</div>
+        <div class="next" id="clockNext"></div>
       </div>
-      <div class="bar" id="brbBar"><span class="msg" id="brbMsg"></span><span class="label" id="brbSub"></span><div class="k-spons" id="brbSponsors"></div></div>
-    </div>
-
-    <!-- Thanks: the champion and the next event. -->
-    <div class="thanks" id="thanks">
-      <div class="art"><img class="hero hidden" id="thanksHero" alt="" draggable="false"></div>
-      <div class="lead">
-        <div class="k-lockup"><img class="logo hidden" id="thanksLogo" alt="" draggable="false"><span class="mark" id="thanksMark"></span><span class="t"><span id="thanksEvent"></span><small id="thanksRound"></small></span></div>
-        <div class="k" id="thanksKey">Thanks for watching</div>
-        <div class="nm" id="thanksName"></div>
-        <div class="lg" id="thanksLegend"></div>
+      <div class="card info" id="infoCard">
+        <div class="dots" id="dots"></div>
+        <div class="pages" id="pages"></div>
+        <div class="prog" id="prog"></div>
       </div>
-      <div class="panels">
-        <div class="panel"><span class="label">Thank you for watching</span><div class="v">See you at the next one</div><div class="s" id="thanksLine"></div></div>
-        <div class="panel" id="nextBox"><span class="label">Next event</span><div class="v" id="nextName"></div><div class="s" id="nextWhen"></div></div>
+      <div class="card spons" id="sponsCard">
+        <span class="label">Presented by</span>
+        <div class="logos" id="logos"></div>
       </div>
     </div>
 
-    <!-- Custom: one line over the ground. -->
-    <div class="message" id="message">
-      <span class="label eyebrow" id="msgEyebrow"></span>
-      <div class="trim"></div>
-      <div class="title big" id="msgTitle"></div>
-      <div class="sub" id="msgSub"></div>
+    <!-- The feature tables along the bottom, in the results ticker's shape. -->
+    <div class="band" id="band">
+      <div class="key"><span class="rd" id="bandRound"></span><span class="tt">Feature tables</span></div>
+      <div class="track" id="bandTrack"></div>
     </div>
 
-    <div class="right" id="right">
-      <div class="panel count" id="countBox"><span class="label">Stream resumes in</span><span class="num" id="countdown">00:00</span></div>
-      <div class="panel cast" id="castBox"><span class="label">On the desk</span><div id="casters"></div></div>
-    </div>
-
-    <!-- Feature tables ticker along the bottom (starting soon). -->
-    <div class="ticker" id="ticker"><div class="k">Feature tables</div><div class="items" id="tickerItems"></div></div>
-
-    <div class="foot" id="foot">
-      <span class="mark"><img class="logo hidden" id="footLogo" alt="" draggable="false"><span class="ev" id="footEvent"></span></span>
-      <span class="label">Riftbound is a trademark of Riot Games. Fan content, not endorsed by Riot.</span>
-    </div>
+    <div class="k-foot" id="foot"><span class="note">Riftbound is a trademark of Riot Games. Fan content, not endorsed by Riot.</span></div>
   </div>
   <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
   <div class="stage-diag" id="hiddenHint">The slate is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>

@@ -226,6 +226,8 @@ function build(cards) {
         { label: 'Table 1', left: tableSide(bySeed(1)), right: tableSide(bySeed(4)) },
         { label: 'Table 2', left: tableSide(bySeed(2)), right: tableSide(bySeed(3)) },
       ],
+      // The top cut's seeds, for the slate's standings strip and page.
+      seeds: PLAYERS.map((p) => [p.name, p.record, legend(p.legend).legend.split(',')[0]].filter(Boolean).join(' · ')).join('\n'),
       casters: [
         { name: 'Avery Stone', role: 'Play-by-play', handle: '@averycasts' },
         { name: 'Jordan Reyes', role: 'Analyst', handle: '@jreyesTCG' },
@@ -344,7 +346,12 @@ function build(cards) {
       cardrow: { cards: [card('Moonfall'), card('Stupefy'), card('Ride the Wind'), card('Swain, Visionary')] },
       decklist: { list: DECKLIST, deckName: 'Diana' },
       sponsor: { items: [{ name: 'Your sponsor' }, { name: 'Card Haven' }], label: 'Presented by' },
-      slate: { text: 'Back after the break' },
+      // Each slate screen's own line.
+      slate: {
+        text: 'Lunch break: back at 14:00',
+        brbText: 'Semifinal 2 complete · the grand final at 21:00',
+        thanksText: 'The VOD, every decklist and the bracket are at the link below.',
+      },
       lowerthird: { side: 'left', credential: 'Regional Qualifier top 8, the only undefeated Diana', text: 'Top 8 player interviews', sub: 'Right after the semifinals, here on the main stream' },
       headtohead: { status: 'Semifinal: best of three' },
       profile: { side: 'left' },

@@ -74,7 +74,10 @@ describe('experimental overlay fields', () => {
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
     assert.equal(getState().preview.scenes.handfan.side, 'right');
     assert.deepEqual(sc.arenabug, { visible: true, clock: false });
-    assert.deepEqual(sc.slate, { visible: true, mode: 'custom', text: 'Back after the break', countdown: false, schedule: true, ticker: true, camera: true });
+    assert.deepEqual(sc.slate, {
+      visible: true, mode: 'custom', text: 'Back after the break', brbText: '', thanksText: '',
+      countdown: false, schedule: true, ticker: true, camera: true, panel: true, sponsors: true, every: 15, clockLabel: '',
+    });
     applyUpdate({ scenes: { slate: { mode: 'sideways' } } });
     assert.equal(getState().preview.scenes.slate.mode, 'custom', 'an unknown slate mode is ignored');
   });

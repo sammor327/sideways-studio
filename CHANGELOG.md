@@ -6,6 +6,22 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.44.0 (2026-09-19)
+
+- The slate is one layout on every screen: the screen's title with the event and the round across the top (the way the standings and pairings are headed), the screen's own content on the left, a rail on the right with the break clock, a side panel and the sponsors, and the feature tables along the bottom. Switching screens no longer moves the clock, the panels or the sponsors around.
+- The slate's switches under Graphic features now list only what the chosen screen uses, and every one of them changes the graphic. When a switch is on but has nothing to show yet, a line under the switches says what to type and where.
+- Fix: Be right back's camera window now lets your camera through on air. The window was see-through, but the background was drawn behind it, so OBS showed the background instead of the camera.
+- Fix: Be right back's break clock now follows the Break clock switch; it always showed before.
+- New: the rail's side panel turns through the event's details every 15 seconds (set it beside the switch): the match coming up, today's schedule with the next block lit, the seeds, the format, who is on the desk, the chat commands and the next event, each once something is typed for it.
+- New: every hold names what comes next under its clock: the schedule block marked Now, with its time, or else the round. The words over the clock can be your own (Semifinals begin in).
+- New screens: Today's schedule (the whole day, large, the next block lit) and Format (best of, first to 8 points, who chose first, and your format text).
+- The break clock can be set, started and reset right under the slate's switches.
+- The sponsors card uses the logos uploaded to the Sponsor plate, three at a time, turning through the rest at the plate's interval; with none uploaded, the names under Event › Sponsors.
+- Be right back, Thanks for watching and Custom line each keep their own line, so switching screens never carries a line across. A line typed on Be right back before this update needs typing again.
+- The feature tables along the bottom take the Results ticker's look (the label box, table numbers, legend icons), two tables at a time, and give way to the Results ticker while it is on.
+- Up next: one or two tables side by side and larger, three or four in two columns; with none typed, the match in Match data stands in, never the placeholder PLAYER ONE and PLAYER TWO.
+- Thanks for watching: the champion's full legend figure behind them and the next event in a card; the sign-off has no break clock.
+
 ## 0.43.0 (2026-09-19)
 
 - The Trash graphic lists what has been banished (Sam): the player's banished cards follow the trash under a Banished label, greyed, with their own count in the line under the player's name. Switch them off under Graphic features › Trash.

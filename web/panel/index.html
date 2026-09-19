@@ -1256,6 +1256,7 @@
     </div>
     <div class="feature-group hidden" data-scene="slate">
       <h3>Slate</h3>
+      <p class="scene-note" id="slateAbout"></p>
       <div class="scene-options">
         <label class="inline">Screen
           <select id="slateMode">
@@ -1263,15 +1264,32 @@
             <option value="starting">Starting soon</option>
             <option value="brb">Be right back</option>
             <option value="thanks">Thanks for watching</option>
+            <option value="schedule">Today's schedule</option>
+            <option value="format">Format</option>
             <option value="custom">Custom line</option>
           </select>
         </label>
-        <input id="slateText" class="slate-text hidden" maxlength="120" autocomplete="off" placeholder="Custom line" aria-label="Custom slate line">
-        <label class="inline"><input type="checkbox" id="slateCountdown" checked> Break clock</label>
-        <label class="inline" title="Starting soon: the day's schedule under the clock"><input type="checkbox" id="slateSchedule" checked> Schedule</label>
-        <label class="inline" title="Starting soon: the feature tables as a ticker along the bottom"><input type="checkbox" id="slateTicker" checked> Tables ticker</label>
-        <label class="inline" title="Be right back: leave a window for a camera source behind this browser source"><input type="checkbox" id="slateCamera" checked> Camera window</label>
+        <input id="slateText" class="slate-text hidden" maxlength="120" autocomplete="off" placeholder="Custom line" aria-label="The slate's line">
       </div>
+      <!-- Only the switches the screen reads are listed (web/shared/slate.js). -->
+      <div class="scene-options">
+        <label class="inline" data-switch="countdown" title="The break clock, in the same place on every screen: the top of the right-hand rail, or the big clock on Starting soon. It airs once it is set or running"><input type="checkbox" id="slateCountdown" checked> Break clock</label>
+        <label class="inline" data-switch="camera" title="Be right back: a window for a camera source behind this browser source. Off: the line and the match coming up take its place"><input type="checkbox" id="slateCamera" checked> Camera window</label>
+        <label class="inline" data-switch="schedule" title="The day's schedule, with the block up next lit: under the clock on Starting soon, a page of the side panel elsewhere"><input type="checkbox" id="slateSchedule" checked> Schedule</label>
+        <label class="inline" data-switch="panel" title="The rail's middle card, turning through the event's details: the match coming up, the schedule, the seeds, the format, the desk, the chat commands and the next event, each while it has something typed"><input type="checkbox" id="slatePanel" checked> Side panel</label>
+        <label class="inline" data-switch="panel" title="Seconds each page of the side panel holds before the next turns in">each page <input type="number" id="slateEvery" class="num-mini" min="5" max="60"> s</label>
+        <label class="inline" data-switch="sponsors" title="The rail's bottom card: the sponsor plate's uploaded logos, or else the names under Match data › Event › Sponsors"><input type="checkbox" id="slateSponsors" checked> Sponsors</label>
+        <label class="inline" data-switch="ticker" title="The feature tables along the bottom of the screen, two at a time, in the results ticker's shape"><input type="checkbox" id="slateTicker" checked> Tables ticker</label>
+      </div>
+      <div class="scene-options slate-clock" data-switch="countdown">
+        <output class="clock-out" id="slCdOut">00:00</output>
+        <button id="slCdStart" title="Start or pause the break clock (acts on air at once)">Start</button>
+        <button id="slCdReset" title="Back to the set length, stopped">Reset</button>
+        <label class="inline clock-len"><input id="slCdMinutes" inputmode="numeric" maxlength="3" value="0" aria-label="Break length in minutes"> min
+          <button id="slCdSet" class="clear-mini" title="Count down from this many minutes; 0 counts up">Set</button></label>
+        <input id="slateClockLabel" class="label-mini" maxlength="40" autocomplete="off" placeholder="Stream resumes in" aria-label="The words over the break clock" title="The words over the break clock. Empty: the screen's own">
+      </div>
+      <p class="hint warn" id="slateGaps"></p>
     </div>
     <div class="feature-group hidden" data-scene="cornertag">
       <h3>Corner tag</h3>

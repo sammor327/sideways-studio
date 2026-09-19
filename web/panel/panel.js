@@ -24,6 +24,7 @@ import { playerKey } from '../shared/focus.js';
 import { cardKey, drawChance, drawPool, formatChance, poolLine } from '../shared/odds.js';
 import { flowText } from '../shared/trash.js';
 import { tickerPlan } from '../shared/ticker.js';
+import { clockLabelOf, slateFields, slateGaps, slateScreen } from '../shared/slate.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -75,7 +76,7 @@ const SCENE_FIELDS = {
   igorows: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'pronouns', 'legend', 'legendText',
     'champion', 'championText', 'archetype', 'handCount', 'hand', 'turn', 'roundTitle', 'battlefield', 'battlefieldPool'],
   arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
-  slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds', 'schedule', 'format', 'commands', 'sponsors', 'nextEvent', 'champion', 'name', 'country', 'legend', 'record'],
+  slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds', 'schedule', 'format', 'commands', 'sponsors', 'nextEvent', 'champion', 'name', 'country', 'legend', 'record', 'seriesLength', 'choseFirst'],
   handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'roundTitle', 'timer', 'turn'],
   showdown: ['name', 'country', 'legend', 'hand', 'handCount', 'showdown'],
   // The starter kit (2026-09-15).
@@ -189,13 +190,10 @@ function sceneDraws(scene, field, side, bank) {
   if (scene === 'showdown' && !cfg.hands && ['hand', 'handCount'].includes(field)) return false;
   if (scene === 'arenabug' && !cfg.clock && field === 'timer') return false;
   if (scene === 'slate') {
-    if (field === 'seeds' && cfg.mode !== 'upnext') return false;
-    if (field === 'tables' && !['upnext', 'starting', 'brb'].includes(cfg.mode)) return false;
-    if (['schedule', 'format', 'sponsors'].includes(field) && cfg.mode !== 'starting' && !(field === 'sponsors' && cfg.mode === 'brb')) return false;
-    if (field === 'commands' && cfg.mode !== 'brb') return false;
-    if (['nextEvent', 'champion', 'name', 'country', 'legend', 'record'].includes(field) && cfg.mode !== 'thanks') return false;
-    if (!cfg.countdown && field === 'countdown') return false;
-    if (field === 'casters' && !['upnext', 'custom'].includes(cfg.mode)) return false;
+    // The screen's own column, the rail and the band (web/shared/slate.js);
+    // the sign-off names one side, the champion.
+    if (!slateFields(cfg).has(field)) return false;
+    if (cfg.mode === 'thanks' && side && bank.event.champion && side !== bank.event.champion) return false;
   }
   // One-player graphics draw only the side they are set to.
   if ((scene === 'profile' || (scene === 'lowerthird' && cfg.mode === 'interview')) && side && cfg.side !== side) return false;
@@ -2411,9 +2409,11 @@ for (const key of ['cornertag', 'lowerthird', 'result', 'ticker']) {
     post({ scenes: { [key]: { visible: !state.preview.scenes[key].visible } } });
   });
 }
-for (const [id, flag] of [['slateSchedule', 'schedule'], ['slateTicker', 'ticker'], ['slateCamera', 'camera']]) {
+const SLATE_FLAGS = [['slateSchedule', 'schedule'], ['slateTicker', 'ticker'], ['slateCamera', 'camera'], ['slatePanel', 'panel'], ['slateSponsors', 'sponsors']];
+for (const [id, flag] of SLATE_FLAGS) {
   $(id).addEventListener('change', () => post({ scenes: { slate: { [flag]: $(id).checked } } }));
 }
+$('slateEvery').addEventListener('change', () => post({ scenes: { slate: { every: Number($('slateEvery').value) } } }));
 $('cornertagMode').addEventListener('change', () => post({ scenes: { cornertag: { mode: $('cornertagMode').value } } }));
 $('lowerthirdMode').addEventListener('change', () => post({ scenes: { lowerthird: { mode: $('lowerthirdMode').value } } }));
 $('lowerthirdSide').addEventListener('change', () => post({ scenes: { lowerthird: { side: $('lowerthirdSide').value } } }));
@@ -2998,11 +2998,60 @@ const SHOWDOWN_NOTE = $('showdownNote').textContent;
 $('arenaClock').addEventListener('change', () => post({ scenes: { arenabug: { clock: $('arenaClock').checked } } }));
 $('slateMode').addEventListener('change', () => post({ scenes: { slate: { mode: $('slateMode').value } } }));
 $('slateCountdown').addEventListener('change', () => post({ scenes: { slate: { countdown: $('slateCountdown').checked } } }));
-{
+// The slate's line and the words over its clock: debounced, flushed on
+// blur. Each screen keeps its own line, so the line goes to the field of the
+// screen it was typed on even if the screen changes before it lands.
+const slateLineField = () => (state && slateScreen(state.preview.scenes.slate.mode).text) || 'text';
+for (const [id, fieldOf] of [['slateText', slateLineField], ['slateClockLabel', () => 'clockLabel']]) {
   let timer = null;
-  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { slate: { text: $('slateText').value } } }); };
-  $('slateText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
-  $('slateText').addEventListener('blur', flush);
+  let field = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { slate: { [field]: $(id).value } } }); };
+  $(id).addEventListener('input', () => { if (timer === null) field = fieldOf(); clearTimeout(timer); timer = setTimeout(flush, 300); });
+  $(id).addEventListener('blur', flush);
+}
+// The slate's one line on each screen that has one, by the field it lives in.
+const SLATE_TEXT = {
+  brbText: ['Line under the camera, e.g. Quarterfinals complete · Semifinals at 14:30', 'The line under the be right back camera'],
+  thanksText: ['Line under the thanks, e.g. VOD, decklists and the bracket at the link below', 'The line under the sign-off'],
+  text: ['Your line, e.g. Lunch break: back at 14:00', "The custom screen's line"],
+};
+// A line under the slate's name: what the screen is for.
+const SLATE_ABOUT = {
+  upnext: 'The feature tables (Match data › Event › Up next) with the seeds under them; the match in Match data stands in when none are typed.',
+  starting: "The pre-show hold: the break clock large, the block up next named under it, the day's schedule below.",
+  brb: 'A window for a camera source with your line under it; the match coming up, the day and the desk turn in the side panel.',
+  thanks: 'The sign-off: the champion (Match data › Match card and result › Champion) with their legend, your line, and the next event.',
+  schedule: 'The whole day large, the block up next lit (Match data › Event › Schedule, with its Now picker).',
+  format: 'How the match is played: best of, first to 8 points, who chose first, then the format text from Match data › Event.',
+  custom: 'Your own line, large; the event name heads it.',
+};
+// The slate's options as preview has them: only the switches its screen
+// reads (a switch that could do nothing is not offered), its one line where
+// it has one, and why a switch that is on still shows nothing.
+function renderSlateOptions(bank) {
+  const sl = bank.scenes.slate;
+  const screen = slateScreen(sl.mode);
+  if (document.activeElement !== $('slateMode')) $('slateMode').value = sl.mode;
+  $('slateAbout').textContent = SLATE_ABOUT[sl.mode] || '';
+  const line = SLATE_TEXT[screen.text];
+  $('slateText').classList.toggle('hidden', !line);
+  if (line) {
+    $('slateText').placeholder = line[0];
+    $('slateText').setAttribute('aria-label', line[1]);
+  }
+  setIfIdle('slateText', line ? sl[screen.text] || '' : '');
+  for (const node of document.querySelectorAll('.feature-group[data-scene="slate"] [data-switch]')) {
+    node.classList.toggle('hidden', !screen.switches.includes(node.dataset.switch));
+  }
+  if (document.activeElement !== $('slateCountdown')) $('slateCountdown').checked = sl.countdown !== false;
+  for (const [id, flag] of SLATE_FLAGS) {
+    if (document.activeElement !== $(id)) $(id).checked = sl[flag] !== false;
+  }
+  if (document.activeElement !== $('slateEvery')) $('slateEvery').value = sl.every;
+  $('slateEvery').disabled = sl.panel === false;
+  setIfIdle('slateClockLabel', sl.clockLabel || '');
+  $('slateClockLabel').placeholder = clockLabelOf(sl.mode, {});
+  $('slateGaps').replaceChildren(...slateGaps(bank, sl.mode).map((g) => Object.assign(document.createElement('span'), { className: 'ln', textContent: g })));
 }
 
 // Per-side text fields the experimental overlays print. The country code is
@@ -3212,22 +3261,31 @@ $('activeSide').addEventListener('change', () => post({ action: 'turn', op: 'sid
 
 // The break clock: the same arithmetic as the round clock, its own numbers.
 let cdState = { running: false, startedAt: 0, elapsed: 0, countdown: 0 };
+// Two sets of controls drive it: the Event row, and the slate's own under
+// Graphic features (2026-09-19), so the switch and its clock sit together.
+const CD_CONTROLS = [['cdOut', 'cdStart', 'cdReset', 'cdMinutes', 'cdSet'], ['slCdOut', 'slCdStart', 'slCdReset', 'slCdMinutes', 'slCdSet']];
 function renderCountdown(t) {
   if (!t) return;
   cdState = t;
-  setClock($('cdOut'), clockText(t));
-  $('cdStart').textContent = t.running ? 'Pause' : 'Start';
-  $('cdStart').classList.toggle('on', t.running);
-  if (document.activeElement !== $('cdMinutes')) $('cdMinutes').value = String(Math.round(t.countdown / 60000));
+  for (const [out, start, , minutes] of CD_CONTROLS) {
+    setClock($(out), clockText(t));
+    $(start).textContent = t.running ? 'Pause' : 'Start';
+    $(start).classList.toggle('on', t.running);
+    if (document.activeElement !== $(minutes)) $(minutes).value = String(Math.round(t.countdown / 60000));
+  }
 }
-setInterval(() => { if (cdState.running) setClock($('cdOut'), clockText(cdState)); }, 500);
-$('cdStart').addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: cdState.running ? 'pause' : 'start' }));
-$('cdReset').addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: 'reset' }));
-$('cdSet').addEventListener('click', () => {
-  const minutes = Math.max(0, Math.min(600, Math.trunc(Number($('cdMinutes').value)) || 0));
-  post({ action: 'timer', which: 'countdown', op: 'set', minutes });
-});
-$('cdMinutes').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('cdSet').click(); });
+setInterval(() => {
+  if (cdState.running) for (const [out] of CD_CONTROLS) setClock($(out), clockText(cdState));
+}, 500);
+for (const [, start, reset, minutes, set] of CD_CONTROLS) {
+  $(start).addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: cdState.running ? 'pause' : 'start' }));
+  $(reset).addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: 'reset' }));
+  $(set).addEventListener('click', () => {
+    const n = Math.max(0, Math.min(600, Math.trunc(Number($(minutes).value)) || 0));
+    post({ action: 'timer', which: 'countdown', op: 'set', minutes: n });
+  });
+  $(minutes).addEventListener('keydown', (e) => { if (e.key === 'Enter') $(set).click(); });
+}
 
 // Up-next tables as one line each. "Table 1: Shoji (KR, 8-2-0, 3rd) [Yasuo,
 // Unforgiven] vs Margaux (FR, 7-3-0, 6th) [Jinx, Loose Cannon]". Only the
@@ -4345,14 +4403,7 @@ function renderExtras(s) {
   renderShowdown(s);
   renderSponsor(s);
   if (document.activeElement !== $('arenaClock')) $('arenaClock').checked = prev.scenes.arenabug.clock;
-  const sl = prev.scenes.slate;
-  if (document.activeElement !== $('slateMode')) $('slateMode').value = sl.mode;
-  setIfIdle('slateText', sl.text || '');
-  $('slateText').classList.toggle('hidden', sl.mode !== 'custom');
-  if (document.activeElement !== $('slateCountdown')) $('slateCountdown').checked = sl.countdown;
-  for (const [id, flag] of [['slateSchedule', 'schedule'], ['slateTicker', 'ticker'], ['slateCamera', 'camera']]) {
-    if (document.activeElement !== $(id)) $(id).checked = sl[flag] !== false;
-  }
+  renderSlateOptions(prev);
   const ct = prev.scenes.cornertag;
   if (document.activeElement !== $('cornertagMode')) $('cornertagMode').value = ct.mode || 'match';
   setIfIdle('cornertagText', ct.text || '');

@@ -25,6 +25,7 @@ import {
   cleanFocus as cleanMatrixFocus, cleanKey as cleanMatrixKey, cleanMatrix, cleanPick as cleanMatrixPick,
 } from '../web/shared/matrix.js';
 import { HOLD_DEFAULT, HOLD_MAX, HOLD_MIN, TICKER_PER_MAX, TICKER_SHOWS } from '../web/shared/ticker.js';
+import { SLATE_EVERY_DEFAULT, SLATE_EVERY_MAX, SLATE_EVERY_MIN, SLATE_MODES } from '../web/shared/slate.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -234,9 +235,18 @@ function defaultBank() {
       // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
       // stage and player cameras. Exclusive with the score bug in the panel.
       arenabug: { visible: false, clock: true },
-      // Slate: full-frame hold screens. upnext lists event.tables; the
-      // others print a message and, when on, the countdown clock.
-      slate: { visible: false, mode: 'upnext', text: '', countdown: true, schedule: true, ticker: true, camera: true },
+      // Slate: full-frame hold screens, one layout (2026-09-19 rework, web/
+      // shared/slate.js): the screen's content on the left, a rail on the
+      // right (break clock, a side panel turning through the event's
+      // details every `every` seconds, sponsors), the feature tables along
+      // the bottom. The switches are what each screen reads. text is the
+      // custom screen's line; be right back and thanks keep their own, so a
+      // change of screen never carries a stale line across.
+      slate: {
+        visible: false, mode: 'upnext', text: '', brbText: '', thanksText: '',
+        countdown: true, schedule: true, ticker: true, camera: true, panel: true, sponsors: true,
+        every: SLATE_EVERY_DEFAULT, clockLabel: '',
+      },
       // Hand fan: one player's hand as real cards fanned along the bottom
       // edge, the other's known cards small at the top. showdown lights the
       // reactions until the real showdown state exists.
@@ -1243,9 +1253,14 @@ function applyBankPatch(bank, patch) {
       if (SLATE_MODES.includes(s.mode)) bank.scenes.slate.mode = s.mode;
       if (s.text !== undefined) bank.scenes.slate.text = cleanStr(s.text, 120);
       if (s.countdown !== undefined) bank.scenes.slate.countdown = Boolean(s.countdown);
-      for (const flag of ['schedule', 'ticker', 'camera']) {
+      for (const flag of ['schedule', 'ticker', 'camera', 'panel', 'sponsors']) {
         if (s[flag] !== undefined) bank.scenes.slate[flag] = Boolean(s[flag]);
       }
+      for (const line of ['brbText', 'thanksText']) {
+        if (s[line] !== undefined) bank.scenes.slate[line] = cleanStr(s[line], 120);
+      }
+      if (s.every !== undefined) bank.scenes.slate.every = clampInt(s.every, SLATE_EVERY_MIN, SLATE_EVERY_MAX);
+      if (s.clockLabel !== undefined) bank.scenes.slate.clockLabel = cleanStr(s.clockLabel, 40);
     }
     // --- the starter kit scenes ---
     if (patch.scenes.cornertag && typeof patch.scenes.cornertag === 'object') {
@@ -1402,7 +1417,7 @@ function applyBankPatch(bank, patch) {
   }
 }
 
-export const SLATE_MODES = ['upnext', 'starting', 'brb', 'thanks', 'custom'];
+export { SLATE_MODES };
 
 function applyThemePatch(patch) {
   if (patch.accentA !== undefined) state.theme.accentA = cleanHex(patch.accentA, state.theme.accentA);

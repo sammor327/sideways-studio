@@ -117,8 +117,13 @@ data and unread:
     1-to-8 track: eight hexes per side, games box, name bar with legend
     thumbs, records and the round title, an event and clock lozenge.
     Exclusive with the score bug in the panel.
-13. **Slate** (`slate`) — full-frame holds: up next (event.tables, seeds
-    strip, casters, break clock) or a message line.
+13. **Slate** (`slate`) — full-frame holds, one layout on every screen
+    (2026-09-19, web/shared/slate.js): head (title + event · round), the
+    screen's column (x 80..1300), a rail (x 1340..1840: break clock with
+    the next thing named, a side panel turning through the event's details
+    every `every` seconds, sponsors) and the feature tables along the
+    bottom. Screens: upnext, starting, brb, thanks, custom, schedule,
+    format; each reads only its own switches (SLATE_SCREENS).
 14. **Hand fan** (`handfan`) — one player's cards in hand as real cards
     fanned along the bottom edge with a badge per card (what it can do,
     read off the card text), reactions lit while a showdown is open, played
@@ -348,7 +353,12 @@ The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume
 clock, next match and event.commands; thanks names event.champion with
-their legend art and event.nextName / nextWhen. Sides gained team, store,
+their legend art and event.nextName / nextWhen. Since 2026-09-19 (the slate
+rework) scenes.slate also carries panel, sponsors (booleans), every (5-60 s,
+the side panel's page), clockLabel (40) and a line per screen: text
+(custom), brbText, thanksText (120 each). The brb camera window is a real
+hole: the ground and shards sit in one .backdrop cut with an even-odd
+clip-path while the camera is on. Sides gained team, store,
 seasonRecord, bestFinish, finishes; casters gained a handle. Full-frame
 graphics (slate, decklist, match card, VS card, profile, bracket,
 standings, pairings, side-by-side decklists) switch each other off in
