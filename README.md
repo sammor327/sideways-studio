@@ -499,6 +499,40 @@ overlay's (the combined /output/ source already stacks them that way). Each
 also clips itself to the table area, so its plates come out from under the
 overlay's panels however the sources are layered.
 
+### Odds to draw and the trash
+
+Two side sheets that sit on a player's side of the game window of whichever
+in-game overlay is up (player 1's against its left edge, player 2's against
+its right), fly in from that side, and scale down only where the window is
+too small for them. Either can show one player or both.
+
+- **Odds to draw** (1v1 graphics): the cards the player's main deck can
+  still give them, the likeliest first, each with the copies left, its
+  chance of being the next draw (or of turning up at least once in the next
+  2 to 5 draws, under Graphic features) and a bar as long as that chance
+  against the likeliest card's. It lists 5 to 15 cards and sums the rest on
+  its last line. The deck is the player's list under Decks and battlefields
+  (less the chosen champion, which starts in its own zone) less every card
+  seen to leave it this game, or a RiftAtlas game's own count when Live game
+  is connected. A card in hand nobody has named still counts as unseen, so
+  the chances are right for the viewer; the sheet then says "cards not yet
+  seen" instead of "cards in deck".
+- **Trash** (1v1 graphics): the player's trash, Riftbound's graveyard, the
+  newest card first. A card with Flow (playable from the trash for its Flow
+  cost, then banished) lights up with its Flow cost and, with Flow cards
+  first on, leads the list. A long trash scrolls through like the hand lists.
+  With both graphics on the same player, the trash stands beside the odds.
+
+**Match data › Trash and draw odds** holds each player's trash, the deck
+tracker and New game. Cards leave the deck by themselves: a card added to the
+hand or the trash comes off, a unit that dies after being played is not
+counted twice, and a card burned off the top of the deck is. The tracker's
+− and + correct it for anything the lists do not show. A hand card's trash
+button moves it into the trash, a spell resolving off the showdown chain
+lands there by itself, and a RiftAtlas game fills both trashes and counts
+both decks on its own. New game clears both hands, trashes and cards drawn
+between games; Reset match clears the trashes and cards drawn too.
+
 ## Tournament platform (TopDeck.gg)
 
 The **Tournament platform** tab at the top of the panel connects a live

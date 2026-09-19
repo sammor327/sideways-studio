@@ -43,6 +43,8 @@ export const TILES = [
   { key: 'result', scene: 'result', group: 'parts' },
   { key: 'matchup', scene: 'matchup', group: 'parts' },
   { key: 'sideboard', scene: 'sideboard', group: 'parts' },
+  { key: 'odds', scene: 'odds', group: 'parts', variant: 'Both players', vary: { side: 'both' } },
+  { key: 'trash', scene: 'trash', group: 'parts', variant: 'Both players', vary: { side: 'both' } },
   { key: 'sidespot', scene: 'sidespot', group: 'parts' },
 
   { key: 'slate', scene: 'slate', group: 'full', variant: 'Up next', vary: { mode: 'upnext' } },

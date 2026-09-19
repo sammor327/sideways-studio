@@ -17,6 +17,8 @@ import {
 } from '../shared/legendstats.js';
 import { standingsStep, standingsView } from '../shared/standings.js';
 import { playerKey } from '../shared/focus.js';
+import { cardKey, drawChance, drawPool, formatChance, poolLine } from '../shared/odds.js';
+import { flowText } from '../shared/trash.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -92,6 +94,9 @@ const SCENE_FIELDS = {
   decklists: ['name', 'country', 'legend', 'record', 'deck'],
   // The VS head to head (2026-09-19).
   vscard: ['name', 'legend', 'legendText', 'roundTitle', 'eventName'],
+  // The odds to draw and the trash (2026-09-19).
+  odds: ['name', 'country', 'legend', 'deck', 'hand', 'handCount', 'trash', 'drawn'],
+  trash: ['name', 'country', 'legend', 'trash'],
   // The card popup and the card row carry their content in their own
   // Graphic features groups (the search, the four slots), not in Match data;
   // listed so putting them in preview unfolds that card.
@@ -130,6 +135,8 @@ const SCENE_NAMES = {
   sidespot: 'the sideboard card spotted',
   decklists: 'the side by side decklists',
   vscard: 'the VS head to head',
+  odds: 'the odds to draw',
+  trash: 'the trash',
 };
 
 // Short names for the on-air list, which lives in the narrow column between
@@ -142,6 +149,7 @@ const SCENE_SHORT = {
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', ongoing: 'Ongoing', result: 'Result',
   legendstats: 'Legends', sponsor: 'Sponsor',
   matchup: 'Game intro', sideboard: 'Sideboard', sidespot: 'Sideboard spot', decklists: 'Decklists 2up', vscard: 'VS card',
+  odds: 'Odds', trash: 'Trash',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
@@ -183,6 +191,7 @@ function sceneDraws(scene, field, side, bank) {
   // One-player graphics draw only the side they are set to.
   if ((scene === 'profile' || (scene === 'lowerthird' && cfg.mode === 'interview')) && side && cfg.side !== side) return false;
   if (scene === 'sideboard' && side && cfg.side !== 'both' && cfg.side !== side) return false;
+  if ((scene === 'odds' || scene === 'trash') && side && cfg.side !== 'both' && cfg.side !== side) return false;
   if (scene === 'profile' && !cfg.decklist && field === 'deck') return false;
   if (scene === 'profile' && cfg.decklist && field === 'finishes') return false;
   if (scene === 'lowerthird') {
@@ -816,13 +825,13 @@ $('seriesLength').addEventListener('change', () => {
 });
 
 $('resetMatch').addEventListener('click', () => {
-  if (!confirm('Reset match in preview? Scores and game wins go to zero and all graphics switch off. Press TAKE afterward to put the reset on air.')) return;
+  if (!confirm('Reset match in preview? Scores and game wins go to zero, trashes and cards drawn are cleared, and all graphics switch off. Press TAKE afterward to put the reset on air.')) return;
   // A new match: no battlefield has been played yet.
   const unplayed = (side) => (state ? state.preview.match[side].battlefields || [] : []).map((b) => ({ ...b, played: false, game: 0, result: '' }));
   post({
     match: {
-      left: { score: 0, gameWins: 0, battlefields: unplayed('left') },
-      right: { score: 0, gameWins: 0, battlefields: unplayed('right') },
+      left: { score: 0, gameWins: 0, battlefields: unplayed('left'), trash: [], drawn: [], deckLeft: [] },
+      right: { score: 0, gameWins: 0, battlefields: unplayed('right'), trash: [], drawn: [], deckLeft: [] },
       choseFirst: '', result: { winner: '', note: '' },
     },
     scenes: {
@@ -834,6 +843,7 @@ $('resetMatch').addEventListener('click', () => {
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
       bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, result: { visible: false }, sponsor: { visible: false },
       matchup: { visible: false }, sideboard: { visible: false }, sidespot: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
+      odds: { visible: false }, trash: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -847,7 +857,7 @@ const SWAP_FIELDS = [
   'champion2', 'score', 'gameWins', 'seed',
   'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'handUnknown',
   'team', 'store', 'seasonRecord', 'bestFinish', 'finishes',
-  'deckList', 'deckName', 'battlefields',
+  'deckList', 'deckName', 'battlefields', 'trash', 'drawn', 'deckLeft',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -1220,7 +1230,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2347,13 +2357,13 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing', 'sidespot'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', sidespot: 'toggleSidespot' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', odds: 'toggleOdds', trash: 'toggleTrash', sidespot: 'toggleSidespot' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', sidespot: 'sidespotOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', odds: 'oddsOnAir', trash: 'trashOnAir', sidespot: 'sidespotOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
@@ -2461,6 +2471,227 @@ $('matchupGame').addEventListener('change', () => post({ scenes: { matchup: { ga
 $('sideboardSide').addEventListener('change', () => post({ scenes: { sideboard: { side: $('sideboardSide').value } } }));
 $('decklistsSideboards').addEventListener('change', () => post({ scenes: { decklists: { sideboards: $('decklistsSideboards').checked } } }));
 $('igoRowsBattlefields').addEventListener('change', () => post({ scenes: { igorows: { battlefields: $('igoRowsBattlefields').value } } }));
+
+// --- the odds and trash round (2026-09-19) ---
+//
+// The Odds to draw and Trash graphics, each player's trash (Riftbound's
+// graveyard) and the deck tracker the odds read. A card reaching the hand or
+// the trash comes off the deck by itself (the store's drawn tally); the
+// tracker's - and + correct it by hand.
+for (const key of ['odds', 'trash']) {
+  $(EXP_TOGGLES[key]).addEventListener('click', () => {
+    if (!state) return;
+    post({ scenes: { [key]: { visible: !state.preview.scenes[key].visible } } });
+  });
+}
+$('oddsSide').addEventListener('change', () => post({ scenes: { odds: { side: $('oddsSide').value } } }));
+$('oddsDraws').addEventListener('change', () => post({ scenes: { odds: { draws: Number($('oddsDraws').value) } } }));
+$('oddsRows').addEventListener('change', () => post({ scenes: { odds: { rows: Number($('oddsRows').value) } } }));
+$('oddsArt').addEventListener('change', () => post({ scenes: { odds: { art: $('oddsArt').checked } } }));
+$('trashSide').addEventListener('change', () => post({ scenes: { trash: { side: $('trashSide').value } } }));
+$('trashFlowFirst').addEventListener('change', () => post({ scenes: { trash: { flowFirst: $('trashFlowFirst').checked } } }));
+$('trashArt').addEventListener('change', () => post({ scenes: { trash: { art: $('trashArt').checked } } }));
+$('newGame').addEventListener('click', () => {
+  if (!confirm('New game in preview? Both players\' hands, hand counts, trashes and cards drawn are cleared, and every card goes back in the deck. Press TAKE afterward to put it on air.')) return;
+  const fresh = { hand: [], handCount: 0, trash: [], drawn: [], deckLeft: [] };
+  post({ match: { left: fresh, right: fresh } });
+});
+
+const TRASH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
+const TRASH_MAX = 60;
+
+// A search box over the card index for a card list: type two letters, click
+// a result or press Enter for the top one.
+function wireCardList(input, list, onPick) {
+  let timer = null;
+  let hits = [];
+  const close = () => { list.classList.remove('open'); list.replaceChildren(); };
+  const pick = (card) => {
+    onPick(card);
+    input.value = '';
+    hits = [];
+    close();
+  };
+  const draw = () => {
+    list.replaceChildren(...hits.map((card) => {
+      const li = document.createElement('li');
+      const img = document.createElement('img');
+      img.src = `/cardart/thumb/${card.cardId}.webp`;
+      img.alt = '';
+      img.onerror = () => img.classList.add('hidden');
+      const meta = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = card.cardName;
+      const sub = document.createElement('span');
+      sub.textContent = [card.cardType, card.flow ? `Flow ${flowText(card.flow)}` : ''].filter(Boolean).join(' · ');
+      meta.append(name, sub);
+      li.append(img, meta);
+      li.addEventListener('mousedown', (e) => { e.preventDefault(); pick(card); });
+      return li;
+    }));
+    placeList(input, list);
+    list.classList.toggle('open', hits.length > 0);
+  };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { hits = []; draw(); return; }
+    timer = setTimeout(async () => {
+      try {
+        const data = await (await fetch(`/api/cards/search?q=${encodeURIComponent(q)}`)).json();
+        hits = data.indexed ? data.results : [];
+        draw();
+      } catch { /* the next keystroke searches again */ }
+    }, 200);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && hits.length) pick(hits[0]);
+    if (e.key === 'Escape') { hits = []; draw(); }
+  });
+  input.addEventListener('blur', () => setTimeout(close, 150));
+}
+
+for (const [p, side] of SIDES) {
+  wireCardList($(`${p}trashSearch`), $(`${p}trashResults`), (card) => {
+    if (!state) return;
+    const trash = state.preview.match[side].trash || [];
+    if (trash.length >= TRASH_MAX) return;
+    const entry = { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [], kind: card.kind || '', flow: card.flow || null };
+    post({ match: { [side]: { trash: [...trash, entry] } } });
+  });
+}
+
+// The trash as it grew, a row per card like the hand's: a card with Flow
+// lights up in the player's colour with its Flow cost; the \u00d7 takes a card out
+// (banished, or played from the trash).
+function renderTrashChips(p, sd) {
+  const trash = sd.trash || [];
+  const box = $(`${p}trashChips`);
+  const search = $(`${p}trashSearch`);
+  const full = trash.length >= TRASH_MAX;
+  if (search.disabled !== full) {
+    search.disabled = full;
+    search.placeholder = full ? `Trash full: ${TRASH_MAX} cards` : 'Add a card\u2026';
+  }
+  const key = JSON.stringify(trash);
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  const side = p === 'l' ? 'left' : 'right';
+  if (!trash.length) {
+    box.replaceChildren(Object.assign(document.createElement('div'), { className: 'hand-card unknown', textContent: 'Nothing in the trash yet' }));
+    return;
+  }
+  box.replaceChildren(...trash.map((c, i) => {
+    const row = document.createElement('div');
+    row.className = `hand-card trash-card ${side}${c.flow ? ' hot' : ''}`;
+    row.title = c.flow ? `Flow ${flowText(c.flow)}: playable from the trash for its Flow cost, then banished` : '';
+    const img = document.createElement('img');
+    img.className = 'card-thumb';
+    img.alt = '';
+    img.onerror = () => img.classList.add('hidden');
+    img.src = cardThumbSrc(c.cardId);
+    const name = document.createElement('span');
+    name.className = 'nm';
+    name.textContent = c.cardName || c.cardId;
+    row.append(img, name);
+    if (c.flow) {
+      const f = document.createElement('span');
+      f.className = 'k flow';
+      // Short in the narrow column; the row's tooltip spells it out.
+      f.textContent = `Flow ${c.flow.energy ?? ''}${c.flow.power ? `+${c.flow.power}` : ''}`;
+      row.append(f);
+    } else if (c.energy !== null && c.energy !== undefined) {
+      const small = document.createElement('small');
+      small.textContent = String(c.energy);
+      small.title = `${c.energy} energy`;
+      row.append(small);
+    }
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'clear-x';
+    x.textContent = '\u00d7';
+    x.title = 'Take it out of the trash (banished, or played from the trash)';
+    x.setAttribute('aria-label', `Take ${c.cardName || c.cardId} out of the trash`);
+    x.addEventListener('click', () => {
+      if (!state) return;
+      const next = (state.preview.match[side].trash || []).filter((_, j) => j !== i);
+      post({ match: { [side]: { trash: next } } });
+    });
+    row.append(x);
+    return row;
+  }));
+}
+
+// One more copy out of the deck (delta 1) or one back in (-1), by name.
+function bumpDrawn(side, card, delta) {
+  if (!state) return;
+  const cur = (state.preview.match[side].drawn || []).map((d) => ({ ...d }));
+  const key = cardKey(card);
+  const hit = cur.find((d) => cardKey(d) === key);
+  if (hit) hit.n = Math.max(0, hit.n + delta);
+  else if (delta > 0) cur.push({ cardId: card.cardId || '', cardName: card.cardName, n: delta });
+  post({ match: { [side]: { drawn: cur.filter((d) => d.n > 0) } } });
+}
+
+// The deck tracker: every card of the player's main deck with the copies
+// still in it and its chance of being the next draw, as the Odds to draw
+// graphic reads them. A RiftAtlas game counts the deck itself, so its numbers
+// read only.
+function renderDeckTrack(p, sd) {
+  const side = p === 'l' ? 'left' : 'right';
+  const line = $(`${p}deckLeftLine`);
+  const list = $(`${p}trackList`);
+  const live = (sd.deckLeft || []).length > 0;
+  const key = JSON.stringify([sd.deckList, sd.drawn, sd.deckLeft, sd.handCount, (sd.hand || []).length]);
+  if (list.dataset.key === key) return;
+  list.dataset.key = key;
+  const paint = (pool) => {
+    const drawn = pool.cards.reduce((t, c) => t + (c.start === null ? 0 : c.start - c.left), 0);
+    line.textContent = live ? `From RiftAtlas: ${poolLine(pool, sd)}` : `${poolLine(pool, sd)} · ${drawn} drawn`;
+    line.title = line.textContent;
+    list.replaceChildren(...pool.cards.map((c) => {
+      const row = document.createElement('div');
+      row.className = `track-row${c.left ? '' : ' out'}`;
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = c.cardName;
+      const n = document.createElement('span');
+      n.className = 'n';
+      n.textContent = live ? String(c.left) : `${c.left}/${c.start}`;
+      n.title = live ? `${c.left} left in the deck` : `${c.left} of ${c.start} left in the deck`;
+      row.title = c.left ? `${formatChance(drawChance(c.left, pool.total, 1))} to be the next draw` : 'None left in the deck';
+      row.append(nm, n);
+      if (!live) {
+        const minus = document.createElement('button');
+        minus.type = 'button';
+        minus.textContent = '\u2212';
+        minus.title = 'One copy out of the deck (seen somewhere the lists do not show)';
+        minus.disabled = c.left <= 0;
+        minus.addEventListener('click', () => bumpDrawn(side, c, 1));
+        const plus = document.createElement('button');
+        plus.type = 'button';
+        plus.textContent = '+';
+        plus.title = 'One copy back into the deck';
+        plus.disabled = c.left >= c.start;
+        plus.addEventListener('click', () => bumpDrawn(side, c, -1));
+        row.append(minus, plus);
+      }
+      return row;
+    }));
+  };
+  if (live) { paint(drawPool(sd, null)); return; }
+  if (!String(sd.deckList || '').trim()) {
+    line.textContent = 'No list: load one under Decks and battlefields';
+    list.replaceChildren();
+    return;
+  }
+  line.textContent = 'Reading the list\u2026';
+  deckSummary(sd.deckList).then((deck) => {
+    if (list.dataset.key !== key) return;
+    if (!deck) { line.textContent = 'Could not read the list'; list.replaceChildren(); return; }
+    paint(drawPool(sd, deck));
+  });
+}
 
 // --- sideboard card spotted (2026-09-19) ---
 //
@@ -2756,6 +2987,29 @@ function renderHandChips(p, sd) {
       const next = (state.preview.match[side].hand || []).filter((_, j) => j !== i);
       post({ match: { [side]: { hand: next } } });
     });
+    // Into the trash (2026-09-19): discarded, or a spell that resolved. It
+    // leaves the hand and its count; the deck tracker counts it once.
+    const toTrash = document.createElement('button');
+    toTrash.type = 'button';
+    toTrash.className = 'to-trash';
+    toTrash.innerHTML = TRASH_ICON;
+    toTrash.title = 'Into the trash (discarded, or a spell that resolved)';
+    toTrash.setAttribute('aria-label', `Move ${c.cardName || c.cardId} to the trash`);
+    toTrash.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!state) return;
+      const cur = state.preview.match[side];
+      const card = (cur.hand || [])[i];
+      if (!card) return;
+      const { played, ...rest } = card;
+      const count = cur.handCount || 0;
+      post({ match: { [side]: {
+        hand: (cur.hand || []).filter((_, j) => j !== i),
+        trash: [...(cur.trash || []), rest].slice(-TRASH_MAX),
+        ...(count > 0 ? { handCount: count - 1 } : {}),
+      } } });
+    });
+    row.append(toTrash);
     row.append(x);
     if (sdOpen && !c.played) { row.classList.add('playable'); row.title = 'Play onto the chain'; }
     row.addEventListener('click', () => {
@@ -3628,6 +3882,15 @@ function renderExtras(s) {
   if (document.activeElement !== $('igoRowsBattlefields')) $('igoRowsBattlefields').value = rw.battlefields || 'off';
   if (document.activeElement !== $('matchupGame')) $('matchupGame').value = String(prev.scenes.matchup.game || 0);
   if (document.activeElement !== $('sideboardSide')) $('sideboardSide').value = prev.scenes.sideboard.side;
+  const od = prev.scenes.odds;
+  if (document.activeElement !== $('oddsSide')) $('oddsSide').value = od.side || 'left';
+  if (document.activeElement !== $('oddsDraws')) $('oddsDraws').value = String(od.draws || 1);
+  if (document.activeElement !== $('oddsRows')) $('oddsRows').value = String(od.rows || 10);
+  if (document.activeElement !== $('oddsArt')) $('oddsArt').checked = od.art !== false;
+  const tr = prev.scenes.trash;
+  if (document.activeElement !== $('trashSide')) $('trashSide').value = tr.side || 'left';
+  if (document.activeElement !== $('trashFlowFirst')) $('trashFlowFirst').checked = tr.flowFirst !== false;
+  if (document.activeElement !== $('trashArt')) $('trashArt').checked = tr.art !== false;
   if (document.activeElement !== $('decklistsSideboards')) $('decklistsSideboards').checked = prev.scenes.decklists.sideboards !== false;
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
@@ -3770,6 +4033,8 @@ function renderExtras(s) {
     setIfIdle(`${p}finishes`, sd.finishes || '');
     $(`${p}handOut`).textContent = sd.handCount || 0;
     renderHandChips(p, sd);
+    renderTrashChips(p, sd);
+    renderDeckTrack(p, sd);
   }
   $('turnOut').textContent = prev.match.turn || 0;
   if (document.activeElement !== $('activeSide')) $('activeSide').value = prev.match.activeSide || '';
@@ -3924,12 +4189,14 @@ function renderThumbs(s) {
       || (key === 'sponsor' && !s.preview.scenes.sponsor.items.length)
       || (key === 'sideboard' && !(s.preview.scenes.sideboard.side === 'both' ? ['left', 'right'] : [s.preview.scenes.sideboard.side])
         .some((k) => s.preview.match[k].deckList.trim()))
+      || (key === 'odds' && !(s.preview.scenes.odds.side === 'both' ? ['left', 'right'] : [s.preview.scenes.odds.side])
+        .some((k) => s.preview.match[k].deckList.trim() || (s.preview.match[k].deckLeft || []).length))
       || (key === 'decklists' && !s.preview.match.left.deckList.trim() && !s.preview.match.right.deckList.trim())
       || (key === 'sidespot' && !s.preview.scenes.sidespot.spot.id);
     const cantShow = key === 'decklist' && !s.preview.scenes.decklist.list.trim();
     thumb.classList.toggle('empty', empty);
     thumb.classList.toggle('disabled', cantShow);
-    const deckGraphic = key === 'sideboard' || key === 'decklists';
+    const deckGraphic = key === 'sideboard' || key === 'decklists' || key === 'odds';
     // Sideboard card spotted goes on air empty and waits for its first card.
     const waits = key === 'sidespot';
     const idle = empty ? (key === 'sponsor' ? 'Add a sponsor' : (waits ? 'Nothing spotted yet' : (deckGraphic ? 'Load a deck' : 'Pick a card'))) : (cantShow ? 'Nothing staged' : 'Click to preview');

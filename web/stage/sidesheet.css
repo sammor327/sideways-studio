@@ -1,0 +1,145 @@
+/* Side sheets (2026-09-19): the odds to draw and the trash, one player's cards
+   on a plate at that player's side of the game window (web/stage/sidesheet.js
+   places them). Player 1's plate stands against the window's left edge and
+   flies in from the left; player 2's against the right edge, from the right.
+   The rows are the hand lists' rows (web/stage/exp.js cardRow): the count,
+   the card's art, its name and its cost.
+
+   Every metric is N * --su, the stage unit times the plate's own scale (--gs,
+   below 1 only in a window too small for it), so the list's scroll, measured
+   in screen pixels, moves it in screen pixels too.
+
+   Motion: --t runs the fly (in 1.1 s, out 0.45 s). The plate slides in from
+   off its frame edge by --dx over 55% of --t from its --d; its rows rise in
+   after it, one after another, the stagger capped so the last lands by
+   --t 1. Every read falls back to settled: var(--t, 1). */
+
+.sheets { position: absolute; inset: 0; }
+.sheets.off { display: none; }
+.sheets, .sheets * { box-sizing: border-box; }
+
+.pos {
+  --su: calc(var(--u) * var(--gs, 1));
+  position: absolute;
+  left: calc(var(--gx, 24) * var(--u));
+  top: calc(var(--gy, 200) * var(--u));
+  width: calc(460 * var(--su));
+  --fly: clamp(0, calc((var(--t, 1) - var(--d, 0)) / 0.55), 1);
+}
+.pos.gone { display: none; }
+
+.sheet {
+  position: relative;
+  overflow: hidden;
+  height: calc(var(--ph, 600) * var(--su));
+  padding: calc(18 * var(--su)) calc(20 * var(--su));
+  border: calc(2 * var(--su)) solid var(--ss-frame, #26303c);
+  background: var(--ss-ink, #0a0d12);
+  box-shadow: 0 calc(24 * var(--su)) calc(70 * var(--su)) rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  opacity: var(--fly);
+  transform: translateX(calc((1 - var(--fly)) * var(--dx, -600) * var(--su)));
+}
+/* The accent edge on the side the plate flies in from. */
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: calc(6 * var(--su));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  z-index: 1;
+}
+.from-left .sheet::before { left: 0; }
+.from-right .sheet::before { right: 0; }
+.sheet .ground .g-shards, .sheet .ground .g-shade, .sheet .ground .g-glint { opacity: 0.3; }
+
+/* --- the head: legend face, name, tag, and what the list is out of --- */
+.head { position: relative; flex: none; height: calc(72 * var(--su)); display: flex; align-items: center; gap: calc(14 * var(--su)); }
+.from-right .head { flex-direction: row-reverse; text-align: right; }
+.face { width: calc(56 * var(--su)); height: calc(56 * var(--su)); border-radius: 0; }
+.who { min-width: 0; flex: 1 1 auto; }
+.who .nm { display: flex; align-items: center; gap: calc(12 * var(--su)); }
+.from-right .who .nm { flex-direction: row-reverse; }
+.who .nm .n {
+  font: 800 calc(28 * var(--su))/1 var(--tes-font);
+  text-transform: uppercase;
+  color: var(--ss-text, #f3f6f9);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.who .nm .tag {
+  flex: 0 0 auto;
+  font: 800 calc(12 * var(--su))/1 var(--tes-font);
+  letter-spacing: calc(2 * var(--su));
+  text-transform: uppercase;
+  padding: calc(6 * var(--su)) calc(10 * var(--su)) calc(5 * var(--su));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  color: var(--ss-plate, #10151d);
+  white-space: nowrap;
+}
+.who .sub {
+  margin-top: calc(7 * var(--su));
+  display: flex; align-items: center; gap: calc(8 * var(--su));
+  font: 500 calc(14 * var(--su))/1.2 var(--tes-font);
+  letter-spacing: calc(1.2 * var(--su));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+  white-space: nowrap; overflow: hidden;
+}
+.from-right .who .sub { flex-direction: row-reverse; }
+.who .sub .k-chip { font-size: calc(11 * var(--su)); padding: calc(3 * var(--su)) calc(6 * var(--su)) calc(2 * var(--su)); }
+
+/* --- the list: a box --vr rows tall, scrolling what it cannot hold --- */
+.view {
+  position: relative;
+  flex: none;
+  height: calc(var(--vr, 10) * var(--rh, 44) * var(--su));
+  overflow: hidden;
+  border-top: calc(1 * var(--su)) solid rgba(255, 255, 255, 0.08);
+}
+.list { transform: translateY(calc(-1 * var(--scroll, 0px))); }
+
+.card {
+  position: relative;
+  display: flex; align-items: center;
+  gap: calc(9 * var(--su));
+  height: calc(var(--rh, 44) * var(--su));
+  padding: 0 calc(10 * var(--su));
+  border-bottom: calc(1 * var(--su)) solid rgba(255, 255, 255, 0.06);
+  font: 500 calc(16 * var(--su))/1.2 var(--tes-font);
+  color: var(--ss-text, #fff);
+  --rp: clamp(0, calc((var(--t, 1) - 0.35 - var(--d, 0) - min(var(--i, 0) * 0.04, 0.3 - var(--d, 0))) / 0.3), 1);
+  opacity: var(--rp);
+  transform: translateY(calc((1 - var(--rp)) * 16 * var(--su)));
+}
+.card > * { position: relative; }
+.card .qty { flex: 0 0 auto; min-width: calc(28 * var(--su)); font: 700 calc(16 * var(--su))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-accent-b, #1bef19); }
+.card .strip { flex: 0 0 auto; width: calc(52 * var(--su)); height: calc(30 * var(--su)); object-fit: cover; object-position: center 22%; border-radius: calc(3 * var(--su)); border: calc(1 * var(--su)) solid var(--ss-frame, #26303c); background: var(--ss-ink, #10151d); }
+.card .strip.missing { visibility: hidden; }
+.card .nm { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .cost { display: flex; align-items: center; gap: calc(4 * var(--su)); flex: 0 0 auto; }
+.card .e { font: 700 calc(14 * var(--su))/calc(22 * var(--su)) var(--tes-font); width: calc(22 * var(--su)); height: calc(22 * var(--su)); border-radius: 50%; background: var(--ss-ink, #10151d); border: calc(1 * var(--su)) solid var(--ss-frame, #26303c); text-align: center; color: var(--ss-text, #fff); }
+.card .e:empty { display: none; }
+.card .rune { width: calc(20 * var(--su)); height: calc(20 * var(--su)); object-fit: contain; }
+.card .rune.hidden { display: none; }
+
+.foot {
+  position: relative;
+  flex: none;
+  height: calc(34 * var(--su));
+  display: flex; align-items: flex-end;
+  font: 500 calc(12 * var(--su))/1.2 var(--tes-font);
+  letter-spacing: calc(1.2 * var(--su));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: var(--fly);
+}
+.foot.gone { display: none; }
+.empty {
+  padding: calc(14 * var(--su)) calc(10 * var(--su));
+  font: 500 calc(15 * var(--su))/1.3 var(--tes-font);
+  letter-spacing: calc(1 * var(--su));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+}

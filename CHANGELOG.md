@@ -6,6 +6,17 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.37.0 (2026-09-19)
+
+- New graphic, Odds to draw (1v1 graphics): the cards a player's deck can still give them, the likeliest first, each with its chance of being the next draw (or of turning up at least once in the next 2 to 5 draws) and a bar as long as that chance against the likeliest card's. It sits on that player's side of the game window of whichever in-game overlay is up; pick Player 1, Player 2 or both, how many cards it lists (the rest are summed on its last line) and card art under Graphic features. The deck is the player's list under Match data › Decks and battlefields less every card seen this game, or a RiftAtlas game's own count.
+- New graphic, Trash (1v1 graphics): a player's trash, Riftbound's graveyard, the newest card first. Cards with Flow (playable from the trash for their Flow cost, then banished) light up in the accent colour with their Flow cost and, with Flow cards first on, lead the list; its last line says what Flow does. A long trash scrolls through the way the hand lists do. With both graphics on the same player, the trash stands beside the odds rather than over them.
+- Match data › Trash and draw odds: each player's trash (search a card and press Enter to add it, × takes it out), the deck tracker (every card of the player's list with the copies left and its chance of being the next draw, − and + to correct it) and New game, which clears both hands, trashes and cards drawn between games.
+- Cards leave the deck by themselves: a card added to the hand or the trash comes off the tracker, a unit that dies after being played is not counted twice, and a card burned straight off the deck is.
+- Cards in hand have a trash button: the card moves from the hand into the trash and the hand count goes down one.
+- Showdowns: a spell, reaction or action resolving off the chain lands in its player's trash.
+- Live game: a RiftAtlas game fills each player's trash and counts every card left in their deck, so the odds are exact, sideboarding included.
+- Reset match also clears both trashes and the cards drawn.
+
 ## 0.36.0 (2026-09-19)
 
 - The corner tag and the lower third anchor to the in-game overlay that is up. The tag moves into the top right corner of the game area the overlay leaves: under the rows overlay's top bar, between the dual columns, inside the portrait camera, left of the 1v1 and 2v2 sidebars, under the 2v2 bars' player cluster. The lower third centres along the bottom of that game area, above the bottom bar, the bars' cluster or the arena bug, and gets smaller where the game area is narrower than the bar (between the portrait pillars). Both slide in from under the overlay's panels instead of across them. With no in-game overlay up they sit where they always have.

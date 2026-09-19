@@ -504,6 +504,45 @@
       </div>
     </details>
 
+    <!-- The trash and the draw odds (2026-09-19): each player's trash, which
+         the Trash graphic lists with its Flow cards lit, and the deck
+         tracker the Odds to draw graphic reads: every card of the player's
+         list with the copies still in the deck. A card reaching the hand or
+         the trash leaves the deck by itself; a RiftAtlas game counts the
+         deck and fills the trash on its own. -->
+    <details class="field-section fold" data-sec="trash">
+      <summary><h4 class="section-label">Trash and draw odds</h4></summary>
+
+      <div class="field-row" data-field="trash">
+        <span class="row-label" title="Riftbound's graveyard. The Trash graphic lists these cards, the newest first. Search a card and press Enter to add it. A card with Flow (playable from the trash for its Flow cost, then banished) lights up in the player's colour. A card's × takes it out (banished, or played from the trash). A card in hand moves here with its trash button, and a spell resolving off the showdown chain lands here by itself. A RiftAtlas game fills this on its own.">Trash</span>
+        <div class="cell hand-cell" data-side="left">
+          <div class="picker-wrap">
+            <input id="ltrashSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card to the trash">
+            <ul class="results" id="ltrashResults"></ul>
+          </div>
+          <div class="hand-chips" id="ltrashChips"></div>
+        </div>
+        <div class="cell hand-cell" data-side="right">
+          <div class="picker-wrap">
+            <input id="rtrashSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 2 add a card to the trash">
+            <ul class="results" id="rtrashResults"></ul>
+          </div>
+          <div class="hand-chips" id="rtrashChips"></div>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="drawn">
+        <span class="row-label" title="Every card of the player's main deck (their list under Decks and battlefields, less the chosen champion) with the copies still in the deck. Cards added to the hand or the trash come off by themselves; a unit that dies after being played is not counted twice. − takes a copy out, + puts one back, for a card seen anywhere else or a mistake. A RiftAtlas game counts the deck itself, sideboarding included.">Left in deck</span>
+        <div class="cell deck-track" data-side="left"><span class="deck-line" id="ldeckLeftLine"></span><div class="track-list" id="ltrackList"></div></div>
+        <div class="cell deck-track" data-side="right"><span class="deck-line" id="rdeckLeftLine"></span><div class="track-list" id="rtrackList"></div></div>
+      </div>
+
+      <div class="field-row" data-field="drawn">
+        <span class="row-label" title="Between games: both players' hands, hand counts, trashes and cards drawn cleared, and every card back in the deck. Lands in preview; TAKE puts it on air.">New game</span>
+        <div class="cell span2"><button type="button" id="newGame" class="danger-ghost">Clear both hands, trashes and cards drawn</button></div>
+      </div>
+    </details>
+
     <details class="field-section fold" data-sec="cut">
       <summary><h4 class="section-label">Match card and result</h4></summary>
 
@@ -791,6 +830,16 @@
           <div class="scene-name">Sideboard fly-in <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sideboardOnAir">ON AIR</button></div>
           <button id="toggleSideboard" class="scene-toggle">OFF</button>
           <p class="scene-note">Both players' sideboards at once, player 1 across the top and player 2 across the bottom, each flying in from their side (or one player alone, under Graphic features).</p>
+        </div>
+        <div class="scene-row" data-scene="odds">
+          <div class="scene-name">Odds to draw <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="oddsOnAir">ON AIR</button></div>
+          <button id="toggleOdds" class="scene-toggle">OFF</button>
+          <p class="scene-note">The cards a player's deck can still give them, the likeliest first, on their side of the game window (or both players'). From their list under Match data &rsaquo; Decks and battlefields less the cards seen this game, or counted by a RiftAtlas game.</p>
+        </div>
+        <div class="scene-row" data-scene="trash">
+          <div class="scene-name">Trash <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="trashOnAir">ON AIR</button></div>
+          <button id="toggleTrash" class="scene-toggle">OFF</button>
+          <p class="scene-note">A player's trash (Riftbound's graveyard), the newest first, cards with Flow lit up with their Flow cost. Fill it under Match data &rsaquo; Trash and draw odds; a RiftAtlas game fills it on its own.</p>
         </div>
         <div class="scene-row" data-scene="sidespot">
           <div class="scene-name">Sideboard card spotted <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sidespotOnAir">ON AIR</button></div>
@@ -1400,6 +1449,33 @@
       </div>
       <p class="hint">Spots act on air at once, like the clock: TAKE this graphic once and it flies each card in as it is spotted, then out again. Live game (Match data) spots the cards a player sided in from game 2 on, when they turn up in hand after turn 1.</p>
     </div>
+    <div class="feature-group hidden" data-scene="odds">
+      <h3>Odds to draw</h3>
+      <div class="scene-options">
+        <label class="inline">Player
+          <select id="oddsSide"><option value="left">Player 1</option><option value="right">Player 2</option><option value="both">Both, player 1 on the left</option></select>
+        </label>
+        <label class="inline" title="The chance of each card turning up in the next draw, or at least once in the next few">Chance in
+          <select id="oddsDraws"><option value="1">the next draw</option><option value="2">the next 2 draws</option><option value="3">the next 3 draws</option><option value="4">the next 4 draws</option><option value="5">the next 5 draws</option></select>
+        </label>
+        <label class="inline" title="How many cards the sheet lists, the likeliest first; the rest are summed on its last line">Cards
+          <select id="oddsRows"><option value="5">5</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="15">15</option></select>
+        </label>
+        <label class="inline"><input type="checkbox" id="oddsArt" checked> Card art</label>
+        <span class="hint" id="oddsHint">Each chance is the card's copies still in the deck over the cards not yet seen, likeliest first, a bar under each as long as its chance against the likeliest's. The deck is the player's list under Match data &rsaquo; Decks and battlefields less the cards seen this game (Trash and draw odds), or a RiftAtlas game's own count. It sits on the player's side of the game window of whichever in-game overlay is up.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="trash">
+      <h3>Trash</h3>
+      <div class="scene-options">
+        <label class="inline">Player
+          <select id="trashSide"><option value="left">Player 1</option><option value="right">Player 2</option><option value="both">Both, player 1 on the left</option></select>
+        </label>
+        <label class="inline" title="Cards with Flow (playable from the trash) at the top of the list, ahead of the rest"><input type="checkbox" id="trashFlowFirst" checked> Flow cards first</label>
+        <label class="inline"><input type="checkbox" id="trashArt" checked> Card art</label>
+        <span class="hint">The cards under Match data &rsaquo; Trash and draw odds, the newest first. A card with Flow lights up with its Flow cost, and the sheet's last line says what Flow does. A trash longer than the sheet scrolls through, the way the hand lists do.</span>
+      </div>
+    </div>
     <div class="feature-group hidden" data-scene="decklists">
       <h3>Decklists side by side</h3>
       <div class="scene-options">
@@ -1699,6 +1775,14 @@
     <div class="url-row">
       <span class="url-label">Sideboard fly-in source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
       <div class="url-line"><input class="url-input" id="sideboardUrl" readonly><button data-copy="sideboardUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Odds to draw source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="oddsUrl" readonly><button data-copy="oddsUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Trash source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="trashUrl" readonly><button data-copy="trashUrl">Copy</button></div>
     </div>
     <div class="url-row">
       <span class="url-label">Sideboard card spotted source, 1920 &times; 1080, 60 fps (plays in the game window, above or below your in-game overlay)</span>

@@ -1,0 +1,39 @@
+/* Trash (2026-09-19, Sam: "showcase what cards are in a player's graveyard,
+   specifically highlighting any cards with Flow, similar to how we showcase
+   the hands"): the side sheet's rows (web/stage/sidesheet.css), newest first.
+   A card with [FLOW] can still be played from the trash, so its row lights up
+   the way a reaction does in the hand lists' marked style: the accent B edge,
+   a tint and a soft glow, with its Flow cost in place of its printed cost. */
+
+.card { border-left: calc(3 * var(--su)) solid transparent; }
+.card.flow {
+  border-left-color: var(--ss-accent-b, #1bef19);
+  background: rgba(27, 239, 25, 0.08);
+  box-shadow: inset 0 0 calc(14 * var(--su)) rgba(27, 239, 25, 0.28);
+}
+.card.flow .nm { font-weight: 700; }
+
+.flow-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(5 * var(--su));
+  padding: calc(3 * var(--su)) calc(6 * var(--su)) calc(3 * var(--su)) calc(8 * var(--su));
+  border: calc(1 * var(--su)) solid var(--ss-accent-b, #1bef19);
+  border-radius: calc(2 * var(--su));
+}
+.flow-tag b {
+  font: 800 calc(11 * var(--su))/1 var(--tes-font);
+  letter-spacing: calc(1.6 * var(--su));
+  text-transform: uppercase;
+  color: var(--ss-accent-b, #1bef19);
+}
+.flow-tag .e { width: calc(20 * var(--su)); height: calc(20 * var(--su)); line-height: calc(20 * var(--su)); font-size: calc(13 * var(--su)); }
+.flow-tag .rune { width: calc(18 * var(--su)); height: calc(18 * var(--su)); }
+/* Power of any domain ("2 Runes"): a plain gem per rune. */
+.flow-tag .any {
+  width: calc(12 * var(--su));
+  height: calc(12 * var(--su));
+  margin: 0 calc(2 * var(--su));
+  transform: rotate(45deg);
+  border: calc(2 * var(--su)) solid var(--ss-text-muted, #9aa7b6);
+}

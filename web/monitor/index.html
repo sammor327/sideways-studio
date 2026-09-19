@@ -28,7 +28,7 @@ iframe {
 </head>
 <body>
 <script>
-  const SCENES = ['slate', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'headtohead', 'vscard', 'profile', 'matchup', 'sideboard', 'sidespot', 'pov', 'decklist', 'decklists', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows', 'handfan', 'showdown', 'lowerthird', 'result', 'cornertag', 'cardrow', 'cardpopup', 'scorebug', 'arenabug', 'sponsor'];
+  const SCENES = ['slate', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'headtohead', 'vscard', 'profile', 'matchup', 'sideboard', 'sidespot', 'pov', 'decklist', 'decklists', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows', 'handfan', 'showdown', 'odds', 'trash', 'lowerthird', 'result', 'cornertag', 'cardrow', 'cardpopup', 'scorebug', 'arenabug', 'sponsor'];
   const preview = new URLSearchParams(location.search).get('mode') === 'preview';
   for (const scene of SCENES) {
     const f = document.createElement('iframe');

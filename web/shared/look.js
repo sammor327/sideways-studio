@@ -20,7 +20,7 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'sponsor',
-  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'sidespot'];
+  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -58,6 +58,8 @@ export const SCENE_LABELS = {
   vscard: 'Head to head, VS',
   pairings: 'Pairings',
   ongoing: 'Ongoing matches',
+  odds: 'Odds to draw',
+  trash: 'Trash',
   sidespot: 'Sideboard card spotted',
 };
 
@@ -263,6 +265,16 @@ export const DESIGNED = {
   vscard: {
     colors: { ink: '#1c1c1c', plate: '#10151d', frame: '#26303c', text: '#ffffff', textMuted: '#c9d2da', trim: '' },
     background: { kind: 'arrows', color: '#1c1c1c', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
+  },
+  // The odds to draw and the trash (2026-09-19) are side sheets over the
+  // game: plates only, on the sideboard fly-in's ground.
+  odds: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 30, dim: 0 },
+  },
+  trash: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 30, dim: 0 },
   },
 };
 

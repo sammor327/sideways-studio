@@ -255,6 +255,28 @@ this set; the PSDs stay the visual reference.
     `again` re-flies the last under a new id, `hide` sets at 0), both banks
     at once. On air the scene flies each new spot id in and out at
     at + hold, wall clock; a reload mid-hold snaps.
+28. **Odds to draw** (`odds`, 2026-09-19) — the cards a side's main deck
+    can still give it, likeliest first (web/shared/odds.js): the pool is
+    side.deckLeft when a live feed counts the deck, else the parsed
+    side.deckList main less the chosen champion (one copy out of a 40-card
+    main that lists it) less side.drawn. Unnamed hand cards stay in the pool
+    (exchangeability), so P(next) = copies / pool and P(within n) is one less
+    the hypergeometric miss. `scenes.odds {visible, side left|right|both,
+    draws 1-5, rows 5|8|10|12|15, art}`. A side sheet (web/stage/sidesheet.js)
+    against its side of gamewindow.js's rect; stays down with no deck known.
+29. **Trash** (`trash`, 2026-09-19) — side.trash newest first, copies on
+    one row, Flow cards (carddb parseFlow: `[FLOW n and m Domain]`) lit with
+    their Flow cost and, with flowFirst, first (web/shared/trash.js).
+    `scenes.trash {visible, side, art, flowFirst}`; a long trash scrolls
+    with the hand lists' HandScroller. An empty trash airs as "Empty".
+Per-side fields (2026-09-19): trash[60] (hand-card fields less played, plus
+flow {energy, power, domain} or null), drawn[] ({cardId, cardName, n}: the
+copies seen to leave the main deck, by name) and deckLeft[] (a live feed's
+per-card count). A patch with hand or trash and no drawn updates the tally
+(state.js applyDeckSeen): new hand copies were drawn; new trash copies came
+off the board when a copy is out but in neither list, else off the deck; a
+hand-trash move in one patch counts nothing. The chain's resolve and close
+put a resolved spell, reaction or action into its side's trash.
 Standings by group (2026-09-19): event.standings rows carry `group`, kept
 sorted within each group by points, or by record when a group has no
 points (state.js sortStandings); `scenes.standings.group` picks the group
@@ -477,6 +499,12 @@ SIDEBOARD_MAX (10) extra copies (the wrong list). spotSideboardCards diffs
 hand card ids per room (the first look only primes), after turn 1, once per
 player and card a game; spotActions turns them into spot cues, sent only
 while preview and program show the same names. Settings gain `spot`.
+
+The live patch also carries each side's trash (resolved like the hand),
+deckLeft (every card RiftAtlas counts in the deck, `broadcastDecksByPlayerId`)
+and drawn (startingCount less count per card), so the odds to draw are
+exact and the panel's deck tracker agrees (2026-09-19). Between games there
+is no board or deck and all three empty for the next game.
 
 ## Attribution and copy rules
 

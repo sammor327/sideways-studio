@@ -11,7 +11,9 @@ import path from 'node:path';
 import { isCuratedFont } from './fonts.js';
 import { DATA_DIR } from './runtime.js';
 import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } from '../web/shared/look.js';
-import { kindOf } from './carddb.js';
+import { flowOf, kindOf } from './carddb.js';
+import { DRAWS_MAX, ROWS_CHOICES, ROWS_DEFAULT, cardKey, countBy } from '../web/shared/odds.js';
+import { TRASH_MAX } from '../web/shared/trash.js';
 import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
 import { SPONSOR_MAX, SPONSOR_POSITIONS } from '../web/shared/sponsor.js';
 import {
@@ -56,6 +58,15 @@ function defaultSide(name) {
     // graphic keeps it, and the saved deck it came from. The sideboard fly-in
     // and the side-by-side decklists draw it.
     deckList: '', deckName: '',
+    // The trash (2026-09-19, Riftbound's graveyard): every card in it, the
+    // oldest first as the pile grew, each resolved like a hand card and
+    // carrying its Flow cost when it has one, which the trash graphic
+    // lights up. For the odds to draw: drawn is every card seen to leave
+    // the main deck this game ({ cardId, cardName, n }), kept as cards
+    // reach the hand and the trash (applyDeckSeen) and corrected in the
+    // panel; deckLeft is a live feed's own count of each card left in the
+    // deck, which the odds take over the list while it is there.
+    trash: [], drawn: [], deckLeft: [],
     // The three battlefields the player brought, in the order typed, each
     // marked once it has been played this match. The one in play now is
     // `battlefield` above; making a pool entry the current battlefield marks
@@ -305,6 +316,17 @@ function defaultBank() {
       // the round and the game number, animated into the game window. game
       // 0 counts from the game wins; 1 to 5 pins it.
       matchup: { visible: false, game: 0 },
+      // --- the odds and trash round (2026-09-19) ---
+      // Odds to draw: the cards a player's deck can still give them, the
+      // likeliest first (web/shared/odds.js), on their side of the game
+      // window, or both players' at once. draws: the next draw or the next
+      // few; rows: how many cards it lists before summing the rest; art:
+      // each card's art beside its name.
+      odds: { visible: false, side: 'left', draws: 1, rows: ROWS_DEFAULT, art: true },
+      // Trash: the cards in a player's trash, newest first, the Flow cards
+      // (playable from there) lit up and, with flowFirst, listed ahead of
+      // the rest (web/shared/trash.js); art as the odds'.
+      trash: { visible: false, side: 'left', art: true, flowFirst: true },
     },
   };
 }
@@ -390,6 +412,7 @@ function mergeBank(bank, raw) {
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
     if (!Array.isArray(side.battlefields)) side.battlefields = [];
+    for (const key of ['trash', 'drawn', 'deckLeft']) if (!Array.isArray(side[key])) side[key] = [];
   }
   for (const key of Object.keys(fresh.scenes)) {
     bank.scenes[key] = { ...fresh.scenes[key], ...bank.scenes[key] };
@@ -540,6 +563,100 @@ function cleanHandCard(raw) {
   return { cardId, cardName, energy, domains, kind, played: Boolean(raw.played) };
 }
 const HAND_KINDS = ['reaction', 'action', 'unit', 'champion', 'gear', 'spell'];
+
+// A Flow cost ({ energy, power, domain }, carddb parseFlow): domain '' is
+// any rune. Nothing to pay reads as no Flow at all.
+function cleanFlow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const energy = raw.energy === null || raw.energy === undefined || raw.energy === '' ? null : clampInt(raw.energy, 0, 20);
+  const power = clampInt(raw.power ?? 0, 0, 9);
+  const domain = DOMAINS.includes(raw.domain) ? raw.domain : '';
+  return energy === null && !power ? null : { energy, power, domain };
+}
+
+// A card in the trash: a hand card's fields without the played mark, and
+// its Flow cost, the patch's own when it carries one (the panel sends back
+// what it was given) and otherwise the index's.
+function cleanTrashCard(raw) {
+  const card = cleanHandCard(raw);
+  if (!card) return null;
+  const { played, ...rest } = card;
+  const flow = raw.flow !== undefined ? cleanFlow(raw.flow) : (card.cardId ? flowOf(card.cardId) : null);
+  return { ...rest, flow };
+}
+
+// The drawn tally: how many copies of each card have left the deck, one
+// entry a card by name (odds.js cardKey), so two printings count as one.
+function cleanDrawn(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = new Map();
+  for (const d of raw) {
+    if (!d || typeof d !== 'object') continue;
+    const cardId = cleanCardId(d.cardId || '');
+    const cardName = cleanStr(d.cardName || '', 80);
+    const key = cardKey({ cardId, cardName });
+    const n = clampInt(d.n ?? 0, 0, 12);
+    if (!key || !n) continue;
+    const cur = out.get(key);
+    if (cur) cur.n = Math.min(12, cur.n + n);
+    else out.set(key, { cardId, cardName, n });
+  }
+  return [...out.values()].slice(0, 60);
+}
+
+// A live feed's deck: each card left in it with how many copies.
+function cleanDeckLeft(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 60).map((c) => {
+    const card = cleanHandCard(c);
+    if (!card) return null;
+    const { played, ...rest } = card;
+    return { ...rest, left: clampInt(c.left ?? 0, 0, 12) };
+  }).filter(Boolean);
+}
+
+// The drawn tally follows the hand and the trash (2026-09-19): a copy new
+// to the hand was drawn; a copy new to the trash came off the board when a
+// copy is out of the deck but in neither list (a unit that died), and off
+// the deck itself otherwise (burned); a card moving between the hand and
+// the trash in one edit (a discard) was out already. Taking a card off
+// either list gives nothing back to the deck: it went to the board or was
+// banished, and a copy counted by mistake is put back in the panel.
+function applyDeckSeen(side, before) {
+  const hand = countBy(side.hand);
+  const trash = countBy(side.trash);
+  const drawn = new Map(side.drawn.map((d) => [cardKey(d), { ...d }]));
+  const cards = new Map();
+  for (const c of [...side.hand, ...side.trash]) if (!cards.has(cardKey(c))) cards.set(cardKey(c), c);
+  let changed = false;
+  for (const [key, card] of cards) {
+    let dh = (hand.get(key) || 0) - (before.hand.get(key) || 0);
+    let dt = (trash.get(key) || 0) - (before.trash.get(key) || 0);
+    if (dh > 0 && dt < 0) { const m = Math.min(dh, -dt); dh -= m; dt += m; }
+    if (dt > 0 && dh < 0) { const m = Math.min(dt, -dh); dt -= m; dh += m; }
+    if (dh <= 0 && dt <= 0) continue;
+    const cur = drawn.get(key) || { cardId: card.cardId, cardName: card.cardName, n: 0 };
+    let n = cur.n + Math.max(0, dh);
+    if (dt > 0) {
+      const away = Math.max(0, n - (hand.get(key) || 0) - ((trash.get(key) || 0) - dt));
+      n += Math.max(0, dt - away);
+    }
+    if (n !== cur.n) {
+      drawn.set(key, { ...cur, n: Math.min(12, n) });
+      changed = true;
+    }
+  }
+  if (changed) side.drawn = [...drawn.values()].slice(0, 60);
+}
+
+// A spell resolving goes to its owner's trash (2026-09-19); a unit, a gear
+// or a champion resolves onto the board, which nothing here draws.
+const TRASH_KINDS = ['spell', 'reaction', 'action'];
+function toTrash(side, card) {
+  if (!card || !TRASH_KINDS.includes(card.kind || kindOf(card.cardId))) return;
+  const entry = cleanTrashCard({ cardId: card.cardId, cardName: card.cardName, energy: card.energy, domains: card.domains, kind: card.kind });
+  if (entry) side.trash = [...side.trash, entry].slice(-TRASH_MAX);
+}
 
 // The showdown as a live game feed knows it (RiftAtlas, 2026-09-19): open or
 // not, where, who has focus, each side's might there and every card played
@@ -701,8 +818,18 @@ function applySide(side, patch) {
   if (patch.handCount !== undefined) side.handCount = clampInt(patch.handCount, 0, 20);
   if (patch.holds !== undefined) side.holds = cleanStr(patch.holds, 80);
   if (patch.handUnknown !== undefined) side.handUnknown = clampInt(patch.handUnknown, 0, 20);
+  // Cards reaching the hand or the trash have left the deck (the drawn
+  // tally, applyDeckSeen), unless the patch brings the tally itself (a
+  // live feed, Swap sides, a new game, the panel's deck tracker).
+  const seenBefore = (Array.isArray(patch.hand) || Array.isArray(patch.trash)) && !Array.isArray(patch.drawn)
+    ? { hand: countBy(side.hand), trash: countBy(side.trash) } : null;
   // Up to 20 listed cards, the most the hand count itself takes.
   if (Array.isArray(patch.hand)) side.hand = patch.hand.map(cleanHandCard).filter(Boolean).slice(0, 20);
+  // The trash keeps its newest 60: more than a deck holds.
+  if (Array.isArray(patch.trash)) side.trash = patch.trash.map(cleanTrashCard).filter(Boolean).slice(-TRASH_MAX);
+  if (Array.isArray(patch.drawn)) side.drawn = cleanDrawn(patch.drawn);
+  if (Array.isArray(patch.deckLeft)) side.deckLeft = cleanDeckLeft(patch.deckLeft);
+  if (seenBefore) applyDeckSeen(side, seenBefore);
   if (patch.legend !== undefined) side.legend = cleanStr(patch.legend, 60);
   if (patch.legendSlug !== undefined) {
     const s = cleanStr(patch.legendSlug, 60);
@@ -1123,6 +1250,24 @@ function applyBankPatch(bank, patch) {
       if (mu.visible !== undefined) bank.scenes.matchup.visible = Boolean(mu.visible);
       if (mu.game !== undefined) bank.scenes.matchup.game = clampInt(mu.game, 0, 5);
     }
+    // --- the odds and trash round ---
+    if (patch.scenes.odds && typeof patch.scenes.odds === 'object') {
+      const o = patch.scenes.odds;
+      const cfg = bank.scenes.odds;
+      if (o.visible !== undefined) cfg.visible = Boolean(o.visible);
+      if (['left', 'right', 'both'].includes(o.side)) cfg.side = o.side;
+      if (o.draws !== undefined) cfg.draws = clampInt(o.draws, 1, DRAWS_MAX);
+      if (ROWS_CHOICES.includes(Number(o.rows))) cfg.rows = Number(o.rows);
+      if (o.art !== undefined) cfg.art = Boolean(o.art);
+    }
+    if (patch.scenes.trash && typeof patch.scenes.trash === 'object') {
+      const t = patch.scenes.trash;
+      const cfg = bank.scenes.trash;
+      if (t.visible !== undefined) cfg.visible = Boolean(t.visible);
+      if (['left', 'right', 'both'].includes(t.side)) cfg.side = t.side;
+      if (t.art !== undefined) cfg.art = Boolean(t.art);
+      if (t.flowFirst !== undefined) cfg.flowFirst = Boolean(t.flowFirst);
+    }
     if (patch.scenes.sidespot && typeof patch.scenes.sidespot === 'object') {
       const ss = patch.scenes.sidespot;
       if (ss.visible !== undefined) bank.scenes.sidespot.visible = Boolean(ss.visible);
@@ -1471,8 +1616,9 @@ export function applyUpdate(patch) {
           if (top) {
             const side = bank.match[top.side];
             const j = side.hand.findIndex((c) => c.played && c.cardId === top.cardId);
-            if (j >= 0) side.hand.splice(j, 1);
+            const held = j >= 0 ? side.hand.splice(j, 1)[0] : null;
             if (side.handCount > 0) side.handCount -= 1;
+            toTrash(side, held || top);
           }
           break;
         }
@@ -1494,8 +1640,9 @@ export function applyUpdate(patch) {
           for (const entry of sd.chain) {
             const side = bank.match[entry.side];
             const j = side.hand.findIndex((c) => c.played && c.cardId === entry.cardId);
-            if (j >= 0) side.hand.splice(j, 1);
+            const held = j >= 0 ? side.hand.splice(j, 1)[0] : null;
             if (side.handCount > 0) side.handCount -= 1;
+            toTrash(side, held || entry);
           }
           sd.active = false; sd.chain = []; sd.priority = ''; sd.battlefield = ''; sd.battlefieldCardId = ''; sd.might = { left: null, right: null };
           break;

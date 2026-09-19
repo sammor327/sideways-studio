@@ -214,6 +214,37 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19k (out of band: odds to draw, the trash)
+
+Sam: "an 'Odds to draw' sheet that we can toggle on and off and choose
+which player ... weighting it towards highest likely to draw" and "the
+ability to showcase what cards are in a player's graveyard, specifically
+highlighting any cards with flow similar to how we showcase the hands".
+Riftbound's graveyard is the trash, and Flow is the Vendetta keyword
+"[FLOW 4 and 1 Fury] (You may play this from your trash for its Flow cost.
+Then banish it.)", 17 cards in the index (15 with a cost; Kennen grants it,
+Stargazer names it), so the trash lights its Flow cards the way the hand
+lists' marked style lights reactions. Built: two side-sheet scenes (`odds`,
+`trash`, shared web/stage/sidesheet.js|css and the layout arithmetic in
+web/shared/sidesheets.js, sheetSlots putting the trash beside the odds when
+both show one player: placed on the player's side of
+gamewindow.js's rect, --su = --u times the sheet's own scale so the
+HandScroller's screen-pixel scroll stays right), web/shared/odds.js (pool,
+hypergeometric chance, ranking, lines) and trash.js, carddb parseFlow /
+flowOf (search returns flow), side trash/drawn/deckLeft with the drawn tally
+kept by applyDeckSeen, resolved spells into the trash on the chain, and
+RiftAtlas liveSide writing trash, deckLeft and drawn (the broadcast view
+counts every card left in the deck). Panel: Trash and draw odds fold (trash
+search + rows, deck tracker with - / +, New game), a trash button on hand
+rows, the two graphics in the 1v1 fold with their features. Design calls:
+cards match by name across list, hand, trash and feed (printings share a
+name); unnamed hand cards stay in the pool, which is the right answer for a
+viewer and why the sheet says "not yet seen" then; the odds stay down with
+no deck known, an empty trash airs as Empty. Verified: 16 new tests (320),
+stills from a scratch server (4803) over the rows, dual-column and portrait
+overlays, both sides, 2-draw odds, a 22-card trash scrolling, the fly-in
+mid-move, the look builder tiles, and the panel fold in headless Chrome.
+
 ### 2026-09-19j (out of band: the corner tag and the lower third anchor to the in-game overlays; custom text; the label switch; 0.36.0)
 
 Sam: "Can we make the Lower Thirds and corner tags anchored for the in game

@@ -1,0 +1,27 @@
+/* Odds to draw (2026-09-19, Sam: "weighting it towards highest likely to
+   draw"): the side sheet's rows (web/stage/sidesheet.css), likeliest first,
+   each over a bar as long as its chance against the likeliest card's, with
+   the chance itself big at the right. The likeliest cards carry the full
+   bar and their chance in accent B. The count is the copies left. */
+
+.card .bar {
+  position: absolute;
+  left: 0;
+  top: calc(5 * var(--su));
+  bottom: calc(5 * var(--su));
+  width: calc(var(--w, 0) * 100%);
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  opacity: 0.16;
+  border-radius: calc(2 * var(--su));
+}
+.card.lead .bar { opacity: 0.32; }
+.card .pct {
+  flex: 0 0 auto;
+  min-width: calc(76 * var(--su));
+  text-align: right;
+  font: 800 calc(21 * var(--su))/1 var(--tes-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--ss-text, #fff);
+}
+.card.lead .pct { color: var(--ss-accent-b, #1bef19); }
+.card.lead .nm { font-weight: 700; }

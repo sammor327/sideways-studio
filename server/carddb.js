@@ -416,6 +416,26 @@ export function kindOf(cardId) {
   return cardKind(byId.get(cardId));
 }
 
+// A card's Flow cost (2026-09-19, the Vendetta keyword: "[FLOW 4 and 1
+// Fury] (You may play this from your trash for its Flow cost. Then banish
+// it.)"), read off its rules text as { energy, power, domain }, domain ''
+// for any rune ("1 Rune", "2 Runes"); null for a card without Flow. A
+// bare [FLOW] is another card naming or granting it (Stargazer, Kennen),
+// not a cost of its own. The trash graphic lights these cards up.
+const FLOW_RE = /\[FLOW\s+(\d+)(?:\s+and\s+(\d+)\s+([A-Za-z]+))?\]/i;
+const RUNE_DOMAINS = ['Body', 'Calm', 'Chaos', 'Fury', 'Mind', 'Order'];
+export function parseFlow(text) {
+  const m = String(text || '').match(FLOW_RE);
+  if (!m) return null;
+  const domain = m[3] ? (RUNE_DOMAINS.find((d) => d.toLowerCase() === m[3].toLowerCase()) || '') : '';
+  return { energy: Number(m[1]), power: m[2] ? Number(m[2]) : 0, domain };
+}
+
+export function flowOf(cardId) {
+  const c = byId.get(cardId);
+  return c ? parseFlow(c.text) : null;
+}
+
 export function searchCards(query, limit = 12) {
   const q = normalize(query).trim();
   if (!q || !cards.length) return [];
@@ -436,6 +456,7 @@ export function searchCards(query, limit = 12) {
     domains: c.domains || [],
     energy: c.energy,
     kind: cardKind(c),
+    flow: parseFlow(c.text),
   }));
 }
 

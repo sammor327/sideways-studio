@@ -608,6 +608,12 @@ const hasDeck = (side) => Boolean(side && typeof side.deckList === 'string' && s
 // the game itself says right now. Names are not in it (see identityPatch).
 function liveSide(p, cur, resolveCard, legendOf) {
   const deck = hasDeck(cur);
+  // One RiftAtlas card as Match data lists it, its cost and domains along.
+  const liveCard = (c) => {
+    const hit = resolveCard(c);
+    return hit ? { cardId: hit.cardId, cardName: hit.cardName, energy: hit.energy ?? null, domains: hit.domains || [] } : { cardId: '', cardName: c.name };
+  };
+  const deckCards = p.deck ? p.deck.cards : [];
   const out = {
     score: Math.min(8, p.score),
     gameWins: Math.min(3, p.wins),
@@ -617,6 +623,17 @@ function liveSide(p, cur, resolveCard, legendOf) {
     hand: p.hand.slice(0, 20).map((c) => {
       const hit = resolveCard(c);
       return hit ? { cardId: hit.cardId, cardName: hit.cardName, energy: hit.energy ?? null, domains: hit.domains || [] } : { cardId: '', cardName: c.name };
+    }),
+    // The trash as it stands, the oldest first as RiftAtlas keeps it, and
+    // the deck (2026-09-19): each card left in it, which the odds to draw
+    // take over a pasted list since it knows what was sideboarded, and
+    // the copies gone from it, so the panel's deck tracker agrees. Between
+    // games there is no board and no deck, and both start over.
+    trash: p.trash.slice(-60).map(liveCard),
+    deckLeft: deckCards.map((c) => ({ ...liveCard(c), left: Math.min(12, c.left) })),
+    drawn: deckCards.filter((c) => c.start > c.left).map((c) => {
+      const card = liveCard(c);
+      return { cardId: card.cardId, cardName: card.cardName, n: Math.min(12, c.start - c.left) };
     }),
   };
   // With a list in Match data the legend and champion are the list's; an
