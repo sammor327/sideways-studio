@@ -58,6 +58,24 @@
 .active-left .active-bar.top, .active-right .active-bar.bot { display: block; }
 .active-label { color: var(--ss-accent-b, #1bef19); visibility: hidden; }
 .active-left #lactive, .active-right #ractive { visibility: visible; }
+/* The active player's legend glows (2026-09-19, Sam: "a very slow pulse").
+   The look's two accents light the legend window from its edges the way the
+   trim runs, A from the top left and B from the bottom right: a lit rim and
+   a glow falling off inward. Only the accents, never the trim, since a look
+   may set the trim to a plain colour. Webcam mode has no legend window, so
+   no glow. --on fades it in when the turn passes to the player and out when
+   it passes on; --breath is the pulse from the wall clock (scene.js), 0 at
+   its faintest and 1 at its brightest. */
+.well .glow {
+  position: absolute; inset: 0; pointer-events: none;
+  box-shadow:
+    inset calc(3 * var(--u)) calc(3 * var(--u)) calc(4 * var(--u)) calc(-1 * var(--u)) var(--ss-accent-a, #11b6fb),
+    inset calc(-3 * var(--u)) calc(-3 * var(--u)) calc(4 * var(--u)) calc(-1 * var(--u)) var(--ss-accent-b, #1bef19),
+    inset calc(10 * var(--u)) calc(10 * var(--u)) calc(34 * var(--u)) calc(-6 * var(--u)) var(--ss-accent-a, #11b6fb),
+    inset calc(-10 * var(--u)) calc(-10 * var(--u)) calc(34 * var(--u)) calc(-6 * var(--u)) var(--ss-accent-b, #1bef19);
+  opacity: calc(var(--on, 1) * (0.35 + 0.65 * var(--breath, 1)));
+}
+.well .glow.gone { display: none; }
 
 .under { position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); display: flex; justify-content: space-between; align-items: center; height: calc(30 * var(--u)); }
 .under.top { top: calc(196 * var(--u)); }

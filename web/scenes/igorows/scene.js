@@ -1,5 +1,5 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
-import { SeekClock, bump } from '../../stage/seekclock.js';
+import { SeekClock, animEnabled, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
 import { Slider, SwapSlot, loadArt } from '../../stage/slide.js';
 import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
@@ -52,6 +52,28 @@ const ruleSlide = new Slider(document.querySelector('#root .divider'), '--hs', 4
 const dock = new SwapSlot($('cardDock'), '--cd', 500, { key: (card) => card.cardId, fill: fillDock });
 const sdSlide = new Slider($('sdView'), '--sv', 450);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
+
+// --- the active player's legend glows (2026-09-19) ---
+//
+// Sam: the legends glow when it is their turn, a very slow pulse. The glow
+// fades in over the legend of the player whose turn it is and out of the
+// other's as the turn passes; the Active turn switch takes it off with the
+// rest of the mark. The pulse runs off the wall clock like all motion here,
+// so an occluded source never freezes it and every copy of the overlay
+// breathes together; the waveform is worked out here so the CSS only
+// multiplies. With motion off (anim=0, reduced motion) the glow holds at its
+// brightest. Nothing is written while no glow can show: a browser source
+// showing nothing should cost nothing.
+const BREATH_MS = 6000;
+const glowSlide = { l: new Slider($('lglow'), '--on', 800), r: new Slider($('rglow'), '--on', 800) };
+if (animEnabled()) {
+  setInterval(() => {
+    if (root.classList.contains('off') || root.classList.contains('mode-webcam')) return;
+    if (!glowSlide.l.on && !glowSlide.r.on) return;
+    const phase = (Date.now() % BREATH_MS) / BREATH_MS;
+    root.style.setProperty('--breath', (0.5 - 0.5 * Math.cos(2 * Math.PI * phase)).toFixed(3));
+  }, 100);
+}
 
 const shown = { hero: {}, hand: {}, sd: {} };
 const scrollers = { l: new HandScroller($('lhandView'), $('lhand')), r: new HandScroller($('rhandView'), $('rhand')) };
@@ -352,6 +374,8 @@ const params = initStage({
     const activeOn = scene.activeTurn !== false;
     root.classList.toggle('active-left', activeOn && m.activeSide === 'left');
     root.classList.toggle('active-right', activeOn && m.activeSide === 'right');
+    glowSlide.l.set(activeOn && m.activeSide === 'left', first);
+    glowSlide.r.set(activeOn && m.activeSide === 'right', first);
     root.classList.toggle('no-points', scene.points === false);
 
     renderSide('l', m.left, m, animate);

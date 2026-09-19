@@ -214,6 +214,30 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19o (out of band: the active player's legend glows on the rows overlay, 0.41.0)
+
+Sam: "can we make the legends on the in game overlay, rows glow when it is
+their active turn? A very slow pulse". The rows overlay's legend art is the
+opaque IGO hero crop (261x242 RGB, object-fit cover in the 330x186 camera
+windows), so the glow lights the window from its edges rather than tracing a
+figure. Picked from five mocked treatments rendered at the faintest and the
+brightest point: a lit rim over an inward glow, accent A from the top left
+and accent B from the bottom right the way the trim gradient runs, all inset
+box-shadows. Not the trim itself: a look may set the trim to a plain colour,
+which border-image cannot take (that variant would have vanished). A solid
+accent frame read as "selected" rather than lit, and a glow on the active
+bar spilled onto the table camera past x 330. The pulse is a cosine on a
+6 s wall-clock period written to --breath every 100 ms (all copies breathe
+together, an occluded source never freezes it), opacity 0.35 to 1; a
+Slider (--on, 800 ms) fades it across when the turn passes. It follows the
+Active turn switch, lives inside the legend window so webcam mode never
+shows it, holds at full with anim=0 or reduced motion, and writes nothing
+while the overlay is off, in webcam mode or with no side active. Verified on
+a scratch server (port 4810): opacity sampled over a period (0.357 to
+0.992), the turn cue's cross-fade (out 0.8 s, in 0.8 s, bars switch at
+once), Active turn off, webcam mode, and a 13 s frame capture across a
+turn pass. 416 tests.
+
 ### 2026-09-19n (out of band: the showdown stack as cards, the battlefield behind it, the defender's actions)
 
 Sam, three asks on the showdown: the contested battlefield's art as the

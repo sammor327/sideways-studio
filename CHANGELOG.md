@@ -6,6 +6,10 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.41.0 (2026-09-19)
+
+- Rows overlay: the legend of the player whose turn it is glows, a very slow pulse (six seconds from faint to bright and back) in the look's two accent colours around their legend window. When the turn passes, the glow fades from one legend to the other. It comes and goes with the Active turn checkbox, and shows only with legend art in the camera windows, not in webcam mode.
+
 ## 0.40.0 (2026-09-19)
 
 - Showdowns: the stack now shows the cards themselves. In the rows overlay's column each player's cards are laid out as cards, oldest to newest with the newest on top, each labelled On the chain, Resolved, or what happened to it.

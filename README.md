@@ -279,8 +279,10 @@ and their source URLs are in Setup's browser source links.
   one player each (country chip, name, pronouns and record, a points box,
   legend, champion, archetype and runes; the round title and turn on the
   bottom bar), and a 330 px left column with both camera windows, the series
-  dots, an active-turn mark and the cards-in-hand list with each card's
-  cost. The table camera gets x 330 to 1920, y 75 to 1005. The middle of the
+  dots, an active-turn mark (with legend art in the windows, the active
+  player's legend also glows in a slow six-second pulse) and the
+  cards-in-hand list with each card's cost. The table camera gets x 330 to
+  1920, y 75 to 1005. The middle of the
   column holds one thing at a time: the event logo with the round under it,
   the hands once a card is listed, and, with **Dock featured card** on (the
   default), the card popup's card while the popup is on. Whatever is there

@@ -104,8 +104,11 @@ data and unread:
     optional) and the docked card with legible rules text (right).
 11. **IGO rows** (`igorows`) — the Magic Pro Tour grammar: 75px bars top and
     bottom, one player each, a 330px left column with both cameras, series
-    dots, the active-turn mark and the CARDS IN HAND list (resolved cards
-    with energy and domain runes; the HOLDS line went in 0.8.0). The middle of the
+    dots, the active-turn mark (the accent bar, the label and, over legend
+    art, a glow on the active player's legend breathing on a 6 s wall-clock
+    pulse, fading across when the turn passes) and the CARDS IN HAND list
+    (resolved cards with energy and domain runes; the HOLDS line went in
+    0.8.0). The middle of the
     column holds one of the event logo, the hands or (cardDock, default on)
     the card popup's card, docked while the popup is on; the popup stands
     down meanwhile, and the outgoing one slides out before the incoming one
