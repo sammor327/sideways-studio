@@ -214,6 +214,39 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19h (out of band: Live game precedence, showdowns from RiftAtlas, the showdown in the rows column)
+
+Sam, using Live game on Convergence #3, four asks. (1) A pasted decklist
+supersedes RiftAtlas and (2) TopDeck's names supersede RiftAtlas's: Load
+players had renamed sides (and cleared their records) whenever RiftAtlas's
+display name differed, and the live patch overwrote a list's legend and
+champion. Now identityPatch fills only unnamed sides (PLAYER ONE / TWO count
+as unnamed) and empty lists, and liveSide keeps a list's legend, champion
+and pool (fill-if-empty; played marks and the battlefield in play still
+follow the game). (3) "Automatically bring up a showdown after a showdown
+has started AND the opponent has played a card onto the stack": RiftAtlas's
+showdown is `pendingBattlefieldConquerAssist` (read from recorded frames:
+set by move_card, stage advanced by battlefield_conquer_pass_focus /
+pass_response, cleared by battlefield_conquer_confirm); the model collects
+the showdown's plays as they arrive, since cards resolve off chainEntries
+within seconds, and the reader opens match.showdown once the defender has
+played, follows it and closes it 4 s after it ends. Might is the casting
+studio's own sum, read from its client (whiteCounter ?? printed might +
+temporaryMightBuff over the zone's units, attachments out); printed might
+comes from the card index, which carries it. (4) "A version of the showdown
+similar to the cards in hands on the rows overlay, split, with the total
+might and the stack of cards played": the rows column's middle gained a
+showdown tenant (showdownView), P1's half on top and P2's below like the
+hands, might in each header, the cards as hand rows newest first, resolved
+dimmed; the showdown scene stands down while it shows (shared/showdowndock.js,
+the card dock's rule), and its strip and takeover dim resolved cards and
+count "2 on the chain · 4 played". Verified: 304 tests (new: the showdown
+lifecycle on synthetic frames, might, a reaction unit from hand, a snapshot
+mid-showdown, precedence, the match.showdown sanitizer, the stand-down rule);
+the rows column and the strip screenshotted from a scratch server (4750)
+with a staged showdown. Not seen yet: a live RiftAtlas showdown with a
+defender's answer end to end.
+
 ### 2026-09-19g (out of band: highlights on the standings, pairings and legend distribution; the legend table rolls)
 
 Sam's four asks. (1) "Highlight and feature specific standings on the

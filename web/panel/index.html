@@ -73,6 +73,7 @@
     <div class="ra-switches">
       <label class="inline" title="Points, game wins, hands, the battlefield in play, legend, champion, turn and whose turn go to preview and program at once, like the clock. Off: they wait in preview for TAKE."><input type="checkbox" id="raLive"> Live values straight to air</label>
       <label class="inline" title="Each card a player plays is staged in the card popup in preview, ready for TAKE."><input type="checkbox" id="raFollow"> Stage each card played in the card popup</label>
+      <label class="inline" title="A showdown comes up by itself once it has started and the defending player has answered with a card, follows it (might, cards, focus) and closes a few seconds after RiftAtlas settles it. It airs on the rows overlay's column, or on the Showdown graphic when that is up."><input type="checkbox" id="raShowdown"> Showdowns come up by themselves</label>
       <label class="inline" title="The reader runs out of sight. Switch this on to watch the casting studio it is reading, in its own window."><input type="checkbox" id="raShow"> Show the RiftAtlas window</label>
     </div>
     <h5 class="ra-sub">Cards played</h5>
@@ -1058,6 +1059,7 @@
         <label class="inline" title="Turn N after the round title on the bottom bar"><input type="checkbox" id="igoRowsTurn" checked> Turn counter</label>
         <label class="inline" title="The theme's event logo in the middle of the column (the event name when no logo is uploaded). It slides out while a hand is listed or a featured card is docked, and back in when they clear"><input type="checkbox" id="igoRowsLogo" checked> Event logo</label>
         <label class="inline" title="Shows the card popup's card in the middle of the column instead of the popup flying in over the feed: the hands or the event logo slide out, the card slides in with its name, and they come back when the card popup goes off"><input type="checkbox" id="igoRowsCard" checked> Dock featured card</label>
+        <label class="inline" title="While a showdown is open (from RiftAtlas, or opened by hand under Hands and showdown) the middle of the column splits between the players: each one's might at the battlefield and the cards they played into it, newest first. The showdown graphic stands down meanwhile, so it never airs twice."><input type="checkbox" id="igoRowsSdView" checked> Showdown in the column</label>
         <label class="inline" title="The round clock at the right end of the bottom bar, running from the match timer"><input type="checkbox" id="igoRowsClock" checked> Round clock</label>
         <label class="inline" title="A strip beside each player's camera: the battlefield this game is on, or the three they brought side by side with an arrow on this game's and the ones played earlier greyed out. Set them under Match data &rsaquo; Decks and battlefields">Battlefields
           <select id="igoRowsBattlefields">

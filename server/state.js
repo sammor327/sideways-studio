@@ -120,7 +120,9 @@ function defaultBank() {
       // The showdown: the contested battlefield, who can respond, and the
       // chain of cards played onto it in order. Driven by the chain cue so
       // it never waits for a TAKE; the showdown scene draws it.
-      showdown: { active: false, battlefield: '', battlefieldCardId: '', priority: '', chain: [] },
+      // might is each side's total at the contested battlefield when a live
+      // feed knows it (RiftAtlas), null when nobody does.
+      showdown: { active: false, battlefield: '', battlefieldCardId: '', priority: '', chain: [], might: { left: null, right: null } },
       // Who chose to go first in game one (the match card prints it) and the
       // result strip's winner with a line about where they go next.
       choseFirst: '', result: { winner: '', note: '' },
@@ -189,8 +191,10 @@ function defaultBank() {
       // the hand); handArt puts each card's art beside its name. cardDock
       // docks the card popup's card in the middle of the column while the
       // popup is on (the hands or the event logo slide out for it) instead
-      // of the popup flying in over the feed.
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true,
+      // of the popup flying in over the feed. showdownView splits the middle
+      // of the column between the players while a showdown is open: each
+      // side's might and the cards it played (2026-09-19).
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true, showdownView: true,
         // Battlefields in each player's block: 'off', 'one' (this game's) or
         // 'all' (the three brought, the played ones marked).
         battlefields: 'off' },
@@ -344,6 +348,7 @@ function mergeBank(bank, raw) {
   bank.match = { ...fresh.match, ...bank.match };
   bank.match.showdown = { ...fresh.match.showdown, ...(bank.match.showdown || {}) };
   if (!Array.isArray(bank.match.showdown.chain)) bank.match.showdown.chain = [];
+  if (!bank.match.showdown.might || typeof bank.match.showdown.might !== 'object') bank.match.showdown.might = { left: null, right: null };
   // Event fields grew with the experimental graphics; older saves carry only
   // the name and round title, and a hand or table list must be an array.
   bank.event = { ...fresh.event, ...bank.event };
@@ -512,6 +517,33 @@ function cleanHandCard(raw) {
   return { cardId, cardName, energy, domains, kind, played: Boolean(raw.played) };
 }
 const HAND_KINDS = ['reaction', 'action', 'unit', 'champion', 'gear', 'spell'];
+
+// The showdown as a live game feed knows it (RiftAtlas, 2026-09-19): open or
+// not, where, who has focus, each side's might there and every card played
+// into it in play order, each marked resolved once it has left the chain.
+// The operator's own showdown runs on the chain cue instead.
+function cleanChainEntry(raw) {
+  const card = cleanHandCard(raw);
+  if (!card || !['left', 'right'].includes(raw.side)) return null;
+  const { played, ...rest } = card;
+  return { ...rest, side: raw.side, resolved: Boolean(raw.resolved) };
+}
+function applyShowdown(sd, p) {
+  if (p.active !== undefined) sd.active = Boolean(p.active);
+  if (p.battlefield !== undefined) sd.battlefield = cleanStr(p.battlefield, 40);
+  if (p.battlefieldCardId !== undefined) sd.battlefieldCardId = cleanCardId(p.battlefieldCardId);
+  if (['', 'left', 'right'].includes(p.priority)) sd.priority = p.priority;
+  // The chain cue's own cap: the newest twelve.
+  if (Array.isArray(p.chain)) sd.chain = p.chain.map(cleanChainEntry).filter(Boolean).slice(-12);
+  if (p.might && typeof p.might === 'object') {
+    const might = { ...(sd.might || { left: null, right: null }) };
+    for (const s of ['left', 'right']) {
+      if (p.might[s] === null) might[s] = null;
+      else if (p.might[s] !== undefined) might[s] = clampInt(p.might[s], 0, 999);
+    }
+    sd.might = might;
+  }
+}
 
 const COUNTRY = /^[A-Z]{0,3}$/;
 // The identity block one player carries on an up-next table card. Its
@@ -787,6 +819,7 @@ function applyBankPatch(bank, patch) {
     }
     if (patch.match.left && typeof patch.match.left === 'object') applySide(bank.match.left, patch.match.left);
     if (patch.match.right && typeof patch.match.right === 'object') applySide(bank.match.right, patch.match.right);
+    if (patch.match.showdown && typeof patch.match.showdown === 'object') applyShowdown(bank.match.showdown, patch.match.showdown);
   }
 
   // Game wins can never exceed what the current series length allows.
@@ -850,7 +883,7 @@ function applyBankPatch(bank, patch) {
     const IGO_FLAGS = {
       igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand', 'handArt'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
-      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo', 'clock', 'cardDock'],
+      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo', 'clock', 'cardDock', 'showdownView'],
     };
     for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {
@@ -1311,6 +1344,7 @@ export function applyUpdate(patch) {
         case 'open': {
           sd.active = true;
           sd.chain = [];
+          sd.might = { left: null, right: null };
           sd.battlefield = cleanStr(patch.battlefield || '', 40);
           sd.battlefieldCardId = cleanCardId(patch.battlefieldCardId || '');
           // The defender responds first: whoever is not the active player.
@@ -1367,7 +1401,7 @@ export function applyUpdate(patch) {
             if (j >= 0) side.hand.splice(j, 1);
             if (side.handCount > 0) side.handCount -= 1;
           }
-          sd.active = false; sd.chain = []; sd.priority = ''; sd.battlefield = ''; sd.battlefieldCardId = '';
+          sd.active = false; sd.chain = []; sd.priority = ''; sd.battlefield = ''; sd.battlefieldCardId = ''; sd.might = { left: null, right: null };
           break;
         }
         default:

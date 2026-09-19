@@ -34,7 +34,7 @@ import { listLegends } from './legends.js';
 import { findBrowser } from './still.js';
 import {
   CASTER_URL, REALTIME_HOST, parseRoomCode, casterUrl, socketRoom, createFeed, ingestFrame, gameView,
-  makeCardResolver, livePatch, identityPatch, orientation, normName,
+  makeCardResolver, livePatch, identityPatch, showdownPatch, orientation, normName,
 } from './riftatlas-model.js';
 
 const FILE = path.join(DATA_DIR, 'riftatlas.json');
@@ -45,8 +45,11 @@ const CHECK_MS = 4_000;
 // A reader that dies mid-show comes back on its own, a little slower each
 // time so a machine that cannot run it is not hammered.
 const RETRY_MS = [3_000, 10_000, 30_000, 60_000];
+// A showdown the feed brought up stays this long after RiftAtlas settles
+// it, so the final might and the last card get their moment on air.
+const SHOWDOWN_HOLD_MS = 4_000;
 
-let config = { room: '', live: true, follow: false, swap: false, show: false };
+let config = { room: '', live: true, follow: false, swap: false, show: false, showdown: true };
 let status = { state: 'idle', message: 'Not connected.', account: '', version: 0 };
 let feed = createFeed();
 let reader = null; // { proc, ws, send, sessionId, sockets, closing }
@@ -56,7 +59,8 @@ let retries = 0;
 let retryTimer = null;
 let checkTimer = null;
 let pushTimer = null;
-let pushed = { live: '', followId: '' };
+let pushed = { live: '', followId: '', showdownKey: '' };
+let showdownTimer = null;
 let saveChain = Promise.resolve();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -88,6 +92,7 @@ export async function initRiftAtlas() {
       follow: raw.follow === true,
       swap: raw.swap === true,
       show: raw.show === true,
+      showdown: raw.showdown !== false,
     };
   } catch { /* first run */ }
 }
@@ -313,8 +318,9 @@ async function stopReader() {
 
 // A new room is a new feed: nothing of the last game carries over.
 async function openRoom(room) {
+  closeShowdown();
   feed = createFeed();
-  pushed = { live: '', followId: '' };
+  pushed = { live: '', followId: '', showdownKey: '' };
   // The last room's sockets close with the page; a frame still in flight
   // from one must not land in the new room's feed.
   if (reader) reader.sockets.clear();
@@ -445,12 +451,26 @@ function changed() {
 
 function push() {
   pushTimer = null;
-  const view = gameView(feed);
-  if (!view || !view.settled || view.players.length !== 2) return;
   const h = helpers();
+  const view = gameView(feed, { resolveCard: h.resolveCard });
+  if (!view || !view.settled || view.players.length !== 2) return;
   const state = getState();
   if (config.live) {
-    const { patch } = livePatch(view, state.preview, { swap: config.swap, ...h });
+    const { patch, sides } = livePatch(view, state.preview, { swap: config.swap, ...h });
+    // Sam, 2026-09-19: a showdown comes up by itself once it has started AND
+    // the defending player has answered with a card; one the attacker plays
+    // into alone is left to the operator. It follows the showdown from then
+    // on and closes a moment after RiftAtlas settles it.
+    const sd = view.showdown;
+    if (config.showdown && sd && (sd.defenderPlayed || pushed.showdownKey === sd.key)) {
+      clearTimeout(showdownTimer);
+      showdownTimer = null;
+      pushed.showdownKey = sd.key;
+      patch.match.showdown = showdownPatch(view, sides, h.resolveCard);
+    } else if (pushed.showdownKey && !showdownTimer) {
+      showdownTimer = setTimeout(closeShowdown, SHOWDOWN_HOLD_MS);
+      showdownTimer.unref();
+    }
     const key = JSON.stringify(patch);
     if (key !== pushed.live) {
       pushed.live = key;
@@ -473,12 +493,25 @@ function push() {
   }
 }
 
+// The showdown the feed brought up is over (or the feed is going): it
+// closes the way the chain cue's close does, on air too while the players on
+// air are the feed's.
+function closeShowdown() {
+  clearTimeout(showdownTimer);
+  showdownTimer = null;
+  if (!pushed.showdownKey) return;
+  pushed.showdownKey = '';
+  pushed.live = '';
+  const match = { showdown: { active: false, chain: [], priority: '', battlefield: '', battlefieldCardId: '', might: { left: null, right: null } } };
+  applyUpdate(sameOnAir(getState()) ? { action: 'live', match } : { match });
+}
+
 // What the panel draws: the view with card ids resolved for thumbnails, the
 // sides as Match data will get them, and the recent cards.
 function panelView() {
-  const view = gameView(feed);
-  if (!view) return null;
   const h = helpers();
+  const view = gameView(feed, { resolveCard: h.resolveCard });
+  if (!view) return null;
   const state = getState();
   const card = (c) => {
     if (!c) return null;
@@ -486,8 +519,18 @@ function panelView() {
     return { name: c.name, cardId: hit ? hit.cardId : '', cardType: hit ? hit.type || '' : '', type: c.type || '' };
   };
   const [l, r] = view.players.length === 2 ? orientation(view, state.preview, config.swap) : view.players;
+  // The name Match data holds for the side each player feeds: TopDeck's or
+  // the operator's when there is one, RiftAtlas's display name otherwise.
+  const matchName = (p) => {
+    const cur = p && p === l ? state.preview.match.left.name : (p && p === r ? state.preview.match.right.name : '');
+    return cur && !/^player (one|two)$/i.test(cur) ? cur : '';
+  };
+  const nameOf = (id) => {
+    const p = view.players.find((x) => x.id === id);
+    return p ? (matchName(p) || p.name) : '';
+  };
   const side = (p) => (p ? {
-    id: p.id, name: p.name, seat: p.seat, score: p.score, wins: p.wins,
+    id: p.id, name: p.name, matchName: matchName(p), seat: p.seat, score: p.score, wins: p.wins,
     legend: card(p.legend), champion: card(p.champion),
     battlefield: p.battlefield ? card({ name: p.battlefield }) : null,
     hand: p.hand.map(card), handCount: p.handCount,
@@ -501,8 +544,17 @@ function panelView() {
     left: side(l), right: side(r),
     chain: view.chain.map((c) => ({ ...card(c), playerId: c.playerId })),
     events: view.events.slice(0, 16).map((e) => ({
-      id: e.id, at: e.at, kind: e.kind, from: e.from, to: e.to, playerName: e.playerName, turn: e.turn, ...card(e),
+      id: e.id, at: e.at, kind: e.kind, from: e.from, to: e.to, playerName: nameOf(e.playerId) || e.playerName, turn: e.turn, ...card(e),
     })),
+    showdown: view.showdown ? {
+      battlefield: view.showdown.battlefield,
+      attacker: nameOf(view.showdown.attackerId),
+      defender: nameOf(view.showdown.defenderId),
+      might: [l, r].map((p) => (p ? view.showdown.might[p.id] ?? null : null)),
+      cards: view.showdown.plays.length,
+      answered: view.showdown.defenderPlayed,
+      up: pushed.showdownKey === view.showdown.key,
+    } : null,
     onAir: sameOnAir(state),
   };
 }
@@ -533,7 +585,9 @@ export async function handleRiftAtlas(req, res, url, { readBody, sendJson }) {
     const b = await body();
     if (!b) { sendJson(res, 400, { ok: false, error: 'invalid JSON' }); return true; }
     const restart = b.show !== undefined && Boolean(b.show) !== config.show;
-    for (const k of ['live', 'follow', 'swap', 'show']) if (b[k] !== undefined) config[k] = Boolean(b[k]);
+    for (const k of ['live', 'follow', 'swap', 'show', 'showdown']) if (b[k] !== undefined) config[k] = Boolean(b[k]);
+    // A showdown the feed brought up goes when what brought it up is off.
+    if (!config.live || !config.showdown) closeShowdown();
     // Turning live or the side swap back on writes at once, not at the next move.
     pushed.live = '';
     if (b.follow) pushed.followId = '';
@@ -561,6 +615,7 @@ export async function handleRiftAtlas(req, res, url, { readBody, sendJson }) {
     return true;
   }
   if (p === '/api/riftatlas/disconnect') {
+    closeShowdown();
     await stopReader();
     feed = createFeed();
     setStatus('idle', 'Not connected.');

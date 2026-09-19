@@ -242,6 +242,47 @@
 .logo-round { font: 700 calc(18 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-text-muted, #9aa7b6); overflow-wrap: anywhere; }
 .logo-round:empty { display: none; }
 
+/* --- the showdown in the column (2026-09-19) ---
+   While a showdown is open, the middle of the column splits between the
+   players: player 1's half on top, player 2's below, the battlefield in a
+   band between. Each half heads with that player's might (the side ahead in
+   accent B, the side with focus marked on its left edge) over the cards they
+   played into the showdown, newest first, resolved ones dimmed. --sv is its
+   clock, sliding in from the column's left edge like the hands. */
+.sd-view {
+  position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u));
+  display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr);
+  pointer-events: none; overflow: hidden;
+}
+.sd-view.gone { display: none; }
+.bf-l .sd-view { top: calc(292 * var(--u)); }
+.bf-r .sd-view { bottom: calc(288 * var(--u)); }
+.sd-view > * {
+  opacity: var(--sv, 1);
+  transform: translateX(calc((1 - var(--sv, 1)) * -340 * var(--u)));
+}
+.sd-half { display: flex; flex-direction: column; min-height: 0; }
+.sd-half .h { flex: none; display: flex; align-items: center; gap: calc(8 * var(--u)); background: rgba(255, 255, 255, 0.06); padding: calc(6 * var(--u)) calc(10 * var(--u)); margin-bottom: calc(4 * var(--u)); border-left: calc(3 * var(--u)) solid transparent; }
+.sd-half .h .label { color: var(--ss-text, #fff); }
+.sd-half .focus { display: none; font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
+.sd-half.has-focus .h { border-left-color: var(--ss-accent-b, #1bef19); }
+.sd-half.has-focus .focus { display: inline; }
+.sd-half .might { margin-left: auto; font: 800 calc(30 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-text, #fff); transform: scale(calc(1 + 0.18 * var(--bump, 0))); }
+.sd-half.lead .might { color: var(--ss-accent-b, #1bef19); }
+.sd-half .cards { min-height: 0; overflow: hidden; }
+.sd-half .scroll { transform: translateY(calc(-1 * var(--scroll, 0px))); }
+.sd-half .card .qty { display: none; }
+.sd-half .card.resolved { opacity: 0.45; }
+.sd-none { padding: calc(8 * var(--u)) calc(10 * var(--u)); font: 500 calc(14 * var(--u))/1.2 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
+.sd-mid {
+  display: flex; align-items: center; justify-content: center; gap: calc(10 * var(--u)); min-width: 0;
+  margin: calc(10 * var(--u)) 0; padding: calc(7 * var(--u)) 0;
+  border-top: calc(1 * var(--u)) solid var(--ss-frame, #26303c); border-bottom: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+}
+.sd-title { flex: none; font: 800 calc(12 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
+.sd-bf { min-width: 0; font: 700 calc(14 * var(--u))/1.1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; }
+.sd-bf:empty { display: none; }
+
 /* --- docked featured card (2026-09-19) ---
    The card popup's card in the middle of the column, in the box the hands
    and the event logo take turns in, while the popup is on and Dock featured

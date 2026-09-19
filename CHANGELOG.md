@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## Unreleased
+
+- Live game: a decklist you pasted (or TopDeck loaded) now wins over RiftAtlas: the legend, the champion and the three battlefields stay the list's. RiftAtlas still marks which battlefield is in play and which have been played.
+- Live game: Load players only fills what Match data is missing. Names from TopDeck (or typed) are never replaced by RiftAtlas's display names, and a pasted decklist is never replaced. The Live game fold shows your name for each side, with the RiftAtlas name under it when they differ.
+- Showdowns come up by themselves: once a showdown has started on RiftAtlas and the defending player answers with a card, the showdown opens with the battlefield, both sides' might, who has focus and every card played into it. It follows the showdown as it goes and closes a few seconds after RiftAtlas settles it. Switch it off in the Live game fold with "Showdowns come up by themselves".
+- New on the rows overlay: Showdown in the column (on by default). While a showdown is open, the middle of the left column splits between the players like the cards in hand: each half shows that player's total might (the side ahead in the accent colour, the side with focus marked) over the cards they played into the showdown, newest first, dimmed once resolved. The Showdown graphic stands down meanwhile so it never airs twice.
+- Showdown strip and takeover: cards that have already resolved stay on, dimmed, and the count says how many are still on the chain and how many were played.
+
 ## 0.33.0 (2026-09-19)
 
 - Legend distribution: every legend two or more players brought now gets a slice of its own. The legends one player brought fold into Other, which says how many there are. Slices, under Graphic features › Legend distribution, also offers every legend, or the top 8 down to the top 3 as before. Past the eighth legend the slices are grey, because eight colours is as many as stay apart on screen: each legend's face sits on its slice where it fits, and every one has its row in the table.

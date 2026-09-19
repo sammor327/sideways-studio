@@ -2,7 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
 import { Slider, SwapSlot, loadArt } from '../../stage/slide.js';
-import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
+import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller, cardRow } from '../../stage/exp.js';
 import { setClock } from '../../shared/clockcells.js';
 import { rowsDockCard } from '../../shared/carddock.js';
 
@@ -50,10 +50,12 @@ const logoSlide = new Slider($('logoWell'), '--lg', 450);
 const handSlide = { l: new Slider($('lhandBlock'), '--hs', 450), r: new Slider($('rhandBlock'), '--hs', 450) };
 const ruleSlide = new Slider(document.querySelector('#root .divider'), '--hs', 450);
 const dock = new SwapSlot($('cardDock'), '--cd', 500, { key: (card) => card.cardId, fill: fillDock });
+const sdSlide = new Slider($('sdView'), '--sv', 450);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
-const shown = { hero: {}, hand: {} };
+const shown = { hero: {}, hand: {}, sd: {} };
 const scrollers = { l: new HandScroller($('lhandView'), $('lhand')), r: new HandScroller($('rhandView'), $('rhand')) };
+const sdScrollers = { l: new HandScroller($('lsdView'), $('lsdCards')), r: new HandScroller($('rsdView'), $('rsdCards')) };
 let lastState = null;
 
 function loadHero(p, side) {
@@ -105,6 +107,43 @@ function renderHand(p, side, show, lanes, art) {
   shown.hand[p] = key;
   $(`${p}hand`).replaceChildren(...handEls(list, { art }));
   scrollers[p].restart();
+}
+
+// --- the showdown in the column (2026-09-19) ---
+//
+// Sam: a version of the showdown like the cards in hand, split between the
+// players, with each one's total might and the stack of cards they played.
+// match.showdown carries it (a live feed fills it, the chain cue otherwise):
+// each half heads with that side's might, the side ahead in the accent
+// colour and the side with focus marked, over the cards that side played
+// into the showdown, newest first, a card that has resolved dimmed. The
+// halves scroll a long stack the way the hands do.
+function renderShowdown(m, show, art, animate) {
+  if (!show) return;
+  const sd = m.showdown || {};
+  setText($('sdBf'), sd.battlefield || '');
+  const might = sd.might || {};
+  const known = Number.isFinite(might.left) && Number.isFinite(might.right);
+  for (const [p, s, o] of [['l', 'left', 'right'], ['r', 'right', 'left']]) {
+    const v = might[s];
+    // Might when a live feed knows it; a showdown run by hand has none.
+    setText($(`${p}sdLabel`), Number.isFinite(v) ? 'Might' : 'Cards played');
+    if (setText($(`${p}might`), Number.isFinite(v) ? String(v) : '') && animate) bump($(`${p}might`), '--bump');
+    $(`${p}sd`).classList.toggle('lead', known && v > might[o]);
+    $(`${p}sd`).classList.toggle('has-focus', sd.priority === s);
+    const cards = (sd.chain || []).filter((c) => c.side === s).reverse();
+    const key = `${art ? 'A' : 'N'}:` + cards.map((c) => `${c.cardId}|${c.cardName}|${c.resolved ? 1 : 0}`).join(';');
+    if (shown.sd[p] === key) continue;
+    shown.sd[p] = key;
+    const rows = cards.map((c) => {
+      const row = cardRow({ ...c, played: false, qty: 1 }, art);
+      row.classList.toggle('resolved', Boolean(c.resolved));
+      return row;
+    });
+    if (!rows.length) rows.push(Object.assign(document.createElement('div'), { className: 'sd-none', textContent: 'No cards played' }));
+    $(`${p}sdCards`).replaceChildren(...rows);
+    sdScrollers[p].restart();
+  }
 }
 
 function proLine(side) {
@@ -212,7 +251,10 @@ const params = initStage({
     const bfMode = scene.battlefields || 'off';
     root.classList.toggle('bf-l', renderBattlefields('l', m.left, bfMode));
     root.classList.toggle('bf-r', renderBattlefields('r', m.right, bfMode));
-    root.classList.toggle('showdown', Boolean(scene.showdown));
+    // The showdown pill and the lit reactions: the operator's switch, or a
+    // showdown that is really open.
+    const sdOpen = Boolean(m.showdown && m.showdown.active);
+    root.classList.toggle('showdown', Boolean(scene.showdown) || sdOpen);
     const lanes = scene.handStyle === 'lanes';
     const art = scene.handArt !== false;
     const handL = Boolean(scene.hand) && handTotal(m.left) > 0;
@@ -229,7 +271,9 @@ const params = initStage({
     // one listed, else the event logo. Whatever is leaving slides out
     // before the one coming in slides in, and the hands keep their lists up
     // to date while a card holds their place.
-    const middle = card ? 'card' : (handL || handR ? 'hands' : (logoHas ? 'logo' : ''));
+    const sdShow = sdOpen && scene.showdownView !== false;
+    renderShowdown(m, sdShow, art, animate);
+    const middle = card ? 'card' : (sdShow ? 'showdown' : (handL || handR ? 'hands' : (logoHas ? 'logo' : '')));
     const twoHands = middle === 'hands' && handL && handR;
     const out = Promise.all([
       middle !== 'card' && dock.set(null, first),
@@ -237,6 +281,7 @@ const params = initStage({
       middle !== 'hands' && handSlide.r.set(false, first),
       !twoHands && ruleSlide.set(false, first),
       middle !== 'logo' && logoSlide.set(false, first),
+      middle !== 'showdown' && sdSlide.set(false, first),
     ]);
     if (middle === 'card') dock.set(card, first, out);
     if (middle === 'hands') {
@@ -245,6 +290,7 @@ const params = initStage({
       if (twoHands) ruleSlide.set(true, first, out);
     }
     if (middle === 'logo') logoSlide.set(true, first, out);
+    if (middle === 'showdown') sdSlide.set(true, first, out);
 
     $('clock').classList.toggle('hidden', scene.clock === false);
     timerState = m.timer || timerState;

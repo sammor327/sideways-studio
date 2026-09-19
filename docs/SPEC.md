@@ -392,6 +392,50 @@ show}; the room is not reconnected on launch. Sign-in is a plain window on
 the same profile, because Google refuses sign-in while the DevTools port is
 open; the reader runs headless with the ordinary user agent.
 
+Precedence and showdowns (2026-09-19, second round, Sam): a side with a
+deckList keeps its legend, champion and pool (RiftAtlas fills only empty
+fields, marks played, never tops the pool up); identityPatch (Load players)
+fills a name only when the side has none or PLAYER ONE / PLAYER TWO, and a
+deckList only when there is none. The model tracks each showdown from
+`pendingBattlefieldConquerAssist` {zone, attackerPlayerId, defenderPlayerId,
+stage attacker_focus / defender_response / attacker_confirm_conquer} and
+collects the cards played into it (chain inserts, and hand-to-zone moves
+into the contested battlefield); it ends once the field is cleared and the
+chain is empty. Might per side = sum over its units in the zone (not
+attached, face-down unknown) of (whiteCounter ?? printed might, RiftAtlas's
+or the card index's) + max(0, temporaryMightBuff), the casting studio's own
+rule. With config.showdown on, a showdown whose defender has played lands as
+match.showdown {active, battlefield, battlefieldCardId, priority, chain[12]
+{cardId, cardName, energy, domains, kind, side, resolved}, might {left,
+right}} through the live action and closes SHOWDOWN_HOLD_MS (4 s) after it
+ends. match.showdown.might is new (null when unknown; the chain cue resets
+it on open and close); a chain entry may carry resolved. igorows gained
+showdownView (default true): the middle of the column's fourth tenant
+(card, then showdown, then hands, then logo), and web/shared/showdowndock.js
+stands the showdown scene down while it shows.
+
+Precedence and showdowns (2026-09-19, second round, Sam): a side with a
+deckList keeps its legend, champion and pool (RiftAtlas fills only empty
+fields, marks played, never tops the pool up); identityPatch (Load players)
+fills a name only when the side has none or PLAYER ONE / PLAYER TWO, and a
+deckList only when there is none. The model tracks each showdown from
+`pendingBattlefieldConquerAssist` {zone, attackerPlayerId, defenderPlayerId,
+stage attacker_focus / defender_response / attacker_confirm_conquer} and
+collects the cards played into it (chain inserts, and hand-to-zone moves
+into the contested battlefield); it ends once the field is cleared and the
+chain is empty. Might per side = sum over its units in the zone (not
+attached, face-down unknown) of (whiteCounter ?? printed might, RiftAtlas's
+or the card index's) + max(0, temporaryMightBuff), the casting studio's own
+rule. With config.showdown on, a showdown whose defender has played lands as
+match.showdown {active, battlefield, battlefieldCardId, priority, chain[12]
+{cardId, cardName, energy, domains, kind, side, resolved}, might {left,
+right}} through the live action and closes SHOWDOWN_HOLD_MS (4 s) after it
+ends. match.showdown.might is new (null when unknown; the chain cue resets
+it on open and close); a chain entry may carry resolved. igorows gained
+showdownView (default true): the middle of the column's fourth tenant
+(card, then showdown, then hands, then logo), and web/shared/showdowndock.js
+stands the showdown scene down while it shows.
+
 ## Attribution and copy rules
 
 - **Riot fan-content attribution line on every full-frame scene** (bracket,

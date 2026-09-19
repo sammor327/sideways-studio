@@ -68,9 +68,14 @@ function paintSide(side, p, active) {
   if (!p) { row.append(el('span', 'ra-empty', 'waiting for the player')); return row; }
   row.append(img(p.legend && p.legend.cardId, 'ra-thumb'));
   const text = el('div', 'ra-text');
-  const name = el('div', 'ra-name', p.name || 'Unnamed');
+  // Match data's name first (TopDeck's or typed), RiftAtlas's under it when
+  // they differ, so the operator sees who feeds which side.
+  const name = el('div', 'ra-name', p.matchName || p.name || 'Unnamed');
   if (p.active) name.append(el('span', 'ra-turn', 'TURN'));
   text.append(name);
+  if (p.matchName && p.matchName.toLowerCase() !== String(p.name || '').toLowerCase()) {
+    text.append(el('div', 'ra-alias', `on RiftAtlas: ${p.name}`));
+  }
   const bits = [
     `${p.score} pt`, `${p.wins} won`,
     `hand ${p.handCount}`,
@@ -80,6 +85,18 @@ function paintSide(side, p, active) {
   text.append(el('div', 'ra-bits', bits.join(' · ')));
   row.append(text);
   return row;
+}
+
+// The open showdown in one line: where, who attacked, the might, and
+// whether it is up (or why not yet).
+function showdownLine(sd, config) {
+  const line = el('p', `ra-sd${sd.up ? ' up' : ''}`);
+  const might = sd.might.every((m) => Number.isFinite(m)) ? `, might ${sd.might[0]} to ${sd.might[1]}` : '';
+  const cards = `${sd.cards} card${sd.cards === 1 ? '' : 's'} played`;
+  const where = sd.battlefield ? `Showdown at ${sd.battlefield}` : 'Showdown';
+  const state = sd.up ? 'up' : (config.showdown === false ? 'comes up by itself: off' : (sd.answered ? 'coming up' : `waiting for ${sd.defender || 'the defender'} to answer`));
+  line.textContent = `${where}: ${sd.attacker || 'a player'} attacking${might}, ${cards}. ${state[0].toUpperCase()}${state.slice(1)}.`;
+  return line;
 }
 
 function paintCards() {
@@ -127,6 +144,7 @@ function paint() {
 
   $('raLive').checked = config.live;
   $('raFollow').checked = config.follow;
+  $('raShowdown').checked = config.showdown !== false;
   $('raShow').checked = config.show;
 
   const map = $('raMap');
@@ -134,6 +152,7 @@ function paint() {
   if (view && view.players === 2) {
     map.append(paintSide('left', view.left, view.live && view.left && view.left.active));
     map.append(paintSide('right', view.right, view.live && view.right && view.right.active));
+    if (view.showdown) map.append(showdownLine(view.showdown, config));
     if (config.live && !view.onAir) {
       map.append(el('p', 'hint ra-note', 'Preview holds other players than air: live values go to preview until you TAKE.'));
     }
@@ -194,6 +213,7 @@ $('raLoad').addEventListener('click', () => act('/api/riftatlas/load', {}));
 $('raSwap').addEventListener('click', () => act('/api/riftatlas/config', { swap: !(info && info.config.swap) }));
 $('raLive').addEventListener('change', (ev) => act('/api/riftatlas/config', { live: ev.target.checked }));
 $('raFollow').addEventListener('change', (ev) => act('/api/riftatlas/config', { follow: ev.target.checked }));
+$('raShowdown').addEventListener('change', (ev) => act('/api/riftatlas/config', { showdown: ev.target.checked }));
 $('raShow').addEventListener('change', (ev) => act('/api/riftatlas/config', { show: ev.target.checked }));
 // A panel in a background tab has its timers throttled (to once a minute
 // after five minutes); coming back to it catches up at once.

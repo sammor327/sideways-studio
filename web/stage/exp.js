@@ -117,7 +117,9 @@ export function applyVisibility({ root, clock, visible, shown, first }) {
 // then the energy cost and the power runes. The row carries the card's kind
 // so the marked style can colour reactions and actions. A card on the chain
 // greys out and says so.
-function cardRow(c, art) {
+// One card as a row of the hand list; the rows overlay's showdown halves
+// draw their cards with it too.
+export function cardRow(c, art) {
   const row = document.createElement('div');
   const kind = String(c.kind || 'other').replace(/[^a-z]/g, '');
   row.className = `card kind-${kind}${c.played ? ' played' : ''}${art ? ' with-art' : ''}`;

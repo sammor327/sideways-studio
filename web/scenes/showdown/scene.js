@@ -2,6 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
 import { applyVisibility } from '../../stage/exp.js';
+import { rowsShowsShowdown } from '../../shared/showdowndock.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -12,11 +13,12 @@ const shown = { chain: null, bchain: null, bf: null, hero: {}, hand: {} };
 // The chain as card tiles in play order, the newest lifted and tagged.
 // Rebuilt only when the chain changes, so priority flips never reload art.
 function chainKey(chain) {
-  return chain.map((c) => `${c.cardId}|${c.side}`).join(';');
+  return chain.map((c) => `${c.cardId}|${c.side}|${c.resolved ? 1 : 0}`).join(';');
 }
 function cardTile(entry, i, last, big) {
   const cc = document.createElement('div');
-  cc.className = `cc ${entry.side}${i === last ? ' next' : ''}`;
+  // A live feed keeps the cards that already resolved, dimmed (2026-09-19).
+  cc.className = `cc ${entry.side}${i === last ? ' next' : ''}${entry.resolved ? ' resolved' : ''}`;
   const img = document.createElement('img');
   img.className = 'art hidden';
   img.alt = '';
@@ -129,7 +131,8 @@ const params = initStage({
 
     const bfName = sd.battlefield || (sd.active ? 'Showdown' : '');
     const who = sd.priority ? m[sd.priority] : null;
-    const count = `${chain.length} on the chain`;
+    const onChain = chain.filter((c) => !c.resolved).length;
+    const count = onChain === chain.length ? `${chain.length} on the chain` : `${onChain} on the chain · ${chain.length} played`;
 
     // Strip.
     setText($('sBf'), bfName);
@@ -150,9 +153,12 @@ const params = initStage({
       renderHand(p, side);
     }
 
-    // The scene shows only while a showdown is open: switching it on with
+    // The scene shows only while a showdown is open (and not in the rows
+    // overlay's column): switching it on with
     // nothing open airs nothing, never an empty strip.
-    const visible = params.force || (scene.visible && sd.active);
+    // While the rows overlay shows it in its column this graphic stands
+    // down, so the showdown never airs twice.
+    const visible = params.force || (scene.visible && sd.active && !rowsShowsShowdown(bank));
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
     shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
   },

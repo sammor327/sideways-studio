@@ -46,3 +46,49 @@ describe('the live action (a game feed writing match data)', () => {
     assert.equal(applyUpdate({ action: 'live', match: 'x' }).ok, false);
   });
 });
+
+describe('the showdown a live feed writes (match.showdown)', () => {
+  it('takes the showdown whole, cleaned: sides, resolved marks, might, the newest twelve', () => {
+    const chain = [
+      { cardName: 'Riposte', side: 'left', resolved: true },
+      { cardName: 'No side', side: 'middle' },
+      ...Array.from({ length: 13 }, (_, i) => ({ cardName: `Card ${i}`, side: 'right' })),
+    ];
+    const r = applyUpdate({ action: 'live', match: { showdown: { active: true, battlefield: 'Sunken Temple', priority: 'right', chain, might: { left: 9, right: 1200 } } } });
+    assert.equal(r.ok, true);
+    for (const bank of ['preview', 'program']) {
+      const sd = getState()[bank].match.showdown;
+      assert.equal(sd.active, true);
+      assert.equal(sd.battlefield, 'Sunken Temple');
+      assert.equal(sd.priority, 'right');
+      assert.equal(sd.chain.length, 12);
+      assert.equal(sd.chain[11].cardName, 'Card 12', 'the newest twelve');
+      assert.ok(sd.chain.every((c) => ['left', 'right'].includes(c.side)));
+      assert.deepEqual(sd.might, { left: 9, right: 999 });
+    }
+  });
+
+  it("keeps the other side's might when one side is patched, and takes null for unknown", () => {
+    applyUpdate({ action: 'live', match: { showdown: { might: { left: null } } } });
+    assert.deepEqual(getState().preview.match.showdown.might, { left: null, right: 999 });
+  });
+
+  it('the chain cue closes it the way it always has, might included', () => {
+    applyUpdate({ action: 'chain', op: 'close' });
+    const sd = getState().preview.match.showdown;
+    assert.equal(sd.active, false);
+    assert.deepEqual(sd.chain, []);
+    assert.deepEqual(sd.might, { left: null, right: null });
+  });
+});
+
+describe('where an open showdown airs', () => {
+  it("in the rows overlay's column while it is up with Showdown in the column on", async () => {
+    const { rowsShowsShowdown } = await import('../web/shared/showdowndock.js');
+    assert.equal(rowsShowsShowdown({ scenes: { igorows: { visible: true } } }), true, 'on by default');
+    assert.equal(rowsShowsShowdown({ scenes: { igorows: { visible: true, showdownView: false } } }), false);
+    assert.equal(rowsShowsShowdown({ scenes: { igorows: { visible: false, showdownView: true } } }), false);
+    assert.equal(rowsShowsShowdown({ scenes: {} }), false);
+    assert.equal(getState().preview.scenes.igorows.showdownView, true);
+  });
+});

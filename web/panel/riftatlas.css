@@ -55,6 +55,9 @@
   border-radius: 3px;
 }
 .ra-note { margin: 2px 0 0; }
+.ra-alias { font-size: 11px; color: #6f7c89; overflow-wrap: anywhere; }
+.ra-sd { margin: 2px 0 0; padding: 5px 8px; font-size: 12px; line-height: 1.4; color: #cdd6de; border-left: 2px solid #f2c46d; background: rgba(242, 196, 109, 0.06); }
+.ra-sd.up { border-left-color: var(--tes-green); background: rgba(27, 239, 25, 0.06); }
 
 .ra-actions { display: flex; gap: 6px; }
 .ra-actions button.on { border-color: var(--tes-blue); color: #e8edf1; }

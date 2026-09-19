@@ -83,7 +83,9 @@ export function ingestFrame(feed, data, { room = '', now = Date.now() } = {}) {
         log: Array.isArray(msg.gameplayLog) ? clone(msg.gameplayLog) : [],
         actionClock: msg.actionClock ? clone(msg.actionClock) : null,
         clockAt: now,
+        showdown: null,
       };
+      feed.game.showdown = showdownFromState(feed.game.state);
       feed.stale = false;
       feed.version += 1;
       return true;
@@ -109,6 +111,7 @@ export function ingestFrame(feed, data, { room = '', now = Date.now() } = {}) {
       g.state = next.state;
       g.log = next.log;
       g.sequence = seq;
+      trackShowdown(g, (msg.patch && msg.patch.operations) || []);
       if (msg.actionClock) { g.actionClock = clone(msg.actionClock); g.clockAt = now; } else if (next.actionClock !== g.actionClock) {
         g.actionClock = next.actionClock;
         g.clockAt = now;
@@ -215,10 +218,135 @@ export function applyOperations(target, ops) {
   }
 }
 
-// ---- The view: what the panel shows and the patches are built from --------
+// ---- Showdowns ---------------------------------------------------------------
+//
+// RiftAtlas runs a showdown as the room's `pendingBattlefieldConquerAssist`:
+// {zone, attackerPlayerId, defenderPlayerId, stage, turnNumber}, set when a
+// unit moves to a battlefield its player does not hold and cleared once the
+// conquer (or the fight) is settled. stage says who has focus:
+// attacker_focus, defender_response, then attacker_confirm_conquer. Cards
+// played into it go on the chain (chainEntries, each by a player) and
+// resolve off it again within seconds, so the cards of a showdown are
+// collected here as they arrive; the chain alone would lose them. A reaction
+// unit can also be played from hand straight to the contested battlefield,
+// which counts as played too. A showdown is over when its conquer is settled
+// and the chain is empty.
 
 const isCard = (c) => c && typeof c === 'object' && !c.isPlaceholder && c.name;
 const cardOf = (c) => ({ name: String(c.name), code: String(c.cardCode || ''), type: String(c.type || ''), keywords: Array.isArray(c.keywords) ? c.keywords.slice(0, 6) : [] });
+
+const showdownKey = (p) => (p ? `${p.zone}|${p.turnNumber}|${p.attackerPlayerId}` : '');
+
+function openShowdown(p) {
+  return {
+    key: showdownKey(p),
+    zone: String(p.zone || ''),
+    attackerId: String(p.attackerPlayerId || ''),
+    defenderId: String(p.defenderPlayerId || ''),
+    stage: String(p.stage || ''),
+    plays: [],
+    ended: false,
+  };
+}
+
+function addPlay(sd, id, playerId, card, from) {
+  if (!isCard(card) || sd.plays.some((x) => x.id === String(id))) return;
+  sd.plays.push({ id: String(id), playerId: String(playerId || card.ownerPlayerId || ''), from: String(from || ''), ...cardOf(card) });
+}
+
+// A snapshot taken mid-showdown: the cards still on the chain are all that
+// can be known of it.
+function showdownFromState(state) {
+  const p = state && state.pendingBattlefieldConquerAssist;
+  if (!p) return null;
+  const sd = openShowdown(p);
+  for (const e of state.chainEntries || []) if (e) addPlay(sd, e.id, e.byPlayerId, e.card, e.fromZone);
+  return sd;
+}
+
+// After each applied patch: a new showdown opens, the cards played into the
+// open one are collected, and it closes once settled with the chain empty.
+function trackShowdown(g, ops) {
+  const st = g.state;
+  const p = st.pendingBattlefieldConquerAssist || null;
+  if (p && (!g.showdown || g.showdown.ended || g.showdown.key !== showdownKey(p))) g.showdown = openShowdown(p);
+  const sd = g.showdown;
+  if (!sd || sd.ended) return;
+  if (p) sd.stage = String(p.stage || '');
+  for (const op of ops) {
+    if (op.op === 'chain_insert') {
+      for (const e of op.entries || []) if (e) addPlay(sd, e.id, e.byPlayerId, e.card, e.fromZone);
+    } else if (op.op === 'zone_move' && op.from && op.from.zone === 'hand' && op.to && op.to.zone === sd.zone) {
+      const owner = (st.players || []).find((x) => x.id === op.to.playerId);
+      const zone = owner && owner.board && Array.isArray(owner.board[sd.zone]) ? owner.board[sd.zone] : [];
+      addPlay(sd, op.cardId, op.to.playerId, zone.find((c) => c.id === op.cardId), 'hand');
+    }
+  }
+  if (!p && !(st.chainEntries || []).length) sd.ended = true;
+}
+
+// One unit's might the way the casting studio counts it: the might counter
+// when the card carries one, else the card's printed might (RiftAtlas's own
+// when it sends one, else the card index's), plus any temporary buff. null
+// when it cannot be known.
+export function unitMight(c, resolveCard) {
+  let base = Number.isFinite(c.whiteCounter) ? Math.trunc(c.whiteCounter) : null;
+  if (base === null && Number.isFinite(c.might)) base = c.might;
+  if (base === null && resolveCard && isCard(c)) {
+    const hit = resolveCard(cardOf(c));
+    if (hit && Number.isFinite(hit.might)) base = hit.might;
+  }
+  if (base === null) return null;
+  const buff = Number.isFinite(c.temporaryMightBuff) ? Math.max(0, Math.trunc(c.temporaryMightBuff)) : 0;
+  return Math.max(0, base + buff);
+}
+
+// Each player's might at a battlefield: their units there, equipment that
+// hangs off a unit left out, face-down cards counted as unknown.
+function mightAt(state, zone, resolveCard) {
+  const might = {};
+  const unknown = {};
+  for (const p of state.players || []) {
+    let total = 0;
+    let missing = 0;
+    for (const c of (p.board && Array.isArray(p.board[zone]) ? p.board[zone] : [])) {
+      if (!c || c.attachedToCardId) continue;
+      if (!isCard(c)) { missing += 1; continue; }
+      if (!/unit/i.test(String(c.type || ''))) continue;
+      const m = unitMight(c, resolveCard);
+      if (m === null) missing += 1; else total += m;
+    }
+    might[p.id] = total;
+    unknown[p.id] = missing;
+  }
+  return { might, unknown };
+}
+
+// The open showdown as the view carries it; null when none is open.
+function showdownView(g, players, resolveCard) {
+  const sd = g && g.showdown;
+  if (!sd || sd.ended) return null;
+  const onChain = new Set((g.state.chainEntries || []).map((e) => String(e && e.id)));
+  // Battlefield A is seat 0's pick, B seat 1's.
+  const owner = players.find((p) => p.seat === ({ battlefieldA: 0, battlefieldB: 1 })[sd.zone]);
+  const { might, unknown } = mightAt(g.state, sd.zone, resolveCard);
+  return {
+    key: sd.key,
+    zone: sd.zone,
+    battlefield: owner ? owner.battlefield : '',
+    attackerId: sd.attackerId,
+    defenderId: sd.defenderId,
+    stage: sd.stage,
+    priorityId: sd.stage === 'defender_response' ? sd.defenderId : (sd.stage ? sd.attackerId : ''),
+    plays: sd.plays.map((x) => ({ ...x, onChain: onChain.has(x.id) })),
+    defenderPlayed: sd.plays.some((x) => x.playerId === sd.defenderId),
+    might,
+    unknown,
+  };
+}
+
+// ---- The view: what the panel shows and the patches are built from --------
+
 const FORMAT_LENGTH = { bo1: 1, bo3: 3, bo5: 5 };
 const BOARD_ZONES = ['base', 'battlefieldA', 'battlefieldB', 'battlefieldC', 'champion', 'hand', 'trash', 'banished', 'legend'];
 
@@ -235,7 +363,7 @@ export function currentRoom(feed) {
 // Everything the panel and the patches need, from the live game when the
 // page is in it and from the shell alone before it starts (mulligans,
 // sideboarding). null until the first frame of a room arrives.
-export function gameView(feed, { now = Date.now() } = {}) {
+export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
   const room = currentRoom(feed);
   if (!room) return null;
   const shell = feed.shells.get(room) || null;
@@ -311,6 +439,7 @@ export function gameView(feed, { now = Date.now() } = {}) {
     firstPlayerId: st ? String(st.firstPlayerId || '') : '',
     players,
     chain,
+    showdown: g ? showdownView(g, players, resolveCard) : null,
     events: g ? cardEvents(g.log, players) : [],
   };
 }
@@ -408,9 +537,16 @@ export function orientation(view, bank, swap = false) {
   return auto !== Boolean(swap) ? [b, a] : [a, b];
 }
 
+// Whether a side already holds a pasted decklist. A list the operator has
+// (pasted, or loaded from TopDeck) outranks RiftAtlas for everything a list
+// says: the legend, the champion and the three battlefields (Sam,
+// 2026-09-19). RiftAtlas still says which battlefield is in play.
+const hasDeck = (side) => Boolean(side && typeof side.deckList === 'string' && side.deckList.trim());
+
 // A Match data side from one RiftAtlas player. The live fields only: what
 // the game itself says right now. Names are not in it (see identityPatch).
 function liveSide(p, cur, resolveCard, legendOf) {
+  const deck = hasDeck(cur);
   const out = {
     score: Math.min(8, p.score),
     gameWins: Math.min(3, p.wins),
@@ -422,23 +558,26 @@ function liveSide(p, cur, resolveCard, legendOf) {
       return hit ? { cardId: hit.cardId, cardName: hit.cardName, energy: hit.energy ?? null, domains: hit.domains || [] } : { cardId: '', cardName: c.name };
     }),
   };
-  if (p.legend) {
+  // With a list in Match data the legend and champion are the list's; an
+  // empty field is still filled.
+  if (p.legend && !(deck && cur.legend)) {
     const L = legendOf(p.legend);
     Object.assign(out, { legend: L.legend, legendSlug: L.legendSlug, legendCardId: L.legendCardId });
   }
-  if (p.champion) out.champion = p.champion.name.slice(0, 40);
+  if (p.champion && !(deck && cur.champion)) out.champion = p.champion.name.slice(0, 40);
   if (p.battlefield) {
     const hit = resolveCard({ name: p.battlefield });
     out.battlefield = p.battlefield.slice(0, 40);
     out.battlefieldCardId = hit ? hit.cardId : '';
     // The pool: what Match data holds already (a decklist brings all three)
-    // with the ones RiftAtlas has seen played marked, topped up with any it
-    // has seen that the pool lacks, up to the three a player brings.
+    // with the ones RiftAtlas has seen played marked. With no list it is
+    // topped up with any RiftAtlas has seen that it lacks, up to the three a
+    // player brings; a list's pool is the list's.
     const seen = [...new Set([...p.usedBattlefields, p.battlefield].filter(Boolean))];
     const playedNames = new Set(seen.map(normName));
     const pool = (Array.isArray(cur.battlefields) ? cur.battlefields : [])
       .map((e) => ({ ...e, played: e.played || playedNames.has(normName(e.name)) }));
-    for (const name of seen) {
+    for (const name of deck && pool.length ? [] : seen) {
       if (pool.length >= 3) break;
       if (pool.some((e) => normName(e.name) === normName(name))) continue;
       const bf = resolveCard({ name });
@@ -466,27 +605,53 @@ export function livePatch(view, bank, { swap = false, resolveCard, legendOf }) {
   return { patch: { match }, sides: [l || null, r || null] };
 }
 
+// The open showdown as Match data holds one (match.showdown): where it is,
+// who has focus, each side's might there, and every card played into it in
+// play order, each marked resolved once it has left the chain. `sides` are
+// the RiftAtlas players on the left and right, as livePatch put them.
+export function showdownPatch(view, sides, resolveCard) {
+  const sd = view.showdown;
+  if (!sd) return null;
+  const [l, r] = sides;
+  const sideOf = (id) => (l && id === l.id ? 'left' : (r && id === r.id ? 'right' : ''));
+  const bf = sd.battlefield ? resolveCard({ name: sd.battlefield }) : null;
+  const chain = [];
+  for (const x of sd.plays.slice(-12)) {
+    const side = sideOf(x.playerId);
+    if (!side) continue;
+    const hit = resolveCard(x);
+    chain.push(hit
+      ? { cardId: hit.cardId, cardName: hit.cardName, energy: hit.energy ?? null, domains: hit.domains || [], side, resolved: !x.onChain }
+      : { cardId: '', cardName: x.name, side, resolved: !x.onChain });
+  }
+  return {
+    active: true,
+    battlefield: sd.battlefield.slice(0, 40),
+    battlefieldCardId: bf ? bf.cardId : '',
+    priority: sideOf(sd.priorityId),
+    chain,
+    might: { left: l ? (sd.might[l.id] ?? null) : null, right: r ? (sd.might[r.id] ?? null) : null },
+  };
+}
+
 // Names, legends and a decklist into preview, for a match nobody loaded from
-// TopDeck: the operator presses Load players. A side whose name changes
-// drops the previous player's typed extras, the way a new TopDeck pairing
-// does.
-export const SIDE_EXTRAS_CLEARED = {
-  record: '', seed: '', country: '', pronouns: '', archetype: '', team: '', store: '',
-  seasonRecord: '', bestFinish: '', finishes: '', deckName: '', deckList: '',
-};
+// TopDeck: the operator presses Load players. It only fills what Match data
+// lacks (Sam, 2026-09-19): a name already there stays, since TopDeck's
+// names outrank RiftAtlas's display names, and so does a pasted list. A
+// side still called PLAYER ONE / PLAYER TWO counts as unnamed.
+const unnamed = (name) => !String(name || '').trim() || /^player (one|two)$/i.test(String(name).trim());
 export function identityPatch(view, bank, { swap = false, resolveCard, legendOf }) {
   const [l, r] = orientation(view, bank, swap);
   const side = (p, cur) => {
     if (!p) return {};
-    const renamed = normName(cur.name) !== normName(p.name);
-    const out = renamed ? { ...SIDE_EXTRAS_CLEARED, battlefields: [], card: { cardId: '', cardName: '' } } : {};
-    out.name = p.name.slice(0, 40);
+    const out = {};
+    if (unnamed(cur.name)) out.name = p.name.slice(0, 40);
     const deckList = deckText(p);
-    if (deckList && (renamed || !cur.deckList)) {
+    if (deckList && !hasDeck(cur)) {
       out.deckList = deckList;
       out.deckName = p.legend ? p.legend.name.split(',')[0].slice(0, 60) : '';
     }
-    return Object.assign(out, liveSide(p, renamed ? { battlefields: [] } : cur, resolveCard, legendOf));
+    return Object.assign(out, liveSide(p, cur, resolveCard, legendOf));
   };
   const match = { left: side(l, bank.match.left), right: side(r, bank.match.right) };
   if (view.seriesLength) match.seriesLength = view.seriesLength;

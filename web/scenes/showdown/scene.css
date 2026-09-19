@@ -31,6 +31,7 @@ i.dot, .kick i, .ribbon i, .pill i, .prio-pill i { width: calc(8 * var(--u)); he
 .cc .art.hidden { display: none; }
 .cc.left { border-color: var(--ss-accent-a, #11b6fb); }
 .cc.right { border-color: var(--ss-accent-b, #1bef19); }
+.cc.resolved { opacity: 0.45; }
 .cc .n { position: absolute; left: calc(5 * var(--u)); top: calc(5 * var(--u)); width: calc(20 * var(--u)); height: calc(20 * var(--u)); border-radius: 50%; background: rgba(10, 14, 20, 0.9); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); display: grid; place-items: center; font: 700 calc(11 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); }
 .cc .nm { position: absolute; left: 0; right: 0; bottom: 0; padding: calc(4 * var(--u)) calc(5 * var(--u)); font: 800 calc(9 * var(--u))/1.15 var(--tes-font); letter-spacing: calc(0.4 * var(--u)); text-transform: uppercase; background: rgba(10, 14, 20, 0.88); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cc.left .nm { color: var(--ss-accent-a, #11b6fb); }

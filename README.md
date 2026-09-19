@@ -288,6 +288,12 @@ and their source URLs are in Setup's browser source links.
   takes the hands or the logo out and brings the card in over the column
   with its name and type, instead of the popup flying in over the table;
   taking the popup off brings them back.
+  While a showdown is open and **Showdown in the column** is on (the
+  default), the middle splits between the players instead: each half heads
+  with that player's might at the battlefield (the side ahead in the accent
+  colour, the side with focus marked) over the cards they played into the
+  showdown, newest first and dimmed once resolved, with the battlefield in a
+  band between. The Showdown graphic stands down meanwhile.
 - **Arena score bug** (`/scenes/arenabug/`): the wide-shot bug for stage and
   player cameras: eight numbered hexes per side lit up to each player's
   points, a games box, and a name bar with legend thumbnails, country chips,
@@ -424,6 +430,9 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   nothing until one is. "Strip" docks into the camera window of whichever
   in-game overlay is on; "Takeover band" is the full lower band with both
   cameras and hands over the battlefield's art.
+  A live game feed (Live game, below) opens it by itself and keeps the
+  cards that have resolved, dimmed. While the rows overlay shows the
+  showdown in its column the graphic stands down.
 
 ## Players' decks, battlefields and the game intro
 
@@ -545,6 +554,24 @@ RiftAtlas's names, legends, battlefields and each player's full deck (as a
 decklist paste) into preview, for a match nobody loaded from TopDeck. Sides
 follow the names already in Match data when they match; **Swap feed sides**
 turns the feed round otherwise.
+
+**What wins.** Match data's own values outrank RiftAtlas's for everything
+that is not the game in progress. Names never change on their own, and Load
+players fills a name only where the side has none (PLAYER ONE and PLAYER TWO
+count as none), so TopDeck's names stay. A decklist in Match data (pasted, or
+from TopDeck) keeps its legend, champion and three battlefields; RiftAtlas
+only fills those fields while they are empty, marks which battlefield is in
+play and which have been played, and Load players never replaces the list.
+
+**Showdowns.** With **Showdowns come up by themselves** on (the default) a
+showdown opens by itself once it has started on RiftAtlas and the defending
+player has answered with a card; one only the attacker plays into is left to
+you. It carries the battlefield, both sides' might there (counted the way
+the casting studio counts it: each unit's might counter or printed might,
+plus buffs; equipment and face-down cards left out), who has focus and every
+card played into it, and closes a few seconds after RiftAtlas settles it.
+The rows overlay shows it in its column; the Showdown graphic, switched on,
+shows it anywhere else.
 
 **Signing in.** Press **Sign in** and RiftAtlas opens in a normal Edge
 window. Sign in there with the account that has caster access, wait for the
