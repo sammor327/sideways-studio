@@ -506,7 +506,8 @@ const cleanHex = (v, fallback) => {
 const DOMAINS = ['Body', 'Calm', 'Chaos', 'Fury', 'Mind', 'Order'];
 function cleanHandCard(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const cardId = cleanCardId(raw.cardId);
+  // A card named without an id keeps an empty id, never the word "undefined".
+  const cardId = cleanCardId(raw.cardId || '');
   const cardName = cleanStr(raw.cardName || '', 80);
   if (!cardId && !cardName) return null;
   const domains = Array.isArray(raw.domains) ? raw.domains.filter((d) => DOMAINS.includes(d)).slice(0, 2) : [];

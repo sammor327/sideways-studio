@@ -22,6 +22,7 @@ describe('the live action (a game feed writing match data)', () => {
       assert.equal(m.left.score, 5);
       assert.equal(m.left.handCount, 3);
       assert.deepEqual(m.left.hand.map((c) => c.cardName), ['Vilemaw']);
+      assert.equal(m.left.hand[0].cardId, '', 'a card named without an id keeps an empty id');
     }
   });
 
@@ -64,6 +65,7 @@ describe('the showdown a live feed writes (match.showdown)', () => {
       assert.equal(sd.chain.length, 12);
       assert.equal(sd.chain[11].cardName, 'Card 12', 'the newest twelve');
       assert.ok(sd.chain.every((c) => ['left', 'right'].includes(c.side)));
+      assert.ok(sd.chain.every((c) => c.cardId === ''), 'no card id stays empty');
       assert.deepEqual(sd.might, { left: 9, right: 999 });
     }
   });

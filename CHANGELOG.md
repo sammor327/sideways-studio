@@ -6,7 +6,7 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
-## Unreleased
+## 0.34.0 (2026-09-19)
 
 - Live game: a decklist you pasted (or TopDeck loaded) now wins over RiftAtlas: the legend, the champion and the three battlefields stay the list's. RiftAtlas still marks which battlefield is in play and which have been played.
 - Live game: Load players only fills what Match data is missing. Names from TopDeck (or typed) are never replaced by RiftAtlas's display names, and a pasted decklist is never replaced. The Live game fold shows your name for each side, with the RiftAtlas name under it when they differ.
