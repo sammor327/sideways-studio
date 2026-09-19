@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
 import {
   parseRoomCode, casterUrl, socketRoom, createFeed, ingestFrame, applyOperations, gameView, currentRoom,
-  makeCardResolver, orientation, livePatch, identityPatch, deckText, showdownPatch, unitMight,
+  makeCardResolver, orientation, livePatch, identityPatch, deckText, showdownPatch, unitMight, actionFor,
 } from '../server/riftatlas-model.js';
 import { buildBank } from '../server/state.js';
 import { parseDecklist } from '../web/shared/decklist-format.js';
@@ -314,4 +314,78 @@ test('a snapshot taken mid-showdown keeps what is still on the chain', () => {
   const v = gameView(fresh, { resolveCard: sdResolve });
   assert.equal(v.showdown.defenderPlayed, true);
   assert.deepEqual(v.showdown.plays.map((x) => x.name), ['Answer Spell']);
+});
+
+// ---- the showdown's stack beyond the chain (2026-09-19, second round) -------
+
+const logBy = (who, text) => ({ op: 'log_insert', index: 0, entries: [{ id: `log-${Math.random()}`, authorPlayerId: who, text }] });
+const drawOps = (who, id, name) => [
+  { op: 'zone_insert', playerId: who, zone: 'hand', index: 0, cards: [card(id, name, 'spell', { ownerPlayerId: who })] },
+  logBy(who, 'drew 1 card.'),
+];
+
+test('what happened to a card, from where it left and where it went', () => {
+  assert.equal(actionFor('deck', 'hand'), 'drew');
+  assert.equal(actionFor('trash', 'hand'), 'returned');
+  assert.equal(actionFor('hand', 'trash'), 'discarded');
+  assert.equal(actionFor('deck', 'trash'), 'milled');
+  assert.equal(actionFor('battlefieldA', 'trash'), 'trashed');
+  assert.equal(actionFor('base', 'banished'), 'banished');
+  assert.equal(actionFor('hand', 'deck'), 'shuffled');
+  assert.equal(actionFor('hand', 'base'), 'played');
+  assert.equal(actionFor('deck', 'battlefieldB'), 'played');
+  assert.equal(actionFor('base', 'battlefieldB'), 'moved');
+});
+
+test('once focus passes, everything the defender does with a card joins the stack', () => {
+  const { feed, patch } = sdFeed();
+  const hand = feed.game.state.players[1].board.hand;
+  hand.push(card('d1', 'Answer Spell', 'spell', { ownerPlayerId: 'b' }));
+  feed.game.state.players[1].board.base.push(card('d2', 'Small Unit', 'unit', { ownerPlayerId: 'b' }));
+
+  patch(pending('attacker_focus'));
+  // Before focus passes the defender's draw is not part of the showdown.
+  patch(...drawOps('b', 'early', 'Quick Spell'));
+  let v = gameView(feed, { resolveCard: sdResolve });
+  assert.equal(v.showdown.plays.length, 0);
+  assert.equal(v.showdown.focusPassed, false);
+
+  patch(pending('defender_response'));
+  patch(...drawOps('b', 'x1', 'Quick Spell'));
+  patch({ op: 'zone_move', cardId: 'd1', from: { playerId: 'b', zone: 'hand' }, to: { playerId: 'b', zone: 'trash', index: 0 } }, logBy('b', 'discarded'));
+  patch({ op: 'zone_move', cardId: 'd2', from: { playerId: 'b', zone: 'base' }, to: { playerId: 'b', zone: 'battlefieldA', index: 0 } }, logBy('b', 'moved'));
+  patch({ op: 'zone_move', cardId: 'd2', from: { playerId: 'b', zone: 'battlefieldA' }, to: { playerId: 'b', zone: 'base', index: 0 } }, logBy('b', 'moved back'));
+  // The attacker's own bookkeeping after passing focus stays off the stack.
+  patch(...drawOps('a', 'x2', 'Quick Spell'));
+
+  v = gameView(feed, { resolveCard: sdResolve });
+  assert.deepEqual(v.showdown.plays.map((x) => [x.name, x.action, x.playerId]), [
+    ['Quick Spell', 'drew', 'b'],
+    ['Answer Spell', 'discarded', 'b'],
+    ['Small Unit', 'moved', 'b'],
+    ['Small Unit', 'moved', 'b'],
+  ], 'a card moved twice is on the stack twice');
+  assert.equal(v.showdown.defenderPlayed, true, 'a draw after focus passes brings the showdown up');
+
+  const sd = showdownPatch(v, [v.players[0], v.players[1]], sdResolve);
+  assert.deepEqual(sd.chain.map((c) => [c.cardName, c.side, c.action, c.resolved]), [
+    ['Quick Spell', 'right', 'drew', false],
+    ['Answer Spell', 'right', 'discarded', false],
+    ['Small Unit', 'right', 'moved', false],
+    ['Small Unit', 'right', 'moved', false],
+  ]);
+});
+
+test('a card played onto the chain is on the stack once, not again for its move from hand', () => {
+  const { feed, patch } = sdFeed();
+  feed.game.state.players[1].board.hand.push(card('h9', 'Big Unit', 'unit', { ownerPlayerId: 'b' }));
+  patch(pending('defender_response'));
+  patch(
+    { op: 'chain_insert', index: 0, entries: [{ id: 'chain-9', byPlayerId: 'b', fromZone: 'base', sourceCardId: 'h9', card: card('chain-9', 'Big Unit', 'unit', { ownerPlayerId: 'b' }) }] },
+    { op: 'zone_move', cardId: 'h9', from: { playerId: 'b', zone: 'hand' }, to: { playerId: 'b', zone: 'base', index: 0 } },
+    logBy('b', 'played Big Unit'),
+  );
+  const v = gameView(feed, { resolveCard: sdResolve });
+  assert.deepEqual(v.showdown.plays.map((x) => [x.name, x.action, x.chain]), [['Big Unit', 'played', true]]);
+  assert.equal(v.showdown.plays[0].onChain, true);
 });

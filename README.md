@@ -293,7 +293,11 @@ and their source URLs are in Setup's browser source links.
   with that player's might at the battlefield (the side ahead in the accent
   colour, the side with focus marked) over the cards they played into the
   showdown, newest first and dimmed once resolved, with the battlefield in a
-  band between. The Showdown graphic stands down meanwhile.
+  band between. Each player's cards are shown as the cards themselves,
+  oldest to newest with the newest on top, each labelled On the chain,
+  Resolved or what happened to it (Drew, Discarded, Moved...), with the
+  contested battlefield's art behind it all. The Showdown graphic stands
+  down meanwhile.
 - **Arena score bug** (`/scenes/arenabug/`): the wide-shot bug for stage and
   player cameras: eight numbered hexes per side lit up to each player's
   points, a games box, and a name bar with legend thumbnails, country chips,
@@ -673,6 +677,10 @@ you. It carries the battlefield, both sides' might there (counted the way
 the casting studio counts it: each unit's might counter or printed might,
 plus buffs; equipment and face-down cards left out), who has focus and every
 card played into it, and closes a few seconds after RiftAtlas settles it.
+Once the attacker passes focus, everything the defending player does with a
+card joins the stack as well: a card drawn or discarded (a Traveling
+Merchant, say), a unit moved, a card sent to the trash. Each is shown with
+what happened to it, and a draw or a discard counts as an answer.
 The rows overlay shows it in its column; the Showdown graphic, switched on,
 shows it anywhere else.
 

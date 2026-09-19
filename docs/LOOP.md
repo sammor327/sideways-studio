@@ -214,6 +214,34 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19n (out of band: the showdown stack as cards, the battlefield behind it, the defender's actions)
+
+Sam, three asks on the showdown: the contested battlefield's art as the
+background on the left; "the physical cards that are added onto the chain",
+with "once pass focus is pressed and anything is done by the opponent ...
+added to the stack (drawing a card / discarding a card from traveling
+merchant, moving a card)"; and a checkpoint to revert to. Checkpoint: tag
+`checkpoint/before-showdown-cards` on 9745039 (0.37.0), taken before any
+change; this round is one commit on top. Read from recorded frames: a draw
+is a zone_remove of a deck placeholder plus a zone_insert of the face-up card
+into hand (the log line carries no card events); a discard or a trash is a
+zone_move to trash; take_card_from_deck and moves are zone_moves carrying
+the card's face; peeks stay inside the deck and are not actions. The model
+records those for the defender once focus has passed, attributed to the
+commit's log author, each as its own entry (a card moved twice shows twice),
+and never doubles a chain play with its own move from hand. The column's
+halves draw the stack as physical cards (layoutFan measures the box; cards
+keep their elements across renders so art never reloads), over the
+battlefield's art band cropped from the sideways card file. Found on the
+way: the scratch patch tool wrote non-ASCII text as latin1, so 0.34.0
+shipped a lone 0xB7 in the strip's count (on air as a replacement glyph) and
+in this log; repaired, the tool now writes UTF-8, and a scan of every
+tracked file finds no invalid UTF-8. The SPEC's 0.34.0 paragraph had been
+duplicated by a replayed patch; the copy is gone. Verified: 363 tests
+(defender actions only after focus passes, the attacker's own ignored, a
+card moved twice, a chain play not doubled, actionFor, the action
+whitelist); the column and the strip screenshotted from a scratch server
+(4750) with a staged mixed stack.
 ### 2026-09-19m (out of band: the matchup matrix, 0.39.0)
 
 Sam: "For sideways studio, I want to make a legend matchup matrix scene.
@@ -424,7 +452,7 @@ showdown tenant (showdownView), P1's half on top and P2's below like the
 hands, might in each header, the cards as hand rows newest first, resolved
 dimmed; the showdown scene stands down while it shows (shared/showdowndock.js,
 the card dock's rule), and its strip and takeover dim resolved cards and
-count "2 on the chain � 4 played". Verified: 304 tests (new: the showdown
+count "2 on the chain · 4 played". Verified: 304 tests (new: the showdown
 lifecycle on synthetic frames, might, a reaction unit from hand, a snapshot
 mid-showdown, precedence, the match.showdown sanitizer, the stand-down rule);
 the rows column and the strip screenshotted from a scratch server (4750)

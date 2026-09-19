@@ -500,27 +500,25 @@ showdownView (default true): the middle of the column's fourth tenant
 (card, then showdown, then hands, then logo), and web/shared/showdowndock.js
 stands the showdown scene down while it shows.
 
-Precedence and showdowns (2026-09-19, second round, Sam): a side with a
-deckList keeps its legend, champion and pool (RiftAtlas fills only empty
-fields, marks played, never tops the pool up); identityPatch (Load players)
-fills a name only when the side has none or PLAYER ONE / PLAYER TWO, and a
-deckList only when there is none. The model tracks each showdown from
-`pendingBattlefieldConquerAssist` {zone, attackerPlayerId, defenderPlayerId,
-stage attacker_focus / defender_response / attacker_confirm_conquer} and
-collects the cards played into it (chain inserts, and hand-to-zone moves
-into the contested battlefield); it ends once the field is cleared and the
-chain is empty. Might per side = sum over its units in the zone (not
-attached, face-down unknown) of (whiteCounter ?? printed might, RiftAtlas's
-or the card index's) + max(0, temporaryMightBuff), the casting studio's own
-rule. With config.showdown on, a showdown whose defender has played lands as
-match.showdown {active, battlefield, battlefieldCardId, priority, chain[12]
-{cardId, cardName, energy, domains, kind, side, resolved}, might {left,
-right}} through the live action and closes SHOWDOWN_HOLD_MS (4 s) after it
-ends. match.showdown.might is new (null when unknown; the chain cue resets
-it on open and close); a chain entry may carry resolved. igorows gained
-showdownView (default true): the middle of the column's fourth tenant
-(card, then showdown, then hands, then logo), and web/shared/showdowndock.js
-stands the showdown scene down while it shows.
+The showdown stack (2026-09-19, third round, Sam): once the attacker passes
+focus (stage leaves attacker_focus), everything the defending player does
+with a card joins the showdown, not only chain plays: zone_move ops by the
+commit's log author (actionFor(from, to): drew, returned, discarded, milled,
+trashed, banished, shuffled, played, moved; rune zones skipped; a move whose
+card went onto the chain in the same commit is that chain entry) and
+zone_insert ops of face-up cards (drew into hand, milled into the trash,
+created on the board). Each action is its own entry, so a card moved twice
+is on the stack twice, and a defender's draw or discard after focus passes
+counts as an answer for the showdown coming up by itself. A chain entry in
+match.showdown now carries action (one of those, '' for the chain cue's own
+plays); only a chain card can resolve. The rows column's showdown shows each
+side's stack as physical cards (full art, oldest to newest left to right,
+the newest on top, each labelled On the chain / Resolved / its action, laid
+out by measuring the box) over the contested battlefield's art: the file is
+the whole card on its side, so the art band (the file's x 150 to 500 of 744)
+is scaled to the block's height (--sdh) and centred, slightly blurred and
+darkened. The strip and takeover tag an action card inside its tile and lift
+only the newest card still on the chain.
 
 Battlefield results and sideboard cards (2026-09-19, Sam). A pool entry is
 {name, cardId, played, game 0-5, result '' | 'won' | 'lost'} (a result means

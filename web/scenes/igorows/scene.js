@@ -2,7 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
 import { Slider, SwapSlot, loadArt } from '../../stage/slide.js';
-import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller, cardRow } from '../../stage/exp.js';
+import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
 import { setClock } from '../../shared/clockcells.js';
 import { rowsDockCard } from '../../shared/carddock.js';
 
@@ -55,7 +55,7 @@ const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 const shown = { hero: {}, hand: {}, sd: {} };
 const scrollers = { l: new HandScroller($('lhandView'), $('lhand')), r: new HandScroller($('rhandView'), $('rhand')) };
-const sdScrollers = { l: new HandScroller($('lsdView'), $('lsdCards')), r: new HandScroller($('rsdView'), $('rsdCards')) };
+const sdFans = { l: $('lsdFan'), r: $('rsdFan') };
 let lastState = null;
 
 function loadHero(p, side) {
@@ -118,10 +118,79 @@ function renderHand(p, side, show, lanes, art) {
 // colour and the side with focus marked, over the cards that side played
 // into the showdown, newest first, a card that has resolved dimmed. The
 // halves scroll a long stack the way the hands do.
+// Each half's stack as physical cards (2026-09-19, Sam: "show the physical
+// cards that are added onto the chain"): oldest to newest from left to
+// right, the newest on top, spread across the half and overlapping more as
+// the stack grows. Sized from the fan's own box, which the battlefield
+// strips change, by measuring it: no layout feature an older browser source
+// might lack.
+function layoutFan(fan) {
+  const cards = [...fan.querySelectorAll('.pc')];
+  const w = fan.clientWidth;
+  const h = fan.clientHeight;
+  if (!cards.length || !w || !h) return;
+  const ch = Math.min(h, Math.floor((w * 1039) / 744));
+  const cw = Math.round((ch * 744) / 1039);
+  const step = cards.length > 1 ? Math.min(cw * 0.66, (w - cw) / (cards.length - 1)) : 0;
+  cards.forEach((c, i) => {
+    c.style.width = `${cw}px`;
+    c.style.height = `${ch}px`;
+    c.style.left = `${Math.round(i * step)}px`;
+    c.style.zIndex = String(i + 1);
+  });
+}
+// The fans come into being inside a hidden block and resize with the
+// strips and the window, so they lay out again whenever their box changes.
+if (typeof ResizeObserver === 'function') {
+  const watch = new ResizeObserver((entries) => { for (const e of entries) layoutFan(e.target); });
+  watch.observe(sdFans.l);
+  watch.observe(sdFans.r);
+}
+window.addEventListener('resize', () => { layoutFan(sdFans.l); layoutFan(sdFans.r); });
+
+// What each card on the stack is there for: its action, or for a card that
+// went onto the chain whether it is still there.
+const STACK_LABEL = {
+  drew: 'Drew', discarded: 'Discarded', moved: 'Moved', trashed: 'Trashed', returned: 'To hand',
+  banished: 'Banished', created: 'Created', milled: 'Milled', shuffled: 'To deck',
+};
+const stackLabel = (c) => (c.action && c.action !== 'played'
+  ? STACK_LABEL[c.action] || c.action
+  : (c.resolved ? 'Resolved' : 'On the chain'));
+
+function physicalCard(c) {
+  const el = document.createElement('div');
+  el.className = 'pc';
+  const img = document.createElement('img');
+  img.className = 'art hidden';
+  img.alt = '';
+  img.draggable = false;
+  const name = document.createElement('span');
+  name.className = 'pc-name';
+  name.textContent = c.cardName || '';
+  const tag = document.createElement('span');
+  tag.className = 'pc-tag';
+  el.append(img, name, tag);
+  const steps = c.cardId ? cardSteps(c.cardId) : [];
+  if (steps.length) chainLoad(img, steps, () => el.classList.add('has-art')); else clearArt(img);
+  return el;
+}
+
+const fanCards = { l: [], r: [] };
+let sdBgId = null;
+
 function renderShowdown(m, show, art, animate) {
   if (!show) return;
   const sd = m.showdown || {};
   setText($('sdBf'), sd.battlefield || '');
+  // The contested battlefield's art behind the whole showdown, turned the
+  // right way up when the file is stored on its side (2026-09-19).
+  const bfId = sd.battlefieldCardId || '';
+  if (bfId !== sdBgId) {
+    sdBgId = bfId;
+    if (bfId) chainLoad($('sdBgArt'), battlefieldSteps(bfId), rotateIfPortrait); else clearArt($('sdBgArt'));
+    $('sdView').classList.toggle('has-bg', Boolean(bfId));
+  }
   const might = sd.might || {};
   const known = Number.isFinite(might.left) && Number.isFinite(might.right);
   for (const [p, s, o] of [['l', 'left', 'right'], ['r', 'right', 'left']]) {
@@ -131,18 +200,29 @@ function renderShowdown(m, show, art, animate) {
     if (setText($(`${p}might`), Number.isFinite(v) ? String(v) : '') && animate) bump($(`${p}might`), '--bump');
     $(`${p}sd`).classList.toggle('lead', known && v > might[o]);
     $(`${p}sd`).classList.toggle('has-focus', sd.priority === s);
-    const cards = (sd.chain || []).filter((c) => c.side === s).reverse();
-    const key = `${art ? 'A' : 'N'}:` + cards.map((c) => `${c.cardId}|${c.cardName}|${c.resolved ? 1 : 0}`).join(';');
+    const cards = (sd.chain || []).filter((c) => c.side === s);
+    const key = cards.map((c) => `${c.cardId}|${c.cardName}|${c.action || ''}|${c.resolved ? 1 : 0}`).join(';');
     if (shown.sd[p] === key) continue;
+    const grew = shown.sd[p] !== undefined && cards.length > fanCards[p].length;
     shown.sd[p] = key;
-    const rows = cards.map((c) => {
-      const row = cardRow({ ...c, played: false, qty: 1 }, art);
-      row.classList.toggle('resolved', Boolean(c.resolved));
-      return row;
+    // A card already in its place keeps its element (and its loaded art);
+    // only what changed is new.
+    const prev = fanCards[p];
+    const next = cards.map((c, i) => {
+      const k = `${c.cardId}|${c.cardName}`;
+      const el = prev[i] && prev[i].k === k ? prev[i].el : physicalCard(c);
+      el.classList.toggle('resolved', Boolean(c.resolved));
+      el.querySelector('.pc-tag').textContent = stackLabel(c);
+      return { k, el };
     });
-    if (!rows.length) rows.push(Object.assign(document.createElement('div'), { className: 'sd-none', textContent: 'No cards played' }));
-    $(`${p}sdCards`).replaceChildren(...rows);
-    sdScrollers[p].restart();
+    fanCards[p] = next;
+    if (!next.length) {
+      sdFans[p].replaceChildren(Object.assign(document.createElement('div'), { className: 'sd-none', textContent: 'Nothing played yet' }));
+      continue;
+    }
+    sdFans[p].replaceChildren(...next.map((x) => x.el));
+    layoutFan(sdFans[p]);
+    if (grew && animate) bump(next[next.length - 1].el, '--bump');
   }
 }
 

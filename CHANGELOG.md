@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## Unreleased
+
+- Showdowns: the stack now shows the cards themselves. In the rows overlay's column each player's cards are laid out as cards, oldest to newest with the newest on top, each labelled On the chain, Resolved, or what happened to it.
+- Showdowns: the contested battlefield's art is the background of the showdown in the rows overlay's column.
+- Showdowns: once the attacker passes focus, everything the defending player does with a card joins the stack, not only cards played onto the chain: a card drawn or discarded (a Traveling Merchant, say), a unit moved, a card sent to the trash. A draw or a discard counts as an answer, so the showdown comes up for it.
+- Showdown strip and takeover: a card that was drawn, discarded or moved carries that in a tag on the card, and only the card still on the chain is lifted as the one that resolves first.
+- Fix: the showdown strip's count showed a broken character between its two numbers; it now reads "1 on the chain · 6 cards".
 ## 0.39.0 (2026-09-19)
 
 - New graphic, Matchup matrix (Between games): every legend's win rate against every other, modelled on Rift Registry's matchup matrix. The most played legends go across and down (the top 4 to 12), each cell the row legend's win rate against the column legend with its record under it, coloured by who is ahead: blue while the row legend is ahead, orange while it is behind, grey for even, in five steps from 40% or less to 60% or more. The diagonal (mirror matches) is hatched, a cell with fewer matches than you set (5 by default) stays bare with its record, and an Overall column closes each row. A key under the grid explains the colours; the foot says how the win rates were counted and whose numbers they are.

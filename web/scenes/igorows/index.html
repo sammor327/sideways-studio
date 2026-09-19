@@ -77,16 +77,18 @@
       <!-- The showdown (2026-09-19): while one is open and Showdown in the
            column is on, the middle of the column splits between the
            players, each half the might that player has at the battlefield
-           and the cards they played into it, newest first. -->
+           and the cards on its stack as cards, oldest to newest, the newest
+           on top; the contested battlefield's art behind it all. -->
       <div class="sd-view gone" id="sdView">
+        <div class="sd-bg"><img class="art hidden" id="sdBgArt" alt="" draggable="false"></div>
         <div class="sd-half top" id="lsd">
           <div class="h"><span class="label" id="lsdLabel">Might</span><span class="focus" id="lsdFocus">Has focus</span><span class="might" id="lmight"></span></div>
-          <div class="cards" id="lsdView"><div class="scroll" id="lsdCards"></div></div>
+          <div class="sd-fan" id="lsdFan"></div>
         </div>
         <div class="sd-mid"><span class="sd-title">Showdown</span><span class="sd-bf" id="sdBf"></span></div>
         <div class="sd-half bot" id="rsd">
           <div class="h"><span class="label" id="rsdLabel">Might</span><span class="focus" id="rsdFocus">Has focus</span><span class="might" id="rmight"></span></div>
-          <div class="cards" id="rsdView"><div class="scroll" id="rsdCards"></div></div>
+          <div class="sd-fan" id="rsdFan"></div>
         </div>
       </div>
       <div class="under bot">

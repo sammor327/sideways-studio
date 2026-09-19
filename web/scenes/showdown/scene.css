@@ -39,6 +39,10 @@ i.dot, .kick i, .ribbon i, .pill i, .prio-pill i { width: calc(8 * var(--u)); he
 .cc.next { border-width: calc(3 * var(--u)); box-shadow: 0 0 0 calc(1 * var(--u)) rgba(27, 239, 25, 0.35), 0 0 calc(26 * var(--u)) rgba(27, 239, 25, 0.5), 0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0, 0, 0, 0.6); }
 .cc .tag { display: none; position: absolute; left: 50%; transform: translateX(-50%); top: calc(-13 * var(--u)); white-space: nowrap; font: 800 calc(9 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; padding: calc(4 * var(--u)) calc(8 * var(--u)) calc(3 * var(--u)); background: var(--ss-accent-b, #1bef19); color: var(--ss-plate, #0a0d12); }
 .cc.next .tag { display: block; }
+/* A drawn, discarded or moved card says so in its tag, quieter than the
+   one that resolves first. */
+.cc.act .tag { display: block; top: calc(5 * var(--u)); left: auto; right: calc(5 * var(--u)); transform: none; background: rgba(10, 14, 20, 0.9); color: var(--ss-accent-b, #1bef19); box-shadow: inset 0 0 0 calc(1 * var(--u)) var(--ss-frame, #26303c); }
+/* (inside the tile, top right: the tile clips anything above its edge) */
 .arrow { flex: none; display: grid; place-items: center; color: var(--ss-text-muted, #9aa7b6); font: 400 calc(22 * var(--u))/1 var(--tes-font); }
 .chain-empty { font: 500 calc(13 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
 

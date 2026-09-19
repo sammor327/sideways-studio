@@ -75,6 +75,16 @@ describe('the showdown a live feed writes (match.showdown)', () => {
     assert.deepEqual(getState().preview.match.showdown.might, { left: null, right: 999 });
   });
 
+  it('keeps what was done with each card on a feed stack, and nothing it does not know', () => {
+    applyUpdate({ action: 'live', match: { showdown: { active: true, chain: [
+      { cardName: 'Drawn', side: 'left', action: 'drew' },
+      { cardName: 'Odd', side: 'right', action: 'teleported' },
+      { cardName: 'Cue play', side: 'right' },
+    ] } } });
+    assert.deepEqual(getState().program.match.showdown.chain.map((c) => [c.cardName, c.action]), [['Drawn', 'drew'], ['Odd', ''], ['Cue play', '']]);
+    applyUpdate({ action: 'chain', op: 'close' });
+  });
+
   it('the chain cue closes it the way it always has, might included', () => {
     applyUpdate({ action: 'chain', op: 'close' });
     const sd = getState().preview.match.showdown;

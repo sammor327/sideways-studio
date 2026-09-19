@@ -245,14 +245,38 @@ function openShowdown(p) {
     attackerId: String(p.attackerPlayerId || ''),
     defenderId: String(p.defenderPlayerId || ''),
     stage: String(p.stage || ''),
+    // Set once the attacker passes focus: from then on everything the
+    // defending player does with a card joins the showdown (see below).
+    focusPassed: false,
     plays: [],
     ended: false,
   };
 }
 
-function addPlay(sd, id, playerId, card, from) {
+// What happened to a card, read off the zone it left and the zone it
+// reached. The scenes print these as the card's line on the stack.
+const RUNE_ZONES = new Set(['runeArea', 'runeDeck']);
+const FIELD = /^(base|battlefield[A-Z]\w*|champion)$/;
+export function actionFor(from, to) {
+  if (to === 'hand') return from === 'deck' ? 'drew' : 'returned';
+  if (to === 'trash') return from === 'hand' ? 'discarded' : (from === 'deck' ? 'milled' : 'trashed');
+  if (to === 'banished') return 'banished';
+  if (to === 'deck') return 'shuffled';
+  if (FIELD.test(to)) return FIELD.test(from) ? 'moved' : 'played';
+  return '';
+}
+
+function addPlay(sd, id, playerId, card, { from = '', to = '', action = 'played', chain = false } = {}) {
   if (!isCard(card) || sd.plays.some((x) => x.id === String(id))) return;
-  sd.plays.push({ id: String(id), playerId: String(playerId || card.ownerPlayerId || ''), from: String(from || ''), ...cardOf(card) });
+  sd.plays.push({
+    id: String(id),
+    playerId: String(playerId || card.ownerPlayerId || ''),
+    from: String(from || ''),
+    to: String(to || ''),
+    action,
+    chain,
+    ...cardOf(card),
+  });
 }
 
 // A snapshot taken mid-showdown: the cards still on the chain are all that
@@ -261,28 +285,77 @@ function showdownFromState(state) {
   const p = state && state.pendingBattlefieldConquerAssist;
   if (!p) return null;
   const sd = openShowdown(p);
-  for (const e of state.chainEntries || []) if (e) addPlay(sd, e.id, e.byPlayerId, e.card, e.fromZone);
+  sd.focusPassed = Boolean(sd.stage) && sd.stage !== 'attacker_focus';
+  for (const e of state.chainEntries || []) if (e) addPlay(sd, e.id, e.byPlayerId, e.card, { from: e.fromZone, chain: true });
   return sd;
 }
 
-// After each applied patch: a new showdown opens, the cards played into the
-// open one are collected, and it closes once settled with the chain empty.
+// After each applied patch: a new showdown opens, and the open one collects
+// what happens in it. Every card played onto the chain, by either player at
+// any point; a reaction unit played from hand straight to the contested
+// battlefield; and, once the attacker has passed focus, everything the
+// defending player does with a card (Sam, 2026-09-19: "once pass focus is
+// pressed and anything is done by the opponent it should be added to the
+// stack", a draw or a discard from a card's effect, a move). Each of those
+// is its own entry, so a card moved twice shows twice. It closes once
+// settled with the chain empty.
 function trackShowdown(g, ops) {
   const st = g.state;
   const p = st.pendingBattlefieldConquerAssist || null;
   if (p && (!g.showdown || g.showdown.ended || g.showdown.key !== showdownKey(p))) g.showdown = openShowdown(p);
   const sd = g.showdown;
   if (!sd || sd.ended) return;
-  if (p) sd.stage = String(p.stage || '');
-  for (const op of ops) {
-    if (op.op === 'chain_insert') {
-      for (const e of op.entries || []) if (e) addPlay(sd, e.id, e.byPlayerId, e.card, e.fromZone);
-    } else if (op.op === 'zone_move' && op.from && op.from.zone === 'hand' && op.to && op.to.zone === sd.zone) {
-      const owner = (st.players || []).find((x) => x.id === op.to.playerId);
-      const zone = owner && owner.board && Array.isArray(owner.board[sd.zone]) ? owner.board[sd.zone] : [];
-      addPlay(sd, op.cardId, op.to.playerId, zone.find((c) => c.id === op.cardId), 'hand');
-    }
+  if (p) {
+    sd.stage = String(p.stage || '');
+    if (sd.stage && sd.stage !== 'attacker_focus') sd.focusPassed = true;
   }
+  // Who acted: the log line the same commit wrote says so; the zone the
+  // card went to is the fallback.
+  let author = '';
+  for (const op of ops) {
+    if (op.op !== 'log_insert') continue;
+    const e = (op.entries || []).find((x) => x && x.authorPlayerId);
+    if (e) { author = String(e.authorPlayerId); break; }
+  }
+  const cardIn = (playerId, zone, cardId) => {
+    const pl = (st.players || []).find((x) => x.id === playerId);
+    const z = pl && pl.board && Array.isArray(pl.board[zone]) ? pl.board[zone] : [];
+    return z.find((c) => c.id === cardId) || null;
+  };
+  const defenders = (playerId) => sd.focusPassed && playerId === sd.defenderId;
+  // A play that went onto the chain is on the stack as its chain entry; its
+  // own move from hand in the same commit is the same play.
+  const chained = new Set();
+  for (const op of ops) {
+    if (op.op !== 'chain_insert') continue;
+    for (const e of op.entries || []) if (e && e.sourceCardId) chained.add(String(e.sourceCardId));
+  }
+  ops.forEach((op, i) => {
+    const tag = `${g.sequence}:${i}`;
+    if (op.op === 'chain_insert') {
+      for (const e of op.entries || []) if (e) addPlay(sd, e.id, e.byPlayerId, e.card, { from: e.fromZone, chain: true });
+    } else if (op.op === 'zone_move' && op.from && op.to) {
+      const from = String(op.from.zone || '');
+      const to = String(op.to.zone || '');
+      if (chained.has(String(op.cardId)) || RUNE_ZONES.has(from) || RUNE_ZONES.has(to)) return;
+      if (from === to && op.from.playerId === op.to.playerId) return;
+      const actor = author || String(op.to.playerId || '');
+      const intoFight = from === 'hand' && to === sd.zone;
+      if (!intoFight && !defenders(actor)) return;
+      addPlay(sd, `${op.cardId}@${tag}`, intoFight ? op.to.playerId : actor, op.card || cardIn(op.to.playerId, to, op.cardId), {
+        from, to, action: actionFor(from, to) || 'moved',
+      });
+    } else if (op.op === 'zone_insert') {
+      // A card drawn arrives in hand face up to a broadcast view; one that
+      // lands in the trash or on the board from nowhere was milled or made.
+      const actor = author || String(op.playerId || '');
+      if (!defenders(actor)) return;
+      const zone = String(op.zone || '');
+      const action = zone === 'hand' ? 'drew' : zone === 'trash' ? 'milled' : zone === 'banished' ? 'banished' : (FIELD.test(zone) ? 'created' : '');
+      if (!action) return;
+      (op.cards || []).forEach((c, j) => addPlay(sd, `${c && c.id}@${tag}:${j}`, actor, c, { to: zone, action }));
+    }
+  });
   if (!p && !(st.chainEntries || []).length) sd.ended = true;
 }
 
@@ -339,7 +412,8 @@ function showdownView(g, players, resolveCard) {
     defenderId: sd.defenderId,
     stage: sd.stage,
     priorityId: sd.stage === 'defender_response' ? sd.defenderId : (sd.stage ? sd.attackerId : ''),
-    plays: sd.plays.map((x) => ({ ...x, onChain: onChain.has(x.id) })),
+    plays: sd.plays.map((x) => ({ ...x, onChain: x.chain && onChain.has(x.id) })),
+    focusPassed: sd.focusPassed,
     defenderPlayed: sd.plays.some((x) => x.playerId === sd.defenderId),
     might,
     unknown,
@@ -703,8 +777,9 @@ export function livePatch(view, bank, { swap = false, resolveCard, legendOf }) {
 }
 
 // The open showdown as Match data holds one (match.showdown): where it is,
-// who has focus, each side's might there, and every card played into it in
-// play order, each marked resolved once it has left the chain. `sides` are
+// who has focus, each side's might there, and its stack in the order things
+// happened: each card with what was done with it (played, drew, discarded,
+// moved...), a chain card marked resolved once it has left it. `sides` are
 // the RiftAtlas players on the left and right, as livePatch put them.
 export function showdownPatch(view, sides, resolveCard) {
   const sd = view.showdown;
@@ -717,9 +792,13 @@ export function showdownPatch(view, sides, resolveCard) {
     const side = sideOf(x.playerId);
     if (!side) continue;
     const hit = resolveCard(x);
+    // Only a card that went onto the chain can resolve; a draw, a discard or
+    // a move is simply what happened, labelled by its action.
+    const resolved = x.chain ? !x.onChain : false;
+    const action = x.action || 'played';
     chain.push(hit
-      ? { cardId: hit.cardId, cardName: hit.cardName, energy: hit.energy ?? null, domains: hit.domains || [], side, resolved: !x.onChain }
-      : { cardId: '', cardName: x.name, side, resolved: !x.onChain });
+      ? { cardId: hit.cardId, cardName: hit.cardName, energy: hit.energy ?? null, domains: hit.domains || [], side, action, resolved }
+      : { cardId: '', cardName: x.name, side, action, resolved });
   }
   return {
     active: true,

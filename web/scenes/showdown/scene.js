@@ -13,12 +13,22 @@ const shown = { chain: null, bchain: null, bf: null, hero: {}, hand: {} };
 // The chain as card tiles in play order, the newest lifted and tagged.
 // Rebuilt only when the chain changes, so priority flips never reload art.
 function chainKey(chain) {
-  return chain.map((c) => `${c.cardId}|${c.side}|${c.resolved ? 1 : 0}`).join(';');
+  return chain.map((c) => `${c.cardId}|${c.side}|${c.action || ''}|${c.resolved ? 1 : 0}`).join(';');
 }
+// A live feed's stack also carries what the defender did once focus passed
+// (drew, discarded, moved...); only a card still on the chain resolves.
+const ACTION_LABEL = {
+  drew: 'Drew', discarded: 'Discarded', moved: 'Moved', trashed: 'Trashed', returned: 'To hand',
+  banished: 'Banished', created: 'Created', milled: 'Milled', shuffled: 'To deck',
+};
+const stillOnChain = (c) => !c.resolved && (!c.action || c.action === 'played');
 function cardTile(entry, i, last, big) {
   const cc = document.createElement('div');
-  // A live feed keeps the cards that already resolved, dimmed (2026-09-19).
-  cc.className = `cc ${entry.side}${i === last ? ' next' : ''}${entry.resolved ? ' resolved' : ''}`;
+  // A live feed keeps the cards that already resolved, dimmed (2026-09-19);
+  // a card that was drawn, discarded or moved rather than played carries
+  // that in the tag over it, so its name stays whole.
+  const act = Boolean(entry.action) && entry.action !== 'played';
+  cc.className = `cc ${entry.side}${i === last ? ' next' : ''}${entry.resolved ? ' resolved' : ''}${act ? ' act' : ''}`;
   const img = document.createElement('img');
   img.className = 'art hidden';
   img.alt = '';
@@ -27,7 +37,7 @@ function cardTile(entry, i, last, big) {
   if (steps.length) chainLoad(img, steps); else clearArt(img);
   cc.append(
     img,
-    Object.assign(document.createElement('span'), { className: 'tag', textContent: 'Resolves first' }),
+    Object.assign(document.createElement('span'), { className: 'tag', textContent: act ? ACTION_LABEL[entry.action] || entry.action : 'Resolves first' }),
     Object.assign(document.createElement('span'), { className: 'n', textContent: String(i + 1) }),
     Object.assign(document.createElement('span'), { className: 'nm', textContent: big ? `${entry.side === 'left' ? 'P1' : 'P2'} · ${entry.cardName || ''}` : (entry.cardName || '') }),
   );
@@ -42,7 +52,8 @@ function renderChain(el, chain, big, slot, animate) {
     el.replaceChildren(Object.assign(document.createElement('span'), { className: 'chain-empty', textContent: 'Nothing on the chain yet' }));
     return;
   }
-  const last = chain.length - 1;
+  // Lifted and tagged: the newest card still on the chain, which resolves first.
+  const last = chain.findLastIndex(stillOnChain);
   const nodes = [];
   chain.forEach((entry, i) => {
     if (i > 0) {
@@ -131,8 +142,8 @@ const params = initStage({
 
     const bfName = sd.battlefield || (sd.active ? 'Showdown' : '');
     const who = sd.priority ? m[sd.priority] : null;
-    const onChain = chain.filter((c) => !c.resolved).length;
-    const count = onChain === chain.length ? `${chain.length} on the chain` : `${onChain} on the chain � ${chain.length} played`;
+    const live = chain.filter(stillOnChain).length;
+    const count = live === chain.length ? `${chain.length} on the chain` : `${live} on the chain · ${chain.length} cards`;
 
     // Strip.
     setText($('sBf'), bfName);

@@ -315,7 +315,28 @@
   opacity: var(--sv, 1);
   transform: translateX(calc((1 - var(--sv, 1)) * -340 * var(--u)));
 }
-.sd-half { display: flex; flex-direction: column; min-height: 0; }
+/* The contested battlefield's art behind the whole block, darkened so the
+   might and the cards read over it. A battlefield file is stored on its
+   side; turned back upright it covers the block by the block's height
+   (--sdh, which the battlefield strips shorten). */
+.sd-view { --sdh: 614; }
+.bf-l .sd-view { --sdh: 558; }
+.bf-r .sd-view { --sdh: 556; }
+.bf-l.bf-r .sd-view { --sdh: 500; }
+.sd-bg { position: absolute; inset: 0; overflow: hidden; display: none; }
+.sd-view.has-bg .sd-bg { display: block; }
+.sd-bg .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.sd-bg .art.hidden { display: none; }
+/* A stored battlefield is the whole card on its side: a text box down each
+   long edge and the art in the band between (the file's x 150 to 500 of
+   744, a little left of centre). Turned upright, that band alone is scaled
+   to the block's height and centred on it, so no rules text shows; the art
+   is enlarged there, and a slight blur keeps that from reading as a fault. */
+.sd-bg .art.crop-battlefield { inset: auto; left: 50%; top: 50%; width: calc(var(--sdh) * 744 / 350 * var(--u)); height: calc(var(--sdh) * 1039 / 350 * var(--u)); object-fit: fill; transform: translate(-50%, -50%) rotate(90deg) translateX(calc(var(--sdh) * 47 / 350 * var(--u))); filter: blur(calc(1.5 * var(--u))); }
+.sd-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 13, 18, 0.55), rgba(10, 13, 18, 0.3) 50%, rgba(10, 13, 18, 0.55)); }
+.sd-half { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.sd-view.has-bg .sd-half .h, .sd-view.has-bg .sd-mid { background: rgba(10, 13, 18, 0.78); }
+.sd-mid { position: relative; }
 .sd-half .h { flex: none; display: flex; align-items: center; gap: calc(8 * var(--u)); background: rgba(255, 255, 255, 0.06); padding: calc(6 * var(--u)) calc(10 * var(--u)); margin-bottom: calc(4 * var(--u)); border-left: calc(3 * var(--u)) solid transparent; }
 .sd-half .h .label { color: var(--ss-text, #fff); }
 .sd-half .focus { display: none; font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
@@ -323,10 +344,25 @@
 .sd-half.has-focus .focus { display: inline; }
 .sd-half .might { margin-left: auto; font: 800 calc(30 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-text, #fff); transform: scale(calc(1 + 0.18 * var(--bump, 0))); }
 .sd-half.lead .might { color: var(--ss-accent-b, #1bef19); }
-.sd-half .cards { min-height: 0; overflow: hidden; }
-.sd-half .scroll { transform: translateY(calc(-1 * var(--scroll, 0px))); }
-.sd-half .card .qty { display: none; }
-.sd-half .card.resolved { opacity: 0.45; }
+/* The stack as physical cards (2026-09-19): laid out by layoutFan in
+   scene.js, oldest on the left, the newest on top at the right. A card that
+   has resolved off the chain is dimmed; each card's label says what it is
+   there for. */
+.sd-fan { position: relative; flex: 1 1 auto; min-height: 0; margin: calc(4 * var(--u)) 0 calc(2 * var(--u)); }
+.pc {
+  position: absolute; top: 0; left: 0;
+  border-radius: calc(6 * var(--u)); overflow: hidden;
+  background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.65);
+  transform: scale(calc(1 + 0.06 * var(--bump, 0))); transform-origin: 50% 100%;
+}
+.pc .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pc .art.hidden { display: none; }
+.pc .pc-name { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: calc(8 * var(--u)); text-align: center; font: 800 calc(13 * var(--u))/1.15 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); overflow-wrap: anywhere; }
+.pc.has-art .pc-name { display: none; }
+.pc .pc-tag { position: absolute; left: 0; right: 0; bottom: 0; padding: calc(5 * var(--u)) calc(6 * var(--u)); font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-accent-b, #1bef19); background: rgba(10, 13, 18, 0.86); }
+.pc.resolved { filter: brightness(0.55) saturate(0.6); }
+.pc.resolved .pc-tag { color: var(--ss-text-muted, #9aa7b6); }
 .sd-none { padding: calc(8 * var(--u)) calc(10 * var(--u)); font: 500 calc(14 * var(--u))/1.2 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
 .sd-mid {
   display: flex; align-items: center; justify-content: center; gap: calc(10 * var(--u)); min-width: 0;

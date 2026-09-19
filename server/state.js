@@ -704,11 +704,15 @@ function toTrash(side, card) {
 // not, where, who has focus, each side's might there and every card played
 // into it in play order, each marked resolved once it has left the chain.
 // The operator's own showdown runs on the chain cue instead.
+// What was done with each card on a feed's stack (2026-09-19: once focus
+// passes, the defender's draws, discards and moves join the plays); empty
+// for the chain cue's own entries, which are all plays.
+const CHAIN_ACTIONS = ['played', 'drew', 'discarded', 'moved', 'trashed', 'returned', 'banished', 'created', 'milled', 'shuffled'];
 function cleanChainEntry(raw) {
   const card = cleanHandCard(raw);
   if (!card || !['left', 'right'].includes(raw.side)) return null;
   const { played, ...rest } = card;
-  return { ...rest, side: raw.side, resolved: Boolean(raw.resolved) };
+  return { ...rest, side: raw.side, action: CHAIN_ACTIONS.includes(raw.action) ? raw.action : '', resolved: Boolean(raw.resolved) };
 }
 function applyShowdown(sd, p) {
   if (p.active !== undefined) sd.active = Boolean(p.active);
