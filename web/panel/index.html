@@ -72,6 +72,7 @@
     </div>
     <div class="ra-switches">
       <label class="inline" title="Points, game wins, hands, the battlefield in play, legend, champion, turn and whose turn go to preview and program at once, like the clock. Off: they wait in preview for TAKE."><input type="checkbox" id="raLive"> Live values straight to air</label>
+      <label class="inline" title="A player with no list under Decks and battlefields gets the deck RiftAtlas shows: legend, champion, the battlefields played so far, the runes once all twelve are out and the main deck they started the series with (RiftAtlas never shows a sideboard). The list keeps up as the series goes, and the next match's players replace it. A list you paste, load or edit, or one from TopDeck, is never touched."><input type="checkbox" id="raDecks"> Fill empty decklists</label>
       <label class="inline" title="Each card a player plays is staged in the card popup in preview, ready for TAKE."><input type="checkbox" id="raFollow"> Stage each card played in the card popup</label>
       <label class="inline" title="A showdown comes up by itself once it has started and the defending player has answered with a card, follows it (might, cards, focus) and closes a few seconds after RiftAtlas settles it. It airs on the rows overlay's column, or on the Showdown graphic when that is up."><input type="checkbox" id="raShowdown"> Showdowns come up by themselves</label>
       <label class="inline" title="From game 2 on: a card a player sided in (their game 1 deck, or the list in Match data, holds fewer copies of it) that turns up in their hand after turn 1 is spotted, and the Sideboard card spotted graphic flies it in while that graphic is on air."><input type="checkbox" id="raSpot"> Spot sideboard cards</label>
@@ -289,7 +290,7 @@
       <summary><h4 class="section-label">Decks and battlefields</h4></summary>
 
       <div class="field-row" data-field="deck">
-        <span class="row-label" title="One of your saved decks (the deck editor saves them), or paste a list under it. Loading a deck fills that player's three battlefields.">Deck</span>
+        <span class="row-label" title="One of your saved decks (the deck editor saves them), or paste a list under it. Loading a deck fills that player's three battlefields. With Live game connected, an empty list fills from the RiftAtlas game and keeps up with it (Fill empty decklists).">Deck</span>
         <div class="cell deck-cell" data-side="left"><select id="ldeckPick" aria-label="Player 1 deck"></select><span class="deck-line" id="ldeckLine"></span></div>
         <div class="cell deck-cell" data-side="right"><select id="rdeckPick" aria-label="Player 2 deck"></select><span class="deck-line" id="rdeckLine"></span></div>
       </div>

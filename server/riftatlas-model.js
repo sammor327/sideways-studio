@@ -450,6 +450,7 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
 
   const winners = seriesWinners(feed, room);
   const gameNo = Math.max(1, Math.trunc(Number(shell && shell.gameNumber) || 1));
+  const series = String((shell && shell.seriesId) || room);
   const publicPlayers = (shell && Array.isArray(shell.publicPlayers)) ? shell.publicPlayers : [];
   const source = st && Array.isArray(st.players) && st.players.length ? st.players : publicPlayers;
   const players = source
@@ -462,6 +463,7 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
       // wherever it goes after that.
       const champ = all.find((c) => isCard(c) && c.source === 'champion');
       const deck = st && st.broadcastDecksByPlayerId ? st.broadcastDecksByPlayerId[p.id] : null;
+      const first = feed.decks ? feed.decks.get(`${series}|${p.id}`) : null;
       const runes = b ? [...(b.runeArea || []), ...(b.runeDeck || [])] : [];
       const selected = String(p.selectedBattlefield || pub.selectedBattlefield || '');
       return {
@@ -488,6 +490,10 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
             ...cardOf(e.card), left: Math.max(0, Math.trunc(Number(e.count) || 0)), start: Math.max(0, Math.trunc(Number(e.startingCount) || 0)),
           })),
         } : null,
+        // The deck the player started the series with, as far as the feed
+        // saw: the earliest game's starting deck noteDecks kept (null when it
+        // kept none), for the list (deckText).
+        firstDeck: first ? first.cards : null,
         runes: runes.filter(isCard).map((c) => String(c.name)),
         clockMs: clockFor(g, p.id, now),
       };
@@ -672,16 +678,27 @@ export function orientation(view, bank, swap = false) {
   return auto !== Boolean(swap) ? [b, a] : [a, b];
 }
 
-// Whether a side already holds a pasted decklist. A list the operator has
-// (pasted, or loaded from TopDeck) outranks RiftAtlas for everything a list
+// Whether a side holds the operator's own decklist. A list the operator has
+// (pasted, loaded, or from TopDeck) outranks RiftAtlas for everything a list
 // says: the legend, the champion and the three battlefields (Sam,
-// 2026-09-19). RiftAtlas still says which battlefield is in play.
-const hasDeck = (side) => Boolean(side && typeof side.deckList === 'string' && side.deckList.trim());
+// 2026-09-19). RiftAtlas still says which battlefield is in play. A list the
+// live game wrote itself (deckFrom 'riftatlas') is RiftAtlas's word, not the
+// operator's, so it outranks nothing and keeps following the game.
+const operatorList = (side) => Boolean(side && typeof side.deckList === 'string' && side.deckList.trim()) && side.deckFrom !== 'riftatlas';
+const sameList = (a, b) => {
+  const norm = (s) => String(s || '').split(/\r?\n/).map((line) => line.trimEnd()).join('\n').trim();
+  return norm(a) === norm(b);
+};
 
 // A Match data side from one RiftAtlas player. The live fields only: what
 // the game itself says right now. Names are not in it (see identityPatch).
-function liveSide(p, cur, resolveCard, legendOf) {
-  const deck = hasDeck(cur);
+// With `fill`, a side with no list of the operator's also gets the player's
+// list as RiftAtlas holds it (deckText): an empty list fills (2026-09-19,
+// Sam: "auto populate the decklist under decks and battlefields if it is
+// empty"), and a list the game wrote keeps up with it: a battlefield played,
+// the runes all out, the next match's players.
+function liveSide(p, cur, resolveCard, legendOf, { fill = false } = {}) {
+  const deck = operatorList(cur);
   // One RiftAtlas card as Match data lists it, its cost and domains along.
   const liveCard = (c) => {
     const hit = resolveCard(c);
@@ -717,30 +734,36 @@ function liveSide(p, cur, resolveCard, legendOf) {
     Object.assign(out, { legend: L.legend, legendSlug: L.legendSlug, legendCardId: L.legendCardId });
   }
   if (p.champion && !(deck && cur.champion)) out.champion = p.champion.name.slice(0, 40);
+  // The pool: what Match data holds already (a decklist brings all three)
+  // with the ones RiftAtlas has seen played marked. With no list of the
+  // operator's it is topped up with any RiftAtlas has seen that it lacks, up
+  // to the three a player brings; a list's pool is the list's.
+  const had = Array.isArray(cur.battlefields) ? cur.battlefields : [];
+  const seen = [...new Set([...p.usedBattlefields, p.battlefield].filter(Boolean))];
+  const playedNames = new Set(seen.map(normName));
+  const pool = had.map((e) => ({ ...e, played: e.played || playedNames.has(normName(e.name)) }));
+  for (const name of deck && pool.length ? [] : seen) {
+    if (pool.length >= 3) break;
+    if (pool.some((e) => normName(e.name) === normName(name))) continue;
+    const bf = resolveCard({ name });
+    pool.push({ name: name.slice(0, 40), cardId: bf ? bf.cardId : '', played: true });
+  }
   if (p.battlefield) {
     const hit = resolveCard({ name: p.battlefield });
     out.battlefield = p.battlefield.slice(0, 40);
     out.battlefieldCardId = hit ? hit.cardId : '';
-    // The pool: what Match data holds already (a decklist brings all three)
-    // with the ones RiftAtlas has seen played marked. With no list it is
-    // topped up with any RiftAtlas has seen that it lacks, up to the three a
-    // player brings; a list's pool is the list's.
-    const seen = [...new Set([...p.usedBattlefields, p.battlefield].filter(Boolean))];
-    const playedNames = new Set(seen.map(normName));
-    const pool = (Array.isArray(cur.battlefields) ? cur.battlefields : [])
-      .map((e) => ({ ...e, played: e.played || playedNames.has(normName(e.name)) }));
-    for (const name of deck && pool.length ? [] : seen) {
-      if (pool.length >= 3) break;
-      if (pool.some((e) => normName(e.name) === normName(name))) continue;
-      const bf = resolveCard({ name });
-      pool.push({ name: name.slice(0, 40), cardId: bf ? bf.cardId : '', played: true });
-    }
+    out.battlefields = markResults(pool, p.battlefieldGames || []);
+  } else if (pool.length > had.length || (had.length && (p.battlefieldGames || []).some((g) => g.result))) {
+    // Between games no battlefield is in play yet, but the games decided so
+    // far still mark the pool Match data holds, and an empty pool still
+    // fills with the battlefields already played.
     out.battlefields = markResults(pool, p.battlefieldGames || []);
   }
-  // Between games no battlefield is in play yet, but the games decided so
-  // far still mark the pool Match data holds.
-  if (!p.battlefield && Array.isArray(cur.battlefields) && cur.battlefields.length && (p.battlefieldGames || []).some((g) => g.result)) {
-    out.battlefields = markResults(cur.battlefields, p.battlefieldGames);
+  if (fill && !deck) {
+    const list = deckText(p);
+    if (list && !sameList(list, cur.deckList)) {
+      Object.assign(out, { deckList: list, deckFrom: 'riftatlas', deckName: p.legend ? p.legend.name.split(',')[0].slice(0, 60) : '' });
+    }
   }
   return out;
 }
@@ -761,12 +784,13 @@ function markResults(pool, games) {
 
 // The live patch for both sides, the series length and, while a game is on,
 // the turn counter and whose turn it is. `bank` is the preview bank, for
-// orientation and the battlefield pool.
-export function livePatch(view, bank, { swap = false, resolveCard, legendOf }) {
+// orientation, the battlefield pool and the lists. `fill`: each side with no
+// list of the operator's gets RiftAtlas's (liveSide).
+export function livePatch(view, bank, { swap = false, resolveCard, legendOf, fill = false }) {
   const [l, r] = orientation(view, bank, swap);
   const match = {};
-  if (l) match.left = liveSide(l, bank.match.left, resolveCard, legendOf);
-  if (r) match.right = liveSide(r, bank.match.right, resolveCard, legendOf);
+  if (l) match.left = liveSide(l, bank.match.left, resolveCard, legendOf, { fill });
+  if (r) match.right = liveSide(r, bank.match.right, resolveCard, legendOf, { fill });
   if (view.seriesLength) match.seriesLength = view.seriesLength;
   if (view.live) {
     match.turn = Math.min(99, view.turn);
@@ -814,7 +838,8 @@ export function showdownPatch(view, sides, resolveCard) {
 // TopDeck: the operator presses Load players. It only fills what Match data
 // lacks (Sam, 2026-09-19): a name already there stays, since TopDeck's
 // names outrank RiftAtlas's display names, and so does a pasted list. A
-// side still called PLAYER ONE / PLAYER TWO counts as unnamed.
+// side still called PLAYER ONE / PLAYER TWO counts as unnamed. The list
+// comes whether or not Live game fills lists by itself.
 const unnamed = (name) => !String(name || '').trim() || /^player (one|two)$/i.test(String(name).trim());
 export function identityPatch(view, bank, { swap = false, resolveCard, legendOf }) {
   const [l, r] = orientation(view, bank, swap);
@@ -822,12 +847,7 @@ export function identityPatch(view, bank, { swap = false, resolveCard, legendOf 
     if (!p) return {};
     const out = {};
     if (unnamed(cur.name)) out.name = p.name.slice(0, 40);
-    const deckList = deckText(p);
-    if (deckList && !hasDeck(cur)) {
-      out.deckList = deckList;
-      out.deckName = p.legend ? p.legend.name.split(',')[0].slice(0, 60) : '';
-    }
-    return Object.assign(out, liveSide(p, cur, resolveCard, legendOf));
+    return Object.assign(out, liveSide(p, cur, resolveCard, legendOf, { fill: true }));
   };
   const match = { left: side(l, bank.match.left), right: side(r, bank.match.right) };
   if (view.seriesLength) match.seriesLength = view.seriesLength;
@@ -835,10 +855,14 @@ export function identityPatch(view, bank, { swap = false, resolveCard, legendOf 
 }
 
 // The player's list as RiftAtlas holds it, in the decklist paste format:
-// legend, champion, the battlefields seen so far, runes and the main deck as
-// it started this game. Empty until the game has a deck to read.
+// legend, champion, the battlefields seen so far, runes and the main deck
+// the player started the series with: the earliest game's the app saw
+// (firstDeck; game 1's when it was there for it, which is the list they
+// registered), else this game's. RiftAtlas never shows a sideboard. Empty
+// until the game has a deck to read.
 export function deckText(p) {
   if (!p.deck || !p.deck.cards.length) return '';
+  const main = Array.isArray(p.firstDeck) && p.firstDeck.length ? p.firstDeck : p.deck.cards;
   const lines = [];
   if (p.legend) lines.push(`Legend: ${p.legend.name}`);
   if (p.champion) lines.push(`Champion: ${p.champion.name}`);
@@ -854,7 +878,7 @@ export function deckText(p) {
     }
     lines.push('', 'Runes:', ...[...runeCounts].map(([d, n]) => `${n} ${d}`));
   }
-  lines.push('', 'Main:', ...p.deck.cards.filter((c) => c.start > 0).map((c) => `${c.start} ${c.name}`));
+  lines.push('', 'Main:', ...main.filter((c) => c.start > 0).map((c) => `${c.start} ${c.name}`));
   return lines.join('\n').trim();
 }
 

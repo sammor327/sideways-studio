@@ -866,7 +866,7 @@ const SWAP_FIELDS = [
   'champion2', 'score', 'gameWins', 'seed',
   'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'handUnknown',
   'team', 'store', 'seasonRecord', 'bestFinish', 'finishes',
-  'deckList', 'deckName', 'battlefields', 'trash', 'drawn', 'deckLeft',
+  'deckList', 'deckName', 'deckFrom', 'battlefields', 'trash', 'drawn', 'deckLeft',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -1661,14 +1661,18 @@ function renderDecks(s) {
     const sel = $(`${p}deckPick`);
     const saved = decks.find((d) => d.name === sd.deckName && d.list === list);
     const want = !list.trim() ? '' : (saved ? saved.name : '__paste');
-    const key = JSON.stringify([decks.map((d) => d.name), want, sd.deckName]);
+    const fromGame = sd.deckFrom === 'riftatlas';
+    const key = JSON.stringify([decks.map((d) => d.name), want, sd.deckName, fromGame]);
     if (sel.dataset.key !== key) {
       sel.dataset.key = key;
       const opts = [new Option('No deck', '')];
-      // A list loaded from a saved deck and then changed says so; one the
-      // library never had is just its name, or a pasted list.
+      // A list loaded from a saved deck and then changed says so; one Live
+      // game wrote says that; one the library never had is just its name, or
+      // a pasted list.
       const edited = sd.deckName && decks.some((d) => d.name === sd.deckName);
-      if (want === '__paste') opts.push(new Option(edited ? `${sd.deckName} (edited)` : (sd.deckName || 'Pasted list'), '__paste'));
+      const label = fromGame ? `${sd.deckName || 'Deck'} (from RiftAtlas)`
+        : (edited ? `${sd.deckName} (edited)` : (sd.deckName || 'Pasted list'));
+      if (want === '__paste') opts.push(new Option(label, '__paste'));
       for (const d of decks) opts.push(new Option(d.name, d.name));
       sel.replaceChildren(...opts);
     }

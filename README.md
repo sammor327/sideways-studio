@@ -664,6 +664,20 @@ decklist paste) into preview, for a match nobody loaded from TopDeck. Sides
 follow the names already in Match data when they match; **Swap feed sides**
 turns the feed round otherwise.
 
+**Decklists.** With **Fill empty decklists** on (the default), a player
+whose list under Match data › Decks and battlefields is empty gets the deck
+RiftAtlas shows, as a decklist paste: legend, champion, the battlefields
+played so far, the runes once all twelve are out (RiftAtlas keeps the rune
+deck face down until then) and the main deck they started the series with
+(game 1's when the app saw game 1, which is the list they registered;
+RiftAtlas never shows a sideboard). The deck picker calls it "(from
+RiftAtlas)". That list keeps up with the series: each battlefield joins it as
+it is played, the runes when they are all out, and the next match's players
+replace it. A list you paste, load or edit, or one from TopDeck, is never
+touched; clear a list and it fills again at the game's next move (switch
+Fill empty decklists off to keep it empty). The player's Battlefield 1 to 3
+fill the same way, with each battlefield as it is played.
+
 **What wins.** Match data's own values outrank RiftAtlas's for everything
 that is not the game in progress. Names never change on their own, and Load
 players fills a name only where the side has none (PLAYER ONE and PLAYER TWO
@@ -671,6 +685,7 @@ count as none), so TopDeck's names stay. A decklist in Match data (pasted, or
 from TopDeck) keeps its legend, champion and three battlefields; RiftAtlas
 only fills those fields while they are empty, marks which battlefield is in
 play and which have been played, and Load players never replaces the list.
+A list RiftAtlas filled in is RiftAtlas's own and outranks nothing.
 
 **Showdowns.** With **Showdowns come up by themselves** on (the default) a
 showdown opens by itself once it has started on RiftAtlas and the defending

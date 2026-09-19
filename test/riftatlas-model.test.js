@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from 'node:util';
 import {
   parseRoomCode, casterUrl, socketRoom, createFeed, ingestFrame, applyOperations, gameView, currentRoom,
   makeCardResolver, orientation, livePatch, identityPatch, deckText, showdownPatch, unitMight, actionFor,
+  noteDecks,
 } from '../server/riftatlas-model.js';
 import { buildBank } from '../server/state.js';
 import { parseDecklist } from '../web/shared/decklist-format.js';
@@ -211,6 +212,84 @@ test('the deck paste leaves runes out until all twelve are face up', () => {
   assert.doesNotMatch(deckText(p), /Runes:/);
   p.runes = [...Array(7).fill('Body Rune'), ...Array(5).fill('Calm Rune')];
   assert.match(deckText(p), /Runes:\n7 Body\n5 Calm/);
+});
+
+// ---- decklists the game fills (2026-09-19) -----------------------------------
+
+const total = (deck) => deck.main.reduce((t, e) => t + e.qty, 0);
+
+test('Fill empty decklists: an empty list gets the deck RiftAtlas shows, marked as the game\'s', () => {
+  const v = gameView(replay());
+  const bank = buildBank({});
+  assert.equal(livePatch(v, bank, { resolveCard, legendOf }).patch.match.left.deckList, undefined, 'only when asked');
+  const { left, right } = livePatch(v, bank, { resolveCard, legendOf, fill: true }).patch.match;
+  assert.equal(left.deckFrom, 'riftatlas');
+  assert.equal(left.deckName, 'Master Yi');
+  const deck = parseDecklist(left.deckList);
+  assert.equal(deck.legend, 'Master Yi, Wuju Bladesman');
+  assert.deepEqual(deck.battlefields, ['Sigil of the Storm', 'Dragon Roost', 'Forgotten Monument']);
+  assert.equal(total(deck), v.players[0].deck.total);
+  assert.deepEqual(deck.sideboard, [], 'RiftAtlas never shows a sideboard');
+  assert.equal(parseDecklist(right.deckList).legend, 'Fiora, Grand Duelist');
+  assert.equal(right.deckFrom, 'riftatlas');
+});
+
+test('a list the game wrote keeps up with it and holds nothing back; the operator\'s is never touched', () => {
+  const v = gameView(replay());
+  // Written back in game 1: one battlefield so far, and an old legend.
+  const early = 'Legend: Master Yi, Wuju Bladesman\n\nBattlefields:\nSigil of the Storm\n\nMain:\n3 X';
+  const own = buildBank({ match: { left: {
+    deckList: early, deckFrom: 'riftatlas', legend: 'Someone Else', champion: 'Old Champion',
+    battlefields: [{ name: 'Sigil of the Storm', played: true }],
+  } } });
+  const { left } = livePatch(v, own, { resolveCard, legendOf, fill: true }).patch.match;
+  assert.deepEqual(parseDecklist(left.deckList).battlefields, ['Sigil of the Storm', 'Dragon Roost', 'Forgotten Monument']);
+  assert.equal(left.deckFrom, 'riftatlas');
+  assert.equal(left.legend, 'Master Yi, Wuju Bladesman', "the game's list does not keep an old legend");
+  assert.ok(left.champion && left.champion !== 'Old Champion');
+  assert.deepEqual(left.battlefields.map((b) => b.name), ['Sigil of the Storm', 'Dragon Roost', 'Forgotten Monument'], 'nor stop the pool filling');
+  // Up to date: nothing to write, so the patch stays the same from frame to frame.
+  const current = buildBank({ match: { left: { deckList: left.deckList, deckFrom: 'riftatlas' } } });
+  assert.equal(livePatch(v, current, { resolveCard, legendOf, fill: true }).patch.match.left.deckList, undefined);
+  // The same text as the operator's list (pasted, loaded, TopDeck's) stays as it is.
+  const theirs = buildBank({ match: { left: { deckList: early, legend: 'Someone Else' } } });
+  const kept = livePatch(v, theirs, { resolveCard, legendOf, fill: true }).patch.match.left;
+  assert.equal(kept.deckList, undefined);
+  assert.equal(kept.legend, undefined);
+  // Load players brings a list whether or not lists fill by themselves, and
+  // refreshes the game's own, but never the operator's.
+  assert.ok(identityPatch(v, own, { resolveCard, legendOf }).patch.match.left.deckList);
+  assert.equal(identityPatch(v, theirs, { resolveCard, legendOf }).patch.match.left.deckList, undefined);
+  assert.equal(identityPatch(v, buildBank({}), { resolveCard, legendOf }).patch.match.left.deckFrom, 'riftatlas');
+});
+
+test("the list's main deck is the one the player started the series with", () => {
+  const feed = replay();
+  // noteDecks keys each deck the way the view looks it up.
+  noteDecks(feed);
+  const seen = gameView(feed);
+  assert.deepEqual(seen.players[0].firstDeck.map((c) => [c.name, c.start]), seen.players[0].deck.cards.map((c) => [c.name, c.start]));
+  // Had the reader seen game 1, with a copy more of the first card than this game's deck.
+  const [a, b] = seen.players;
+  const game1 = a.deck.cards.map((c, i) => ({ ...c, start: i === 0 ? c.start + 1 : c.start }));
+  feed.decks = new Map([[`${seen.seriesId || seen.room}|${a.id}`, { game: 1, cards: game1 }]]);
+  const v = gameView(feed);
+  assert.equal(total(parseDecklist(deckText(v.players[0]))), a.deck.total + 1);
+  assert.equal(v.players[1].firstDeck, null);
+  assert.equal(total(parseDecklist(deckText(v.players[1]))), b.deck.total, "this game's deck when the feed kept no earlier one");
+});
+
+test('between games an empty pool still fills with the battlefields already played', () => {
+  const v = gameView(replay());
+  for (const p of v.players) p.battlefield = '';
+  const { left } = livePatch(v, buildBank({}), { resolveCard, legendOf }).patch.match;
+  assert.equal(left.battlefield, undefined, 'no battlefield in play');
+  assert.deepEqual(left.battlefields.map((e) => [e.name, e.played]), [['Sigil of the Storm', true], ['Dragon Roost', true]]);
+  // A list of the operator's keeps its pool between games too.
+  const pool = [{ name: 'Field Nobody Played', cardId: '', played: false }];
+  const theirs = buildBank({ match: { left: { deckList: 'Legend: X\nMain:\n3 Y', battlefields: pool } } });
+  const kept = livePatch(v, theirs, { resolveCard, legendOf }).patch.match.left;
+  assert.ok(!kept.battlefields || kept.battlefields.map((e) => e.name).join() === 'Field Nobody Played');
 });
 
 // ---- showdowns ---------------------------------------------------------------

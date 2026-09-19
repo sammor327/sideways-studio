@@ -20,7 +20,9 @@
 // battlefield in play, legend, champion, turn and whose turn) land in both
 // banks at once, like the clock, while the players on air are the players in
 // preview; with a new pairing loaded into preview and not yet taken they wait
-// in preview. Names only ever change on Load players. A card a player sided
+// in preview. Names only ever change on Load players. A player with no list
+// of the operator's under Decks and battlefields gets RiftAtlas's, which
+// keeps up with the series (config.decks, 2026-09-19). A card a player sided
 // in that turns up in their hand after turn 1 is spotted for the Sideboard
 // card spotted graphic (the spot cue, 2026-09-19).
 
@@ -53,7 +55,7 @@ const RETRY_MS = [3_000, 10_000, 30_000, 60_000];
 // it, so the final might and the last card get their moment on air.
 const SHOWDOWN_HOLD_MS = 4_000;
 
-let config = { room: '', live: true, follow: false, swap: false, show: false, showdown: true, spot: true };
+let config = { room: '', live: true, follow: false, swap: false, show: false, showdown: true, spot: true, decks: true };
 let status = { state: 'idle', message: 'Not connected.', account: '', version: 0 };
 // Every series' starting decks, kept across rooms and reconnects so game 2
 // can still be held against game 1 (sideboard spotting; keyed by series).
@@ -102,6 +104,7 @@ export async function initRiftAtlas() {
       show: raw.show === true,
       showdown: raw.showdown !== false,
       spot: raw.spot !== false,
+      decks: raw.decks !== false,
     };
   } catch { /* first run */ }
 }
@@ -469,7 +472,7 @@ function push() {
   if (!view || !view.settled || view.players.length !== 2) return;
   const state = getState();
   if (config.live) {
-    const { patch, sides } = livePatch(view, state.preview, { swap: config.swap, ...h });
+    const { patch, sides } = livePatch(view, state.preview, { swap: config.swap, fill: config.decks, ...h });
     // Sam, 2026-09-19: a showdown comes up by itself once it has started AND
     // the defending player has answered with a card; one the attacker plays
     // into alone is left to the operator. It follows the showdown from then
@@ -653,7 +656,7 @@ export async function handleRiftAtlas(req, res, url, { readBody, sendJson }) {
     const b = await body();
     if (!b) { sendJson(res, 400, { ok: false, error: 'invalid JSON' }); return true; }
     const restart = b.show !== undefined && Boolean(b.show) !== config.show;
-    for (const k of ['live', 'follow', 'swap', 'show', 'showdown', 'spot']) if (b[k] !== undefined) config[k] = Boolean(b[k]);
+    for (const k of ['live', 'follow', 'swap', 'show', 'showdown', 'spot', 'decks']) if (b[k] !== undefined) config[k] = Boolean(b[k]);
     // A showdown the feed brought up goes when what brought it up is off.
     if (!config.live || !config.showdown) closeShowdown();
     // Turning live or the side swap back on writes at once, not at the next move.

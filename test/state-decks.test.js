@@ -51,10 +51,29 @@ describe('players\' decks and battlefields', () => {
     assert.equal(getState().preview.match.right.battlefield, 'abandoned hall');
   });
 
+  it('keeps where a list came from only while that source writes it', () => {
+    const list = 'Legend: Master Yi\nMain:\n3 Stupefy';
+    applyUpdate({ action: 'live', match: { left: { deckList: list, deckFrom: 'riftatlas' } } });
+    for (const bank of ['preview', 'program']) assert.equal(getState()[bank].match.left.deckFrom, 'riftatlas');
+    // The source rides with the list: on its own it changes nothing.
+    applyUpdate({ match: { left: { deckFrom: '' } } });
+    assert.equal(getState().preview.match.left.deckFrom, 'riftatlas');
+    // The same text pasted by the operator is the operator's list now.
+    applyUpdate({ match: { left: { deckList: list } } });
+    assert.equal(getState().preview.match.left.deckFrom, '');
+    assert.equal(getState().program.match.left.deckFrom, 'riftatlas', 'program keeps its own until TAKE');
+    applyUpdate({ match: { left: { deckList: list, deckFrom: 'somewhere' } } });
+    assert.equal(getState().preview.match.left.deckFrom, '', 'only a live game names itself');
+    applyUpdate({ match: { left: { deckList: '  ', deckFrom: 'riftatlas' } } });
+    assert.equal(getState().preview.match.left.deckFrom, '', 'an empty list has no source');
+    applyUpdate({ match: { left: { deckList: '', deckName: '' } } });
+  });
+
   it('gives an older save the new fields', () => {
     const bank = buildBank({});
     assert.deepEqual(bank.match.left.battlefields, []);
     assert.equal(bank.match.left.deckList, '');
+    assert.equal(bank.match.left.deckFrom, '');
     assert.equal(bank.scenes.igorows.battlefields, 'off');
     assert.equal(bank.scenes.sideboard.side, 'both');
   });

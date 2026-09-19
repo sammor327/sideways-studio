@@ -156,6 +156,7 @@ function paint() {
   $('raLine').textContent = summaryLine();
 
   $('raLive').checked = config.live;
+  $('raDecks').checked = config.decks !== false;
   $('raFollow').checked = config.follow;
   $('raShowdown').checked = config.showdown !== false;
   $('raShow').checked = config.show;
@@ -226,6 +227,7 @@ $('raSignIn').addEventListener('click', () => act('/api/riftatlas/signin', {}));
 $('raLoad').addEventListener('click', () => act('/api/riftatlas/load', {}));
 $('raSwap').addEventListener('click', () => act('/api/riftatlas/config', { swap: !(info && info.config.swap) }));
 $('raLive').addEventListener('change', (ev) => act('/api/riftatlas/config', { live: ev.target.checked }));
+$('raDecks').addEventListener('change', (ev) => act('/api/riftatlas/config', { decks: ev.target.checked }));
 $('raFollow').addEventListener('change', (ev) => act('/api/riftatlas/config', { follow: ev.target.checked }));
 $('raShowdown').addEventListener('change', (ev) => act('/api/riftatlas/config', { showdown: ev.target.checked }));
 $('raShow').addEventListener('change', (ev) => act('/api/riftatlas/config', { show: ev.target.checked }));

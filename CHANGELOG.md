@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## Unreleased
+
+- Live game fills empty decklists: a player with no list under Match data › Decks and battlefields gets the deck RiftAtlas shows, as a decklist paste: legend, champion, the battlefields played so far, the runes once all twelve are out, and the main deck they started the series with (RiftAtlas never shows a sideboard). The deck picker says "(from RiftAtlas)". No more pressing Load players for the decks.
+- That list keeps up with the series: each battlefield joins it as it is played, the runes once they are all out, and the next match's players replace it. A list you paste, load or edit, or one from TopDeck, is never touched. The switch is Fill empty decklists in the Live game fold, on by default.
+- The player's Battlefield 1 to 3 also fill between games, from the battlefields already played, so connecting during sideboarding no longer leaves them empty until the next game starts.
+- Fix: a list Load players brought in no longer stops the next match's legend and champion, or later battlefields, from coming through: it counted as a list you had typed.
+
 ## 0.41.0 (2026-09-19)
 
 - Rows overlay: the legend of the player whose turn it is glows, a very slow pulse (six seconds from faint to bright and back) in the look's two accent colours around their legend window. When the turn passes, the glow fades from one legend to the other. It comes and goes with the Active turn checkbox, and shows only with legend art in the camera windows, not in webcam mode.

@@ -61,8 +61,10 @@ function defaultSide(name) {
     team: '', store: '', seasonRecord: '', bestFinish: '', finishes: '',
     // The player's own deck (2026-09-18): the paste itself, as the decklist
     // graphic keeps it, and the saved deck it came from. The sideboard fly-in
-    // and the side-by-side decklists draw it.
-    deckList: '', deckName: '',
+    // and the side-by-side decklists draw it. deckFrom is 'riftatlas' for a
+    // list a live game wrote itself (2026-09-19): that list keeps following
+    // the game, until a list from anywhere else takes its place.
+    deckList: '', deckName: '', deckFrom: '',
     // The trash (2026-09-19, Riftbound's graveyard): every card in it, the
     // oldest first as the pile grew, each resolved like a hand card and
     // carrying its Flow cost when it has one, which the trash graphic
@@ -905,7 +907,12 @@ function applySide(side, patch) {
   if (patch.card && typeof patch.card === 'object') applyCard(side.card, patch.card);
   if (patch.score !== undefined) side.score = clampInt(patch.score, 0, 8);
   if (patch.gameWins !== undefined) side.gameWins = clampInt(patch.gameWins, 0, 3);
-  if (patch.deckList !== undefined) side.deckList = cleanMultiline(patch.deckList, 6000);
+  // A list's source rides with the list: one written without it (a paste, a
+  // saved deck, TopDeck's) is the operator's.
+  if (patch.deckList !== undefined) {
+    side.deckList = cleanMultiline(patch.deckList, 6000);
+    side.deckFrom = patch.deckFrom === 'riftatlas' && side.deckList.trim() ? 'riftatlas' : '';
+  }
   if (patch.deckName !== undefined) side.deckName = cleanStr(patch.deckName, 60);
   if (Array.isArray(patch.battlefields)) side.battlefields = patch.battlefields.map(cleanPoolEntry).filter(Boolean).slice(0, 3);
   // The battlefield going into play is one of the pool: it has now been

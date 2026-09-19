@@ -475,7 +475,7 @@ from the rooms seen), plus seriesLength, turn and activeSide. It lands as
 while preview and program show the same names, and as a preview edit
 otherwise. Load players adds names and a deck paste (legend, champion, the
 battlefields seen, runes once all 12 are face up, the main deck as it
-started the game). Card codes resolve exactly, case-blind, by base number,
+started the series; see Decklists from the game below). Card codes resolve exactly, case-blind, by base number,
 then by name. Settings: data/riftatlas.json {room, live, follow, swap,
 show}; the room is not reconnected on launch. Sign-in is a plain window on
 the same profile, because Google refuses sign-in while the DevTools port is
@@ -550,6 +550,23 @@ deckLeft (every card RiftAtlas counts in the deck, `broadcastDecksByPlayerId`)
 and drawn (startingCount less count per card), so the odds to draw are
 exact and the panel's deck tracker agrees (2026-09-19). Between games there
 is no board or deck and all three empty for the next game.
+
+Decklists from the game (2026-09-19, Sam: "auto populate the decklist under
+decks and battlefields if it is empty"). A side gains deckFrom ('' |
+'riftatlas'), which rides with deckList: applySide keeps 'riftatlas' only
+when the same patch writes a non-empty list and says so, so a paste, a saved
+deck or TopDeck's list makes the list the operator's; Swap sides carries
+deckFrom along (SWAP_FIELDS). liveSide takes `fill` (config.decks, default on;
+identityPatch always fills): a side with no list of the operator's (empty,
+or deckFrom 'riftatlas') gets deckText as deckList with deckFrom 'riftatlas'
+and deckName the legend's short name, only when the text differs, and only
+once the game has a deck to read (between games the last list stays). A
+RiftAtlas list is not the operator's for precedence either: legend,
+champion and the pool follow RiftAtlas. deckText's main deck is the
+player's firstDeck (gameView: the earliest starting deck noteDecks kept for
+series|player, else this game's). The pool now tops up between games as
+well (usedBattlefieldsByPlayerId, while no battlefield is selected), emitted
+when it grew or a decided game marks it. Settings gain `decks`.
 
 ## Attribution and copy rules
 

@@ -214,6 +214,35 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19p (out of band: Live game fills empty decklists)
+
+Sam: "For the live game on sideways studio, can we auto populate the
+decklist under decks and battlefields if it is empty?" Load players already
+wrote a RiftAtlas deck paste, but only on a click, and once written it
+counted as the operator's list: from then on it held the legend, the
+champion and a non-empty pool, so a later game's battlefield never joined
+the pool and the next match's legend never came through. Now a side's
+deckFrom says a list is RiftAtlas's own; the reader fills an empty list with
+it on every settled push (Fill empty decklists, on by default) and keeps it
+current while it stays RiftAtlas's (battlefields as played, runes once all
+twelve are out, the next match's deck), and any other write of the list
+makes it the operator's again. The main deck is the earliest game's the feed
+saw (game 1's is the registered list); noteDecks lives in memory, so after an
+app restart mid-series the list's main becomes the earliest game seen since,
+no worse than having no list. RiftAtlas never shows a sideboard or the
+battlefields still to be played, so the list and the pool grow game by game.
+The pool also fills between games now. Kept as it was: an operator's list
+with a partial pool is not topped up (the 2026-09-19h rule), which also
+applies once the operator edits a list RiftAtlas filled. Verified: 421
+tests (fill, keep up, operator lists untouched, Load players, first-game
+main deck and the noteDecks key, the between-games pool, deckFrom riding
+with the list); a scratch server (4830) fed the recorded series through the
+real model and state path: game-1 look filled both lists, the picker read
+"(from RiftAtlas)", a hand edit to one side cleared its source, game 3 grew
+the other's list to three battlefields and its runes and left the edited one
+alone, No deck then refilled at the next push, and the switch saved to
+riftatlas.json.
+
 ### 2026-09-19o (out of band: the active player's legend glows on the rows overlay, 0.41.0)
 
 Sam: "can we make the legends on the in game overlay, rows glow when it is
