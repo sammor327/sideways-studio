@@ -95,5 +95,7 @@
 .num .s { font: 500 calc(13 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); margin-top: calc(6 * var(--u)); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .num .s:empty { display: none; }
 
-.empty { position: absolute; left: calc(80 * var(--u)); top: calc(220 * var(--u)); width: calc(1760 * var(--u)); padding: calc(40 * var(--u)); text-align: center; font: 500 calc(20 * var(--u))/1.4 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); background: var(--ss-plate, #10151d); }
+/* The empty-state line comes in on the rows' clock, so it arrives the way
+   rows would (fully there when the clock is unset or settled). */
+.empty { position: absolute; left: calc(80 * var(--u)); top: calc(220 * var(--u)); width: calc(1760 * var(--u)); padding: calc(40 * var(--u)); text-align: center; font: 500 calc(20 * var(--u))/1.4 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); background: var(--ss-plate, #10151d); opacity: var(--r, 1); }
 .empty.hidden { display: none; }

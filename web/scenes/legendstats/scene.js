@@ -144,13 +144,21 @@ function paintRows(slices, showRate) {
 // cuts the turn short.
 let want = null;
 let shownKey = null;
+let shownEmpty = true;
 let turning = false;
 let turnToken = 0;
 
+// The panel and the "no legend data yet" line swap here, with the content,
+// never ahead of it: data arriving while the graphic is up must not bare an
+// empty panel before its pie is drawn, and data going away must not cut to
+// the line before the rows have left.
 function paint() {
   if (!want || shownKey === want.key) return;
   paintPie(want.slices);
   paintRows(want.slices, want.showRate);
+  shownEmpty = !want.slices.length;
+  $('empty').classList.toggle('hidden', !shownEmpty);
+  $('panel').classList.toggle('hidden', shownEmpty);
   shownKey = want.key;
 }
 
@@ -168,9 +176,17 @@ async function turnOver() {
   turning = true;
   while (want && shownKey !== want.key) {
     for (const clock of [sweep, rowsIn]) { clock.stop(); clock.seek(1); }
-    await rowsOut.play({ from: 0, to: 1 });
-    if (token !== turnToken) return;
+    const wasEmpty = shownEmpty;
+    // With only the empty-state line up there is nothing to take out.
+    if (!wasEmpty) {
+      await rowsOut.play({ from: 0, to: 1 });
+      if (token !== turnToken) return;
+    }
     paint();
+    // Empty before and after (a switch flipped with no data yet): the line
+    // stays as it is. Otherwise the new content comes in; the in clocks are
+    // wound back in this same tick, so no frame shows it settled first.
+    if (wasEmpty && shownEmpty) { rowsOut.seek(0); continue; }
     rowsIn.duration = TURN_IN_MS;
     const landed = Promise.all([sweep.play({ from: 0, to: 1 }), rowsIn.play({ from: 0, to: 1 })]);
     rowsOut.seek(0);
@@ -197,8 +213,6 @@ const params = initStage({
     setText($('sub'), [bank.event.name, stats.label, total ? plural(total, 'player') : '', legends > 1 ? `${legends} legends` : ''].filter(Boolean).join(' · '));
     // The note says how the win rates were counted, so it goes with them.
     setText($('foot'), showRate ? stats.note || '' : '');
-    $('empty').classList.toggle('hidden', slices.length > 0);
-    $('panel').classList.toggle('hidden', !slices.length);
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
