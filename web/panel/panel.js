@@ -65,7 +65,7 @@ const SCENE_FIELDS = {
   cornertag: ['name', 'roundTitle', 'eventName', 'countdown'],
   lowerthird: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'bestFinish', 'eventName', 'roundTitle', 'casters'],
   headtohead: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'seed', 'record', 'pronouns', 'playerTeam', 'seasonRecord', 'bestFinish', 'card', 'choseFirst', 'roundTitle', 'eventName'],
-  profile: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'pronouns', 'playerTeam', 'seasonRecord', 'archetype', 'store', 'finishes', 'eventName', 'roundTitle'],
+  profile: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'pronouns', 'playerTeam', 'seasonRecord', 'archetype', 'store', 'finishes', 'eventName', 'roundTitle', 'deck'],
   bracket: ['bracket', 'eventName'],
   standings: ['standings', 'eventName', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
@@ -160,6 +160,8 @@ function sceneDraws(scene, field, side, bank) {
   // One-player graphics draw only the side they are set to.
   if ((scene === 'profile' || (scene === 'lowerthird' && cfg.mode === 'interview')) && side && cfg.side !== side) return false;
   if (scene === 'sideboard' && side && cfg.side !== 'both' && cfg.side !== side) return false;
+  if (scene === 'profile' && !cfg.decklist && field === 'deck') return false;
+  if (scene === 'profile' && cfg.decklist && field === 'finishes') return false;
   if (scene === 'lowerthird') {
     if (cfg.mode === 'casters' && !['casters', 'eventName', 'roundTitle'].includes(field)) return false;
     if (cfg.mode === 'coming' && !['name', 'roundTitle', 'eventName'].includes(field)) return false;
@@ -1564,7 +1566,7 @@ async function loadFontList() {
     const sel = $('fontSelect');
     const current = state?.theme.font || data.active || '';
     sel.replaceChildren(
-      Object.assign(document.createElement('option'), { value: '', textContent: 'TES default' }),
+      Object.assign(document.createElement('option'), { value: '', textContent: 'TES default (Aktiv Grotesk)' }),
       ...data.fonts.map((f) => Object.assign(document.createElement('option'), {
         value: f.family,
         textContent: f.cached ? f.family : `${f.family} (downloads on pick)`,
@@ -1599,6 +1601,57 @@ $('fontSelect').addEventListener('change', async () => {
     $('fontStatus').textContent = 'Font download failed. Check the connection and try again.';
   }
 });
+
+// Download all fonts (Sam, 2026-09-18): every font in the list saved on
+// this computer, one after another, so any of them works at a venue with no
+// internet. The ones already saved are skipped.
+$('fontAll').addEventListener('click', async () => {
+  const btn = $('fontAll');
+  const status = $('fontStatus');
+  btn.disabled = true;
+  try {
+    const data = await (await fetch('/api/fonts', { cache: 'no-store' })).json();
+    const todo = data.fonts.filter((f) => !f.cached);
+    let failed = 0;
+    for (const [i, f] of todo.entries()) {
+      status.textContent = `Downloading ${f.family} (${i + 1} of ${todo.length})…`;
+      try {
+        const res = await (await fetch('/api/fonts/download', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ family: f.family }),
+        })).json();
+        if (!res.ok) failed += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    status.textContent = !todo.length ? 'Every font is already saved on this computer.'
+      : (failed ? `Saved ${todo.length - failed} of ${todo.length}; ${failed} could not download. Is the internet up? Press again to retry them.`
+        : `All ${data.fonts.length} fonts are saved on this computer and work offline.`);
+    loadFontList();
+  } catch {
+    status.textContent = 'Could not read the font list. Is the app running?';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// Whether this computer can draw the TES default's Aktiv Grotesk: a canvas
+// measure against a fallback-only face, so the note says what will air.
+(function aktivNote() {
+  const note = $('fontAktiv');
+  try {
+    const ctx = document.createElement('canvas').getContext('2d');
+    const width = (font) => { ctx.font = `800 40px ${font}`; return ctx.measureText('Sideways Studio 0123 WMQ').width; };
+    const here = width("'Aktiv Grotesk', monospace") !== width('monospace');
+    note.textContent = here
+      ? 'Aktiv Grotesk is installed on this computer, so the TES default airs in it.'
+      : 'Aktiv Grotesk is not on this computer, so the TES default airs in Segoe UI. Activate Aktiv Grotesk in Adobe Fonts (or install it) and restart OBS to air in it.';
+  } catch {
+    note.textContent = '';
+  }
+})();
 
 // The event logo can be uploaded from the Look card or from the rows
 // overlay's options; both write the one theme logo.
@@ -2233,6 +2286,9 @@ $('cornertagMode').addEventListener('change', () => post({ scenes: { cornertag: 
 $('lowerthirdMode').addEventListener('change', () => post({ scenes: { lowerthird: { mode: $('lowerthirdMode').value } } }));
 $('lowerthirdSide').addEventListener('change', () => post({ scenes: { lowerthird: { side: $('lowerthirdSide').value } } }));
 $('profileSide').addEventListener('change', () => post({ scenes: { profile: { side: $('profileSide').value } } }));
+for (const [id, flag] of [['profileCamera', 'camera'], ['profileDecklist', 'decklist']]) {
+  $(id).addEventListener('change', () => post({ scenes: { profile: { [flag]: $(id).checked } } }));
+}
 for (const [id, scene, field] of [['cornertagText', 'cornertag', 'text'], ['lowerthirdCred', 'lowerthird', 'credential'], ['h2hStatus', 'headtohead', 'status']]) {
   const el = $(id);
   let timer = null;
@@ -2894,6 +2950,8 @@ function renderExtras(s) {
   $('lowerthirdCred').classList.toggle('hidden', lt.mode !== 'interview');
   setIfIdle('h2hStatus', prev.scenes.headtohead.status || '');
   if (document.activeElement !== $('profileSide')) $('profileSide').value = prev.scenes.profile.side || 'left';
+  if (document.activeElement !== $('profileCamera')) $('profileCamera').checked = prev.scenes.profile.camera !== false;
+  if (document.activeElement !== $('profileDecklist')) $('profileDecklist').checked = Boolean(prev.scenes.profile.decklist);
   $('standingsPage').textContent = String(prev.scenes.standings.page || 1);
   if (document.activeElement !== $('standingsCut')) $('standingsCut').value = String(prev.event.standings ? prev.event.standings.cut : 8);
   setIfIdle('standingsText', standingsToText(prev.event.standings ? prev.event.standings.rows || [] : []));

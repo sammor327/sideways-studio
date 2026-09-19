@@ -1113,7 +1113,9 @@
         <label class="inline">Player
           <select id="profileSide"><option value="left">Player 1</option><option value="right">Player 2</option></select>
         </label>
-        <span class="hint">Team, store, season record and top finishes are under Match data › Player details. The camera well bottom right is transparent for a player feed behind this source.</span>
+        <label class="inline" title="The transparent window bottom right for the player's camera feed behind this source"><input type="checkbox" id="profileCamera" checked> Live camera</label>
+        <label class="inline" title="The player's own list from Match data &rsaquo; Decks and battlefields, down the left under their details"><input type="checkbox" id="profileDecklist"> Decklist</label>
+        <span class="hint">Team, store, season record and top finishes are under Match data › Player details; the decklist is the player's list under Decks and battlefields (with it on, the top finishes make room for it). The camera well bottom right is transparent for a player feed behind this source.</span>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="bracket">
@@ -1281,9 +1283,11 @@
     <section class="look-sec" id="lookGlobalOnly">
       <h3 class="look-sec-title">Font and logo</h3>
       <label>Display font
-        <select id="fontSelect"><option value="">TES default</option></select>
+        <select id="fontSelect"><option value="">TES default (Aktiv Grotesk)</option></select>
       </label>
+      <div class="row"><button type="button" id="fontAll" title="Save every font in the list on this computer, so any of them works at a venue with no internet">Download all fonts</button></div>
       <p class="hint" id="fontStatus">Fonts download once, then work offline.</p>
+      <p class="hint" id="fontAktiv"></p>
       <div class="logo-row">
         <div class="logo-preview" id="logoPreview"><span class="muted">No logo</span></div>
         <div class="logo-actions">

@@ -214,6 +214,32 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-18h (out of band: profile switches, Download all fonts, Aktiv Grotesk; not released)
+
+Sam: remove the profile's diamond, make its live camera toggleable, add a
+toggle for the decklist on the left; a Download all fonts button; Aktiv
+Grotesk as the TES default font.
+
+Profile: the k-lockup `.mark` diamond is gone from the profile markup (only
+the profile; the other lockups keep theirs). `scenes.profile` gains
+`camera` (default true, `.no-camera` hides the well) and `decklist` (default
+false). With the decklist on and the player's list parsed, `.with-deck`
+tightens the details (name 84px, stat tiles in one row of four, the top
+finishes stood down) and a deck block at x 80..780, y 400..1040 (inside
+the ground's side box; the art column starts at x 820) shows the
+main deck as a grid sized by the same min(by width, by height) rule, with
+the deck name and rune totals over it and decklist-style counts.
+
+Fonts: `--tes-font` in web/stage/stage.css is now 'Aktiv Grotesk', 'Segoe
+UI', ... for every graphic (the panel keeps brand.css's Segoe UI). Aktiv
+Grotesk is Dalton Maag's, commercial: named, never bundled in the public
+exe. On Sam's PC it is NOT available to the browser (canvas probe; Akzidenz
+is, via Adobe Fonts), so graphics air in Segoe UI until it is activated;
+the panel's Font section says which with the same canvas probe. The
+decklist keeps its own Akzidenz preference. Download all fonts loops
+POST /api/fonts/download over the uncached curated families in the panel
+(no server change); verified 0 -> 23 saved in about 5 s.
+
 ### 2026-09-18g (out of band: sideboards one size, the versus screen; not released)
 
 Sam: both sideboards the same size, filling the screen across; on the game

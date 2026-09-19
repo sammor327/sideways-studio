@@ -191,7 +191,9 @@ function defaultBank() {
       // Match card (the spec's head-to-head): both sides with a centre column.
       headtohead: { visible: false, status: '' },
       // Player profile: one side, legend art backdrop, stat tiles.
-      profile: { visible: false, side: 'left' },
+      // camera: the transparent window bottom right for the player's feed.
+      // decklist: the player's own list (side.deckList) down the left.
+      profile: { visible: false, side: 'left', camera: true, decklist: false },
       // Bracket and standings draw event.bracket and event.standings.
       bracket: { visible: false },
       standings: { visible: false, page: 1 },
@@ -720,6 +722,8 @@ function applyBankPatch(bank, patch) {
       const p = patch.scenes.profile;
       if (p.visible !== undefined) bank.scenes.profile.visible = Boolean(p.visible);
       if (['left', 'right'].includes(p.side)) bank.scenes.profile.side = p.side;
+      if (p.camera !== undefined) bank.scenes.profile.camera = Boolean(p.camera);
+      if (p.decklist !== undefined) bank.scenes.profile.decklist = Boolean(p.decklist);
     }
     for (const key of ['bracket', 'result']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object' && patch.scenes[key].visible !== undefined) {

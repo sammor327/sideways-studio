@@ -206,6 +206,13 @@ graphic inherits; pick one graphic and switch on "Own look" to give it its
 own. Cleared colours fall back to each graphic's designed look. Changes air
 at once, like the logo.
 
+The TES default font is **Aktiv Grotesk** wherever it is installed or
+activated (Adobe Fonts), and Segoe UI where it is not; it is a commercial
+font, so the app names it and never ships it. The Font and logo section
+says whether this computer has it. **Download all fonts** saves every font
+in the list on this computer at once, so any of them works at a venue with
+no internet.
+
 Image uploads, and where they are drawn:
 
 - **Logo**: PNG or SVG with a transparent background, landscape, about
@@ -293,7 +300,8 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   clock", top right, over anything), a **lower third** (casters, an
   interview name with a credential line, or "coming up"), the **match card**
   (both players with legend art, their cards, records, who chose first and a
-  status line), a **player profile**, a **bracket** in four formats (top 8
+  status line), a **player profile** (switches for its live camera window
+  and for the player's decklist down the left), a **bracket** in four formats (top 8
   and top 16, single and double elimination, edited match by match under
   Match data), **standings** as a full-width table with the cut line, and a
   **result strip**. The slate's Starting soon, Be right back and Thanks

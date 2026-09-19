@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.24.1 (2026-09-18)
+
+- Player profile: the diamond beside the event name is gone.
+- Player profile: a Live camera switch. Turn it off to hide the camera window bottom right when there is no player feed.
+- Player profile: a Decklist switch. With it on, the player's own list (from Match data, Decks and battlefields) runs down the left under their details, with the deck name and rune counts over it. The top finishes make room for it.
+- Look: a Download all fonts button saves every font in the list on this computer at once, so any of them works at a venue with no internet.
+- The TES default font is now Aktiv Grotesk wherever it is installed or activated in Adobe Fonts, and Segoe UI where it is not. The Font section says which one this computer will use.
+- Match data: the This game battlefield buttons are all the same size.
+
 ## 0.24.0 (2026-09-18)
 
 - New graphic: Game intro. The round and the game number over both players' legend art, name, champion and this game's battlefield, with a VS between them. It builds in over the game area of whichever in-game overlay is up.

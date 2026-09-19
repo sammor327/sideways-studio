@@ -85,7 +85,7 @@ describe('starter kit fields', () => {
     assert.deepEqual(sc.cornertag, { visible: true, mode: 'custom', text: 'Back in five' });
     assert.deepEqual(sc.lowerthird, { visible: true, mode: 'interview', side: 'right', credential: '2019 champion' });
     assert.deepEqual(sc.headtohead, { visible: true, status: 'Shuffling' });
-    assert.deepEqual(sc.profile, { visible: true, side: 'right' });
+    assert.deepEqual(sc.profile, { visible: true, side: 'right', camera: true, decklist: false });
     assert.deepEqual(sc.bracket, { visible: true });
     assert.deepEqual(sc.standings, { visible: true, page: 4 });
     assert.deepEqual(sc.result, { visible: true });

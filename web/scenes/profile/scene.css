@@ -3,7 +3,8 @@
    carries name, legend with domain runes, country and seed, four stat tiles
    (Swiss record, season record, deck, store) and the top finishes; a camera
    well bottom right is transparent for the player's feed (Flesh and Blood's
-   profile with the live cam).
+   profile with the live cam). The event lockup has no diamond mark (Sam,
+   2026-09-18); the camera and the player's decklist each have a switch.
 
    Motion: --t fades the frame and slides the card in from the left. */
 
@@ -48,3 +49,58 @@
 /* On a non-transparent view the window reads as an empty frame, never black. */
 html:not(.transparent) .cam .well .win { background: rgba(8, 12, 18, 0.7); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); }
 .cam .tag { position: absolute; left: 0; bottom: calc(-34 * var(--u)); font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+
+/* --- switches (Sam, 2026-09-18) --- */
+.no-camera .cam { display: none; }
+
+/* With the decklist on, the details tighten into the top of the left side
+   (the stat tiles in one row, the top finishes stood down) and the player's
+   list fills the rest: a grid of cards sized so every card fits, counts in
+   the decklist graphic's style. All of it stays inside the ground's side
+   box (Sam): x 80..780, the 700px the stat tiles use anyway, clear of the
+   legend art column that starts at x 820. */
+.deck { display: none; }
+.with-deck .card { top: calc(56 * var(--u)); width: calc(700 * var(--u)); }
+.with-deck .card .nm { font-size: calc(84 * var(--u)); margin-top: calc(12 * var(--u)); }
+.with-deck .card .lg { font-size: calc(26 * var(--u)); margin-top: calc(10 * var(--u)); }
+.with-deck .seedrow { margin-top: calc(12 * var(--u)); }
+.with-deck .seedrow .big { font-size: calc(36 * var(--u)); }
+.with-deck .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); width: calc(700 * var(--u)); margin-top: calc(18 * var(--u)); gap: calc(10 * var(--u)); }
+.with-deck .stat { padding: calc(10 * var(--u)) calc(14 * var(--u)); }
+.with-deck .stat .v { font-size: calc(26 * var(--u)); }
+.with-deck .stat .v.small { font-size: calc(19 * var(--u)); }
+.with-deck .fin { display: none; }
+.with-deck .deck {
+  display: flex; flex-direction: column; gap: calc(10 * var(--u));
+  position: absolute; left: calc(80 * var(--u)); top: calc(400 * var(--u)); width: calc(700 * var(--u)); bottom: calc(40 * var(--u));
+  transform: translateX(calc((1 - var(--t, 1)) * -300 * var(--u)));
+}
+.deck-head { display: flex; align-items: center; gap: calc(14 * var(--u)); height: calc(36 * var(--u)); flex: none; }
+.deck-head .dn { font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.deck-head .runes { margin-left: auto; display: flex; gap: calc(14 * var(--u)); align-items: center; }
+.deck-head .rn { display: flex; align-items: center; gap: calc(5 * var(--u)); font: 800 calc(26 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); }
+.deck-head .rn img { width: calc(30 * var(--u)); height: calc(30 * var(--u)); object-fit: contain; }
+.deck .grid { display: flex; flex-wrap: wrap; gap: calc(10 * var(--u)); align-content: flex-start; }
+.deck .cd {
+  position: relative; flex: 0 0 auto;
+  width: calc(var(--w, 100) * var(--u)); height: calc(var(--w, 100) / 0.716 * var(--u));
+  border-radius: calc(var(--w, 100) * 0.05 * var(--u));
+  overflow: hidden;
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-plate, #10151d);
+  box-shadow: 0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.45);
+}
+.deck .cd .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.deck .cd .art.hidden { display: none; }
+.deck .cd .miss { position: absolute; inset: 0; display: grid; place-items: center; padding: 8%; text-align: center; font: 700 calc(var(--w, 100) * 0.11 * var(--u))/1.2 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
+.deck .cd .qty {
+  position: absolute; left: 9%; top: 10%;
+  font-family: 'Akzidenz-Grotesk Next', var(--tes-font);
+  font-size: calc(var(--w, 100) * 0.4 * var(--u));
+  font-weight: 800; line-height: 1; color: #fff;
+  text-shadow:
+    0 calc(4 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.95),
+    0 0 calc(8 * var(--u)) rgba(0, 0, 0, 0.85),
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9);
+}
+html.theme-font .deck .cd .qty { font-family: var(--tes-font); }

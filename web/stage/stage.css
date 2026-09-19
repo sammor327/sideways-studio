@@ -3,6 +3,11 @@
    At exactly 1920x1080 (what the mixer captures) --u is 1px. */
 :root {
   --u: min(100vw / 1920, 100vh / 1080);
+  /* The TES default face for every graphic (Sam, 2026-09-18): Aktiv
+     Grotesk where it is installed or activated (Adobe Fonts), Segoe UI
+     otherwise. A commercial font, so it is named here and never shipped
+     with the app. A font picked under Look replaces the lot. */
+  --tes-font: 'Aktiv Grotesk', 'Segoe UI', 'Arial Narrow', Arial, sans-serif;
 }
 
 html, body {
