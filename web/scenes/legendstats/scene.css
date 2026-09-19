@@ -9,9 +9,12 @@
    o'clock in the table's order, a 4 unit gap in the panel colour between
    them (the data-viz surface gap: slices never get an outline). A legend
    whose slice has room wears its icon on the slice, ringed in the panel
-   colour. The table rows carry the same icon ringed in their slice colour,
-   so a slice and its row match by picture as well as by colour. Text never
-   takes a slice colour.
+   colour; Other wears its count. The table rows carry the same icon ringed
+   in their slice colour, so a slice and its row match by picture as well
+   as by colour. Text never takes a slice colour. By default every legend
+   two or more players brought has a slice (Sam: "show all legends (except
+   for the 1 ofs)"), so the table can be longer than its nine rows: it
+   rolls (below).
 
    Motion: --t fades the frame and brings the heading across (every read is
    var(--t, 1)). --p sweeps the pie in clockwise through a conic mask, and
@@ -21,9 +24,22 @@
    arithmetic, both travelling on the left (the table is clipped, so they
    emerge from and go under the hairline). The pie fades on --o too, so new
    data (another group, the win rate switched) turns the whole panel over.
-   --p and --r read 1 when unset, --o reads 0: the settled frame. */
+   --p and --r read 1 when unset, --o reads 0: the settled frame.
 
-.legendstats { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); --rw: 0.42; --ow: 0.55; }
+   The roll (2026-09-19): a table longer than nine rows shows them in a box
+   and moves them up by --scroll design pixels (scene.js works it out of
+   the roll's wall clock, web/shared/legendstats.js rollAt). --ft and --fb
+   fade the box's top and bottom edge while there are rows beyond them.
+
+   The highlight (2026-09-19, Sam: "highlight specific legends in the pie
+   chart and that slice grows", the card row's grammar): a highlighted
+   slice comes out along its middle and grows while the others step back
+   and dim; its row lights up in its colour while the other rows dim. All
+   on one clock, --fk (web/stage/focusblend.js): each slice, icon and row
+   blends its pose from ...0 to ...1, --b a slice's own highlight, --s
+   another slice's, --h a row's own, --d another row's. */
+
+.legendstats { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); --rw: 0.42; --ow: 0.55; --rh: 80; }
 .legendstats.off { display: none; }
 .legendstats, .legendstats * { box-sizing: border-box; }
 
@@ -36,21 +52,49 @@
 .panel.hidden { display: none; }
 
 /* --- the pie --- */
-.chart {
-  position: absolute; left: calc(40 * var(--u)); top: calc(84 * var(--u)); width: calc(680 * var(--u)); height: calc(680 * var(--u));
-  opacity: calc(1 - var(--o, 0));
+/* The sweep's mask sits on a box 80 units wider than the pie all round, so
+   a highlighted slice that comes out past the rim is never clipped by it. */
+.chart { position: absolute; left: calc(40 * var(--u)); top: calc(84 * var(--u)); width: calc(680 * var(--u)); height: calc(680 * var(--u)); opacity: calc(1 - var(--o, 0)); }
+.sweep {
+  position: absolute; inset: calc(-80 * var(--u));
   -webkit-mask-image: conic-gradient(#000 calc(var(--p, 1) * 360deg), transparent 0);
   mask-image: conic-gradient(#000 calc(var(--p, 1) * 360deg), transparent 0);
 }
+.pie-box { position: absolute; inset: calc(80 * var(--u)); }
 .pie { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.pie path { stroke: var(--ss-plate, #10151d); stroke-width: 4; stroke-linejoin: round; }
+/* A slice's pose: --ux/--uy is the unit vector through its middle, so the
+   highlight carries it 22 units out and grows it about the pie's centre,
+   while a slice that is not highlighted steps back a little and dims. */
+.pie path {
+  --b: calc(var(--b0, 0) + (var(--b1, 0) - var(--b0, 0)) * var(--fk, 1));
+  --s: calc(var(--s0, 0) + (var(--s1, 0) - var(--s0, 0)) * var(--fk, 1));
+  stroke: var(--ss-plate, #10151d); stroke-width: 4; stroke-linejoin: round;
+  transform-box: view-box; transform-origin: 340px 340px;
+  transform: translate(calc(var(--ux, 0) * var(--b) * 22px), calc(var(--uy, 0) * var(--b) * 22px)) scale(calc(1 + 0.05 * var(--b) - 0.04 * var(--s)));
+  opacity: calc(1 - 0.62 * var(--s));
+}
+/* The lifted slice casts the card row's shadow; only the slices in a
+   highlight's move carry the filter, so the rest cost nothing. */
+.pie path.lit { filter: drop-shadow(0 calc(var(--b) * 10px) calc(var(--b) * 20px) rgba(0, 0, 0, calc(var(--b) * 0.6))); }
 .marks { position: absolute; inset: 0; }
 .mark {
   --k: clamp(0, calc((var(--p, 1) - var(--a, 0)) * 10), 1);
-  position: absolute; left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u)); width: calc(var(--s) * var(--u)); height: calc(var(--s) * var(--u));
+  --b: calc(var(--b0, 0) + (var(--b1, 0) - var(--b0, 0)) * var(--fk, 1));
+  --s: calc(var(--s0, 0) + (var(--s1, 0) - var(--s0, 0)) * var(--fk, 1));
+  /* How far the icon travels with its slice: the slice's own move out, plus
+     its growth (or its step back) at the icon's distance from the centre. */
+  --go: calc(22 * var(--b) + var(--rc, 0) * (0.05 * var(--b) - 0.04 * var(--s)));
+  position: absolute; left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u)); width: calc(var(--sz) * var(--u)); height: calc(var(--sz) * var(--u));
   border-radius: 50%; border: calc(3 * var(--u)) solid var(--ss-plate, #10151d); background: var(--ss-ink, #0a0d12); overflow: hidden;
-  opacity: var(--k); transform: scale(calc(0.6 + 0.4 * var(--k)));
+  display: grid; place-items: center;
+  opacity: calc(var(--k) * (1 - 0.62 * var(--s)));
+  transform: translate(calc(var(--ux, 0) * var(--go) * var(--u)), calc(var(--uy, 0) * var(--go) * var(--u))) scale(calc((0.6 + 0.4 * var(--k)) * (1 + 0.28 * var(--b))));
 }
+/* A slice too thin for its icon shows it only while highlighted. */
+.mark.thin { opacity: calc(var(--k) * var(--b)); }
+.mark.lit { z-index: 1; }
+/* Other's mark: how many legends it holds. */
+.mark .lt { position: relative; font: 800 calc(var(--sz) * 0.3 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); }
 .mark img, .ic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; }
 .mark img.hidden, .ic img.hidden { display: none; }
 /* A legend card's painting (the last fallback) shows its figure, not its frame. */
@@ -68,17 +112,35 @@
 .thead span:first-child { grid-column: 1 / 3; padding-left: calc(14 * var(--u)); }
 .thead .n { text-align: right; padding-right: calc(14 * var(--u)); }
 
+/* The rows' box: as many rows as there are, nine at most (--vr), the rest
+   rolled into view. Its edges fade while rows go on beyond them. */
+.view {
+  position: relative; height: calc(var(--vr, 9) * var(--rh) * var(--u)); overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, calc(1 - var(--ft, 0))) 0, #000 calc(56 * var(--u)), #000 calc(100% - 56 * var(--u)), rgba(0, 0, 0, calc(1 - var(--fb, 0))) 100%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, calc(1 - var(--ft, 0))) 0, #000 calc(56 * var(--u)), #000 calc(100% - 56 * var(--u)), rgba(0, 0, 0, calc(1 - var(--fb, 0))) 100%);
+}
+.rows { transform: translateY(calc(var(--scroll, 0) * -1 * var(--u))); }
+
 /* A row's progress in (--rp) and out (--rq): the standings' arithmetic. The
    0.998 lands the last row a hair before its clock ends, so rounding never
    leaves it part-faded. */
 .row {
   --rp: clamp(0, calc((var(--r, 1) - var(--pos, 0) * (0.998 - var(--rw))) / var(--rw)), 1);
   --rq: clamp(0, calc((var(--o, 0) - var(--pos, 0) * (0.998 - var(--ow))) / var(--ow)), 1);
-  height: calc(80 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06);
-  opacity: calc(var(--rp) * (1 - var(--rq)));
+  --h: calc(var(--h0, 0) + (var(--h1, 0) - var(--h0, 0)) * var(--fk, 1));
+  --d: calc(var(--d0, 0) + (var(--d1, 0) - var(--d0, 0)) * var(--fk, 1));
+  position: relative;
+  height: calc(var(--rh) * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06);
+  opacity: calc(var(--rp) * (1 - var(--rq)) * (1 - 0.45 * var(--d)));
   transform: translateX(calc(((1 - var(--rp)) + var(--rq)) * -72 * var(--u)));
 }
 .row:nth-child(even) { background: rgba(255, 255, 255, 0.025); }
+/* A highlighted row: its slice colour washed over it and a bar of it down
+   the left edge. */
+.row::before, .row::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; background: var(--c, #646c77); pointer-events: none; }
+.row::before { right: 0; opacity: calc(var(--h) * 0.2); }
+.row::after { width: calc(6 * var(--u)); transform: scaleX(var(--h)); transform-origin: left center; }
+.row > * { position: relative; }
 
 .ic { position: relative; width: calc(60 * var(--u)); height: calc(60 * var(--u)); margin-left: calc(12 * var(--u)); border-radius: 50%; border: calc(4 * var(--u)) solid var(--c, #646c77); background: var(--ss-ink, #0a0d12); overflow: hidden; display: grid; place-items: center; font: 800 calc(20 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); }
 .ic .lt { position: relative; }

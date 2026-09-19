@@ -11,7 +11,16 @@
    Motion is the standings': --t fades the frame and brings the heading
    across; --r / --o bring each column's rows in and out one after another
    from the top (--pos is a row's place down its column, so the two columns
-   move together), --in-dx / --out-dx the travel (web/stage/pager.js). */
+   move together), --in-dx / --out-dx the travel (web/stage/pager.js).
+
+   Highlights (2026-09-19, Sam: "highlight and enlarge (similar to the card
+   row feature) certain pairings"): a highlighted table grows in its column
+   (34 design pixels taller, its names, portraits, number and result a size
+   up), takes a wash of the accent and an accent bar down its left edge,
+   and every other table dims; the other tables in its column give up the
+   room between them, so the column never outgrows the frame. One clock,
+   --fk (web/stage/focusblend.js): each row blends --g (how far it has
+   grown, 0 to 1), --d (dimmed) and --x (pixels gained or given up). */
 
 .pairings { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); --rw: 0.42; --ow: 0.55; }
 .pairings.off { display: none; }
@@ -36,22 +45,30 @@
 
 /* A row's progress in (--p) and out (--q), the standings' formula. */
 .row {
-  height: calc(51 * var(--u));
+  --g: calc(var(--g0, 0) + (var(--g1, 0) - var(--g0, 0)) * var(--fk, 1));
+  --d: calc(var(--d0, 0) + (var(--d1, 0) - var(--d0, 0)) * var(--fk, 1));
+  --x: calc(var(--x0, 0) + (var(--x1, 0) - var(--x0, 0)) * var(--fk, 1));
+  position: relative;
+  height: calc((51 + var(--x)) * var(--u));
   border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06);
   --p: clamp(0, calc((var(--r, 1) - var(--pos, 0) * (0.998 - var(--rw))) / var(--rw)), 1);
   --q: clamp(0, calc((var(--o, 0) - var(--pos, 0) * (0.998 - var(--ow))) / var(--ow)), 1);
-  opacity: calc(var(--p) * (1 - var(--q)));
+  opacity: calc(var(--p) * (1 - var(--q)) * (1 - 0.45 * var(--d)));
   transform: translateX(calc(((1 - var(--p)) * var(--in-dx, -72) + var(--q) * var(--out-dx, -72)) * var(--u)));
 }
 .row:nth-child(even) { background: rgba(255, 255, 255, 0.025); }
 .row:last-child { border-bottom: 0; }
+/* The accent wash under the row's content (the row's transform makes it a
+   stacking context, so z-index -1 stays inside it) and the accent bar. */
+.row::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ss-accent-a, #11b6fb); opacity: calc(var(--g) * 0.18); pointer-events: none; }
+.row::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: calc(6 * var(--u)); background: var(--ss-accent-a, #11b6fb); transform: scaleX(var(--g)); transform-origin: left center; pointer-events: none; }
 
-.tb { text-align: center; font: 700 calc(22 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tb { text-align: center; font: 700 calc((22 + 10 * var(--g, 0)) * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .pl { display: flex; align-items: center; gap: calc(12 * var(--u)); min-width: 0; height: 100%; padding: 0 calc(14 * var(--u)); }
 .pl.r { flex-direction: row-reverse; text-align: right; }
 .pl.lost { opacity: 0.42; }
-.pl .pt { flex: none; position: relative; width: calc(54 * var(--u)); height: calc(38 * var(--u)); overflow: hidden; background: var(--ss-ink, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+.pl .pt { flex: none; position: relative; width: calc((54 + 26 * var(--g, 0)) * var(--u)); height: calc((38 + 18 * var(--g, 0)) * var(--u)); overflow: hidden; background: var(--ss-ink, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
 .pl .pt.none { background: transparent; border-color: rgba(255, 255, 255, 0.08); }
 .pl .pt .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
 .pl .pt .art.hidden { display: none; }
@@ -60,18 +77,18 @@
 .pl .id { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: calc(6 * var(--u)); }
 .pl .top { display: flex; align-items: center; gap: calc(8 * var(--u)); min-width: 0; }
 .pl.r .top { flex-direction: row-reverse; }
-.pl .nm { min-width: 0; overflow: hidden; white-space: nowrap; font: 800 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
-.pl .sub { display: flex; gap: calc(10 * var(--u)); min-width: 0; font: 500 calc(13 * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
+.pl .nm { min-width: 0; overflow: hidden; white-space: nowrap; font: 800 calc((20 + 9 * var(--g, 0)) * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
+.pl .sub { display: flex; gap: calc(10 * var(--u)); min-width: 0; font: 500 calc((13 + 4 * var(--g, 0)) * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
 .pl .sub:empty { display: none; }
 .pl.r .sub { flex-direction: row-reverse; }
 .pl .sub .rec { flex: none; font-weight: 800; color: var(--ss-text, #fff); font-variant-numeric: tabular-nums; }
 .pl .sub .lg { min-width: 0; overflow: hidden; white-space: nowrap; }
 
-.mid { text-align: center; white-space: nowrap; font: 800 calc(14 * var(--u))/1 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
-.mid.score { display: flex; justify-content: center; align-items: baseline; gap: calc(6 * var(--u)); font-size: calc(24 * var(--u)); letter-spacing: 0; color: var(--ss-text, #fff); font-variant-numeric: tabular-nums; }
+.mid { text-align: center; white-space: nowrap; font: 800 calc((14 + 5 * var(--g, 0)) * var(--u))/1 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+.mid.score { display: flex; justify-content: center; align-items: baseline; gap: calc(6 * var(--u)); font-size: calc((24 + 10 * var(--g, 0)) * var(--u)); letter-spacing: 0; color: var(--ss-text, #fff); font-variant-numeric: tabular-nums; }
 .mid.score .w { color: var(--ss-accent-b, #1bef19); }
 .mid.score .dash { font-weight: 500; color: var(--ss-text-muted, #9aa7b6); }
-.mid.draw { color: var(--ss-text, #fff); font-size: calc(13 * var(--u)); }
+.mid.draw { color: var(--ss-text, #fff); font-size: calc((13 + 4 * var(--g, 0)) * var(--u)); }
 
 .empty { position: absolute; left: calc(80 * var(--u)); top: calc(220 * var(--u)); width: calc(1760 * var(--u)); padding: calc(40 * var(--u)); text-align: center; font: 500 calc(20 * var(--u))/1.4 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); }
 .empty.hidden { display: none; }

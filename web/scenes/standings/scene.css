@@ -21,7 +21,16 @@
    settled page is fully opaque and in place. --in-dx and --out-dx are the
    travel in design pixels: the next page comes in from the right as the old
    one leaves to the left, the previous page the other way. --o reads
-   var(--o, 0) because its settled state is "not leaving". */
+   var(--o, 0) because its settled state is "not leaving".
+
+   Highlights (2026-09-19, Sam: "highlight and feature specific
+   standings"): a highlighted player's row takes a wash of the accent and
+   an accent bar down its left edge, grows a little (12 design pixels, its
+   name and numbers a size up) and the rows around it dim; the rest of the
+   page gives up the room if the table would outgrow its space. One clock,
+   --fk (web/stage/focusblend.js): each row blends --h (its own highlight),
+   --d (another row's) and --x (pixels it gains or gives up) from ...0 to
+   ...1. */
 
 .standings { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); --rw: 0.42; --ow: 0.55; }
 .standings.off { display: none; }
@@ -45,29 +54,38 @@ table { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u))
 tbody tr {
   --p: clamp(0, calc((var(--r, 1) - var(--pos, 0) * (0.998 - var(--rw))) / var(--rw)), 1);
   --q: clamp(0, calc((var(--o, 0) - var(--pos, 0) * (0.998 - var(--ow))) / var(--ow)), 1);
-  opacity: calc(var(--p) * (1 - var(--q)));
+  --h: calc(var(--h0, 0) + (var(--h1, 0) - var(--h0, 0)) * var(--fk, 1));
+  --d: calc(var(--d0, 0) + (var(--d1, 0) - var(--d0, 0)) * var(--fk, 1));
+  --x: calc(var(--x0, 0) + (var(--x1, 0) - var(--x0, 0)) * var(--fk, 1));
+  opacity: calc(var(--p) * (1 - var(--q)) * (1 - 0.4 * var(--d)));
   transform: translateX(calc(((1 - var(--p)) * var(--in-dx, -72) + var(--q) * var(--out-dx, -72)) * var(--u)));
 }
+/* The accent wash sits under each cell's text: the row's transform makes it
+   a stacking context, so a pseudo-element at z-index -1 paints over the
+   table's plate and under the cell. */
+tbody td { position: relative; }
+tbody td::before { content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ss-accent-a, #11b6fb); opacity: calc(var(--h) * 0.2); pointer-events: none; }
+tbody td:first-child { box-shadow: inset calc(6 * var(--h) * var(--u)) 0 0 var(--ss-accent-a, #11b6fb); }
 th { font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); text-align: left; padding: calc(10 * var(--u)) calc(14 * var(--u)); border-bottom: calc(1 * var(--u)) solid var(--ss-frame, #26303c); background: rgba(255, 255, 255, 0.03); }
 th.n, th.tb { text-align: right; }
-td { padding: 0 calc(14 * var(--u)); height: calc(39 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+td { padding: 0 calc(14 * var(--u)); height: calc((39 + var(--x, 0)) * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
-td.rk { font: 700 calc(22 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); position: relative; }
-td.pl { font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; }
+td.rk { font: 700 calc((22 + 5 * var(--h, 0)) * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); position: relative; }
+td.pl { font: 800 calc((22 + 5 * var(--h, 0)) * var(--u))/1 var(--tes-font); text-transform: uppercase; }
 td.pl .who { display: flex; align-items: center; gap: calc(12 * var(--u)); min-width: 0; }
 td.pl .k-chip { margin-right: calc(-4 * var(--u)); }
 td.pl .nm { min-width: 0; overflow: hidden; white-space: nowrap; }
 /* The portrait: the legend's face, square cornered like the overlays' camera
    wells, framed in the panel rule. */
-td.pl .pt { flex: none; position: relative; width: calc(54 * var(--u)); height: calc(36 * var(--u)); overflow: hidden; background: var(--ss-ink, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+td.pl .pt { flex: none; position: relative; width: calc((54 + 12 * var(--h, 0)) * var(--u)); height: calc((36 + 8 * var(--h, 0)) * var(--u)); overflow: hidden; background: var(--ss-ink, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
 td.pl .pt.none { background: transparent; border-color: rgba(255, 255, 255, 0.08); }
 td.pl .pt .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
 td.pl .pt .art.hidden { display: none; }
 td.pl .pt .art.crop-legend { object-position: center 18%; }
 td.pl .pt .art.icon-tier { object-fit: contain; padding: 6%; }
-td.lg { font: 500 calc(17 * var(--u))/1 var(--tes-font); color: var(--ss-text, #dfe6ee); }
-td.n { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-align: right; font-variant-numeric: tabular-nums; }
-td.tb { text-align: right; color: var(--ss-text-muted, #9aa7b6); font-variant-numeric: tabular-nums; font-size: calc(16 * var(--u)); }
+td.lg { font: 500 calc((17 + 3 * var(--h, 0)) * var(--u))/1 var(--tes-font); color: var(--ss-text, #dfe6ee); }
+td.n { font: 700 calc((22 + 4 * var(--h, 0)) * var(--u))/1 var(--tes-font); text-align: right; font-variant-numeric: tabular-nums; }
+td.tb { text-align: right; color: var(--ss-text-muted, #9aa7b6); font-variant-numeric: tabular-nums; font-size: calc((16 + 2 * var(--h, 0)) * var(--u)); }
 tr.cut td { border-bottom: calc(2 * var(--u)) solid var(--ss-accent-b, #1bef19); }
 tr.cut td.rk::after { content: 'Cut'; position: absolute; right: calc(8 * var(--u)); top: calc(19 * var(--u)); font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
 tr.outc td { opacity: 0.82; }

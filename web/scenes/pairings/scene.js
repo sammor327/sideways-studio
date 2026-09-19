@@ -7,16 +7,19 @@
 //
 // State: event.pairings {rows, label, byes} (loaded by the Tournament
 // platform tab, or typed under Match data > Pairings) and scenes.pairings
-// {page, legends, results}.
+// {page, legends, results, focus}.
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, portraitSteps } from '../../stage/art.js';
 import { applyVisibility } from '../../stage/exp.js';
 import { createPager } from '../../stage/pager.js';
+import { FocusBlend } from '../../stage/focusblend.js';
+import { scheduleNameFit } from '../../stage/fitnames.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 600);
+const focus = new FocusBlend(root, 450);
 
 const PER_PAGE = 32;
 
@@ -92,6 +95,7 @@ function middle(r, results) {
 function row(r, i, count, want) {
   const done = want.results && r.status === 'done' && (r.winner === 'left' || r.winner === 'right');
   const div = el('div', `row${done ? ' done' : ''}`);
+  div.dataset.table = String(r.table || 0);
   // Place down its column, 0 to 1: both columns come in together.
   div.style.setProperty('--pos', String(count > 1 ? i / (count - 1) : 0));
   div.append(
@@ -121,6 +125,49 @@ function renderRows(want) {
   root.classList.toggle('no-legends', !legends);
   const anyDone = results && slice.some((r) => r.status === 'done');
   for (const m of root.querySelectorAll('.ch .c-m')) m.textContent = anyDone ? 'Result' : '';
+  // New rows take their highlight as they are drawn, no move.
+  poseRows(false);
+}
+
+// --- the highlight (2026-09-19, Sam: "highlight and enlarge (similar to
+// the card row feature) certain pairings") ---
+//
+// The tables highlighted (scenes.pairings.focus, by table number, so the
+// Tournament platform rewriting the rows as tables finish never moves a
+// highlight to another table). A highlighted table grows GROW_PX in its
+// column and its type a size up, every other table dims, and the other
+// tables in its column give the room up between them, never below MIN_PX,
+// so a column keeps to the sixteen rows' height it was drawn for.
+// Highlighting a table on another page turns the graphic to it (the store
+// does that).
+const ROW_PX = 51;
+const GROW_PX = 34;
+const MIN_PX = 36;
+const COL_PX = 16 * ROW_PX;
+let focusTables = [];
+
+function poseRows(animate) {
+  const lit = new Set(focusTables);
+  const cols = [$('rowsA'), $('rowsB')].map((c) => [...c.children]);
+  const any = cols.some((rows) => rows.some((r) => lit.has(Number(r.dataset.table))));
+  const poses = [];
+  for (const rows of cols) {
+    const on = rows.filter((r) => lit.has(Number(r.dataset.table))).length;
+    const off = rows.length - on;
+    let grow = on ? GROW_PX : 0;
+    let give = off ? Math.max(0, (rows.length * ROW_PX + on * grow - COL_PX) / off) : 0;
+    if (ROW_PX - give < MIN_PX) {
+      give = ROW_PX - MIN_PX;
+      grow = Math.max(0, Math.min(GROW_PX, (COL_PX - rows.length * ROW_PX + off * give) / on));
+    }
+    for (const r of rows) {
+      const me = lit.has(Number(r.dataset.table));
+      poses.push([r, { g: me ? grow / GROW_PX : 0, d: any && !me ? 1 : 0, x: me ? grow : on ? -give : 0 }]);
+    }
+  }
+  // Grown names may no longer fit their half: fit them again once the rows
+  // have landed (stage/fitnames.js only reruns on DOM changes).
+  focus.move(poses, animate).then(() => scheduleNameFit());
 }
 
 const showPage = createPager(root, (want) => {
@@ -159,7 +206,13 @@ const params = initStage({
     // Records going in, unless every one is 0-0 (a first round), where they
     // would only repeat the same noise down both columns.
     const records = rows.some((r) => [r.left, r.right].some((p) => p && p.record && !/^0-0(-0)?$/.test(p.record)));
+    const tables = Array.isArray(scene.focus) ? scene.focus : [];
+    const focusChanged = JSON.stringify(tables) !== JSON.stringify(focusTables);
+    focusTables = tables;
     showPage({ rows, page, pages, legends: scene.legends !== false, results, records }, { first, visible, wasVisible: shownVisible });
+    // A highlight on the page up: the tables move to it where they stand (a
+    // page turning to the table poses its new rows as it draws them).
+    if (focusChanged) poseRows(Boolean(visible && shownVisible && !first));
     shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
   },
 });

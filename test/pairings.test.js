@@ -41,8 +41,8 @@ describe('pairings and standings state', () => {
   it('fills an older save with the new fields, the Legends switch on', () => {
     const bank = getState().preview;
     assert.deepEqual(bank.event.pairings, { rows: [], label: '', byes: [], src: '' });
-    assert.deepEqual(bank.scenes.pairings, { visible: false, page: 1, legends: true, results: true });
-    assert.deepEqual(bank.scenes.standings, { visible: true, page: 2, legends: true, group: '' });
+    assert.deepEqual(bank.scenes.pairings, { visible: false, page: 1, legends: true, results: true, focus: [] });
+    assert.deepEqual(bank.scenes.standings, { visible: true, page: 2, legends: true, group: '', focus: [] });
     assert.deepEqual(bank.scenes.ongoing, { visible: false, page: 1, legends: true });
     assert.equal(bank.event.standings.rows[0].name, 'Guubums');
   });
@@ -92,7 +92,7 @@ describe('pairings and standings state', () => {
   it('whitelists the pairings switches and pages, and the standings Legends switch', () => {
     applyUpdate({ scenes: { pairings: { visible: true, page: 9, legends: false, results: 0, bogus: 1 }, standings: { legends: false } } });
     const sc = getState().preview.scenes;
-    assert.deepEqual(sc.pairings, { visible: true, page: 5, legends: false, results: false });
+    assert.deepEqual(sc.pairings, { visible: true, page: 5, legends: false, results: false, focus: [] });
     assert.equal(sc.standings.legends, false);
     applyUpdate({ scenes: { pairings: { page: 0 } } });
     assert.equal(getState().preview.scenes.pairings.page, 1);

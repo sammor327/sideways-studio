@@ -27,18 +27,32 @@ export const SLICE_COLORS = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d5518
 // Other: a neutral grey (3.45:1 on the panel) that no slot resembles.
 export const OTHER_COLOR = '#646c77';
 
-// How many legends get a slice and a row of their own; the rest fold into
-// Other. Eight is the palette's ceiling.
+// How many legends get a slice and a row of their own in the Top mode; the
+// rest fold into Other. Eight is the palette's ceiling.
 export const TOP_MIN = 3;
 export const TOP_MAX = SLICE_COLORS.length;
 export const TOP_DEFAULT = 8;
+
+// Which legends get a slice of their own (2026-09-19, Sam: "show all legends
+// (except for the 1 ofs) on the pie chart"):
+//   multi  every legend two or more players brought (the default); the
+//          legends one player brought fold into Other
+//   all    every legend
+//   top    the largest `top` of them, the graphic as it first shipped
+// Past the eighth, a legend's slice is Other's grey: the palette has eight
+// colours that stay apart, and a ninth would only look like one of them. Its
+// face on the slice (where it fits), its row in the table and the highlight
+// name it instead.
+export const SLICE_MODES = ['multi', 'all', 'top'];
+export const SLICES_DEFAULT = 'multi';
 
 // A pie closes on itself, so its last slice also touches its first. With
 // seven slices and nothing in Other, slot seven (violet) would sit against
 // slot one (blue), a pair the validator fails even for full colour vision
 // (a difference of 9.8 against a floor of 15), so the seventh slice takes
 // slot eight (red), which clears both of its neighbours. Every other
-// count's closing pair passes as it stands.
+// count's closing pair passes as it stands. A slice past the eighth is
+// Other's grey, which clears red, blue and violet (17 and more).
 export function sliceColor(i, count, hasOther) {
   if (count === 7 && !hasOther && i === 6) return SLICE_COLORS[7];
   return SLICE_COLORS[i] || OTHER_COLOR;
@@ -71,10 +85,11 @@ export function splitLegend(name) {
 
 // Everything the graphic draws: the shown legends in order of share (the
 // pie clockwise from twelve o'clock, the table top down), then Other for the
-// legends past `top` plus any players the rows do not account for. start and
-// end are fractions of a full turn. total is the field size when counts are
-// known (the event's own total if it is larger than the rows add up to).
-export function legendSlices(stats, { top = TOP_DEFAULT } = {}) {
+// legends folded away (past `top`, or brought by one player) plus any
+// players the rows do not account for. start and end are fractions of a
+// full turn. total is the field size when counts are known (the event's own
+// total if it is larger than the rows add up to).
+export function legendSlices(stats, { slices: mode = 'top', top = TOP_DEFAULT } = {}) {
   const src = stats && Array.isArray(stats.rows) ? stats.rows : [];
   const rows = src.filter((r) => r && (num(r.players) > 0 || num(r.share) > 0));
   const counted = rows.reduce((sum, r) => sum + Math.max(0, num(r.players)), 0);
@@ -95,9 +110,25 @@ export function legendSlices(stats, { top = TOP_DEFAULT } = {}) {
   if (sum > 100) for (const x of items) x.share = (x.share / sum) * 100;
   items.sort((a, b) => b.share - a.share || b.players - a.players || a.legend.localeCompare(b.legend));
 
-  const n = Math.min(TOP_MAX, Math.max(TOP_MIN, Math.trunc(num(top)) || TOP_DEFAULT));
-  const shown = items.slice(0, n);
-  const folded = items.slice(n);
+  let shown = items;
+  let folded = [];
+  let ones = false;
+  if (mode === 'multi') {
+    // A legend one player brought folds into Other. A row with no count (a
+    // typed share) keeps its slice: how many brought it is not known. With
+    // every legend brought once there would be nothing left to draw, so
+    // then every legend keeps its slice.
+    const kept = items.filter((x) => x.players !== 1);
+    if (kept.length) {
+      folded = items.filter((x) => x.players === 1);
+      shown = kept;
+      ones = folded.length > 0;
+    }
+  } else if (mode !== 'all') {
+    const n = Math.min(TOP_MAX, Math.max(TOP_MIN, Math.trunc(num(top)) || TOP_DEFAULT));
+    shown = items.slice(0, n);
+    folded = items.slice(n);
+  }
   const listed = items.reduce((s, x) => s + x.share, 0);
   const rest = items.length && listed < 99.95 ? 100 - listed : 0;
   const hasOther = folded.length > 0 || rest > 0;
@@ -115,7 +146,7 @@ export function legendSlices(stats, { top = TOP_DEFAULT } = {}) {
       wins: summable ? w : 0, losses: summable ? l : 0,
       typedRate: false, winRate: summable && w + l > 0 ? (w / (w + l)) * 100 : null,
       share: folded.reduce((s, x) => s + x.share, 0) + rest,
-      other: true, legends: folded.length, unlisted: rest > 0, color: OTHER_COLOR,
+      other: true, legends: folded.length, ones, unlisted: rest > 0, color: OTHER_COLOR,
     });
   }
   let at = 0;
@@ -142,6 +173,114 @@ export function slicePath(cx, cy, r, from, to) {
   const [x0, y0] = at(from);
   const [x1, y1] = at(to);
   return `M ${f(cx)} ${f(cy)} L ${x0} ${y0} A ${r} ${r} 0 ${to - from > 0.5 ? 1 : 0} 1 ${x1} ${y1} Z`;
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+// The line under Other's name in the table: what it holds. The legends
+// folded into it (brought by one player each, or past the ones shown), the
+// players the list does not name (a field size larger than the lines), or
+// both.
+export function otherTitle(s) {
+  if (!s || !s.other) return '';
+  const held = s.legends ? (s.ones ? `${plural(s.legends, 'legend')} with one player each` : plural(s.legends, 'more legend')) : '';
+  if (held && s.unlisted) return `${held}, plus players not listed`;
+  return held || 'Players not listed';
+}
+
+// --- highlighting a legend (2026-09-19) ---
+//
+// Sam: "the operator can highlight specific legends in the pie chart and
+// that slice grows", like the card row's and the decklist's highlight. A
+// highlight names a slice by a key that outlives a reload of the numbers:
+// the legend's slug, else its name squeezed (a typed legend the catalog did
+// not know), and 'other' for Other. scenes.legendstats.focus holds the
+// highlighted keys, the newest last.
+export const FOCUS_OTHER = 'other';
+export function sliceKey(s) {
+  if (!s) return '';
+  if (s.other) return FOCUS_OTHER;
+  return s.legendSlug || `n:${normLegend(s.legend)}`;
+}
+
+// --- the table's roll (2026-09-19) ---
+//
+// Sam: "make it so the table naturally animates down to show the full
+// length", and "the operator can start, stop/restart, pause the
+// animation". A table longer than its box rolls: a hold at the top, down at
+// a reading pace (easing into and out of it), a hold at the bottom, then,
+// with Loop on, back up briskly and round again; with Loop off it stays at
+// the bottom until it is started again.
+//
+// scenes.legendstats.roll is { state, at, done }: state 'play', 'pause',
+// 'stop' (back at the top) or 'hold' (paused by a highlight, which picks up
+// again when the highlight clears); at is when it last started playing, in
+// ms since the epoch on the server's clock, which on a localhost app is
+// every browser source's clock too; done is the time it had played before
+// that. Every browser source works the same place out of the wall clock, so
+// one that reloads mid-roll comes back where the others are.
+export const ROLL_STATES = ['stop', 'play', 'pause', 'hold'];
+export const ROLL_OPS = ['start', 'pause', 'stop', 'restart'];
+// The table's rows and its box (the scene's CSS reads these through
+// --rh and the box height): nine rows show at once, the rest roll.
+export const TABLE_ROW_PX = 80;
+export const TABLE_VIEW_ROWS = 9;
+export const tableOverflow = (rows) => Math.max(0, (Math.trunc(num(rows)) - TABLE_VIEW_ROWS) * TABLE_ROW_PX);
+// Design pixels a second: normal moves a row of the table on every 1.3 s.
+export const ROLL_SPEEDS = { slow: 36, normal: 60, fast: 100 };
+export const ROLL_SPEED_DEFAULT = 'normal';
+export const ROLL_HOLD_MS = 5000;
+export const ROLL_RAMP_MS = 700;
+
+// How long the roll has played at `now`.
+export function rollElapsed(roll, now = Date.now()) {
+  if (!roll || typeof roll !== 'object') return 0;
+  const done = Math.max(0, num(roll.done));
+  return roll.state === 'play' ? done + Math.max(0, now - num(roll.at)) : done;
+}
+
+// One trip of `distance` pixels at `speed` a second, easing up to speed
+// over ROLL_RAMP_MS and down again at the end (a short trip never reaches
+// full speed): how long it takes, and how far along it is at t ms. A speed
+// of Infinity is a jump.
+function trip(distance, speed) {
+  if (!(speed < Infinity)) return { total: 0, at: () => distance };
+  const a = speed / 1000 / ROLL_RAMP_MS;
+  const ramp = Math.min(ROLL_RAMP_MS, Math.sqrt(distance / a));
+  const peak = a * ramp;
+  const cruise = (distance - a * ramp * ramp) / peak;
+  const total = 2 * ramp + cruise;
+  return {
+    total,
+    at(t) {
+      if (t <= 0) return 0;
+      if (t >= total) return distance;
+      if (t < ramp) return (a * t * t) / 2;
+      if (t < ramp + cruise) return (a * ramp * ramp) / 2 + peak * (t - ramp);
+      const left = total - t;
+      return distance - (a * left * left) / 2;
+    },
+  };
+}
+
+// Where the rows sit `elapsed` ms into the roll of a table `overflow` pixels
+// longer than its box. offset is how far the rows have moved up (0 is the
+// top, overflow has the last row at the foot of the box); moving says they
+// are on their way; next is how soon they move again (Infinity once a pass
+// without Loop is over); end says that pass is over. The way back up takes
+// at most three seconds. jump: travel instantly (animation switched off).
+export function rollAt(elapsed, overflow, { speed = ROLL_SPEEDS.normal, loop = true, hold = ROLL_HOLD_MS, jump = false } = {}) {
+  if (!(overflow > 0)) return { offset: 0, moving: false, next: Infinity, end: false };
+  const down = trip(overflow, jump ? Infinity : speed);
+  const t = Math.max(0, elapsed);
+  if (!loop && t >= hold + down.total) return { offset: overflow, moving: false, next: Infinity, end: true };
+  const back = trip(overflow, jump ? Infinity : Math.max(speed * 4, overflow / 2.3));
+  const period = 2 * hold + down.total + back.total;
+  const p = t % period;
+  if (p < hold) return { offset: 0, moving: false, next: hold - p, end: false };
+  if (p < hold + down.total) return { offset: down.at(p - hold), moving: true, next: 0, end: false };
+  if (p < 2 * hold + down.total) return { offset: overflow, moving: false, next: 2 * hold + down.total - p, end: false };
+  return { offset: overflow - back.at(p - 2 * hold - down.total), moving: true, next: 0, end: false };
 }
 
 // --- the panel's paste ---

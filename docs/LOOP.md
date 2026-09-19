@@ -214,6 +214,67 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19g (out of band: highlights on the standings, pairings and legend distribution; the legend table rolls)
+
+Sam's four asks. (1) "Highlight and feature specific standings on the
+standings graphic as well as highlight and enlarge (similar to the card row
+feature) certain pairings." (2) "For the legend distribution graphic can we
+show all legends (except for the 1 ofs) on the pie chart and make it so the
+table naturally animates down to show the full length." (3) "The operator
+can start, stop/restart, pause the animation in #2." (4) "Highlight
+specific legends in the pie chart and that slice grows similar to the card
+row and decklist graphic."
+
+All the highlights are cues on the focus action (both banks, on air at
+once), naming what they highlight rather than where it sits: a standings
+player by playerKey (the rows re-sort), a pairings table by its number (the
+platform's follow feed rewrites the rows as tables finish), a legend by its
+slice key (slug, `n:` + squeezed name, `other`). web/shared/focus.js holds
+the list rule (on / off / flip / only / clear, eight at most, newest last)
+and where a player or table sits, so a newly highlighted one turns its
+graphic to its group and page. One seek clock per scene drives every
+highlight: web/stage/focusblend.js writes each element's pose on screen as
+the start of the next move, so a second highlight mid-move never jumps.
+Standings: accent wash under the cells (a z-index -1 pseudo-element inside
+the row's stacking context, since a transformed tr is one), an accent bar,
++12px and a size of type, the rest dimmed 40%; the other rows give up room
+past 810px. Pairings: the table grows 34px in its column with names,
+portraits, number and result a size up, the column's other rows give the
+room up (never under 36px), everything else dims 45%. fitnames reruns after
+a move lands (it only watches DOM changes).
+
+Legend distribution: `slices` multi (default: every legend brought by two
+or more, the one-player legends into Other, which now says "N legends with
+one player each" and wears "+N" on the pie), all, or top 3-8 as shipped.
+Slices past the eighth take Other's grey: the data-viz rule is no ninth
+hue (it would be indistinguishable from one of the eight), so identity
+past eight rides on the face on the slice, the table row and the
+highlight; the grey clears red, blue and violet at 17+ OKLab. The table is
+a nine-row box (TABLE_VIEW_ROWS, 80px rows); longer tables roll on the wall
+clock from `roll {state, at, done}` (legendstats.js rollAt: 5 s hold, down
+at 36/60/100 px/s with a 0.7 s ease each end, 5 s hold, back up in 3 s at
+most, round again with loop), edges fading while rows go on past them.
+TAKE stamps the roll from the top on both banks when the graphic comes on
+air or airs new numbers (stopped with autoRoll off). The roll cue: start,
+pause, stop, restart, speed, loop, autoRoll. A highlighted slice comes out
+22 units along its middle and grows 5% with a drop shadow (the card row's
+lift), its face grows 28% and moves with it, a slice too thin for a face
+shows one only while highlighted; the rest step back 4% and dim, rows
+likewise. A highlight holds a playing roll (`hold`) and the table glides
+to the newest highlighted row; the last highlight off resumes the roll.
+The sweep mask moved to a box 80 units wider than the pie so a slice
+coming out is never clipped.
+
+Verified on a scratch server (port 4771, worktree ../ss-highlights) with
+the Convergence #3 data (217 standings in four groups, 108 pairings, the
+legend count from the standings: 37 legends, 28 slices): stills of each
+highlight settled and mid-move, a thin slice's highlight gliding the table
+to its row, the roll at 2 s / 9 s / 14 s, the panel driven click by click
+(chips, ‹ ›, transport, speed, loop, both searches, chip removal, Clear,
+the slice select) with state read back after each, and no console errors.
+Tests: test/highlights.test.js (roll arithmetic, slice modes, focus lists,
+the cues, TAKE's stamp, old saves).
+
 ### 2026-09-19f (out of band: standings by group, standings in order, the ongoing matches)
 
 Sam, Convergence #3 round 1, three asks. (1) "Standings should be sorted by

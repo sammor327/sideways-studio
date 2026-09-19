@@ -172,14 +172,15 @@ graphic back. CLEAR PROGRAM still drops everything on air at once, and
 CLEAR PREVIEW takes every graphic out of preview (data kept) so the next
 TAKE airs a clean frame.
 
-Two graphics take a highlight: the card row (one to four cards side by
+Five graphics take a highlight: the card row (one to four cards side by
 side over the look's ground, or over nothing with Background off; the star
-beside a slot grows and lifts that card while the others shrink and dim)
-and the decklist (Highlight a card on the Decklist card lifts one card out
+beside a slot grows and lifts that card while the others shrink and dim),
+the decklist (Highlight a card on the Decklist card lifts one card out
 of the plate, larger and glowing, with the rest blurred and darkened; the
 picker shows each card's art, ‹ › step through the list, and Highlight
-on/off flicks it away and back with the card kept). Both are cues like the
-clock: they act on air at once, no TAKE needed.
+on/off flicks it away and back with the card kept), and since 2026-09-19
+the standings, the pairings and the legend distribution (below). All are
+cues like the clock: they act on air at once, no TAKE needed.
 
 ## Looks
 
@@ -357,6 +358,18 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   starts a group. Every list is kept sorted by points, or by record (win
   3, draw 1) when it has no points, highest first, ties in the order they
   came; a list with no points leaves the Points column empty.
+- **Highlights on the standings and the pairings** (2026-09-19): the
+  **Highlight** search under each one's Graphic features finds a player
+  (standings) or a table by its number or a player at it (pairings). A
+  highlighted standings row takes a wash of the accent colour and a bar
+  down its left edge and grows a little, its name and numbers a size up; a
+  highlighted table grows in its column, its names, portraits, number and
+  result a size up, the column's other tables giving up the room. The rest
+  dim in both. It happens on air at once, and the graphic turns to the
+  group and page the player or table is on. Up to eight at a time, each a
+  chip under the search (a click takes it off; Clear takes them all). A
+  highlight names the player or the table, never a row, so it stays put as
+  the standings re-sort and the Tournament platform brings results in.
 - **Ongoing matches** (`/scenes/ongoing/`, 2026-09-19): the pairings'
   tables that have no result yet, for the wait at the end of a round. Up to
   12 tables sit in one 1400px column whose rows grow to fill it (up to 1.9
@@ -376,9 +389,23 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   legends as a pie on the left and a table on the right, each legend's face,
   name, share of the field and win rate. The pie runs clockwise from twelve
   o'clock in the table's order with the faces on the slices that have room
-  for them, and legends past **Legends shown** (Graphic features, eight at
-  most) fold into a grey Other. **Win rate** switches the column off, and
+  for them. **Slices** (Graphic features) decides which legends get one:
+  every legend two or more players brought (the default, since 2026-09-19;
+  the one-player legends fold into a grey Other that counts them), every
+  legend, or the top 8 down to 3 with the rest in Other. Past the eighth,
+  a slice is Other's grey: eight colours is as many as stay apart. **Win
+  rate** switches the column off, and
   the note under the graphic saying how the win rates were counted with it.
+  A table longer than nine rows **rolls** (2026-09-19): five seconds at the
+  top, down at a reading pace, five seconds at the bottom, then back up and
+  round again with **Loop** on, or it stays at the bottom with Loop off. It
+  starts by itself as the graphic goes on air (**Start on its own**), and
+  **Start**, **Pause**, **Stop** (back to the top) and **Restart** under
+  Table roll act on air at once, with **Speed** slow, normal or fast. The
+  legend chips under **Highlight** (or ‹ ›) highlight a legend: its slice
+  comes out of the pie and grows with its face while the others step back
+  and dim, and its row lights up in its colour; a rolling table holds with
+  that row in view until the highlight comes off.
   Fill it under Match data › Legend distribution: one legend per line with
   how many played it and its win rate or record (`Kai'Sa | 42 | 55.1`,
   `Jinx | 30 | 45-37`), a share with a % sign for a list of percentages, or

@@ -11,8 +11,11 @@ import { refreshFontSheet } from '../shared/fontsheet.js';
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
 import { SCENE_SOURCES } from '../shared/sources.js';
-import { legendsFromStandings, legendsToText, parseLegendLines, resolveLegend } from '../shared/legendstats.js';
+import {
+  ROLL_SPEEDS, legendSlices, legendsFromStandings, legendsToText, parseLegendLines, resolveLegend, rollAt, rollElapsed, sliceKey, splitLegend, tableOverflow,
+} from '../shared/legendstats.js';
 import { standingsStep, standingsView } from '../shared/standings.js';
+import { playerKey } from '../shared/focus.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -3192,7 +3195,248 @@ $('legendFromStandings').addEventListener('click', () => {
   if (legendProblem) $('legendHint').textContent = legendProblem;
 });
 $('legendstatsRate').addEventListener('change', () => post({ scenes: { legendstats: { winRate: $('legendstatsRate').checked } } }));
-$('legendstatsTop').addEventListener('change', () => post({ scenes: { legendstats: { top: Number($('legendstatsTop').value) } } }));
+// Which legends get a slice: every legend two or more played (the
+// default), every legend, or the top few, the graphic as it first shipped.
+$('legendstatsSlices').addEventListener('change', () => {
+  const v = $('legendstatsSlices').value;
+  post({ scenes: { legendstats: v.startsWith('top-') ? { slices: 'top', top: Number(v.slice(4)) } : { slices: v } } });
+});
+
+// --- the legend distribution's roll and highlight (2026-09-19) ---
+//
+// Sam: "the operator can start, stop/restart, pause the animation" and
+// "highlight specific legends in the pie chart and that slice grows". Both
+// are cues (server/state.js roll and focus): they land in both banks and
+// act on air at once, the way the card row's star does. The chips are the
+// graphic's slices in the pie's order, drawn from the same arithmetic
+// (web/shared/legendstats.js), so a chip and its slice always agree.
+const legendSlicesOf = (bank) => {
+  const ls = bank.scenes.legendstats;
+  return legendSlices(bank.event.legendStats || { rows: [] }, { slices: ls.slices, top: ls.top }).slices;
+};
+for (const [id, op] of [['rollStart', 'start'], ['rollPause', 'pause'], ['rollStop', 'stop'], ['rollRestart', 'restart']]) {
+  $(id).addEventListener('click', () => post({ action: 'roll', scene: 'legendstats', op }));
+}
+$('rollSpeed').addEventListener('change', () => post({ action: 'roll', scene: 'legendstats', speed: $('rollSpeed').value }));
+$('rollLoop').addEventListener('change', () => post({ action: 'roll', scene: 'legendstats', loop: $('rollLoop').checked }));
+$('rollAuto').addEventListener('change', () => post({ action: 'roll', scene: 'legendstats', autoRoll: $('rollAuto').checked }));
+$('lsFocusChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('button[data-key]');
+  if (!chip || !state) return;
+  const on = !(state.preview.scenes.legendstats.focus || []).includes(chip.dataset.key);
+  post({ action: 'focus', scene: 'legendstats', legend: chip.dataset.key, on });
+});
+// The arrows walk the slices in the pie's order, one highlight at a time.
+function stepLegendFocus(dir) {
+  if (!state) return;
+  const keys = legendSlicesOf(state.preview).map(sliceKey);
+  if (!keys.length) return;
+  const focus = state.preview.scenes.legendstats.focus || [];
+  const at = keys.indexOf(focus[focus.length - 1]);
+  const next = at < 0 ? (dir > 0 ? 0 : keys.length - 1) : (at + dir + keys.length) % keys.length;
+  post({ action: 'focus', scene: 'legendstats', legend: keys[next], only: true });
+}
+$('lsFocusPrev').addEventListener('click', () => stepLegendFocus(-1));
+$('lsFocusNext').addEventListener('click', () => stepLegendFocus(1));
+$('lsFocusClear').addEventListener('click', () => post({ action: 'focus', scene: 'legendstats', clear: true }));
+
+function rollStatus(bank, rows) {
+  const ls = bank.scenes.legendstats;
+  const r = ls.roll || { state: 'stop' };
+  const overflow = tableOverflow(rows);
+  if (!overflow) return { text: rows ? 'The table fits: nothing to roll' : '', live: false };
+  if (r.state === 'stop') return { text: 'Stopped at the top', live: false };
+  if (r.state === 'pause') return { text: 'Paused', live: false };
+  if (r.state === 'hold') return { text: 'Held for the highlight', live: false };
+  const at = rollAt(rollElapsed(r), overflow, { speed: ROLL_SPEEDS[ls.speed] || ROLL_SPEEDS.normal, loop: ls.loop !== false });
+  return { text: at.end ? 'Rolled to the bottom (Loop is off)' : 'Rolling', live: !at.end };
+}
+
+function renderLegendControls(s) {
+  const lsc = s.preview.scenes.legendstats;
+  if (document.activeElement !== $('legendstatsSlices')) $('legendstatsSlices').value = lsc.slices === 'top' ? `top-${lsc.top || 8}` : (lsc.slices || 'multi');
+  const slices = legendSlicesOf(s.preview);
+  const st = rollStatus(s.preview, slices.length);
+  $('rollStatus').textContent = st.text;
+  $('rollStatus').classList.toggle('live', st.live);
+  const r = (lsc.roll && lsc.roll.state) || 'stop';
+  $('rollStart').classList.toggle('on', r === 'play');
+  $('rollPause').classList.toggle('on', r === 'pause' || r === 'hold');
+  $('rollStop').classList.toggle('on', r === 'stop');
+  if (document.activeElement !== $('rollSpeed')) $('rollSpeed').value = lsc.speed || 'normal';
+  if (document.activeElement !== $('rollLoop')) $('rollLoop').checked = lsc.loop !== false;
+  if (document.activeElement !== $('rollAuto')) $('rollAuto').checked = lsc.autoRoll !== false;
+  const focus = lsc.focus || [];
+  for (const id of ['lsFocusPrev', 'lsFocusNext']) $(id).disabled = !slices.length;
+  $('lsFocusClear').disabled = !focus.length;
+  const shown = new Set(slices.map(sliceKey));
+  const away = focus.filter((k) => !shown.has(k)).length;
+  $('lsFocusNote').textContent = away ? `${away} highlighted legend${away === 1 ? ' is' : 's are'} not on the pie now.` : '';
+  const box = $('lsFocusChips');
+  const sig = JSON.stringify([slices.map((x) => [sliceKey(x), x.legend, x.share, x.color, x.legends || 0]), focus]);
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  box.replaceChildren(...slices.map((x) => {
+    const key = sliceKey(x);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = `focus-chip${focus.includes(key) ? ' on' : ''}`;
+    chip.dataset.key = key;
+    chip.setAttribute('aria-pressed', focus.includes(key) ? 'true' : 'false');
+    chip.title = focus.includes(key) ? `${x.legend}: take the highlight off` : `Highlight ${x.legend}: its slice comes out and grows`;
+    const sw = Object.assign(document.createElement('span'), { className: 'sw' });
+    sw.style.background = x.color;
+    chip.append(sw);
+    if (x.legendSlug) {
+      const img = Object.assign(document.createElement('img'), { alt: '', src: `/legendart/icon/${x.legendSlug}.webp` });
+      img.onerror = () => img.classList.add('hidden');
+      chip.append(img);
+    }
+    const name = x.other ? `${x.legend}${x.legends ? ` (+${x.legends})` : ''}` : splitLegend(x.legend).champion;
+    chip.append(
+      Object.assign(document.createElement('span'), { className: 'nm', textContent: name }),
+      Object.assign(document.createElement('span'), { className: 'n', textContent: `${(Math.round(x.share * 10) / 10).toFixed(1)}%` }),
+    );
+    return chip;
+  }));
+}
+
+// --- the standings' and the pairings' highlights (2026-09-19) ---
+//
+// Sam: "highlight and feature specific standings on the standings graphic
+// as well as highlight and enlarge (similar to the card row feature)
+// certain pairings". A search finds a player (the standings) or a table by
+// its number or a player at it (the pairings); picking one highlights it as
+// a cue, on air at once, and the store turns the graphic to its page. The
+// highlighted ones sit under the search as chips; a chip's click takes its
+// highlight off. A highlight names the player or the table, never a row,
+// so it stays put as the standings re-sort and results come in.
+function wireFocusSearch(inputId, listId, { search, pick }) {
+  const input = $(inputId);
+  const list = $(listId);
+  let hits = [];
+  const close = () => { list.classList.remove('open'); list.replaceChildren(); };
+  const choose = (hit) => { pick(hit); input.value = ''; hits = []; close(); };
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    hits = q && state ? search(q).slice(0, 8) : [];
+    list.replaceChildren(...hits.map((hit) => {
+      const li = document.createElement('li');
+      if (hit.icon) {
+        const img = Object.assign(document.createElement('img'), { alt: '', src: hit.icon });
+        img.onerror = () => img.classList.add('hidden');
+        li.append(img);
+      }
+      const meta = document.createElement('div');
+      meta.append(
+        Object.assign(document.createElement('strong'), { textContent: hit.label }),
+        Object.assign(document.createElement('span'), { textContent: hit.sub || '' }),
+      );
+      li.append(meta);
+      li.addEventListener('mousedown', (e) => { e.preventDefault(); choose(hit); });
+      return li;
+    }));
+    placeList(input, list);
+    list.classList.toggle('open', hits.length > 0);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      // Nothing typed means nothing picked (wirePicker's rule).
+      if (!input.value.trim() || !hits.length) { close(); return; }
+      choose(hits[0]);
+    }
+    if (e.key === 'Escape') { hits = []; close(); }
+  });
+  input.addEventListener('blur', () => setTimeout(close, 150));
+}
+
+// A highlighted player or table: lit like the card row's star, a click
+// takes its highlight off. gone: not on the sheet now (the standings or
+// pairings loaded since), kept so it lights up again when it comes back.
+function focusChip(label, sub, takeOff, gone, title) {
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = `focus-chip on${gone ? ' gone' : ''}`;
+  chip.title = title;
+  chip.append(
+    Object.assign(document.createElement('span'), { className: 'nm', textContent: label }),
+    Object.assign(document.createElement('span'), { className: 'n', textContent: sub }),
+    Object.assign(document.createElement('span'), { className: 'x', textContent: '×' }),
+  );
+  chip.addEventListener('click', takeOff);
+  return chip;
+}
+
+// Standings rows with their place: the group, and the rank within it.
+function standingsPlaces(bank) {
+  const rows = (bank.event.standings && bank.event.standings.rows) || [];
+  const seen = new Map();
+  return rows.map((r) => {
+    const g = r.group || '';
+    const rank = (seen.get(g) || 0) + 1;
+    seen.set(g, rank);
+    return { row: r, key: playerKey(r.name), rank, group: g };
+  });
+}
+const ordinal = (n) => `${n}${[11, 12, 13].includes(n % 100) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th'}`;
+wireFocusSearch('standingsFocusSearch', 'standingsFocusResults', {
+  search: (q) => standingsPlaces(state.preview).filter((p) => p.row.name.toLowerCase().includes(q)).map((p) => ({
+    key: p.key,
+    label: p.row.name,
+    sub: [p.group, ordinal(p.rank), p.row.record, p.row.legend].filter(Boolean).join(' · '),
+    icon: p.row.legendSlug ? `/legendart/icon/${p.row.legendSlug}.webp` : '',
+  })),
+  pick: (hit) => post({ action: 'focus', scene: 'standings', player: hit.key, on: true }),
+});
+$('standingsFocusClear').addEventListener('click', () => post({ action: 'focus', scene: 'standings', clear: true }));
+
+function renderStandingsFocus(s) {
+  const focus = s.preview.scenes.standings.focus || [];
+  $('standingsFocusClear').disabled = !focus.length;
+  const places = new Map(standingsPlaces(s.preview).map((p) => [p.key, p]));
+  const box = $('standingsFocusChips');
+  const sig = JSON.stringify(focus.map((k) => [k, places.get(k) ? [places.get(k).rank, places.get(k).group, places.get(k).row.name] : null]));
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  box.replaceChildren(...focus.map((key) => {
+    const p = places.get(key);
+    return focusChip(p ? p.row.name : key, p ? [p.group.replace(/^group\s+/i, 'G'), ordinal(p.rank)].filter(Boolean).join(' · ') : 'not on the standings',
+      () => post({ action: 'focus', scene: 'standings', player: key, on: false }), !p, 'Take this player\'s highlight off');
+  }));
+}
+
+// A pairings table as the search and the chips name it.
+const tableName = (r) => `${(r.left && r.left.name) || 'TBD'} vs ${(r.right && r.right.name) || 'TBD'}`;
+wireFocusSearch('pairingsFocusSearch', 'pairingsFocusResults', {
+  search: (q) => {
+    const rows = (state.preview.event.pairings && state.preview.event.pairings.rows) || [];
+    const n = q.replace(/^(?:table\s*|t)/, '');
+    const hits = /^\d+$/.test(n)
+      ? rows.filter((r) => String(r.table).startsWith(n)).sort((a, b) => String(a.table).length - String(b.table).length || a.table - b.table)
+      : rows.filter((r) => [r.left, r.right].some((p) => p && p.name.toLowerCase().includes(q)));
+    return hits.filter((r) => r.table > 0).map((r) => ({
+      table: r.table,
+      label: `Table ${r.table}: ${tableName(r)}`,
+      sub: `Page ${Math.floor(rows.indexOf(r) / PAIRINGS_PER_PAGE) + 1}${r.status === 'done' ? ' · finished' : ''}`,
+    }));
+  },
+  pick: (hit) => post({ action: 'focus', scene: 'pairings', table: hit.table, on: true }),
+});
+$('pairingsFocusClear').addEventListener('click', () => post({ action: 'focus', scene: 'pairings', clear: true }));
+
+function renderPairingsFocus(s) {
+  const focus = s.preview.scenes.pairings.focus || [];
+  $('pairingsFocusClear').disabled = !focus.length;
+  const rows = (s.preview.event.pairings && s.preview.event.pairings.rows) || [];
+  const box = $('pairingsFocusChips');
+  const sig = JSON.stringify(focus.map((t) => { const r = rows.find((x) => x.table === t); return [t, r ? tableName(r) : null]; }));
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  box.replaceChildren(...focus.map((t) => {
+    const r = rows.find((x) => x.table === t);
+    return focusChip(`Table ${t}`, r ? tableName(r) : 'not in the pairings', () => post({ action: 'focus', scene: 'pairings', table: t, on: false }), !r, 'Take this table\'s highlight off');
+  }));
+}
 
 function renderExtras(s) {
   const prev = s.preview;
@@ -3276,8 +3520,10 @@ function renderExtras(s) {
     if (document.activeElement !== $('legendText')) $('legendHint').textContent = legendProblem || legendSummary(ls);
     const lsc = prev.scenes.legendstats;
     if (document.activeElement !== $('legendstatsRate')) $('legendstatsRate').checked = lsc.winRate !== false;
-    if (document.activeElement !== $('legendstatsTop')) $('legendstatsTop').value = String(lsc.top || 8);
+    renderLegendControls(s);
   }
+  renderStandingsFocus(s);
+  renderPairingsFocus(s);
   if (document.activeElement !== $('standingsLegends')) $('standingsLegends').checked = prev.scenes.standings.legends !== false;
   legendNote('standingsLegendNote', prev.scenes.standings.legends !== false, prev.event.standings ? prev.event.standings.rows || [] : []);
   {

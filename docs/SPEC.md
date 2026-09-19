@@ -168,6 +168,9 @@ this set; the PSDs stay the visual reference.
     name in its own column; `scenes.standings.legends` (default true) drops
     both for an event whose legends are not known. Fixed column widths, so
     a long name shrinks (fitnames) rather than widening its column.
+    `scenes.standings.focus[8]` (2026-09-19) holds highlighted players by
+    web/shared/focus.js playerKey: the row takes an accent wash and bar,
+    grows 12px with its type a size up, and the other rows dim.
 22. **Result strip** (`result`) — the match winner (match.result.winner, or
     whoever holds the series) with legend art, round and game chips, the
     "advances to" note and a transparent camera well; the series score as a
@@ -186,12 +189,27 @@ this set; the PSDs stay the visual reference.
     twelve in share order, legend faces on the slices with room) beside a
     table (the face ringed in its slice colour, champion and title, share
     over the player count, win rate over the record). scenes.legendstats
-    {visible, winRate, top 3-8}: the win rate column and the note switch
-    together; legends past `top` fold into Other, with any players past the
-    rows when `total` is larger. Shares, Other, slice colours, the paste and
-    the standings count live in web/shared/legendstats.js; the Tournament
-    platform fills it from TopDeck (legendStats in server/platform-model.js).
-    A full-frame graphic.
+    {visible, winRate, slices multi | all | top, top 3-8, focus[8], roll,
+    autoRoll, loop, speed slow | normal | fast}: the win rate column and the
+    note switch together; `slices` multi (the default since 2026-09-19)
+    gives every legend two or more players brought a slice and folds the
+    one-player legends into Other, all gives every legend one, top keeps
+    the largest `top`; any players past the rows when `total` is larger go
+    to Other too. Slices past the eighth take Other's grey (the palette's
+    ceiling). A table longer than nine 80px rows rolls: `roll {state stop |
+    play | pause | hold, at, done}` on the wall clock (legendstats.js
+    rollAt: 5 s hold, down at `speed` px/s easing in and out, 5 s hold,
+    back up in 3 s at most and round again with `loop`); TAKE stamps it
+    from the top on both banks when the graphic comes on air or airs new
+    numbers (stopped instead with autoRoll off). `focus` names highlighted
+    slices by key (the legend's slug, `n:` + its squeezed name, or `other`):
+    the slice comes out 22 units and grows 5%, its face grows, the rest
+    step back and dim, its row lights up; while the roll is not playing the
+    table brings the newest highlighted row into view, and a highlight on a
+    playing roll holds it (`hold`) until the last highlight clears. Shares,
+    Other, slice colours, the roll, the paste and the standings count live
+    in web/shared/legendstats.js; the Tournament platform fills it from
+    TopDeck (legendStats in server/platform-model.js). A full-frame graphic.
 25. **Pairings** (`pairings`, 2026-09-19) — every table of a round:
     event.pairings {rows[128] (table, left and right as up-next table
     sides, status '' / pending / live / done, score [left, right], winner
@@ -199,8 +217,11 @@ this set; the PSDs stay the visual reference.
     the round title), byes[16]}. 32 tables a page in two columns of 16
     (scene.page 1-4), each table read across: number, player (portrait,
     name, record going in and legend), VS or the games, opponent mirrored.
-    `scenes.pairings {visible, page, legends, results}`: legends as the
-    standings'; results off keeps every table at VS. Records are left off
+    `scenes.pairings {visible, page, legends, results, focus[8]}`: legends
+    as the standings'; results off keeps every table at VS; focus holds
+    highlighted table numbers (a highlighted table grows 34px in its column
+    with its type a size up, the column's other rows give the room up down
+    to 36px, every other table dims). Records are left off
     when every one is 0-0. Filled by the Tournament platform (kind
     `pairings`: a round, optionally one group; a different round or group
     resets the page, the same one keeps it) or typed under Match data ›
@@ -219,6 +240,16 @@ sorted within each group by points, or by record when a group has no
 points (state.js sortStandings); `scenes.standings.group` picks the group
 on the graphic (web/shared/standings.js), and the panel's page arrows run
 across groups. Rows are capped at 80 a group and 320 in all.
+Highlight cues (2026-09-19): `{action:'focus', scene:'standings', player}`,
+`{action:'focus', scene:'pairings', table}` and `{action:'focus',
+scene:'legendstats', legend}` add (`on: true`), take out (`on: false`) or
+flip (no `on`) one highlight; `only: true` makes it the one highlight and
+`clear: true` takes them all off. Both banks at once, like the card row's.
+A standings player or pairings table newly highlighted turns that graphic
+to its group and page. The legend table's roll: `{action:'roll',
+scene:'legendstats', op}` with op start (from the top when stopped, from
+where it is when paused or held), pause, stop (back to the top) or
+restart, and optionally `speed`, `loop`, `autoRoll`, on both banks.
 The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume

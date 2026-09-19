@@ -193,10 +193,13 @@ describe('legend distribution: the store', () => {
     ({ applyUpdate, getState } = await import('../server/state.js'));
   });
 
-  it('starts empty with the win rate on and eight legends shown', () => {
+  it('starts empty with the win rate on, every legend but the one-player ones sliced, the table stopped', () => {
     const bank = getState().preview;
     assert.deepEqual(bank.event.legendStats, { rows: [], total: 0, label: '', note: '' });
-    assert.deepEqual(bank.scenes.legendstats, { visible: false, winRate: true, top: 8 });
+    assert.deepEqual(bank.scenes.legendstats, {
+      visible: false, winRate: true, top: 8, slices: 'multi', focus: [],
+      roll: { state: 'stop', at: 0, done: 0 }, autoRoll: true, loop: true, speed: 'normal',
+    });
   });
 
   it('keeps clean rows and drops the rest', () => {
@@ -224,8 +227,9 @@ describe('legend distribution: the store', () => {
   });
 
   it('switches the win rate and clamps the legends shown, and TAKE airs it', () => {
-    applyUpdate({ scenes: { legendstats: { visible: true, winRate: false, top: 99, bogus: true } } });
-    assert.deepEqual(getState().preview.scenes.legendstats, { visible: true, winRate: false, top: 8 });
+    applyUpdate({ scenes: { legendstats: { visible: true, winRate: false, top: 99, bogus: true, slices: 'most' } } });
+    const ls = getState().preview.scenes.legendstats;
+    assert.deepEqual([ls.visible, ls.winRate, ls.top, ls.slices, 'bogus' in ls], [true, false, 8, 'multi', false]);
     applyUpdate({ scenes: { legendstats: { top: 1 } } });
     assert.equal(getState().preview.scenes.legendstats.top, 3);
     applyUpdate({ action: 'take' });

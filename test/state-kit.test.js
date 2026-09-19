@@ -87,7 +87,7 @@ describe('starter kit fields', () => {
     assert.deepEqual(sc.headtohead, { visible: true, status: 'Shuffling' });
     assert.deepEqual(sc.profile, { visible: true, side: 'right', camera: true, decklist: false });
     assert.deepEqual(sc.bracket, { visible: true });
-    assert.deepEqual(sc.standings, { visible: true, page: 4, legends: true, group: '' });
+    assert.deepEqual(sc.standings, { visible: true, page: 4, legends: true, group: '', focus: [] });
     assert.deepEqual(sc.result, { visible: true });
     assert.equal(sc.slate.schedule, false);
     assert.equal(sc.slate.camera, false);

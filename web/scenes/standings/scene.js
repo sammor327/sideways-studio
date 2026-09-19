@@ -3,11 +3,15 @@ import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, portraitSteps } from '../../stage/art.js';
 import { applyVisibility } from '../../stage/exp.js';
 import { createPager } from '../../stage/pager.js';
+import { FocusBlend } from '../../stage/focusblend.js';
+import { scheduleNameFit } from '../../stage/fitnames.js';
 import { STANDINGS_PAGES, STANDINGS_PER_PAGE as PER_PAGE, standingsView } from '../../shared/standings.js';
+import { playerKey } from '../../shared/focus.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 600);
+const focus = new FocusBlend(root, 450);
 
 // The columns, with and without the legends (2026-09-19, Sam: "show the
 // legend portrait next to them and the legend name to the right", with a
@@ -67,6 +71,7 @@ function renderRows({ rows, cut, page, legends, points }) {
     const rank = start + i + 1;
     const tr = document.createElement('tr');
     tr.className = (cut && rank > cut ? 'outc' : 'in') + (cut && rank === cut ? ' cut' : '');
+    tr.dataset.key = playerKey(r.name);
     // The row's place down the page, 0 to 1: where its slice of the in and
     // out clocks starts (scene.css).
     tr.style.setProperty('--pos', String(slice.length > 1 ? i / (slice.length - 1) : 0));
@@ -93,6 +98,37 @@ function renderRows({ rows, cut, page, legends, points }) {
     );
     return tr;
   }));
+  // New rows take their highlight as they are drawn, no move.
+  poseRows(false);
+}
+
+// --- the highlight (2026-09-19, Sam: "highlight and feature specific
+// standings") ---
+//
+// The players highlighted (scenes.standings.focus, by web/shared/focus.js
+// playerKey). Each of their rows on the page gains FEATURE_PX and a size
+// of type while the other rows dim; if the page would then outgrow the
+// room under the heading, the other rows give the difference up between
+// them. Highlighting a player on another page or group turns the graphic
+// to them (the store does that), so their row is always on the page.
+const ROW_PX = 39;
+const FEATURE_PX = 12;
+const PAGE_PX = ROW_PX * PER_PAGE + 30;
+let focusKeys = [];
+
+function poseRows(animate) {
+  const rows = [...$('rows').children];
+  const lit = new Set(focusKeys);
+  const on = rows.filter((tr) => lit.has(tr.dataset.key));
+  const spare = Math.max(0, rows.length * ROW_PX + on.length * FEATURE_PX - PAGE_PX);
+  const give = on.length && on.length < rows.length ? spare / (rows.length - on.length) : 0;
+  const moved = focus.move(rows.map((tr) => {
+    const me = lit.has(tr.dataset.key);
+    return [tr, { h: me ? 1 : 0, d: on.length && !me ? 1 : 0, x: me ? FEATURE_PX : on.length ? -give : 0 }];
+  }), animate);
+  // Grown type may no longer fit its column: fit the names again once the
+  // rows have landed (stage/fitnames.js only reruns on DOM changes).
+  moved.then(() => scheduleNameFit());
 }
 
 // The page turns and the entrance: web/stage/pager.js. The group's name and
@@ -137,10 +173,16 @@ const params = initStage({
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
 
+    const keys = Array.isArray(scene.focus) ? scene.focus : [];
+    const focusChanged = JSON.stringify(keys) !== JSON.stringify(focusKeys);
+    focusKeys = keys;
     showPage({
       rows, cut: st.cut || 0, page, pages, legends: scene.legends !== false, points,
       group: view.group, sub, foot, place: view.index * (STANDINGS_PAGES + 1) + page,
     }, { first, visible, wasVisible: shownVisible });
+    // A highlight on the page up: the rows move to it where they stand (a
+    // page turning to the player poses its new rows as it draws them).
+    if (focusChanged) poseRows(Boolean(visible && shownVisible && !first));
     shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
   },
 });

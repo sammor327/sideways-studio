@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.33.0 (2026-09-19)
+
+- Legend distribution: every legend two or more players brought now gets a slice of its own. The legends one player brought fold into Other, which says how many there are. Slices, under Graphic features › Legend distribution, also offers every legend, or the top 8 down to the top 3 as before. Past the eighth legend the slices are grey, because eight colours is as many as stay apart on screen: each legend's face sits on its slice where it fits, and every one has its row in the table.
+- Legend distribution: a table longer than nine rows rolls. Five seconds at the top, down at a reading pace, five seconds at the bottom, then back up and round again (Loop), or it stays at the bottom with Loop off. It starts by itself each time the graphic goes on air; switch Start on its own off to start it by hand. Start, Pause, Stop (back to the top) and Restart under Graphic features › Legend distribution › Table roll act on air at once, and Speed makes it slow, normal or fast.
+- Legend distribution: highlight a legend. Click its chip under Graphic features, or step through them with ‹ ›: its slice comes out of the pie and grows with its face, the other slices step back and dim, and its row lights up in its colour. A rolling table holds with that row in view and rolls on when the highlight comes off. On air at once, no TAKE; several at a time; Clear takes them all off.
+- Standings: highlight players. Type a name under Graphic features › Standings › Highlight: the player's row lights up in the accent colour and grows a little while the other rows dim, on air at once, and the graphic turns to their group and page. Up to eight at a time; a chip's × takes one off. A highlight stays on its player as the standings re-sort.
+- Pairings: highlight and enlarge tables. Type a table number or a player under Graphic features › Pairings › Highlight: the table grows in its column, its names, portraits and result a size up, while every other table dims, on air at once, and the graphic turns to its page. A highlight stays on its table as results come in.
+
 ## 0.32.0 (2026-09-19)
 
 - Standings rank by points during a round again. Standings loaded from the Tournament platform mid-round had every player on 0 points (TopDeck's own standings only catch up once a round ends) and so were sorted by name; the app now counts the finished tables itself until TopDeck's numbers agree with them. While a round's tables are still being played the line under the title says "Round 2 in progress" instead of "after Round 2", and a freshly paired round's byes wait for its first result.

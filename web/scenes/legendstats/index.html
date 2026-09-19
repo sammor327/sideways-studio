@@ -23,13 +23,17 @@
     <div class="head"><div class="lead"><div class="title">Legend distribution</div><div class="sub" id="sub"></div></div></div>
     <div class="panel" id="panel">
       <div class="chart">
-        <svg class="pie" id="pie" viewBox="0 0 680 680" aria-hidden="true"></svg>
-        <div class="marks" id="marks"></div>
+        <div class="sweep">
+          <div class="pie-box">
+            <svg class="pie" id="pie" viewBox="0 0 680 680" aria-hidden="true"></svg>
+            <div class="marks" id="marks"></div>
+          </div>
+        </div>
       </div>
       <div class="rule"></div>
       <div class="table" id="table">
         <div class="thead"><span>Legend</span><span class="n">Share</span><span class="n rate">Win rate</span></div>
-        <div class="rows" id="rows"></div>
+        <div class="view" id="view"><div class="rows" id="rows"></div></div>
       </div>
     </div>
     <div class="empty hidden" id="empty">No legend data yet. Paste it under Match data › Legend distribution in the control panel, or load it from the Tournament platform tab.</div>

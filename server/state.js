@@ -14,7 +14,10 @@ import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } fro
 import { kindOf } from './carddb.js';
 import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
 import { SPONSOR_MAX, SPONSOR_POSITIONS } from '../web/shared/sponsor.js';
-import { TOP_DEFAULT, TOP_MAX, TOP_MIN } from '../web/shared/legendstats.js';
+import {
+  ROLL_OPS, ROLL_SPEEDS, ROLL_SPEED_DEFAULT, ROLL_STATES, SLICE_MODES, SLICES_DEFAULT, TOP_DEFAULT, TOP_MAX, TOP_MIN, rollElapsed,
+} from '../web/shared/legendstats.js';
+import { FOCUS_MAX, nextFocus, pairingsPageOf, playerKey, standingsPlaceOf } from '../web/shared/focus.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -227,17 +230,32 @@ function defaultBank() {
       bracket: { visible: false },
       // group: which group's standings are up when the rows carry groups
       // (2026-09-19, Sam: "alternate through the groups more easily"); ''
-      // or a group that is not there means the first.
-      standings: { visible: false, page: 1, legends: true, group: '' },
+      // or a group that is not there means the first. focus: the players
+      // highlighted (web/shared/focus.js playerKey), newest last: their rows
+      // light up and grow a little while the rest dim. A cue like the card
+      // row's highlight, so it lands in both banks and acts on air at once.
+      standings: { visible: false, page: 1, legends: true, group: '', focus: [] },
       // The legend distribution: a pie of the legends played and a table of
       // their shares, the win rate column switchable (Sam: "make the win rate
-      // option able to be toggled"). top is how many legends get a slice of
-      // their own; the rest fold into Other.
-      legendstats: { visible: false, winRate: true, top: TOP_DEFAULT },
+      // option able to be toggled"). slices: which legends get a slice of
+      // their own (multi: every legend two or more players brought, the
+      // default; all; top: the largest `top`); the rest fold into Other.
+      // focus: the highlighted slices (legendstats.js sliceKey), newest last.
+      // roll: the table's roll when it is longer than its box, { state, at,
+      // done } (legendstats.js rollAt); autoRoll starts it as the graphic
+      // comes on air, loop sends it back up and round again, speed is slow,
+      // normal or fast. The highlight and the roll are cues (the focus and
+      // roll actions): they land in both banks and act on air at once.
+      legendstats: {
+        visible: false, winRate: true, top: TOP_DEFAULT, slices: SLICES_DEFAULT, focus: [],
+        roll: { state: 'stop', at: 0, done: 0 }, autoRoll: true, loop: true, speed: ROLL_SPEED_DEFAULT,
+      },
       // Pairings draw event.pairings, 32 tables a page in two columns.
       // legends as the standings'; results marks the finished tables with
-      // their games and dims the player who lost.
-      pairings: { visible: false, page: 1, legends: true, results: true },
+      // their games and dims the player who lost. focus: the table numbers
+      // highlighted, newest last: a highlighted table grows in its column
+      // while the rest dim (a cue, like the standings' highlight).
+      pairings: { visible: false, page: 1, legends: true, results: true, focus: [] },
       // Ongoing matches (2026-09-19, Sam: "a graphic that shows ongoing
       // matches"): the tables of event.pairings that have not finished,
       // bigger the fewer there are, 32 a page at most.
@@ -360,6 +378,44 @@ function mergeBank(bank, raw) {
   if (typeof bank.scenes.decklist.focusOn !== 'boolean') bank.scenes.decklist.focusOn = true;
   if (typeof bank.scenes.cardrow.background !== 'boolean') bank.scenes.cardrow.background = true;
   bank.scenes.sponsor.items = cleanSponsorItems(bank.scenes.sponsor.items);
+  // The highlights and the legend table's roll (2026-09-19): clean lists and
+  // a roll of the right shape, whatever an older or hand-edited save held.
+  bank.scenes.standings.focus = cleanPlayerKeys(bank.scenes.standings.focus);
+  bank.scenes.pairings.focus = cleanTableKeys(bank.scenes.pairings.focus);
+  const ls = bank.scenes.legendstats;
+  ls.focus = cleanSliceKeys(ls.focus);
+  ls.roll = cleanRoll(ls.roll);
+  if (!SLICE_MODES.includes(ls.slices)) ls.slices = SLICES_DEFAULT;
+  if (!Object.hasOwn(ROLL_SPEEDS, ls.speed)) ls.speed = ROLL_SPEED_DEFAULT;
+  for (const flag of ['autoRoll', 'loop']) if (typeof ls[flag] !== 'boolean') ls[flag] = true;
+}
+
+// The highlight lists (web/shared/focus.js): standings players by
+// playerKey, pairings tables by number, legend slices by sliceKey; no
+// repeats, at most FOCUS_MAX, the newest last.
+const lastUnique = (list) => [...new Set(list)].slice(-FOCUS_MAX);
+function cleanPlayerKeys(raw) {
+  return Array.isArray(raw) ? lastUnique(raw.map((k) => playerKey(cleanStr(k ?? '', 40))).filter(Boolean)) : [];
+}
+function cleanTableKeys(raw) {
+  return Array.isArray(raw) ? lastUnique(raw.map((t) => clampInt(t, 0, 9999)).filter((t) => t > 0)) : [];
+}
+const SLICE_KEY = /^(?:[a-z0-9-]{1,60}|n:[a-z0-9]{1,60})$/;
+function cleanSliceKey(raw) {
+  const key = String(raw ?? '').trim().toLowerCase();
+  return SLICE_KEY.test(key) ? key : '';
+}
+function cleanSliceKeys(raw) {
+  return Array.isArray(raw) ? lastUnique(raw.map(cleanSliceKey).filter(Boolean)) : [];
+}
+// The legend table's roll (web/shared/legendstats.js): a playing roll needs
+// the moment it started; anything unreadable is stopped at the top.
+function cleanRoll(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  const at = Math.max(0, Math.trunc(Number(r.at)) || 0);
+  const done = Math.max(0, Math.trunc(Number(r.done)) || 0);
+  if (!ROLL_STATES.includes(r.state) || r.state === 'stop' || (r.state === 'play' && !at)) return { state: 'stop', at: 0, done: 0 };
+  return r.state === 'play' ? { state: 'play', at, done } : { state: r.state, at: 0, done };
 }
 
 // A sponsor is a name and, optionally, art uploaded through
@@ -887,6 +943,7 @@ function applyBankPatch(bank, patch) {
       if (st.page !== undefined) bank.scenes.standings.page = clampInt(st.page, 1, 4);
       if (st.legends !== undefined) bank.scenes.standings.legends = Boolean(st.legends);
       if (st.group !== undefined) bank.scenes.standings.group = cleanStr(st.group ?? '', 20);
+      if (st.focus !== undefined) bank.scenes.standings.focus = cleanPlayerKeys(st.focus);
     }
     if (patch.scenes.pairings && typeof patch.scenes.pairings === 'object') {
       const pr = patch.scenes.pairings;
@@ -894,6 +951,7 @@ function applyBankPatch(bank, patch) {
       if (pr.page !== undefined) bank.scenes.pairings.page = clampInt(pr.page, 1, PAIRINGS_PAGES);
       if (pr.legends !== undefined) bank.scenes.pairings.legends = Boolean(pr.legends);
       if (pr.results !== undefined) bank.scenes.pairings.results = Boolean(pr.results);
+      if (pr.focus !== undefined) bank.scenes.pairings.focus = cleanTableKeys(pr.focus);
     }
     if (patch.scenes.ongoing && typeof patch.scenes.ongoing === 'object') {
       const og = patch.scenes.ongoing;
@@ -906,6 +964,10 @@ function applyBankPatch(bank, patch) {
       if (ls.visible !== undefined) bank.scenes.legendstats.visible = Boolean(ls.visible);
       if (ls.winRate !== undefined) bank.scenes.legendstats.winRate = Boolean(ls.winRate);
       if (ls.top !== undefined) bank.scenes.legendstats.top = clampInt(ls.top, TOP_MIN, TOP_MAX);
+      if (ls.slices !== undefined && SLICE_MODES.includes(ls.slices)) bank.scenes.legendstats.slices = ls.slices;
+      // The highlight travels with the bank on TAKE; the panel changes it
+      // with the focus cue, and the roll with the roll cue.
+      if (ls.focus !== undefined) bank.scenes.legendstats.focus = cleanSliceKeys(ls.focus);
     }
     if (patch.scenes.sponsor && typeof patch.scenes.sponsor === 'object') {
       const sp = patch.scenes.sponsor;
@@ -985,6 +1047,68 @@ export function setThemeImage(slot, urlPath) {
 // waits for a TAKE. Every op is idempotent enough to survive a double click.
 // which: 'round' (the match clock, default) or 'countdown' (the slate's
 // "stream resumes in" clock). Same arithmetic, separate numbers.
+// --- the between-games highlights and the legend table's roll (2026-09-19) ---
+
+// A highlight on the standings, the pairings or the legend distribution (the
+// focus cue). A player or a table newly highlighted turns its graphic to
+// the page it is on, so featuring a player is one press even from page 3.
+function focusSheet(bank, patch, now) {
+  const how = { on: patch.on === undefined ? undefined : Boolean(patch.on), only: Boolean(patch.only), clear: Boolean(patch.clear) };
+  if (patch.scene === 'standings') {
+    const sc = bank.scenes.standings;
+    const key = playerKey(cleanStr(patch.player ?? '', 40));
+    const had = sc.focus.includes(key);
+    sc.focus = nextFocus(sc.focus, key, how);
+    const at = key && !had && sc.focus.includes(key) ? standingsPlaceOf(bank.event.standings, key) : null;
+    if (at) Object.assign(sc, at);
+  } else if (patch.scene === 'pairings') {
+    const sc = bank.scenes.pairings;
+    const table = clampInt(patch.table ?? 0, 0, 9999);
+    const had = sc.focus.includes(table);
+    sc.focus = nextFocus(sc.focus, table, how);
+    const page = table && !had && sc.focus.includes(table) ? pairingsPageOf(bank.event.pairings.rows, table) : null;
+    if (page) sc.page = Math.min(PAIRINGS_PAGES, page);
+  } else {
+    const ls = bank.scenes.legendstats;
+    ls.focus = nextFocus(ls.focus, cleanSliceKey(patch.legend), how);
+    holdRoll(ls, now);
+  }
+}
+
+// A highlight holds the legend table's roll where it is (the table brings
+// the highlighted row into view instead), and clearing the last highlight
+// lets it roll on from there.
+function holdRoll(ls, now) {
+  if (ls.focus.length && ls.roll.state === 'play') ls.roll = { state: 'hold', at: 0, done: rollElapsed(ls.roll, now) };
+  else if (!ls.focus.length && ls.roll.state === 'hold') ls.roll = { state: 'play', at: now, done: ls.roll.done };
+}
+
+// The roll cue on one bank: its settings, then start (from the top when
+// stopped, else from where it stands), pause, stop (back to the top) or
+// restart (from the top at once).
+function applyRoll(ls, patch, now) {
+  if (patch.speed !== undefined && Object.hasOwn(ROLL_SPEEDS, patch.speed)) ls.speed = patch.speed;
+  if (patch.loop !== undefined) ls.loop = Boolean(patch.loop);
+  if (patch.autoRoll !== undefined) ls.autoRoll = Boolean(patch.autoRoll);
+  const r = ls.roll;
+  if (patch.op === 'start' && r.state !== 'play') ls.roll = { state: 'play', at: now, done: r.state === 'stop' ? 0 : r.done };
+  else if (patch.op === 'pause' && (r.state === 'play' || r.state === 'hold')) ls.roll = { state: 'pause', at: 0, done: rollElapsed(r, now) };
+  else if (patch.op === 'stop') ls.roll = { state: 'stop', at: 0, done: 0 };
+  else if (patch.op === 'restart') ls.roll = { state: 'play', at: now, done: 0 };
+}
+
+// What starts the legend table's roll over: the graphic coming on air, or
+// new numbers airing while it is up.
+function rollInputs(bank) {
+  const ls = bank.scenes.legendstats;
+  const st = bank.event.legendStats;
+  return { on: Boolean(ls.visible), key: JSON.stringify([st.rows, st.total, ls.slices, ls.top]) };
+}
+function rollFromTop(ls, now) {
+  if (ls.autoRoll === false) ls.roll = { state: 'stop', at: 0, done: 0 };
+  else ls.roll = ls.focus.length ? { state: 'hold', at: 0, done: 0 } : { state: 'play', at: now, done: 0 };
+}
+
 function applyTimer(patch) {
   const now = Date.now();
   for (const bank of [state.preview, state.program]) {
@@ -1063,7 +1187,15 @@ export function applyUpdate(patch) {
   if (!patch || typeof patch !== 'object') return { ok: false, error: 'invalid body' };
 
   if (patch.action === 'take') {
+    const before = rollInputs(state.program);
     state.program = structuredClone(state.preview);
+    // The legend table rolls from the top whenever the graphic comes on air
+    // or airs new numbers (with Start on its own off, it waits at the top).
+    const after = rollInputs(state.program);
+    if (after.on && (!before.on || after.key !== before.key)) {
+      const at = Date.now();
+      for (const bank of [state.preview, state.program]) rollFromTop(bank.scenes.legendstats, at);
+    }
     bump();
     return { ok: true, version: state.version };
   }
@@ -1098,6 +1230,12 @@ export function applyUpdate(patch) {
     } else if (patch.scene === 'cardrow') {
       const slot = clampInt(patch.slot ?? -1, -1, ROW_SLOTS - 1);
       for (const bank of [state.preview, state.program]) bank.scenes.cardrow.focus = slot;
+    } else if (patch.scene === 'standings' || patch.scene === 'pairings' || patch.scene === 'legendstats') {
+      // The between-games sheets (2026-09-19): a player, a table or a legend
+      // added, taken out or flipped (on true, false, or neither), made the
+      // only one (only), or every highlight cleared (clear).
+      const now = Date.now();
+      for (const bank of [state.preview, state.program]) focusSheet(bank, patch, now);
     } else {
       return { ok: false, error: 'unknown scene' };
     }
@@ -1120,6 +1258,17 @@ export function applyUpdate(patch) {
     const next = (state.program.scenes.decklist.replay || 0) + 1;
     state.program.scenes.decklist.replay = next;
     state.preview.scenes.decklist.replay = next;
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // The legend table's roll (2026-09-19): start, pause, stop (back to the
+  // top) and restart, and its settings, on both banks at once like the
+  // clock, so the operator steers it on air without a TAKE.
+  if (patch.action === 'roll') {
+    if (patch.scene !== 'legendstats') return { ok: false, error: 'unknown scene' };
+    if (patch.op !== undefined && !ROLL_OPS.includes(patch.op)) return { ok: false, error: 'unknown roll op' };
+    const now = Date.now();
+    for (const bank of [state.preview, state.program]) applyRoll(bank.scenes.legendstats, patch, now);
     bump();
     return { ok: true, version: state.version };
   }

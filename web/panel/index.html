@@ -1229,6 +1229,16 @@
         <label class="inline" title="Each player's legend portrait beside their name and the legend's name in its own column. Switch off while the legends are not known yet, so the graphic shows no empty column."><input type="checkbox" id="standingsLegends" checked> Legends</label>
         <span class="hint">Twenty rows a page, one group at a time: &rsaquo; runs on from a group's last page into the next group. Rows and the cut are under Match data › Standings; the Tournament platform tab loads every group at once.</span>
       </div>
+      <div class="scene-options focus-row">
+        <span class="opt-label">Highlight</span>
+        <div class="picker-wrap focus-pick">
+          <input id="standingsFocusSearch" placeholder="A player's name&hellip;" autocomplete="off" aria-label="Highlight a player on the standings">
+          <ul class="results" id="standingsFocusResults"></ul>
+        </div>
+        <button type="button" class="clear-mini" id="standingsFocusClear" title="Take every highlight off the standings">Clear</button>
+      </div>
+      <div class="focus-chips" id="standingsFocusChips" role="group" aria-label="Players highlighted on the standings"></div>
+      <p class="hint">A highlighted player's row lights up and grows while the rest dim, on air at once with no TAKE, and the graphic turns to their group and page. Up to eight at a time; &times; takes one off.</p>
       <p class="hint" id="standingsLegendNote"></p>
     </div>
     <div class="feature-group hidden" data-scene="pairings">
@@ -1243,6 +1253,16 @@
         <label class="inline" title="A finished table shows its games, the winner's in the accent colour, and dims the player who lost. Off, every table reads VS."><input type="checkbox" id="pairingsResults" checked> Results</label>
         <span class="hint">32 tables a page. The tables are under Match data › Pairings; the Tournament platform tab loads a whole round (or one group) at once, and loading it again brings in new results.</span>
       </div>
+      <div class="scene-options focus-row">
+        <span class="opt-label">Highlight</span>
+        <div class="picker-wrap focus-pick">
+          <input id="pairingsFocusSearch" placeholder="A table number or a player&hellip;" autocomplete="off" aria-label="Highlight a table on the pairings">
+          <ul class="results" id="pairingsFocusResults"></ul>
+        </div>
+        <button type="button" class="clear-mini" id="pairingsFocusClear" title="Take every highlight off the pairings">Clear</button>
+      </div>
+      <div class="focus-chips" id="pairingsFocusChips" role="group" aria-label="Tables highlighted on the pairings"></div>
+      <p class="hint">A highlighted table grows in its column while the rest dim, on air at once with no TAKE, and the graphic turns to its page. It stays on its table as results come in. Up to eight at a time; &times; takes one off.</p>
       <p class="hint" id="pairingsLegendNote"></p>
     </div>
     <div class="feature-group hidden" data-scene="ongoing">
@@ -1262,18 +1282,48 @@
       <h3>Legend distribution</h3>
       <div class="scene-options">
         <label class="inline" title="The win rate column, and the note under the graphic saying how the win rates were counted"><input type="checkbox" id="legendstatsRate" checked> Win rate</label>
-        <label class="inline" title="How many legends get a slice and a row of their own; the rest fold into Other">Legends shown
-          <select id="legendstatsTop" aria-label="Legends shown">
-            <option value="8">8</option>
-            <option value="7">7</option>
-            <option value="6">6</option>
-            <option value="5">5</option>
-            <option value="4">4</option>
-            <option value="3">3</option>
+        <label class="inline" title="Which legends get a slice and a row of their own; the rest fold into Other. Past the eighth, a slice is grey: eight colours is as many as stay apart.">Slices
+          <select id="legendstatsSlices" aria-label="Legends with a slice of their own">
+            <option value="multi">Every legend two or more played</option>
+            <option value="all">Every legend</option>
+            <option value="top-8">The top 8</option>
+            <option value="top-7">The top 7</option>
+            <option value="top-6">The top 6</option>
+            <option value="top-5">The top 5</option>
+            <option value="top-4">The top 4</option>
+            <option value="top-3">The top 3</option>
           </select>
         </label>
-        <span class="hint">Legends past the number shown fold into Other. The legends, the player count, the label and the win rate note are under Match data › Legend distribution.</span>
+        <span class="hint">The legends, the player count, the label and the win rate note are under Match data › Legend distribution.</span>
       </div>
+      <div class="scene-options roll-row">
+        <span class="opt-label">Table roll</span>
+        <div class="transport" role="group" aria-label="The table's roll">
+          <button type="button" class="clear-mini" id="rollStart" title="Roll the table: from the top when it is stopped, from where it is when it is paused">&#9654; Start</button>
+          <button type="button" class="clear-mini" id="rollPause" title="Hold the table where it is">&#10074;&#10074; Pause</button>
+          <button type="button" class="clear-mini" id="rollStop" title="Stop and go back to the top">&#9632; Stop</button>
+          <button type="button" class="clear-mini" id="rollRestart" title="Back to the top and rolling at once">&#8634; Restart</button>
+        </div>
+        <output class="roll-status" id="rollStatus"></output>
+        <label class="inline" title="How fast the rows go by">Speed
+          <select id="rollSpeed" aria-label="Roll speed">
+            <option value="slow">Slow</option>
+            <option value="normal">Normal</option>
+            <option value="fast">Fast</option>
+          </select>
+        </label>
+        <label class="inline" title="On: after a hold at the bottom the table goes back up and rolls again. Off: it stays at the bottom until Start or Restart."><input type="checkbox" id="rollLoop" checked> Loop</label>
+        <label class="inline" title="On: the table starts rolling by itself each time the graphic goes on air (after five seconds at the top). Off: it waits at the top for Start."><input type="checkbox" id="rollAuto" checked> Start on its own</label>
+      </div>
+      <div class="scene-options focus-row">
+        <span class="opt-label">Highlight</span>
+        <button type="button" class="clear-mini" id="lsFocusPrev" title="Highlight the legend before, in the pie's order">&lsaquo;</button>
+        <button type="button" class="clear-mini" id="lsFocusNext" title="Highlight the next legend, in the pie's order">&rsaquo;</button>
+        <button type="button" class="clear-mini" id="lsFocusClear" title="Take every highlight off">Clear</button>
+        <span class="hint" id="lsFocusNote"></span>
+      </div>
+      <div class="focus-chips" id="lsFocusChips" role="group" aria-label="Highlight a legend"></div>
+      <p class="hint">A table longer than nine rows rolls; the roll and the highlight act on air at once, no TAKE needed. A highlighted legend's slice comes out of the pie and grows, its row lights up, and a rolling table holds with that row in view until the highlight comes off.</p>
     </div>
     <div class="feature-group hidden" data-scene="result">
       <h3>Result</h3>
