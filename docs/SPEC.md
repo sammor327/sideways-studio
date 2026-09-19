@@ -206,6 +206,19 @@ this set; the PSDs stay the visual reference.
     resets the page, the same one keeps it) or typed under Match data ›
     Pairings. Its pages turn like the standings' (web/stage/pager.js, shared
     since this round). A full-frame graphic on the standings' ground.
+26. **Ongoing matches** (`ongoing`, 2026-09-19) — the tables of
+    event.pairings with no result yet (status not done, no winner), for the
+    wait at the end of a round. Up to 12 in one 1400px column whose rows
+    grow to share its 816px (--k up to 1.9), more in the pairings' two
+    columns (--k up to 1.25), 32 a page (`scenes.ongoing {visible, page
+    1-5, legends}`). VS or the games so far. The Tournament platform keeps
+    its tables current on air (event.pairings.src + followPairings, the
+    `follow` switch). A full-frame graphic on the pairings' ground.
+Standings by group (2026-09-19): event.standings rows carry `group`, kept
+sorted within each group by points, or by record when a group has no
+points (state.js sortStandings); `scenes.standings.group` picks the group
+on the graphic (web/shared/standings.js), and the panel's page arrows run
+across groups. Rows are capped at 80 a group and 320 in all.
 The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume

@@ -658,7 +658,7 @@
       <summary><h4 class="section-label">Standings</h4></summary>
 
       <div class="field-row" data-field="standings">
-        <span class="row-label" title="One row per line in rank order: Name | CN | Irelia, Blade Dancer | 9-1-0 | 27 | 68.4 | 72.1 | 61.0. Points and the three tiebreaks are optional. Twenty rows a page.">Standings</span>
+        <span class="row-label" title="One row per line: Name | CN | Irelia, Blade Dancer | 9-1-0 | 27 | 68.4 | 72.1 | 61.0. Points and the three tiebreaks are optional; the rows are ranked by points, or by record when there are no points. A line # Group 2 starts a group: the graphic shows one group at a time. Twenty rows a page.">Standings</span>
         <div class="cell span2 standings-cell">
           <label class="inline">Cut
             <select id="standingsCut" aria-label="Cut size">
@@ -885,6 +885,11 @@
           <div class="scene-name">Pairings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="pairingsOnAir">ON AIR</button></div>
           <button id="togglePairings" class="scene-toggle">OFF</button>
           <p class="scene-note">Every table of the round, 32 a page in two columns, with each finished table's result. Load a round from the Tournament platform tab, or type the tables under Match data &rsaquo; Pairings.</p>
+        </div>
+        <div class="scene-row" data-scene="ongoing">
+          <div class="scene-name">Ongoing matches <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="ongoingOnAir">ON AIR</button></div>
+          <button id="toggleOngoing" class="scene-toggle">OFF</button>
+          <p class="scene-note">The pairings' tables still being played, bigger the fewer are left. Loaded from the Tournament platform tab, finished tables leave it on their own.</p>
         </div>
         <div class="scene-row" data-scene="result">
           <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
@@ -1215,13 +1220,14 @@
     <div class="feature-group hidden" data-scene="standings">
       <h3>Standings</h3>
       <div class="scene-options">
+        <div class="seg hidden" id="standingsGroups" role="group" aria-label="The group on the standings"></div>
         <label class="inline">Page
-          <button type="button" id="standingsPrev" class="clear-mini">&lsaquo;</button>
+          <button type="button" id="standingsPrev" class="clear-mini" title="The previous page; from a group's first page, the last page of the group before">&lsaquo;</button>
           <output id="standingsPage">1</output>
-          <button type="button" id="standingsNext" class="clear-mini">&rsaquo;</button>
+          <button type="button" id="standingsNext" class="clear-mini" title="The next page; from a group's last page, the first page of the next group">&rsaquo;</button>
         </label>
         <label class="inline" title="Each player's legend portrait beside their name and the legend's name in its own column. Switch off while the legends are not known yet, so the graphic shows no empty column."><input type="checkbox" id="standingsLegends" checked> Legends</label>
-        <span class="hint">Twenty rows a page. Rows and the cut are under Match data › Standings.</span>
+        <span class="hint">Twenty rows a page, one group at a time: &rsaquo; runs on from a group's last page into the next group. Rows and the cut are under Match data › Standings; the Tournament platform tab loads every group at once.</span>
       </div>
       <p class="hint" id="standingsLegendNote"></p>
     </div>
@@ -1238,6 +1244,19 @@
         <span class="hint">32 tables a page. The tables are under Match data › Pairings; the Tournament platform tab loads a whole round (or one group) at once, and loading it again brings in new results.</span>
       </div>
       <p class="hint" id="pairingsLegendNote"></p>
+    </div>
+    <div class="feature-group hidden" data-scene="ongoing">
+      <h3>Ongoing matches</h3>
+      <div class="scene-options">
+        <label class="inline">Page
+          <button type="button" id="ongoingPrev" class="clear-mini">&lsaquo;</button>
+          <output id="ongoingPage">1</output>
+          <button type="button" id="ongoingNext" class="clear-mini">&rsaquo;</button>
+        </label>
+        <label class="inline" title="Each player's legend portrait and legend name. Switch off while the legends are not known yet."><input type="checkbox" id="ongoingLegends" checked> Legends</label>
+        <span class="hint">Draws the tables under Match data › Pairings that have no result yet: up to 12 in one column, bigger the fewer there are, then two columns, 32 a page.</span>
+      </div>
+      <p class="hint" id="ongoingCount"></p>
     </div>
     <div class="feature-group hidden" data-scene="legendstats">
       <h3>Legend distribution</h3>
@@ -1570,6 +1589,10 @@
       <div class="url-line"><input class="url-input" id="pairingsUrl" readonly><button data-copy="pairingsUrl">Copy</button></div>
     </div>
     <div class="url-row">
+      <span class="url-label">Ongoing matches source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="ongoingUrl" readonly><button data-copy="ongoingUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
       <span class="url-label">Result source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="resultUrl" readonly><button data-copy="resultUrl">Copy</button></div>
     </div>
@@ -1670,7 +1693,7 @@
     <section class="card pf-event">
       <h2>Standings, pairings, legends and bracket</h2>
       <div class="row">
-        <select id="pfStandGroup" aria-label="Standings for"></select>
+        <select id="pfStandGroup" aria-label="Standings for" title="Every group loads each group's standings at once; the Studio switches between them beside the standings' page arrows"></select>
         <select id="pfCut" aria-label="Cut line">
           <option value="4">Top 4 cut</option>
           <option value="8">Top 8 cut</option>
@@ -1680,8 +1703,11 @@
         <button type="button" id="pfStandings">Standings to preview</button>
       </div>
       <div class="row">
-        <button type="button" id="pfPairings" title="Every table of the round picked under Matches (and of its group, when one is picked) onto the Pairings graphic. Press again to bring in new results.">Pairings to preview</button>
+        <button type="button" id="pfPairings" title="Every table of the round picked under Matches (and of its group, when one is picked) onto the Pairings graphic and the Ongoing matches graphic, which shows the tables still being played.">Pairings to preview</button>
         <span class="pf-what" id="pfPairingsWhat"></span>
+      </div>
+      <div class="row">
+        <label class="inline" title="Every refresh brings each finished table's result into the pairings that preview and program already hold, on air too, without a TAKE: finished tables leave the Ongoing matches graphic as they finish. Never changes which round is loaded or which graphic is up."><input type="checkbox" id="pfFollow" checked> Keep results up to date, on air too</label>
       </div>
       <div class="row">
         <select id="pfLegendGroup" aria-label="Legend distribution for"></select>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Ongoing matches</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="ongoing off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="k-shard s1"></div><div class="k-shard s2"></div>
+    <div class="head"><div class="lead"><div class="title">Ongoing matches</div><div class="sub" id="sub"></div></div><div class="pg" id="page"></div></div>
+    <div class="cols" id="cols">
+      <div class="col" id="colA"><div class="ch"><span class="c-tb">Table</span><span class="c-l">Player</span><span class="c-m"></span><span class="c-r">Opponent</span></div><div class="rows" id="rowsA"></div></div>
+      <div class="col" id="colB"><div class="ch"><span class="c-tb">Table</span><span class="c-l">Player</span><span class="c-m"></span><span class="c-r">Opponent</span></div><div class="rows" id="rowsB"></div></div>
+    </div>
+    <div class="empty" id="empty">No pairings yet. Load a round from the Tournament platform tab, or type the tables under Match data › Pairings in the control panel.</div>
+    <div class="k-foot"><span class="note" id="foot"></span></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The ongoing matches are hidden: switch them on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

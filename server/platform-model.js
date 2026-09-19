@@ -177,10 +177,19 @@ export function standings(ev, { group = 0, throughRound = Infinity } = {}) {
   const inGroup = (e) => !group || (ev.entrants.get(e) && ev.entrants.get(e).group === group);
   for (const e of ev.entrants.keys()) if (inGroup(e) && !ev.entrants.get(e).released) get(e);
   const rounds = Object.values((ev.swiss && ev.swiss.rounds) || {}).filter((r) => r.r <= throughRound).sort((a, b) => a.r - b.r);
+  // The last round with a finished table (in this group), and whether that
+  // round still has tables being played: the standings then stand during it,
+  // not after it. A round's byes count with its first finished table, so a
+  // freshly paired round leaves the standings "after" the one before, bye
+  // players included (Convergence #3: a round 2 bye had put a 1-1 on top of
+  // standings labelled after round 1).
   let played = 0;
+  let open = false;
   for (const r of rounds) {
     let any = false;
+    let playing = false;
     for (const tb of r.tables) {
+      if (!tb.done && tb.es.length === 2 && inGroup(tb.es[0])) playing = true;
       if (!tb.done || tb.es.length !== 2) continue;
       const [a, b] = tb.es;
       const res = tb.winnerE ? (tb.winnerE === a ? 'a' : 'b')
@@ -193,11 +202,13 @@ export function standings(ev, { group = 0, throughRound = Infinity } = {}) {
       B.gw += tb.wins[1]; B.gl += tb.wins[0]; B.gd += tb.draws;
       if (res === 'a') { A.mw++; B.ml++; } else if (res === 'b') { B.mw++; A.ml++; } else { A.md++; B.md++; }
     }
+    if (!any) continue;
     for (const e of r.byes) {
       if (!inGroup(e) || !ev.entrants.has(e)) continue;
-      const P = get(e); P.mw++; P.gw += 2; any = true;
+      const P = get(e); P.mw++; P.gw += 2;
     }
-    if (any) played = r.r;
+    played = r.r;
+    open = playing;
   }
   const FLOOR = 0.33;
   const pts = (s) => s.mw * 3 + s.md;
@@ -214,8 +225,12 @@ export function standings(ev, { group = 0, throughRound = Infinity } = {}) {
     };
   });
   // From the API, TopDeck's own numbers for the standings as they stand (a
-  // drawn match carries no game counts there, so a recomputed GW% drifts).
-  if (ev.official && throughRound === Infinity) {
+  // drawn match carries no game counts there, so a recomputed GW% drifts),
+  // but only while they count the same results as the tables: during a round
+  // TopDeck's standings still stand before it (Convergence #3, round 1: every
+  // player on 0 points beside records of 1-0), and taking them then zeroed
+  // everyone's points and sorted the field by name (2026-09-19, Sam).
+  if (ev.official && throughRound === Infinity && officialCurrent(ev, rows)) {
     for (const r of rows) {
       const o = ev.official.get(r.e);
       if (o) Object.assign(r, o);
@@ -223,8 +238,26 @@ export function standings(ev, { group = 0, throughRound = Infinity } = {}) {
   }
   rows.sort((a, b) => b.points - a.points || b.omw - a.omw || b.gw - a.gw || b.ogw - a.ogw || a.name.localeCompare(b.name));
   rows.forEach((r, i) => { r.rank = i + 1; });
-  return { round: played, rows };
+  return { round: played, open, rows };
 }
+
+// TopDeck's standings agree with the tables when every player it lists has
+// the points the finished tables give them. One player off means they were
+// counted at another moment, and the tables win: mixing the two would rank
+// half the field on stale numbers.
+function officialCurrent(ev, rows) {
+  let seen = 0;
+  for (const r of rows) {
+    const o = ev.official.get(r.e);
+    if (!o) continue;
+    seen += 1;
+    if (o.points !== r.points) return false;
+  }
+  return seen > 0;
+}
+
+// "after Round 3", or "Round 4 in progress" while its tables are being played.
+export const standingsWhen = (s) => (s.round ? (s.open ? `Round ${s.round} in progress` : `after Round ${s.round}`) : '');
 
 // --- rounds for the panel ---
 
@@ -295,14 +328,48 @@ export function summarize(ev, legendOf) {
 const ordinal = (k) => `${k}${(k % 100 >= 11 && k % 100 <= 13) ? 'TH' : ['TH', 'ST', 'ND', 'RD'][k % 10] || 'TH'}`;
 const pct1 = (x) => Math.round(x * 1000) / 10;
 
-export function standingsPatch(ev, legendOf, { group = 0, cut = 4 } = {}) {
-  const s = standings(ev, { group });
-  const rows = s.rows.slice(0, 64).map((r) => ({
-    name: r.name.slice(0, 40), record: r.record, ...legendOf(r.leader),
-    points: r.points, omw: pct1(r.omw), gw: pct1(r.gw), ogw: pct1(r.ogw),
-  }));
-  const label = [group ? `Group ${group}` : '', s.round ? `after Round ${s.round}` : ''].filter(Boolean).join(' · ');
-  return { patch: { event: { standings: { rows, cut, label } } }, round: s.round, count: rows.length, leader: rows[0] ? rows[0].name : '' };
+// Twenty rows a page, four pages: the most one group's standings show.
+export const STANDINGS_PER_GROUP = 80;
+
+// The standings into preview: one group (group N), every player in one list
+// (group 0), or every group at once (group 'all', 2026-09-19, Sam: "make it
+// so the standings can alternate through the groups more easily"), each
+// row tagged with its group so the graphic shows one group at a time and
+// the Studio flips between them without another load. The label says when
+// ("after Round 3"); the group's name is the graphic's own heading. A load
+// that brings the group on air back keeps it and its page; otherwise the
+// graphic opens on the first group's first page.
+export function standingsPatch(ev, legendOf, { group = 0, cut = 4, bank = null } = {}) {
+  // Every group of an event without groups is every player.
+  const groups = group === 'all' ? groupsOf(ev) : [];
+  const one = group === 'all' ? 0 : group;
+  const parts = groups.length
+    ? groups.map((g) => ({ name: `Group ${g}`, s: standings(ev, { group: g }) }))
+    : [{ name: one ? `Group ${one}` : '', s: standings(ev, { group: one }) }];
+  const rows = [];
+  for (const { name, s } of parts) {
+    for (const r of s.rows.slice(0, STANDINGS_PER_GROUP)) {
+      rows.push({
+        name: r.name.slice(0, 40), record: r.record, ...legendOf(r.leader),
+        points: r.points, omw: pct1(r.omw), gw: pct1(r.gw), ogw: pct1(r.ogw), group: name,
+      });
+    }
+  }
+  // When, across the groups loaded: the latest round any of them counted,
+  // in progress while any group still plays it.
+  const round = Math.max(0, ...parts.map((p) => p.s.round));
+  const open = parts.some((p) => p.s.round === round && p.s.open);
+  const label = standingsWhen({ round, open });
+  const names = parts.map((p) => p.name);
+  const cur = bank && bank.scenes && bank.scenes.standings;
+  const keep = cur && names.includes(cur.group || '');
+  const patch = { event: { standings: { rows, cut, label } } };
+  if (!keep) patch.scenes = { standings: { group: names[0], page: 1 } };
+  const first = parts[0].s.rows[0];
+  return {
+    patch, round, open, label, count: rows.length, groups: names.filter(Boolean),
+    leader: first ? first.name.slice(0, 40) : '',
+  };
 }
 
 // The bracket as TopDeck ran it: its first-round tables fill Sideways
@@ -545,9 +612,12 @@ export function legendStatsPatch(ev, legendOf, { group = 0 } = {}) {
 // table with its games and who won. The byes of that round (and group) go
 // with them. Loading a different round or group puts the graphic back on
 // its first page; loading the same one again (fresh results) keeps the page
-// that is up.
-export const PAIRINGS_MAX = 128;
-export function pairingsPatch(ev, legendOf, { round, group: wanted = 0, bank }) {
+// that is up. `id` (the TopDeck event) goes with them as `src`, which is
+// how pairingsRefresh finds them again. 160 tables: five pages of 32, a
+// 320-player round (Convergence #3 seats 265 in its four groups).
+export const PAIRINGS_MAX = 160;
+export const pairingsSrc = (id, round, group) => (id ? `${id}|${round}|${group || 0}` : '');
+export function pairingsPatch(ev, legendOf, { round, group: wanted = 0, bank, id = '' }) {
   const [stage, num] = String(round || '').split(':');
   const st = stage === 'bracket' ? ev.bracket : stage === 'swiss' ? ev.swiss : null;
   const r = st && st.rounds[num];
@@ -571,11 +641,30 @@ export function pairingsPatch(ev, legendOf, { round, group: wanted = 0, bank }) 
   const label = [roundLabel(stage, r), group ? `Group ${group}` : ''].filter(Boolean).join(' · ');
   const byes = (r.byes || []).filter((e) => !group || groupOf(e) === group)
     .map((e) => (ev.entrants.get(e) || {}).name).filter(Boolean).map((name) => name.slice(0, 40));
-  const patch = { event: { pairings: { rows, label, byes } } };
-  if (!bank || !bank.event.pairings || bank.event.pairings.label !== label) patch.scenes = { pairings: { page: 1 } };
+  const patch = { event: { pairings: { rows, label, byes, src: pairingsSrc(id, `${stage}:${r.r}`, group) } } };
+  // The ongoing matches draw these same tables, so they turn back with them.
+  if (!bank || !bank.event.pairings || bank.event.pairings.label !== label) patch.scenes = { pairings: { page: 1 }, ongoing: { page: 1 } };
   if (bank && !bank.event.name && ev.name) patch.event.name = ev.name.slice(0, 80);
   return {
     patch, label, count: rows.length, done: rows.filter((x) => x.status === 'done').length,
     byes: byes.length, dropped: Math.max(0, tables.length - PAIRINGS_MAX),
   };
+}
+
+// Fresh results for the pairings a bank already holds (2026-09-19, the
+// ongoing matches): the same round and group of the same event, reread,
+// or null when the bank holds pairings from anywhere else (typed, another
+// event, an older build) or nothing a viewer would see has changed. Only the
+// tables themselves: never the page, the event name or anything else.
+export function pairingsRefresh(ev, legendOf, { id, bank }) {
+  const cur = bank && bank.event && bank.event.pairings;
+  const m = String((cur && cur.src) || '').match(/^(.+)\|((?:swiss|bracket):\d+)\|(\d+)$/);
+  if (!id || !m || m[1] !== id) return null;
+  const out = pairingsPatch(ev, legendOf, { round: m[2], group: Number(m[3]), id });
+  if (out.error) return null;
+  const next = out.patch.event.pairings;
+  const side = (p) => (p ? [p.name, p.record, p.legend, p.legendSlug] : []);
+  const sig = (pr) => JSON.stringify([pr.label, pr.byes || [],
+    (pr.rows || []).map((r) => [r.table, side(r.left), side(r.right), r.status, r.score, r.winner])]);
+  return sig(next) === sig(cur) ? null : { event: { pairings: next } };
 }

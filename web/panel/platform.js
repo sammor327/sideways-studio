@@ -56,6 +56,7 @@ function paintConnection() {
   if (document.activeElement !== input && !input.dataset.dirty) input.value = config.event || '';
   $('pfKey').placeholder = config.hasKey ? `Key saved (ends ${config.keyHint}); paste a new one to replace it` : 'Optional: paste your TopDeck API key';
   $('pfAuto').checked = config.auto;
+  $('pfFollow').checked = config.follow !== false;
   const line = $('pfStatus');
   line.classList.toggle('bad', status.state === 'error');
   line.classList.toggle('warn', status.state === 'ok' && Boolean(status.warning));
@@ -79,11 +80,15 @@ function paintConnection() {
 
 // What Pairings to preview loads: the round picked under Matches and, in a
 // pooled Swiss, the group picked there.
+// The ones still playing are what the Ongoing matches graphic shows.
 function paintPairingsButton() {
   const r = currentRound();
-  const tables = r ? r.tables.filter((t) => !ui.group || t.group === ui.group).length : 0;
+  const picked = r ? r.tables.filter((t) => !ui.group || t.group === ui.group) : [];
+  const tables = picked.length;
+  const playing = picked.filter((t) => t.status !== 'done').length;
   $('pfPairings').disabled = !tables;
-  $('pfPairingsWhat').textContent = r ? `${r.label}${ui.group ? ` · Group ${ui.group}` : ''} · ${tables} table${tables === 1 ? '' : 's'}` : '';
+  $('pfPairingsWhat').textContent = r ? `${r.label}${ui.group ? ` · Group ${ui.group}` : ''} · ${tables} table${tables === 1 ? '' : 's'}`
+    + `${playing && playing < tables ? `, ${playing} still playing` : ''}` : '';
 }
 
 $('pfEvent').addEventListener('input', () => { $('pfEvent').dataset.dirty = '1'; });
@@ -111,6 +116,15 @@ $('pfKey').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pfConn
 $('pfEvent').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('pfConnect').click(); });
 $('pfAuto').addEventListener('change', async () => {
   info = { ...info, ...(await api('/api/platform/config', { auto: $('pfAuto').checked })) };
+  paintConnection();
+});
+// Results into the pairings already loaded, on air too (server/platform.js
+// followPairings): the ongoing matches empty themselves as tables finish.
+$('pfFollow').addEventListener('change', async () => {
+  const on = $('pfFollow').checked;
+  const res = await api('/api/platform/config', { follow: on });
+  if (res.config) info = { ...info, ...res };
+  say(on ? 'Results now reach the loaded pairings on every refresh, on air too.' : 'Loaded pairings stay as they are until you press Pairings to preview again.');
   paintConnection();
 });
 $('pfRefresh').addEventListener('click', async () => {
@@ -162,14 +176,18 @@ function paintRounds() {
   info2.textContent = r ? (r.byes.length ? `${r.byes.length} bye${r.byes.length === 1 ? '' : 's'}` : '') : '';
   info2.title = r && r.byes.length ? `Byes: ${r.byes.join(', ')}` : '';
 
+  // Every group at once first (2026-09-19): the Studio then flips between
+  // them beside the standings' page arrows, no reload needed.
   const sg = $('pfStandGroup');
   const all = summary ? summary.groups : [];
   const ssig = JSON.stringify(all);
   if (sg.dataset.sig !== ssig) {
     const keep = sg.value;
     sg.dataset.sig = ssig;
-    sg.replaceChildren(...[...all.map((g) => [g, `Group ${g}`]), [0, all.length ? 'Every player' : 'All players']]
-      .map(([v, t]) => Object.assign(el('option', '', t), { value: String(v) })));
+    const opts = all.length
+      ? [['all', 'Every group'], ...all.map((g) => [g, `Group ${g} only`]), [0, 'Everyone, one list']]
+      : [[0, 'All players']];
+    sg.replaceChildren(...opts.map(([v, t]) => Object.assign(el('option', '', t), { value: String(v) })));
     if ([...sg.options].some((o) => o.value === keep)) sg.value = keep;
   }
   // The legend distribution defaults to the whole event, the standings to a group.
@@ -290,8 +308,9 @@ async function loadMatch(round, table, swap) {
   say(`Table ${res.table} is in preview: ${res.names[0]} vs ${res.names[1]}, ${res.roundTitle}. `
     + `${decks === 2 ? 'Both decklists' : decks === 1 ? 'One decklist' : 'No decklists yet (TopDeck shows them once the organizer allows)'}.`
     + `${counts} TAKE to air.`);
-  // Standings default to the group this match is in.
-  if (res.group && [...$('pfStandGroup').options].some((o) => o.value === String(res.group))) $('pfStandGroup').value = String(res.group);
+  // Standings picked for one group follow to the group this match is in;
+  // every group already has it.
+  if (res.group && $('pfStandGroup').value !== 'all' && [...$('pfStandGroup').options].some((o) => o.value === String(res.group))) $('pfStandGroup').value = String(res.group);
 }
 
 async function loadExtra(body, done) {
@@ -301,9 +320,16 @@ async function loadExtra(body, done) {
 }
 
 $('pfStandings').addEventListener('click', () => {
-  const group = Number($('pfStandGroup').value);
-  loadExtra({ kind: 'standings', group, cut: Number($('pfCut').value) },
-    (res) => `${group ? `Group ${group} standings` : 'Standings'} after round ${res.round} are in preview (${res.count} players, ${res.leader} on top). TAKE to air.`);
+  const pick = $('pfStandGroup').value;
+  const group = pick === 'all' ? 'all' : Number(pick);
+  loadExtra({ kind: 'standings', group, cut: Number($('pfCut').value) }, (res) => {
+    const when = res.label ? ` (${res.label})` : '';
+    if (res.groups.length > 1) {
+      return `Standings for all ${res.groups.length} groups${when} are in preview, ${res.count} players. `
+        + 'Switch groups beside the page arrows under Graphic features › Standings (› runs on into the next group). TAKE to air.';
+    }
+    return `${res.groups[0] ? `${res.groups[0]} standings` : 'Standings'}${when} are in preview (${res.count} players, ${res.leader} on top). TAKE to air.`;
+  });
 });
 $('pfLegends').addEventListener('click', () => {
   const group = Number($('pfLegendGroup').value) || 0;
@@ -315,8 +341,9 @@ $('pfPairings').addEventListener('click', () => {
   if (!r) return;
   const plural = (k, word) => `${k} ${word}${k === 1 ? '' : 's'}`;
   loadExtra({ kind: 'pairings', round: r.id, group: ui.group }, (res) => `${res.label} pairings are in preview: ${plural(res.count, 'table')}`
-    + `${res.done ? `, ${res.done} finished` : ''}${res.byes ? `, ${plural(res.byes, 'bye')}` : ''}`
-    + `${res.dropped ? ` (the first 128: ${res.dropped} more do not fit; pick a group)` : ''}. TAKE to air.`);
+    + `${res.done ? `, ${res.done} finished` : ''}${res.count - res.done ? `, ${res.count - res.done} still playing (the Ongoing matches graphic)` : ''}`
+    + `${res.byes ? `, ${plural(res.byes, 'bye')}` : ''}`
+    + `${res.dropped ? ` (the first 160: ${res.dropped} more do not fit; pick a group)` : ''}. TAKE to air.`);
 });
 $('pfBracket').addEventListener('click', () => loadExtra({ kind: 'bracket' },
   (res) => `The ${res.format === 'se16' ? 'Top 16' : 'Top 8'} is in preview with ${res.results} result${res.results === 1 ? '' : 's'}. TAKE to air.`));
@@ -374,7 +401,7 @@ async function poll() {
 const PF_TILES = [
   { label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
   { label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
-  { label: 'Event graphics', keys: ['standings', 'legendstats', 'pairings', 'bracket', 'slate'] },
+  { label: 'Event graphics', keys: ['standings', 'pairings', 'ongoing', 'legendstats', 'bracket', 'slate'] },
 ];
 
 const PREFS_KEY = 'sidewaysStudio.platform';

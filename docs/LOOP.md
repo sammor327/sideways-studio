@@ -214,6 +214,65 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19f (out of band: standings by group, standings in order, the ongoing matches)
+
+Sam, Convergence #3 round 1, three asks. (1) "Standings should be sorted by
+points and if no points available, the record. Highest record or points
+first." His live standings (Group 1 after round 1, from the TopDeck API)
+had every player on 0 points beside records of 1-0 and 0-1, in name order.
+Cause: platform-model standings() laid TopDeck's official numbers over its
+own count whenever the API was the source, and TopDeck's /standings still
+stood before the round (points 0 for all). Now the official numbers are
+taken only while their points equal the count for every player listed
+(officialCurrent); otherwise the tables win for everyone. The label says
+"Round N in progress" while that round has unfinished tables in the scope
+(standingsWhen), and a round's byes count with its first finished table, so
+a freshly paired round leaves the standings "after" the previous one (a
+round 2 bye had put a 1-1 on top of standings labelled after round 1). The
+store sorts every standings list (sortStandings in state.js): within each
+group by points when any row has points, else by record (W-L-D, a win 3, a
+draw 1, fewer losses first), ties in arrival order so TopDeck's tiebreak
+order and typed order survive. A list without points leaves the Points
+column empty and its foot says "Ranked by record." (2) "Make it so the
+standings can alternate through the groups more easily": standings rows
+carry `group` (80 a group, 320 in all), `scenes.standings.group` picks the
+one up (the first when empty or gone), web/shared/standings.js
+(standingsView / standingsStep) is shared by the scene and the panel. The
+platform's Standings to preview defaults to "Every group" (kind standings,
+group 'all': every group tagged "Group N", label without the group; a load
+keeps the group and page up when that group is still there). Graphic
+features › Standings has Group buttons, and › / ‹ run across groups. The
+scene paints the group's name (accent B, 40px) beside the title with the
+rows, and pager.js takes want.place (the page's place in a run of pages) so
+a group change turns like a page. Typed standings take "# Group 2" header
+lines, written back the same way. (3) "A graphic that shows ongoing
+matches": new full-frame `ongoing` scene over event.pairings minus every
+table with a result (status done or a winner): up to 12 tables in one
+1400px column with rows grown by --k up to 1.9, more in the pairings' two
+columns grown up to 1.25, 32 a page (scenes.ongoing {page 1-5, legends}).
+VS or the games so far; an empty box for "Every table in Round 2 has
+finished." To keep it true on air without TAKEs, the platform follows:
+pairingsPatch stamps `event.pairings.src` ("event|swiss:2|0"; typed rows
+clear it), and after every refresh followPairings runs pairingsRefresh for
+each bank whose src is this event and applies changed tables through the
+new state.applyFeed (event.pairings only, each bank its own round, one bump,
+nothing when nothing changed). Platform config `follow` (default on), the
+"Keep results up to date, on air too" switch. PAIRINGS_MAX 160 / 5 pages
+(C3 seats 265 in four groups; round 1 had 107 tables, group 4 only 11 plus a
+bye). Verified on a scratch server (port 4766, worktree ../ss-standings)
+against C3's public page: all four groups in one load; real clicks walked
+Group 1 page 4 › Group 2 page 1, Group 3 through its four pages into Group
+4 and stopped at its end; the on-air group turn (rows out by 380 ms, name
+and rows swapped, settled by 1.2 s); ongoing at 107, 20, 13, 12, 3 and 0
+tables; follow off changed nothing, on restored both banks' real tables and
+a refresh with nothing new left the version alone; no console errors on the
+panel, the platform tab, output, monitor or either scene. Tests:
+test/standings-groups.test.js. Built off 1a5b096 in worktree ../ss-standings
+while the RiftAtlas live game (0.30.0) and the card dock (0.31.0) shipped;
+moved onto 736c2ea by stash, fast-forward and replaying the byte-level patch
+scripts on the seven shared files (every +/- line identical after), and
+released as 0.32.0 on Sam's go ("release this").
+
 ### 2026-09-19e (out of band: the card popup docks into the rows and dual-column overlays, 0.31.0)
 
 Sam: "for the card preview, can we make an overlay specific version of it

@@ -12,6 +12,7 @@ import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
 import { SCENE_SOURCES } from '../shared/sources.js';
 import { legendsFromStandings, legendsToText, parseLegendLines, resolveLegend } from '../shared/legendstats.js';
+import { standingsStep, standingsView } from '../shared/standings.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -75,6 +76,7 @@ const SCENE_FIELDS = {
   standings: ['standings', 'eventName', 'roundTitle'],
   legendstats: ['legendStats', 'eventName'],
   pairings: ['pairings', 'eventName', 'roundTitle'],
+  ongoing: ['pairings', 'eventName', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
   sponsor: [],
   // The decks round (2026-09-18).
@@ -113,6 +115,7 @@ const SCENE_NAMES = {
   standings: 'the standings',
   legendstats: 'the legend distribution',
   pairings: 'the pairings',
+  ongoing: 'the ongoing matches',
   result: 'the result strip',
   sponsor: 'the sponsor plate',
   matchup: 'the game intro',
@@ -128,7 +131,7 @@ const SCENE_SHORT = {
   igodual: 'Dual columns', igobars: '2v2 bars', pov: 'POV', decklist: 'Decklist',
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
-  cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', result: 'Result',
+  cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', ongoing: 'Ongoing', result: 'Result',
   legendstats: 'Legends', sponsor: 'Sponsor',
   matchup: 'Game intro', sideboard: 'Sideboard', decklists: 'Decklists 2up', vscard: 'VS card',
 };
@@ -818,7 +821,7 @@ $('resetMatch').addEventListener('click', () => {
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
-      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, result: { visible: false }, sponsor: { visible: false },
+      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, result: { visible: false }, sponsor: { visible: false },
       matchup: { visible: false }, sideboard: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
     },
   });
@@ -1206,7 +1209,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'result', 'matchup', 'sideboard', 'decklists']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'result', 'matchup', 'sideboard', 'decklists']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2299,17 +2302,17 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
-const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'decklists'];
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'decklists'];
 function setFullScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
@@ -2328,7 +2331,7 @@ $('toggleSlate').addEventListener('click', () => {
   if (!state) return;
   setFullScene('slate', !state.preview.scenes.slate.visible);
 });
-for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings']) {
+for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing']) {
   $(EXP_TOGGLES[key]).addEventListener('click', () => {
     if (!state) return;
     setFullScene(key, !state.preview.scenes[key].visible);
@@ -2912,10 +2915,17 @@ $('bracketMatches').addEventListener('change', (e) => {
 });
 
 // --- the standings editor: pipe-separated rows in rank order ---
+// A line "# Group 2" starts a group (2026-09-19): the rows under it are that
+// group's, and the graphic shows one group at a time. What the Tournament
+// platform loads for every group is written back the same way. The store
+// sorts each group by points, or by record when a group has no points.
 function parseStandings(text) {
   const rows = [];
   const bad = [];
-  for (const raw of text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 64)) {
+  let group = '';
+  for (const raw of text.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 400)) {
+    const head = raw.match(/^#\s+([^|#]+)$/);
+    if (head) { group = head[1].trim().slice(0, 20); continue; }
     const parts = raw.split('|').map((x) => x.trim());
     if (parts.length < 2) {
       // The table-side shape with trailing numbers: Name (CN, 9-1-0) [Irelia] 27 68.4
@@ -2923,17 +2933,35 @@ function parseStandings(text) {
       const side = parseTableSide(m ? m[1] : raw);
       if (!side.name) { bad.push(raw); continue; }
       const nums = (m && m[2] ? m[2].trim().split(/\s+/) : []).map(Number);
-      rows.push({ ...side, points: nums[0] || 0, omw: nums[1] || 0, gw: nums[2] || 0, ogw: nums[3] || 0 });
+      rows.push({ ...side, points: nums[0] || 0, omw: nums[1] || 0, gw: nums[2] || 0, ogw: nums[3] || 0, group });
       continue;
     }
     const [name, country = '', legendText = '', record = '', points = '0', omw = '0', gw = '0', ogw = '0'] = parts;
     if (!name) { bad.push(raw); continue; }
     const side = parseTableSide(`${name} (${[country, record].filter(Boolean).join(', ')})${legendText ? ` [${legendText}]` : ''}`);
-    rows.push({ ...side, points: Number(points) || 0, omw: Number(omw) || 0, gw: Number(gw) || 0, ogw: Number(ogw) || 0 });
+    rows.push({ ...side, points: Number(points) || 0, omw: Number(omw) || 0, gw: Number(gw) || 0, ogw: Number(ogw) || 0, group });
   }
   return { rows, bad };
 }
-const standingsToText = (rows) => rows.map((r) => [r.name, r.country, r.legend, r.record, r.points, r.omw || '', r.gw || '', r.ogw || ''].join(' | ').replace(/( \| )+$/, '')).join('\n');
+function standingsToText(rows) {
+  const lines = [];
+  let group = '';
+  for (const r of rows) {
+    if ((r.group || '') !== group) {
+      group = r.group || '';
+      if (group) lines.push(`# ${group}`);
+    }
+    lines.push([r.name, r.country, r.legend, r.record, r.points, r.omw || '', r.gw || '', r.ogw || ''].join(' | ').replace(/( \| )+$/, ''));
+  }
+  return lines.join('\n');
+}
+function standingsSummary(rows) {
+  const groups = standingsView({ rows }, {}).groups.filter(Boolean);
+  const pages = Math.max(1, Math.ceil(rows.length / 20));
+  if (!rows.length) return '';
+  if (groups.length > 1) return `${rows.length} rows in ${groups.length} groups, one group at a time on the graphic.`;
+  return `${rows.length} row${rows.length === 1 ? '' : 's'}, ${pages} page${pages === 1 ? '' : 's'}.`;
+}
 {
   let timer = null;
   const flush = () => {
@@ -2941,16 +2969,51 @@ const standingsToText = (rows) => rows.map((r) => [r.name, r.country, r.legend, 
     clearTimeout(timer);
     timer = null;
     const { rows, bad } = parseStandings($('standingsText').value);
-    $('standingsHint').textContent = bad.length ? `Could not read: ${bad[0]}.` : (rows.length ? `${rows.length} row${rows.length === 1 ? '' : 's'}, ${Math.max(1, Math.ceil(rows.length / 20))} page${rows.length > 20 ? 's' : ''}.` : '');
+    $('standingsHint').textContent = bad.length ? `Could not read: ${bad[0]}.` : standingsSummary(rows);
     post({ event: { standings: { rows } } });
   };
   $('standingsText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 500); });
   $('standingsText').addEventListener('blur', flush);
 }
 $('standingsCut').addEventListener('change', () => post({ event: { standings: { cut: Number($('standingsCut').value) } } }));
-$('standingsPrev').addEventListener('click', () => { if (state) post({ scenes: { standings: { page: Math.max(1, (state.preview.scenes.standings.page || 1) - 1) } } }); });
-$('standingsNext').addEventListener('click', () => { if (state) post({ scenes: { standings: { page: Math.min(4, (state.preview.scenes.standings.page || 1) + 1) } } }); });
+// The page arrows walk every page of every group: past a group's last page
+// the next group's first (web/shared/standings.js). The group buttons jump
+// straight to a group's first page.
+function stepStandings(dir) {
+  if (!state) return;
+  const to = standingsStep(state.preview.event.standings, state.preview.scenes.standings, dir);
+  if (to) post({ scenes: { standings: to } });
+}
+$('standingsPrev').addEventListener('click', () => stepStandings(-1));
+$('standingsNext').addEventListener('click', () => stepStandings(1));
+$('standingsGroups').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-group]');
+  if (btn) post({ scenes: { standings: { group: btn.dataset.group, page: 1 } } });
+});
 $('standingsLegends').addEventListener('change', () => post({ scenes: { standings: { legends: $('standingsLegends').checked } } }));
+
+function renderStandingsGroups(prev) {
+  const v = standingsView(prev.event.standings, prev.scenes.standings);
+  $('standingsPage').textContent = v.pages > 1 ? `${v.page} of ${v.pages}` : String(v.page);
+  $('standingsPrev').disabled = !standingsStep(prev.event.standings, prev.scenes.standings, -1);
+  $('standingsNext').disabled = !standingsStep(prev.event.standings, prev.scenes.standings, 1);
+  const seg = $('standingsGroups');
+  const groups = v.groups.length > 1 ? v.groups : [];
+  const sig = JSON.stringify([groups, v.group]);
+  if (seg.dataset.sig === sig) return;
+  seg.dataset.sig = sig;
+  seg.classList.toggle('hidden', !groups.length);
+  seg.replaceChildren(Object.assign(document.createElement('span'), { className: 'seg-label', textContent: 'Group' }), ...groups.map((g) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.group = g;
+    b.textContent = g ? g.replace(/^group\s+/i, '') : 'Other';
+    b.title = g ? `${g}: its standings from page 1` : 'The rows without a group';
+    b.classList.toggle('on', g === v.group);
+    b.setAttribute('aria-pressed', g === v.group ? 'true' : 'false');
+    return b;
+  }));
+}
 
 // --- the pairings editor: one table per line, the Up next shape ---
 // "Table 12: Dax (US, 2-1) [Viktor] vs Shoji (KR, 2-1) [Yasuo] = 2-1". The
@@ -2989,7 +3052,7 @@ function parsePairings(text) {
     const next = rows.reduce((top, r) => Math.max(top, r.table), 0) + 1;
     rows.push({ table: table || next, left: parseTableSide(halves[0]), right: parseTableSide(halves[1]), ...done });
   }
-  return { rows: rows.slice(0, 128), byes: byes.slice(0, 16), bad };
+  return { rows: rows.slice(0, 160), byes: byes.slice(0, 16), bad };
 }
 function pairingsToText(pr) {
   const lines = (pr.rows || []).map((r) => {
@@ -3022,6 +3085,13 @@ $('pairingsPrev').addEventListener('click', () => { if (state) post({ scenes: { 
 $('pairingsNext').addEventListener('click', () => { if (state) post({ scenes: { pairings: { page: Math.min(pairingsPages(), (state.preview.scenes.pairings.page || 1) + 1) } } }); });
 $('pairingsLegends').addEventListener('change', () => post({ scenes: { pairings: { legends: $('pairingsLegends').checked } } }));
 $('pairingsResults').addEventListener('change', () => post({ scenes: { pairings: { results: $('pairingsResults').checked } } }));
+
+// --- the ongoing matches: the pairings' tables that have not finished ---
+const ongoingRows = (bank) => ((bank && bank.event.pairings && bank.event.pairings.rows) || []).filter((r) => r.status !== 'done' && !r.winner);
+const ongoingPages = () => Math.max(1, Math.ceil(ongoingRows(state && state.preview).length / PAIRINGS_PER_PAGE));
+$('ongoingPrev').addEventListener('click', () => { if (state) post({ scenes: { ongoing: { page: Math.max(1, Math.min(ongoingPages(), state.preview.scenes.ongoing.page || 1) - 1) } } }); });
+$('ongoingNext').addEventListener('click', () => { if (state) post({ scenes: { ongoing: { page: Math.min(ongoingPages(), (state.preview.scenes.ongoing.page || 1) + 1) } } }); });
+$('ongoingLegends').addEventListener('change', () => post({ scenes: { ongoing: { legends: $('ongoingLegends').checked } } }));
 
 // The Legends switch's note: with it on, say when rows have no legend to
 // show (TopDeck shows legends only once the organizer allows it, and a
@@ -3186,7 +3256,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('profileSide')) $('profileSide').value = prev.scenes.profile.side || 'left';
   if (document.activeElement !== $('profileCamera')) $('profileCamera').checked = prev.scenes.profile.camera !== false;
   if (document.activeElement !== $('profileDecklist')) $('profileDecklist').checked = Boolean(prev.scenes.profile.decklist);
-  $('standingsPage').textContent = String(prev.scenes.standings.page || 1);
+  renderStandingsGroups(prev);
   if (document.activeElement !== $('standingsCut')) $('standingsCut').value = String(prev.event.standings ? prev.event.standings.cut : 8);
   setIfIdle('standingsText', standingsToText(prev.event.standings ? prev.event.standings.rows || [] : []));
   {
@@ -3219,6 +3289,17 @@ function renderExtras(s) {
     if (document.activeElement !== $('pairingsResults')) $('pairingsResults').checked = prev.scenes.pairings.results !== false;
     legendNote('pairingsLegendNote', prev.scenes.pairings.legends !== false, (pr.rows || []).flatMap((r) => [r.left, r.right]).filter((p) => p && p.name));
     setIfIdle('pairingsText', pairingsToText(pr));
+    // The ongoing matches: how many of the round's tables are left, and
+    // whether TopDeck keeps them up to date (src: loaded by the platform).
+    const left = ongoingRows(prev);
+    const opages = Math.max(1, Math.ceil(left.length / PAIRINGS_PER_PAGE));
+    const opage = Math.min(opages, prev.scenes.ongoing.page || 1);
+    $('ongoingPage').textContent = opages > 1 ? `${opage} of ${opages}` : String(opage);
+    if (document.activeElement !== $('ongoingLegends')) $('ongoingLegends').checked = prev.scenes.ongoing.legends !== false;
+    const total = (pr.rows || []).length;
+    $('ongoingCount').textContent = !total ? 'No pairings loaded yet.'
+      : `${left.length} of ${total} table${total === 1 ? '' : 's'}${pr.label ? ` in ${pr.label}` : ''} still playing.`
+        + (pr.src ? ' Loaded from TopDeck: the Tournament platform brings in results as they arrive while Keep results up to date is on.' : ' Typed: close a table with "= 2-1" under Match data › Pairings and it leaves the board.');
   }
   renderBracketEditor(s);
   if (document.activeElement !== $('choseFirst')) $('choseFirst').value = prev.match.choseFirst || '';

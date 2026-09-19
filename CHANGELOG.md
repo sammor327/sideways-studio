@@ -6,6 +6,16 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.32.0 (2026-09-19)
+
+- Standings rank by points during a round again. Standings loaded from the Tournament platform mid-round had every player on 0 points (TopDeck's own standings only catch up once a round ends) and so were sorted by name; the app now counts the finished tables itself until TopDeck's numbers agree with them. While a round's tables are still being played the line under the title says "Round 2 in progress" instead of "after Round 2", and a freshly paired round's byes wait for its first result.
+- Standings are always in order: by points, or by record (a win 3, a draw 1) for a list with no points, highest first, ties in the order they came. That goes for standings typed by hand too; a list with no points leaves the Points column empty and says it is ranked by record.
+- Standings by group: Standings to preview on the Tournament platform tab loads every group at once (pick "Group 2 only" for one group, or "Everyone, one list"). The graphic shows one group at a time, its name beside the title. Switch groups with the Group buttons beside the page arrows under Graphic features › Standings; › runs on from a group's last page into the next group's first, so one button walks every page of every group. A group change on air turns like a page.
+- Standings by hand: a line "# Group 2" in Match data › Standings starts a group.
+- New graphic: Ongoing matches, the tables of the round still being played, for the wait at the end of a round. It draws the pairings (Pairings to preview on the Tournament platform tab, or Match data › Pairings) minus every table with a result: up to 12 tables in one big column, more in two columns, 32 a page. It is under Between games, after Pairings.
+- Tournament platform: Keep results up to date, on air too (on by default). Every refresh brings finished tables into the pairings that preview and program already hold, without a TAKE, so the Ongoing matches empty themselves as tables finish and the Pairings fill in their results. It never changes which round is loaded or which graphic is up.
+- Pairings hold 160 tables now (five pages), enough for every group of Convergence #3's rounds at once.
+
 ## 0.31.0 (2026-09-19)
 
 - The card popup docks into the rows overlay. With the rows overlay up, a card you stage and TAKE no longer flies in over the table: the hands (or the event logo) slide out of the middle of the left column and the card slides in over the column with its name and type under it. Take the card popup off and the card slides out and the hands or the logo come back. A new card while one is docked swaps it the same way, and cards typed into a hand meanwhile are there when the hands return.

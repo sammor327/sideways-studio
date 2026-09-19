@@ -12,7 +12,14 @@
 // half-drawn one. The scene's CSS turns --r, --o, each row's --pos (its place
 // down the page, 0 to 1) and --in-dx / --out-dx (the travel in design
 // pixels) into the rows' opacity and offset: see standings/scene.css.
+//
+// want.place, when a scene gives one, is the page's place in a longer run
+// than its own pages: the standings' groups (2026-09-19) number every page
+// of every group in one run, so a change of group turns like a change of
+// page, the next group coming in from the right. Without it, want.page.
 import { SeekClock } from './seekclock.js';
+
+const placeOf = (w) => (w.place !== undefined ? w.place : w.page);
 
 export function createPager(root, paint, { enterMs = 1000, turnInMs = 720, outMs = 380 } = {}) {
   const rowsIn = new SeekClock(root, '--r', enterMs);
@@ -29,7 +36,7 @@ export function createPager(root, paint, { enterMs = 1000, turnInMs = 720, outMs
 
   function paintPage() {
     paint(want);
-    shownPage = want.page;
+    shownPage = placeOf(want);
   }
 
   function setTravel(dir) {
@@ -49,8 +56,8 @@ export function createPager(root, paint, { enterMs = 1000, turnInMs = 720, outMs
   async function turnPage() {
     const token = ++turnToken;
     turning = true;
-    while (want && shownPage !== want.page) {
-      setTravel(want.page > shownPage ? 1 : -1);
+    while (want && shownPage !== placeOf(want)) {
+      setTravel(placeOf(want) > shownPage ? 1 : -1);
       rowsIn.stop();
       rowsIn.seek(1);
       await rowsOut.play({ from: 0, to: 1 });
@@ -83,7 +90,7 @@ export function createPager(root, paint, { enterMs = 1000, turnInMs = 720, outMs
       // Off air (or fading out): a turn already playing finishes under the
       // fade; otherwise the page just follows the state for next time.
       if (!turning) paintPage();
-    } else if (want.page !== shownPage) {
+    } else if (placeOf(want) !== shownPage) {
       if (!turning) turnPage();
     } else if (!turning) {
       // Same page, new numbers (a refresh): straight in, no motion.

@@ -30,6 +30,10 @@
 .head { position: absolute; left: calc(80 * var(--u)); top: calc(54 * var(--u)); right: calc(80 * var(--u)); display: flex; align-items: flex-end; justify-content: space-between; transform: translateX(calc((1 - var(--t, 1)) * -48 * var(--u))); }
 .head .lead { display: flex; align-items: flex-end; min-width: 0; }
 .head .title { font: 800 calc(64 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
+/* The group up (2026-09-19): its name beside the title in the accent, the
+   lines after it about that group. */
+.head .grp { flex: none; font: 800 calc(40 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); margin-left: calc(22 * var(--u)); padding-bottom: calc(2 * var(--u)); white-space: nowrap; }
+.head .grp.hidden { display: none; }
 .head .sub { font: 700 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); margin-left: calc(26 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .head .pg { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); white-space: nowrap; }
 

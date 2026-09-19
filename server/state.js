@@ -103,7 +103,10 @@ function defaultBank() {
       // an up-next table side, with the table's result once it is in. label
       // names the round ("Round 3 · Group 2", set by the Tournament platform);
       // empty falls back to the round title. byes: the players sitting out.
-      pairings: { rows: [], label: '', byes: [] },
+      // src: which TopDeck event, round and group the tables came from, so
+      // the platform can bring in fresh results on its own (followPairings);
+      // typed tables have none.
+      pairings: { rows: [], label: '', byes: [], src: '' },
     },
     match: {
       seriesLength: 3,
@@ -222,7 +225,10 @@ function defaultBank() {
       // name to the right (2026-09-19, Sam); off for an event whose legends
       // are not known yet.
       bracket: { visible: false },
-      standings: { visible: false, page: 1, legends: true },
+      // group: which group's standings are up when the rows carry groups
+      // (2026-09-19, Sam: "alternate through the groups more easily"); ''
+      // or a group that is not there means the first.
+      standings: { visible: false, page: 1, legends: true, group: '' },
       // The legend distribution: a pie of the legends played and a table of
       // their shares, the win rate column switchable (Sam: "make the win rate
       // option able to be toggled"). top is how many legends get a slice of
@@ -232,6 +238,10 @@ function defaultBank() {
       // legends as the standings'; results marks the finished tables with
       // their games and dims the player who lost.
       pairings: { visible: false, page: 1, legends: true, results: true },
+      // Ongoing matches (2026-09-19, Sam: "a graphic that shows ongoing
+      // matches"): the tables of event.pairings that have not finished,
+      // bigger the fewer there are, 32 a page at most.
+      ongoing: { visible: false, page: 1, legends: true },
       // Result strip: the match winner and where they go next.
       result: { visible: false },
       // Sponsor plate: a 3:1 plate rotating through items every `interval`
@@ -490,7 +500,40 @@ function cleanStandingsRow(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const side = cleanTableSide(raw);
   if (!side.name) return null;
-  return { ...side, points: clampInt(raw.points, 0, 999), omw: num1(raw.omw), gw: num1(raw.gw), ogw: num1(raw.ogw) };
+  return {
+    ...side, points: clampInt(raw.points, 0, 999), omw: num1(raw.omw), gw: num1(raw.gw), ogw: num1(raw.ogw),
+    group: cleanStr(raw.group ?? '', 20),
+  };
+}
+
+// Standings in the order the graphic ranks them (2026-09-19, Sam: "sorted
+// by points and if no points available, the record. Highest record or
+// points first"). Within each group: by points when any of its rows has
+// points; otherwise by the record, a win 3 and a draw 1 (W-L-D, the way
+// TopDeck writes it), fewer losses first between equal records. Rows that
+// tie keep the order they came in: TopDeck's tiebreaks, or the order typed.
+// Groups keep the order they first appear in; each shows up to four pages.
+const STANDINGS_PER_GROUP = 80;
+const STANDINGS_MAX = 320;
+const RECORD_RE = /^(\d+)\s*[-\u2013]\s*(\d+)(?:\s*[-\u2013]\s*(\d+))?$/;
+function recordRank(record) {
+  const m = String(record || '').match(RECORD_RE);
+  return m ? { pts: Number(m[1]) * 3 + Number(m[3] || 0), losses: Number(m[2]) } : { pts: -1, losses: 0 };
+}
+function sortStandings(rows) {
+  const groups = new Map();
+  for (const r of rows) {
+    if (!groups.has(r.group)) groups.set(r.group, []);
+    groups.get(r.group).push(r);
+  }
+  const out = [];
+  for (const list of groups.values()) {
+    const byPoints = list.some((r) => r.points > 0);
+    const keyed = list.map((r, i) => ({ r, i, k: byPoints ? { pts: r.points, losses: 0 } : recordRank(r.record) }));
+    keyed.sort((a, b) => b.k.pts - a.k.pts || a.k.losses - b.k.losses || a.i - b.i);
+    out.push(...keyed.slice(0, STANDINGS_PER_GROUP).map((x) => x.r));
+  }
+  return out.slice(0, STANDINGS_MAX);
 }
 
 // A legend distribution row: the legend (resolved like a table side's), how
@@ -516,10 +559,10 @@ function cleanLegendRow(raw) {
 // A pairing: the table number, both players as up-next table sides, and the
 // table's state. status is '' (unknown), 'pending', 'live' or 'done'; score
 // is the games each side won, left first; winner is the side that took the
-// match, or 'draw'. A row needs at least one name. 128 tables is four pages
-// of 32: a 256-player round.
-const PAIRINGS_MAX = 128;
-const PAIRINGS_PAGES = 4;
+// match, or 'draw'. A row needs at least one name. 160 tables is five pages
+// of 32: a 320-player round (Convergence #3 seats 265 in its four groups).
+const PAIRINGS_MAX = 160;
+const PAIRINGS_PAGES = 5;
 function cleanPairing(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const left = cleanTableSide(raw.left);
@@ -644,7 +687,7 @@ function applyBankPatch(bank, patch) {
     }
     if (patch.event.standings && typeof patch.event.standings === 'object') {
       const st = patch.event.standings;
-      if (Array.isArray(st.rows)) bank.event.standings.rows = st.rows.slice(0, 64).map(cleanStandingsRow).filter(Boolean);
+      if (Array.isArray(st.rows)) bank.event.standings.rows = sortStandings(st.rows.slice(0, 2 * STANDINGS_MAX).map(cleanStandingsRow).filter(Boolean));
       if (st.cut !== undefined && [0, 4, 8, 16, 32].includes(Number(st.cut))) bank.event.standings.cut = Number(st.cut);
       // New rows without a label (the Studio's hand-typed editor) drop the
       // last one, so "Group 2" never sits over rows typed for something else.
@@ -668,6 +711,8 @@ function applyBankPatch(bank, patch) {
       else if (Array.isArray(pr.rows)) bank.event.pairings.label = '';
       if (Array.isArray(pr.byes)) bank.event.pairings.byes = pr.byes.slice(0, 16).map((b) => cleanStr(b ?? '', 40)).filter(Boolean);
       else if (Array.isArray(pr.rows)) bank.event.pairings.byes = [];
+      if (pr.src !== undefined) bank.event.pairings.src = cleanStr(pr.src ?? '', 120);
+      else if (Array.isArray(pr.rows)) bank.event.pairings.src = '';
     }
   }
 
@@ -841,6 +886,7 @@ function applyBankPatch(bank, patch) {
       if (st.visible !== undefined) bank.scenes.standings.visible = Boolean(st.visible);
       if (st.page !== undefined) bank.scenes.standings.page = clampInt(st.page, 1, 4);
       if (st.legends !== undefined) bank.scenes.standings.legends = Boolean(st.legends);
+      if (st.group !== undefined) bank.scenes.standings.group = cleanStr(st.group ?? '', 20);
     }
     if (patch.scenes.pairings && typeof patch.scenes.pairings === 'object') {
       const pr = patch.scenes.pairings;
@@ -848,6 +894,12 @@ function applyBankPatch(bank, patch) {
       if (pr.page !== undefined) bank.scenes.pairings.page = clampInt(pr.page, 1, PAIRINGS_PAGES);
       if (pr.legends !== undefined) bank.scenes.pairings.legends = Boolean(pr.legends);
       if (pr.results !== undefined) bank.scenes.pairings.results = Boolean(pr.results);
+    }
+    if (patch.scenes.ongoing && typeof patch.scenes.ongoing === 'object') {
+      const og = patch.scenes.ongoing;
+      if (og.visible !== undefined) bank.scenes.ongoing.visible = Boolean(og.visible);
+      if (og.page !== undefined) bank.scenes.ongoing.page = clampInt(og.page, 1, PAIRINGS_PAGES);
+      if (og.legends !== undefined) bank.scenes.ongoing.legends = Boolean(og.legends);
     }
     if (patch.scenes.legendstats && typeof patch.scenes.legendstats === 'object') {
       const ls = patch.scenes.legendstats;
@@ -973,6 +1025,22 @@ export function buildBank(patch) {
   const bank = defaultBank();
   applyBankPatch(bank, patch && typeof patch === 'object' ? patch : {});
   return bank;
+}
+
+// A data feed into the banks (2026-09-19): the Tournament platform's fresh
+// results for the pairings each bank already holds (server/platform.js
+// followPairings), each into its own bank and on air at once, like a clock
+// cue. Only event.pairings rides it, through the same whitelist as any edit.
+export function applyFeed(patches) {
+  let changed = false;
+  for (const name of ['preview', 'program']) {
+    const p = patches && patches[name];
+    if (!p || !p.event || !p.event.pairings || typeof p.event.pairings !== 'object') continue;
+    applyBankPatch(state[name], { event: { pairings: p.event.pairings } });
+    changed = true;
+  }
+  if (changed) bump();
+  return { ok: true, version: state.version };
 }
 
 export function onChange(fn) {

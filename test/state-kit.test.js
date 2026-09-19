@@ -62,9 +62,9 @@ describe('starter kit fields', () => {
     applyUpdate({ event: { standings: { rows: [{ name: 'Guubums', country: 'cn', legend: 'Irelia, Blade Dancer', record: '9-1-0', points: 27, omw: '68.44', gw: 72.1, ogw: 61 }, { name: '' }, { name: 'Dax', points: 999999 }], cut: 16 } } });
     const st = getState().preview.event.standings;
     assert.equal(st.rows.length, 2);
-    assert.equal(st.rows[0].country, 'CN');
-    assert.equal(st.rows[0].omw, 68.4);
-    assert.equal(st.rows[1].points, 999);
+    assert.equal(st.rows[0].points, 999, 'the most points first');
+    assert.equal(st.rows[1].country, 'CN');
+    assert.equal(st.rows[1].omw, 68.4);
     assert.equal(st.cut, 16);
     applyUpdate({ event: { standings: { cut: 7 } } });
     assert.equal(getState().preview.event.standings.cut, 16, 'only the usual cut sizes are accepted');
@@ -87,7 +87,7 @@ describe('starter kit fields', () => {
     assert.deepEqual(sc.headtohead, { visible: true, status: 'Shuffling' });
     assert.deepEqual(sc.profile, { visible: true, side: 'right', camera: true, decklist: false });
     assert.deepEqual(sc.bracket, { visible: true });
-    assert.deepEqual(sc.standings, { visible: true, page: 4, legends: true });
+    assert.deepEqual(sc.standings, { visible: true, page: 4, legends: true, group: '' });
     assert.deepEqual(sc.result, { visible: true });
     assert.equal(sc.slate.schedule, false);
     assert.equal(sc.slate.camera, false);

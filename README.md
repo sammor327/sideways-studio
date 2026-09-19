@@ -348,6 +348,22 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   with no games reported, and a `Bye: Name, Name` line. Graphic features
   pages it and has the **Legends** and **Results** switches. Its pages turn
   the way the standings' do.
+- **Standings by group** (2026-09-19): rows can carry a group, and the
+  graphic shows one group at a time with the group's name beside the title
+  (`scenes.standings.group`, the first group when it is empty or gone).
+  The **Group** buttons beside the standings' page arrows switch groups;
+  **›** runs on from a group's last page into the next group's first and
+  **‹** back into the previous group's last. By hand, a line `# Group 2`
+  starts a group. Every list is kept sorted by points, or by record (win
+  3, draw 1) when it has no points, highest first, ties in the order they
+  came; a list with no points leaves the Points column empty.
+- **Ongoing matches** (`/scenes/ongoing/`, 2026-09-19): the pairings'
+  tables that have no result yet, for the wait at the end of a round. Up to
+  12 tables sit in one 1400px column whose rows grow to fill it (up to 1.9
+  times a pairing row), more in the pairings' two columns (up to 1.25
+  times), 32 a page. A table shows VS, or its games so far when the platform
+  has them. With the Tournament platform's **Keep results up to date** on,
+  a table leaves the board on air the moment its result is in.
 - **Head to head, VS** (`/scenes/vscard/`, 0.27.0): the Sideways Showdown
   head to head, laid out from its PSD. Each player's legend card stands
   tilted either side of a big VS on the glowing-arrows ground, the upper
@@ -442,13 +458,24 @@ already up keeps what you have counted. A finished table brings its game
 score. **Swap sides** reloads it with the players the other way round, and
 **+** adds a table to the Up next board.
 
-**Standings to preview** writes a group's standings (TopDeck's own points
-and tiebreaks, labelled "Group 2 · after Round 3"), **Pairings to
+**Standings to preview** writes every group's standings at once ("Every
+group"; the Studio switches between them beside the page arrows), one
+group's, or everyone in one list, labelled "after Round 3", or "Round 4 in
+progress" while that round's tables are being played. TopDeck's own points
+and tiebreaks are used while they agree with the finished tables; during a
+round TopDeck's standings still stand before it, so the app counts the
+tables itself until they catch up. A round's byes count with its first
+finished table. **Pairings to
 preview** writes every table of the round picked under Matches (only the
 picked group's, when a group chip is on) with each finished table's result
 and the round's byes; press it again during the round to bring in new
 results (a different round or group starts on page one, the same one stays
-on its page). **Bracket to
+on its page). The same tables feed the **Ongoing matches** graphic. With
+**Keep results up to date, on air too** on (the default), every refresh
+brings new results into the pairings preview and program already hold,
+each in its own bank and without a TAKE (`event.pairings.src` names the
+event, round and group they came from; typed tables have none, so they are
+never touched). **Bracket to
 preview** writes the Top 8 or Top 16 as TopDeck ran it. **Legend
 distribution to preview** counts the whole event or one group: how many
 players TopDeck lists for each legend, and each legend's win rate against the

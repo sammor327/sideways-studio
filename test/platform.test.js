@@ -156,11 +156,13 @@ describe('platform: the API', () => {
 });
 
 describe('platform: patches', () => {
-  it('labels standings with the group and round', () => {
+  it('labels standings with the round and tags the rows with the group', () => {
     const out = standingsPatch(feed(), legendOf, { group: 2, cut: 4 });
-    assert.equal(out.patch.event.standings.label, 'Group 2 · after Round 2');
+    assert.equal(out.patch.event.standings.label, 'after Round 2');
     assert.equal(out.patch.event.standings.cut, 4);
     assert.equal(out.patch.event.standings.rows[0].omw, 33);
+    assert.ok(out.patch.event.standings.rows.every((r) => r.group === 'Group 2'));
+    assert.deepEqual(out.patch.scenes, { standings: { group: 'Group 2', page: 1 } }, 'a new group opens on its first page');
   });
 
   it('places the bracket by who played, whatever order TopDeck lists them in', () => {
@@ -273,7 +275,7 @@ describe('platform: pairings', () => {
   });
 
   it('turns back to page one for a new round or group, not for fresh results of the same one', () => {
-    assert.deepEqual(pairingsPatch(feed(), legendOf, { round: 'swiss:2', group: 1, bank: pairingsBank('Round 1 · Group 1') }).patch.scenes, { pairings: { page: 1 } });
+    assert.deepEqual(pairingsPatch(feed(), legendOf, { round: 'swiss:2', group: 1, bank: pairingsBank('Round 1 · Group 1') }).patch.scenes, { pairings: { page: 1 }, ongoing: { page: 1 } });
     assert.equal(pairingsPatch(feed(), legendOf, { round: 'swiss:2', group: 1, bank: pairingsBank('Round 2 · Group 1') }).patch.scenes, undefined);
   });
 

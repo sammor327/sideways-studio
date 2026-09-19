@@ -16,12 +16,12 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DATA_DIR } from './runtime.js';
-import { applyUpdate, getState } from './state.js';
+import { applyUpdate, applyFeed, getState } from './state.js';
 import { listLegends } from './legends.js';
 import { buildDeck } from './decklist.js';
 import {
   parseEventId, decodeFirestore, buildFromFeed, feedExtras, buildFromApi, summarize,
-  standingsPatch, bracketPatch, matchPatch, upNextPatch, legendStatsPatch, pairingsPatch, normName,
+  standingsPatch, bracketPatch, matchPatch, upNextPatch, legendStatsPatch, pairingsPatch, pairingsRefresh, normName,
 } from './platform-model.js';
 
 const FILE = path.join(DATA_DIR, 'platform.json');
@@ -33,7 +33,9 @@ const AUTO_MS = 30_000;
 const MIN_GAP_MS = 4_000;
 const TIMEOUT_MS = 20_000;
 
-let config = { event: '', key: '', auto: true };
+// follow: every refresh rereads the pairings each bank holds from this event
+// (followPairings), so the pairings and the ongoing matches keep up on air.
+let config = { event: '', key: '', auto: true, follow: true };
 let status = { state: 'idle', error: '', warning: '', fetchedAt: 0, version: 0, source: '' };
 let model = null;
 let summary = null;
@@ -144,6 +146,7 @@ export async function refreshPlatform({ force = false } = {}) {
       model = ev;
       summary = summarize(ev, legendIndex());
       status = { state: 'ok', error: '', warning, fetchedAt: Date.now(), version: status.version + 1, source: ev.source };
+      followPairings();
     } catch (err) {
       status = { ...status, state: 'error', error: err.message || String(err), version: status.version + 1 };
     } finally {
@@ -154,9 +157,29 @@ export async function refreshPlatform({ force = false } = {}) {
   return inflight;
 }
 
+// After every refresh: each bank that holds pairings loaded from this event
+// gets that round's fresh results, on air too (2026-09-19, the ongoing
+// matches: a table that finishes leaves the board without a TAKE). A feed
+// like the clock: it changes only the tables, never what is up or which
+// round is loaded, so preview and program each keep their own round.
+function followPairings() {
+  if (!config.follow || !model) return;
+  const legendOf = legendIndex();
+  const state = getState();
+  const patches = {};
+  for (const name of ['preview', 'program']) {
+    const patch = pairingsRefresh(model, legendOf, { id: config.event, bank: state[name] });
+    if (patch) patches[name] = patch;
+  }
+  if (Object.keys(patches).length) applyFeed(patches);
+}
+
 function publicState() {
   return {
-    config: { event: config.event, hasKey: Boolean(config.key), keyHint: config.key ? config.key.slice(-4) : '', auto: config.auto },
+    config: {
+      event: config.event, hasKey: Boolean(config.key), keyHint: config.key ? config.key.slice(-4) : '',
+      auto: config.auto, follow: config.follow,
+    },
     status,
     name: summary ? summary.name : '',
   };
@@ -179,6 +202,7 @@ export async function initPlatform() {
       event: parseEventId(raw.event),
       key: typeof raw.key === 'string' ? raw.key.trim().slice(0, 100) : '',
       auto: raw.auto !== false,
+      follow: raw.follow !== false,
     };
   } catch {
     // First run: nothing connected.
@@ -225,8 +249,10 @@ export async function handlePlatform(req, res, url, { readBody, sendJson }) {
       config.key = key;
     }
     if (b.auto !== undefined) config.auto = Boolean(b.auto);
+    if (b.follow !== undefined) config.follow = Boolean(b.follow);
     await save();
     if (reconnect && config.event) await refreshPlatform({ force: true });
+    else if (b.follow) followPairings();
     sendJson(res, 200, { ok: true, ...publicState() });
     return true;
   }
@@ -247,7 +273,8 @@ export async function handlePlatform(req, res, url, { readBody, sendJson }) {
       out = matchPatch(model, legendOf, { round: b.round, table: b.table, swap: Boolean(b.swap), bank, deckOf: (text) => buildDeck(text) });
     } else if (b.kind === 'standings') {
       const cut = [0, 4, 8, 16, 32].includes(Number(b.cut)) ? Number(b.cut) : 4;
-      out = standingsPatch(model, legendOf, { group: Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0))), cut });
+      const group = b.group === 'all' ? 'all' : Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0)));
+      out = standingsPatch(model, legendOf, { group, cut, bank });
     } else if (b.kind === 'bracket') {
       out = bracketPatch(model, legendOf);
     } else if (b.kind === 'legends') {
@@ -257,7 +284,7 @@ export async function handlePlatform(req, res, url, { readBody, sendJson }) {
     } else if (b.kind === 'upnext-clear') {
       out = { patch: { event: { tables: [] } } };
     } else if (b.kind === 'pairings') {
-      out = pairingsPatch(model, legendOf, { round: b.round, group: Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0))), bank });
+      out = pairingsPatch(model, legendOf, { round: b.round, group: Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0))), bank, id: config.event });
     } else {
       sendJson(res, 400, { ok: false, error: 'unknown kind' });
       return true;
