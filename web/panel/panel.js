@@ -4,6 +4,7 @@ import {
 import { renderLookBuilder } from './lookbuilder.js';
 import { setClock } from '../shared/clockcells.js';
 import { setOffline } from '../shared/offline.js';
+import { refreshFontSheet } from '../shared/fontsheet.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
@@ -73,7 +74,7 @@ const SCENE_FIELDS = {
   // The decks round (2026-09-18).
   matchup: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'champion', 'championText', 'battlefield', 'gameWins', 'roundTitle', 'eventName'],
   sideboard: ['name', 'country', 'legend', 'deck'],
-  decklists: ['name', 'country', 'legend', 'record', 'deck', 'eventName', 'roundTitle'],
+  decklists: ['name', 'country', 'legend', 'record', 'deck'],
   // The card popup and the card row carry their content in their own
   // Graphic features groups (the search, the four slots), not in Match data;
   // listed so putting them in preview unfolds that card.
@@ -1596,6 +1597,7 @@ $('fontSelect').addEventListener('change', async () => {
     }
     post({ theme: { font: family } });
     $('fontStatus').textContent = `${family} is saved on this computer and works offline.`;
+    if (!res.cached) refreshFontSheet();
     loadFontList();
   } catch {
     $('fontStatus').textContent = 'Font download failed. Check the connection and try again.';
@@ -1629,6 +1631,7 @@ $('fontAll').addEventListener('click', async () => {
     status.textContent = !todo.length ? 'Every font is already saved on this computer.'
       : (failed ? `Saved ${todo.length - failed} of ${todo.length}; ${failed} could not download. Is the internet up? Press again to retry them.`
         : `All ${data.fonts.length} fonts are saved on this computer and work offline.`);
+    if (todo.length > failed) refreshFontSheet();
     loadFontList();
   } catch {
     status.textContent = 'Could not read the font list. Is the app running?';

@@ -6,6 +6,12 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.24.2 (2026-09-18)
+
+- A font picked under Look now reaches graphics that are already open. Before, a font downloaded after a browser source opened (a first pick, or Download all fonts) stayed in the default font until the source was refreshed. Refresh your browser sources once after this update; from then on font changes go live on their own.
+- Decklists side by side: the header is gone (the event name and its diamond, the DECKLISTS title and the round), so both players' lists run the full height with larger cards.
+- Decklists side by side and the sideboard fly-in: every card now finishes coming in. Before, the last cards of a long list stayed partly faded and slightly low.
+
 ## 0.24.1 (2026-09-18)
 
 - Player profile: the diamond beside the event name is gone.

@@ -93,7 +93,9 @@
   border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
   background: var(--ss-plate, #10151d);
   box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(0, 0, 0, 0.5);
-  --cp: clamp(0, calc((var(--t, 1) - 0.4 - var(--d, 0) - var(--i, 0) * 0.05) / 0.3), 1);
+  /* The stagger is capped at whatever the plate's own delay leaves, so the
+     last card still finishes its 0.3 move by --t 1 (0.4 + d + cap + 0.3). */
+  --cp: clamp(0, calc((var(--t, 1) - 0.4 - var(--d, 0) - min(var(--i, 0) * 0.05, 0.3 - var(--d, 0))) / 0.3), 1);
   opacity: var(--cp);
   transform: translateY(calc((1 - var(--cp)) * 40 * var(--u)));
 }

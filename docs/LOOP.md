@@ -214,6 +214,42 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-18j (out of band: decklists side by side lose the header)
+
+Sam: remove the diamond in the upper left of the head to head decklists and
+the top header altogether. The `.top` band (event lockup with its diamond
+mark and logo, the DECKLISTS title, the round) is gone from
+web/scenes/decklists; both halves and the divider now run y 40..1040, and
+HALF_H is 1000 (was 936), so the card grid sizes to the taller room. The
+panel's field map no longer lists eventName/roundTitle for `decklists`.
+
+Found while measuring it: the card stagger was uncapped in both deck
+graphics, so late cards never reached --cp 1 at --t 1 and aired part-faded
+and a few px low (decklists past about the 17th card, 9 px over the foot;
+the sideboard fly-in's player 2 past the 4th card, player 1 past the 6th).
+Both delays are now capped (decklists 0.25; sideboard 0.3 minus the plate's
+own delay) so the last card still gets its whole move.
+
+### 2026-09-18i (out of band: a picked font goes live without a source refresh)
+
+Sam: the font does not update to live from Look and setup. Reproduced on a
+fresh data folder: every page links /theme/fonts.css once, and that sheet
+lists only the families saved at the time, so a font downloaded after a
+browser source opened (a first pick, or Download all fonts) was named by
+--tes-font but never declared; the source drew Segoe UI until refreshed.
+Fonts saved before the source opened always worked, which hid it.
+
+Fix: web/shared/fontsheet.js. stage.js calls ensureFontFace(theme.font) on
+every state push; when the family is not in document.fonts it adds a fresh
+copy of the sheet (cache-busted) after the old link and removes the old one
+on load, so faces already showing never drop out. Rate-limited to one retry
+per family every 5 s, so a font that is not on this computer at all (an
+event file from another machine) does not refetch on every score click.
+The panel refreshes its own copy after a download so the picker previews
+the new face. Verified: an open lower third picked Oswald after download
+(probe width 600 -> 471, face loaded); from the Look tab, Rubik reached all
+99 scene frames on the page (26 PROGRAM) with none declaring it before.
+
 ### 2026-09-18h (out of band: profile switches, Download all fonts, Aktiv Grotesk; not released)
 
 Sam: remove the profile's diamond, make its live camera toggleable, add a

@@ -1,5 +1,6 @@
 /* Decklists side by side (2026-09-18, Sam): both players' decks at once,
-   full frame. A band across the top carries the event and the round; each
+   full frame, no header band (Sam, 2026-09-18: the halves run the full
+   height, 40 from the top as from the foot). Each
    900px half has the player, their legend and runes, the champion and the
    three battlefields, the main deck as a grid of cards with their counts
    (sized so every card fits), and the sideboard along the foot when it is
@@ -12,30 +13,9 @@
 .dls.off { display: none; }
 .dls, .dls * { box-sizing: border-box; }
 
-.top {
-  position: absolute; left: calc(40 * var(--u)); right: calc(40 * var(--u)); top: calc(22 * var(--u));
-  height: calc(56 * var(--u));
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-  opacity: var(--t, 1);
-}
-.top .ttl {
-  font: 800 calc(30 * var(--u))/1 var(--tes-font);
-  letter-spacing: calc(6 * var(--u));
-  text-transform: uppercase;
-  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-}
-.top .round {
-  justify-self: end;
-  font: 500 calc(16 * var(--u))/1.2 var(--tes-font);
-  letter-spacing: calc(2.4 * var(--u));
-  text-transform: uppercase;
-  color: var(--ss-text-muted, #9aa7b6);
-}
-
 .divider {
   position: absolute; left: calc(957 * var(--u)); width: calc(6 * var(--u));
-  top: calc(104 * var(--u)); bottom: calc(40 * var(--u));
+  top: calc(40 * var(--u)); bottom: calc(40 * var(--u));
   border-radius: calc(3 * var(--u));
   background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
   opacity: 0.8;
@@ -43,7 +23,7 @@
 }
 
 .half {
-  position: absolute; top: calc(104 * var(--u)); bottom: calc(40 * var(--u)); width: calc(900 * var(--u));
+  position: absolute; top: calc(40 * var(--u)); bottom: calc(40 * var(--u)); width: calc(900 * var(--u));
   display: flex; flex-direction: column; gap: calc(16 * var(--u));
 }
 .half.l { left: calc(40 * var(--u)); transform: translateX(calc((1 - var(--t, 1)) * -160 * var(--u))); }
@@ -76,7 +56,9 @@
   border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
   background: var(--ss-plate, #10151d);
   box-shadow: 0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.45);
-  --cp: clamp(0, calc((var(--t, 1) - 0.35 - var(--i, 0) * 0.015) / 0.4), 1);
+  /* The stagger is capped at 0.25 so every card, however long the list,
+     finishes its 0.4 move by --t 1 (0.35 + 0.25 + 0.4). */
+  --cp: clamp(0, calc((var(--t, 1) - 0.35 - min(var(--i, 0) * 0.015, 0.25)) / 0.4), 1);
   opacity: var(--cp);
   transform: translateY(calc((1 - var(--cp)) * 24 * var(--u)));
 }

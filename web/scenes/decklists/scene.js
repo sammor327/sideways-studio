@@ -1,4 +1,4 @@
-import { initStage, sceneBank, setText } from '../../stage/stage.js';
+import { initStage, sceneBank } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, legendSteps, rotateIfPortrait } from '../../stage/art.js';
 import { applyVisibility, runeSrc } from '../../stage/exp.js';
@@ -9,7 +9,7 @@ const root = $('root');
 const inOut = new SeekClock(root, '--t', 900);
 
 const HALF_W = 900;
-const HALF_H = 936;
+const HALF_H = 1000; // 1080 less 40 top and bottom: no header band
 const GAP = 10;
 const RATIO = 0.716;
 const FIXED_H = 112 + 16 + 125 + 16; // player, gap, strip, gap
@@ -146,19 +146,6 @@ async function render(state, first) {
     if (built[p] === key) continue;
     built[p] = key;
     buildHalf($(`${p}half`), side, deck, cfg.sideboards !== false);
-  }
-
-  setText($('eventName'), bank.event.name || 'Decklists');
-  setText($('roundTitle'), '');
-  setText($('series'), bank.event.roundTitle || '');
-  const logo = $('logo');
-  const src = state.theme && state.theme.logo ? state.theme.logo : '';
-  if (src) {
-    if (logo.getAttribute('src') !== src) { logo.src = src; logo.onerror = () => logo.classList.add('hidden'); }
-    logo.classList.remove('hidden');
-  } else {
-    logo.classList.add('hidden');
-    logo.removeAttribute('src');
   }
 
   const visible = params.force || Boolean(cfg.visible);

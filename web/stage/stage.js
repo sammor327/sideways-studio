@@ -4,6 +4,7 @@
 // failure, 60s belt-and-braces resync. URL params own presentation only.
 import { resolveLook, lookVars } from '../shared/look.js';
 import { tileBank } from '../shared/looktiles.js';
+import { ensureFontFace } from '../shared/fontsheet.js';
 
 export function stageParams() {
   const p = new URLSearchParams(location.search);
@@ -59,6 +60,8 @@ function applyTheme(theme, scene) {
   }
   if (theme.font) root.setProperty('--tes-font', `'${theme.font}', ${FONT_FALLBACK}`);
   else root.removeProperty('--tes-font');
+  // A font saved after this page loaded is not in its fonts sheet yet.
+  ensureFontFace(theme.font);
   // Lets a scene prefer a locally installed brand face under the default
   // theme while still yielding to a font the organizer picked.
   document.documentElement.classList.toggle('theme-font', Boolean(theme.font));
