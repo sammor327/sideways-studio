@@ -214,7 +214,7 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
-### 2026-09-19p (out of band: Live game fills empty decklists)
+### 2026-09-19p (out of band: Live game fills empty decklists, 0.42.0)
 
 Sam: "For the live game on sideways studio, can we auto populate the
 decklist under decks and battlefields if it is empty?" Load players already
@@ -241,7 +241,9 @@ real model and state path: game-1 look filled both lists, the picker read
 "(from RiftAtlas)", a hand edit to one side cleared its source, game 3 grew
 the other's list to three battlefields and its runes and left the edited one
 alone, No deck then refilled at the next push, and the switch saved to
-riftatlas.json.
+riftatlas.json. Version race: this was built and smoke-tested as 0.41.0, the
+turn-glow session pushed that number first (ef343ea), so it was rebased onto
+it and released as 0.42.0. Only CHANGELOG and this log conflicted.
 
 ### 2026-09-19o (out of band: the active player's legend glows on the rows overlay, 0.41.0)
 

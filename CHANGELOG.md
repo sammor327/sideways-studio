@@ -6,7 +6,7 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
-## Unreleased
+## 0.42.0 (2026-09-19)
 
 - Live game fills empty decklists: a player with no list under Match data › Decks and battlefields gets the deck RiftAtlas shows, as a decklist paste: legend, champion, the battlefields played so far, the runes once all twelve are out, and the main deck they started the series with (RiftAtlas never shows a sideboard). The deck picker says "(from RiftAtlas)". No more pressing Load players for the decks.
 - That list keeps up with the series: each battlefield joins it as it is played, the runes once they are all out, and the next match's players replace it. A list you paste, load or edit, or one from TopDeck, is never touched. The switch is Fill empty decklists in the Live game fold, on by default.
