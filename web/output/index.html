@@ -26,8 +26,9 @@ iframe {
   const popupSide = q.get('popupside') === 'left' ? '&side=left' : '';
   const anim = q.get('anim') === '0' ? '&anim=0' : '';
   // POV and the IGOs at the bottom of the stack, popup above them, score bug
-  // on top. The game intro and the sideboard fly-in sit under the in-game
-  // overlays (Sam, 2026-09-18): they play in the game window, underneath.
+  // on top. The game intro, the sideboard fly-in and the sideboard card
+  // spotted sit under the in-game overlays (Sam, 2026-09-18): they play in
+  // the game window, underneath.
   const SCENES = [
     `/scenes/slate/?transparent=1${anim}`,
     `/scenes/bracket/?transparent=1${anim}`,
@@ -40,6 +41,7 @@ iframe {
     `/scenes/profile/?transparent=1${anim}`,
     `/scenes/matchup/?transparent=1${anim}`,
     `/scenes/sideboard/?transparent=1${anim}`,
+    `/scenes/sidespot/?transparent=1${anim}`,
     `/scenes/pov/?transparent=1${anim}`,
     `/scenes/decklist/?transparent=1${anim}`,
     `/scenes/decklists/?transparent=1${anim}`,

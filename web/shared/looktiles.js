@@ -42,6 +42,7 @@ export const TILES = [
   { key: 'result', scene: 'result', group: 'parts' },
   { key: 'matchup', scene: 'matchup', group: 'parts' },
   { key: 'sideboard', scene: 'sideboard', group: 'parts' },
+  { key: 'sidespot', scene: 'sidespot', group: 'parts' },
 
   { key: 'slate', scene: 'slate', group: 'full', variant: 'Up next', vary: { mode: 'upnext' } },
   { key: 'slate-starting', scene: 'slate', group: 'full', variant: 'Starting soon', vary: { mode: 'starting' } },

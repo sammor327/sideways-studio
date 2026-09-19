@@ -215,6 +215,17 @@ describe('platform: patches', () => {
     assert.equal(out.patch.event.roundTitle, 'Semifinals');
   });
 
+  it("keeps each battlefield's played mark and result when the same pairing reloads", () => {
+    const first = matchPatch(feed(), legendOf, { round: 'swiss:2', table: 1, bank: bankWith('Someone', 'Else'), deckOf });
+    const bank = bankWith(first.names[0], first.names[1]);
+    bank.match.left.battlefields = [{ name: 'Field One', cardId: '', played: true, game: 1, result: 'won' }, { name: 'Field Two', cardId: '', played: true }];
+    const out = matchPatch(feed(), legendOf, { round: 'swiss:2', table: 1, bank, deckOf });
+    assert.equal(out.newPairing, false);
+    assert.deepEqual(out.patch.match.left.battlefields.map((b) => [b.name, b.played, b.game, b.result]), [
+      ['Field One', true, 1, 'won'], ['Field Two', true, 0, ''], ['Field Three', false, 0, ''],
+    ]);
+  });
+
   it('swaps sides on request', () => {
     const out = matchPatch(feed(), legendOf, { round: 'swiss:1', table: 1, swap: true, bank: bankWith('A', 'B'), deckOf });
     assert.equal(out.patch.match.left.name, 'Player 2');

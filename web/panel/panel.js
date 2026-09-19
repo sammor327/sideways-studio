@@ -85,6 +85,9 @@ const SCENE_FIELDS = {
   // The decks round (2026-09-18).
   matchup: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'champion', 'championText', 'battlefield', 'gameWins', 'roundTitle', 'eventName'],
   sideboard: ['name', 'country', 'legend', 'deck'],
+  // Sideboard card spotted (2026-09-19): the name under the card; the cards
+  // it spots are held against each player's list.
+  sidespot: ['name', 'deck'],
   decklists: ['name', 'country', 'legend', 'record', 'deck'],
   // The VS head to head (2026-09-19).
   vscard: ['name', 'legend', 'legendText', 'roundTitle', 'eventName'],
@@ -123,6 +126,7 @@ const SCENE_NAMES = {
   sponsor: 'the sponsor plate',
   matchup: 'the game intro',
   sideboard: 'the sideboard fly-in',
+  sidespot: 'the sideboard card spotted',
   decklists: 'the side by side decklists',
   vscard: 'the VS head to head',
 };
@@ -136,7 +140,7 @@ const SCENE_SHORT = {
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', ongoing: 'Ongoing', result: 'Result',
   legendstats: 'Legends', sponsor: 'Sponsor',
-  matchup: 'Game intro', sideboard: 'Sideboard', decklists: 'Decklists 2up', vscard: 'VS card',
+  matchup: 'Game intro', sideboard: 'Sideboard', sidespot: 'Sideboard spot', decklists: 'Decklists 2up', vscard: 'VS card',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
@@ -668,6 +672,7 @@ function render(s) {
   renderPlatform(s);
   renderRiftAtlas(s);
   renderDecks(s);
+  renderSidespot(s);
   renderExtras(s);
   revealNewGraphics(s);
 
@@ -810,7 +815,7 @@ $('seriesLength').addEventListener('change', () => {
 $('resetMatch').addEventListener('click', () => {
   if (!confirm('Reset match in preview? Scores and game wins go to zero and all graphics switch off. Press TAKE afterward to put the reset on air.')) return;
   // A new match: no battlefield has been played yet.
-  const unplayed = (side) => (state ? state.preview.match[side].battlefields || [] : []).map((b) => ({ ...b, played: false }));
+  const unplayed = (side) => (state ? state.preview.match[side].battlefields || [] : []).map((b) => ({ ...b, played: false, game: 0, result: '' }));
   post({
     match: {
       left: { score: 0, gameWins: 0, battlefields: unplayed('left') },
@@ -825,7 +830,7 @@ $('resetMatch').addEventListener('click', () => {
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
       bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, result: { visible: false }, sponsor: { visible: false },
-      matchup: { visible: false }, sideboard: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
+      matchup: { visible: false }, sideboard: { visible: false }, sidespot: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -1212,7 +1217,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'result', 'matchup', 'sideboard', 'decklists']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -1438,17 +1443,20 @@ async function deckSummary(list) {
   }
 }
 
+// A battlefield from a list, keeping the played mark and the result (game
+// and won or lost) the same battlefield had before, by name.
+const keepMarks = (b, marks) => {
+  const had = marks.get(b.name.toLowerCase()) || {};
+  return { name: b.name, cardId: b.cardId || '', played: Boolean(had.played), game: had.game || 0, result: had.result || '' };
+};
+
 async function loadSideDeck(side, list, deckName) {
   const before = state ? (state.preview.match[side].battlefields || []) : [];
   await post({ match: { [side]: { deckList: list, deckName } } });
   const deck = await deckSummary(list);
   if (!deck || !deck.battlefields.length) return;
-  const played = new Map(before.map((b) => [b.name.toLowerCase(), b.played]));
-  post({ match: { [side]: { battlefields: deck.battlefields.slice(0, 3).map((b) => ({
-    name: b.name,
-    cardId: b.cardId || '',
-    played: played.get(b.name.toLowerCase()) || false,
-  })) } } });
+  const marks = new Map(before.map((b) => [b.name.toLowerCase(), b]));
+  post({ match: { [side]: { battlefields: deck.battlefields.slice(0, 3).map((b) => keepMarks(b, marks)) } } });
 }
 
 // Populate from decklist (Sam, 2026-09-18): the player's legend, champion
@@ -1478,12 +1486,8 @@ async function fillFromDeck(side, btn) {
     got.push('champion');
   }
   if (deck && deck.battlefields.length) {
-    const played = new Map((sd.battlefields || []).map((b) => [b.name.toLowerCase(), b.played]));
-    patch.battlefields = deck.battlefields.slice(0, 3).map((b) => ({
-      name: b.name,
-      cardId: b.cardId || '',
-      played: played.get(b.name.toLowerCase()) || false,
-    }));
+    const marks = new Map((sd.battlefields || []).map((b) => [b.name.toLowerCase(), b]));
+    patch.battlefields = deck.battlefields.slice(0, 3).map((b) => keepMarks(b, marks));
     got.push(`${patch.battlefields.length} battlefield${patch.battlefields.length === 1 ? '' : 's'}`);
   }
   if (got.length) post({ match: { [side]: patch } });
@@ -1557,6 +1561,29 @@ function renderDeckLine(p, list) {
   });
 }
 
+// A decided game's mark beside each battlefield (2026-09-19), as the rows
+// overlay draws it: a crown with the game's number where this player won
+// it, an X where they lost it. The game wins set it by themselves (a +1
+// marks both players' battlefields in play) and Live game from RiftAtlas;
+// a click cycles no result, won, lost, keeping the game's number, or giving
+// the next one for this player.
+const RESULT_NEXT = { '': 'won', won: 'lost', lost: '' };
+function resultLabel(b) {
+  if (b.result === 'won') return `\u265B ${b.game || ''}`.trim();
+  if (b.result === 'lost') return `\u2715 ${b.game || ''}`.trim();
+  return '\u2013';
+}
+function setPoolResult(side, i) {
+  if (!state) return;
+  const pool = (state.preview.match[side].battlefields || []).map((b) => ({ ...b }));
+  const b = pool[i];
+  if (!b) return;
+  const next = RESULT_NEXT[b.result || ''];
+  if (!next) Object.assign(b, { result: '', game: 0 });
+  else Object.assign(b, { result: next, played: true, game: b.game || pool.filter((x) => x.game > 0).length + 1 });
+  post({ match: { [side]: { battlefields: pool } } });
+}
+
 function renderBfChips(p, side, sd) {
   const box = $(`${p}bfChips`);
   const pool = sd.battlefields || [];
@@ -1568,28 +1595,40 @@ function renderBfChips(p, side, sd) {
     box.replaceChildren(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'Add battlefields above, or load a deck' }));
     return;
   }
-  const chips = pool.map((b) => {
+  const lines = pool.map((b, i) => {
+    const line = document.createElement('div');
+    line.className = 'bf-line';
     const btn = document.createElement('button');
     btn.type = 'button';
     const isNow = Boolean(now) && b.name.toLowerCase() === now;
-    btn.className = `bf-chip${isNow ? ' now' : ''}${b.played ? ' played' : ''}`;
+    btn.className = `bf-chip${isNow ? ' now' : ''}${b.played ? ' played' : ''}${b.result ? ' decided' : ''}`;
     btn.textContent = b.name;
     btn.title = isNow ? `${b.name}: in play this game` : `Play this game on ${b.name}${b.played ? ' (played earlier this match)' : ''}`;
     btn.addEventListener('click', () => post({ match: { [side]: {
       battlefield: b.name,
       battlefieldCardId: b.cardId || catalogCardId(battlefieldCatalog, b.name) || '',
     } } }));
-    return btn;
+    const res = document.createElement('button');
+    res.type = 'button';
+    res.className = `bf-res${b.result ? ` ${b.result}` : ''}`;
+    res.textContent = resultLabel(b);
+    res.title = b.result === 'won' ? `Won game ${b.game || '?'} on ${b.name} (a crown on the rows overlay). Click: lost it instead`
+      : (b.result === 'lost' ? `Lost game ${b.game || '?'} on ${b.name} (a red X on the rows overlay). Click: no result`
+        : `No result on ${b.name}. Click: won the game on it`);
+    res.setAttribute('aria-label', res.title);
+    res.addEventListener('click', () => setPoolResult(side, i));
+    line.append(btn, res);
+    return line;
   });
   const clear = document.createElement('button');
   clear.type = 'button';
   clear.className = 'clear-mini';
-  clear.textContent = '↺';
-  clear.title = 'Clear the played marks, for a new match';
-  clear.setAttribute('aria-label', 'Clear the played marks');
-  clear.disabled = !pool.some((b) => b.played);
-  clear.addEventListener('click', () => post({ match: { [side]: { battlefields: pool.map((b) => ({ ...b, played: false })) } } }));
-  box.replaceChildren(...chips, clear);
+  clear.textContent = '\u21BA';
+  clear.title = 'Clear the played marks and results, for a new match';
+  clear.setAttribute('aria-label', 'Clear the played marks and results');
+  clear.disabled = !pool.some((b) => b.played || b.result);
+  clear.addEventListener('click', () => post({ match: { [side]: { battlefields: pool.map((b) => ({ ...b, played: false, game: 0, result: '' })) } } }));
+  box.replaceChildren(...lines, clear);
 }
 
 function renderDecks(s) {
@@ -2305,13 +2344,13 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing', 'sidespot'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', sidespot: 'toggleSidespot' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', sidespot: 'sidespotOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
@@ -2393,7 +2432,7 @@ $('showdownHands').addEventListener('change', () => post({ scenes: { showdown: {
 
 // --- the decks round (2026-09-18): game intro, sideboard fly-in, side by
 // side decklists, and the rows overlay's battlefields ---
-for (const key of ['matchup', 'sideboard']) {
+for (const key of ['matchup', 'sideboard', 'sidespot']) {
   $(EXP_TOGGLES[key]).addEventListener('click', () => {
     if (!state) return;
     post({ scenes: { [key]: { visible: !state.preview.scenes[key].visible } } });
@@ -2407,6 +2446,120 @@ $('matchupGame').addEventListener('change', () => post({ scenes: { matchup: { ga
 $('sideboardSide').addEventListener('change', () => post({ scenes: { sideboard: { side: $('sideboardSide').value } } }));
 $('decklistsSideboards').addEventListener('change', () => post({ scenes: { decklists: { sideboards: $('decklistsSideboards').checked } } }));
 $('igoRowsBattlefields').addEventListener('change', () => post({ scenes: { igorows: { battlefields: $('igoRowsBattlefields').value } } }));
+
+// --- sideboard card spotted (2026-09-19) ---
+//
+// On air, the graphic flies in each card spotted: Live game spots the cards
+// a player sided in as they turn up in hand, and the search here spots one by
+// hand. Spot it, Show again and Take it down are the spot cue, so they act on
+// air at once; the time on screen is the graphic's own setting.
+$('sidespotHold').addEventListener('change', () => post({ scenes: { sidespot: { hold: Number($('sidespotHold').value) } } }));
+$('sidespotAgain').addEventListener('click', () => post({ action: 'spot', op: 'again' }));
+$('sidespotHide').addEventListener('click', () => post({ action: 'spot', op: 'hide' }));
+let spotPick = null;
+function paintSpotPick() {
+  renderPickThumb('sidespotCard', cardThumbSrc(spotPick ? spotPick.cardId : ''), Boolean(spotPick));
+  $('sidespotGo').disabled = !spotPick;
+}
+(function wireSpotSearch() {
+  const input = $('sidespotCard');
+  const list = $('sidespotCardResults');
+  let hits = [];
+  let timer = null;
+  const close = () => { list.classList.remove('open'); list.replaceChildren(); };
+  const choose = (card) => {
+    spotPick = card ? { cardId: card.cardId, cardName: card.cardName } : null;
+    input.value = card ? card.cardName : '';
+    hits = [];
+    close();
+    paintSpotPick();
+  };
+  const draw = () => {
+    list.replaceChildren(...hits.map((card) => {
+      const li = document.createElement('li');
+      const img = document.createElement('img');
+      img.src = cardThumbSrc(card.cardId);
+      img.alt = '';
+      img.onerror = () => img.classList.add('hidden');
+      const meta = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = card.cardName;
+      const sub = document.createElement('span');
+      sub.textContent = [card.cardType, card.cardId].filter(Boolean).join(' · ');
+      meta.append(name, sub);
+      li.append(img, meta);
+      li.addEventListener('mousedown', (e) => { e.preventDefault(); choose(card); });
+      return li;
+    }));
+    placeList(input, list);
+    list.classList.toggle('open', hits.length > 0);
+  };
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { hits = []; draw(); return; }
+    timer = setTimeout(async () => {
+      try {
+        const data = await (await fetch(`/api/cards/search?q=${encodeURIComponent(q)}`)).json();
+        hits = data.indexed ? data.results : [];
+        draw();
+      } catch { /* the server comes back; the next keystroke searches again */ }
+    }, 200);
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && hits.length) choose(hits[0]);
+    if (e.key === 'Escape') { hits = []; draw(); }
+  });
+  input.addEventListener('blur', () => setTimeout(() => {
+    close();
+    if (document.activeElement !== input) input.value = spotPick ? spotPick.cardName : '';
+  }, 150));
+  $('sidespotCardClear').addEventListener('click', () => choose(null));
+}());
+$('sidespotGo').addEventListener('click', () => {
+  if (!spotPick) return;
+  post({ action: 'spot', side: $('sidespotSide').value === 'right' ? 'right' : 'left', cardId: spotPick.cardId, cardName: spotPick.cardName });
+});
+
+// The last card spotted (the spot is a cue, so both banks hold the same
+// one), the time on screen, and the by-hand player list by name.
+function renderSidespot(s) {
+  const cfg = s.preview.scenes.sidespot;
+  const hold = $('sidespotHold');
+  if (document.activeElement !== hold) {
+    const v = String(cfg.hold);
+    if (![...hold.options].some((o) => o.value === v)) hold.append(new Option(`${v} seconds`, v));
+    hold.value = v;
+  }
+  const spot = s.program.scenes.sidespot.spot;
+  const box = $('sidespotLast');
+  const key = JSON.stringify(spot);
+  if (box.dataset.key !== key) {
+    box.dataset.key = key;
+    if (!spot.id) {
+      box.replaceChildren(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'Nothing spotted yet.' }));
+    } else {
+      const img = document.createElement('img');
+      img.className = 'spot-thumb';
+      img.alt = '';
+      if (spot.cardId) img.src = cardThumbSrc(spot.cardId);
+      img.onerror = () => img.classList.add('hidden');
+      const text = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = spot.cardName || 'A card';
+      const sub = document.createElement('span');
+      const who = spot.player || (spot.side === 'left' ? 'Player 1' : 'Player 2');
+      sub.textContent = [`Sideboard card for ${who}`, spot.game ? `game ${spot.game}` : '', spot.turn ? `turn ${spot.turn}` : ''].filter(Boolean).join(' · ');
+      text.append(name, sub);
+      box.replaceChildren(img, text);
+    }
+  }
+  $('sidespotAgain').disabled = !spot.id;
+  $('sidespotHide').disabled = !spot.id;
+  const opts = $('sidespotSide').options;
+  opts[0].textContent = s.preview.match.left.name || 'Player 1';
+  opts[1].textContent = s.preview.match.right.name || 'Player 2';
+}
 
 // --- the showdown chain: cues on both banks ---
 //
@@ -3736,15 +3889,18 @@ function renderThumbs(s) {
       || (key === 'sponsor' && !s.preview.scenes.sponsor.items.length)
       || (key === 'sideboard' && !(s.preview.scenes.sideboard.side === 'both' ? ['left', 'right'] : [s.preview.scenes.sideboard.side])
         .some((k) => s.preview.match[k].deckList.trim()))
-      || (key === 'decklists' && !s.preview.match.left.deckList.trim() && !s.preview.match.right.deckList.trim());
+      || (key === 'decklists' && !s.preview.match.left.deckList.trim() && !s.preview.match.right.deckList.trim())
+      || (key === 'sidespot' && !s.preview.scenes.sidespot.spot.id);
     const cantShow = key === 'decklist' && !s.preview.scenes.decklist.list.trim();
     thumb.classList.toggle('empty', empty);
     thumb.classList.toggle('disabled', cantShow);
     const deckGraphic = key === 'sideboard' || key === 'decklists';
-    const idle = empty ? (key === 'sponsor' ? 'Add a sponsor' : (deckGraphic ? 'Load a deck' : 'Pick a card')) : (cantShow ? 'Nothing staged' : 'Click to preview');
+    // Sideboard card spotted goes on air empty and waits for its first card.
+    const waits = key === 'sidespot';
+    const idle = empty ? (key === 'sponsor' ? 'Add a sponsor' : (waits ? 'Nothing spotted yet' : (deckGraphic ? 'Load a deck' : 'Pick a card'))) : (cantShow ? 'Nothing staged' : 'Click to preview');
     thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : idle);
     thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview`
-      : (empty ? (deckGraphic ? `Load a deck under Match data › Decks and battlefields for ${SCENE_NAMES[key] || key}` : `Pick cards for ${SCENE_NAMES[key] || key} under Graphic features`) : `Put ${SCENE_NAMES[key] || key} in preview`);
+      : (empty && !waits ? (deckGraphic ? `Load a deck under Match data › Decks and battlefields for ${SCENE_NAMES[key] || key}` : `Pick cards for ${SCENE_NAMES[key] || key} under Graphic features`) : `Put ${SCENE_NAMES[key] || key} in preview`);
   }
   renderFeatures(s);
   renderSections(s);

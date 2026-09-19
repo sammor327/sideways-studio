@@ -20,7 +20,9 @@
 // battlefield in play, legend, champion, turn and whose turn) land in both
 // banks at once, like the clock, while the players on air are the players in
 // preview; with a new pairing loaded into preview and not yet taken they wait
-// in preview. Names only ever change on Load players.
+// in preview. Names only ever change on Load players. A card a player sided
+// in that turns up in their hand after turn 1 is spotted for the Sideboard
+// card spotted graphic (the spot cue, 2026-09-19).
 
 import { spawn } from 'node:child_process';
 import { closeSync, openSync, readFileSync, rmSync } from 'node:fs';
@@ -35,7 +37,9 @@ import { findBrowser } from './still.js';
 import {
   CASTER_URL, REALTIME_HOST, parseRoomCode, casterUrl, socketRoom, createFeed, ingestFrame, gameView,
   makeCardResolver, livePatch, identityPatch, showdownPatch, orientation, normName,
+  noteDecks, sidedIn, spotSideboardCards, spotActions,
 } from './riftatlas-model.js';
+import { parseDecklist } from '../web/shared/decklist-format.js';
 
 const FILE = path.join(DATA_DIR, 'riftatlas.json');
 const PROFILE = path.join(DATA_DIR, 'riftatlas');
@@ -49,9 +53,13 @@ const RETRY_MS = [3_000, 10_000, 30_000, 60_000];
 // it, so the final might and the last card get their moment on air.
 const SHOWDOWN_HOLD_MS = 4_000;
 
-let config = { room: '', live: true, follow: false, swap: false, show: false, showdown: true };
+let config = { room: '', live: true, follow: false, swap: false, show: false, showdown: true, spot: true };
 let status = { state: 'idle', message: 'Not connected.', account: '', version: 0 };
+// Every series' starting decks, kept across rooms and reconnects so game 2
+// can still be held against game 1 (sideboard spotting; keyed by series).
+const seriesDecks = new Map();
 let feed = createFeed();
+feed.decks = seriesDecks;
 let reader = null; // { proc, ws, send, sessionId, sockets, closing }
 let signin = null; // the sign-in window's process
 let starting = null;
@@ -93,6 +101,7 @@ export async function initRiftAtlas() {
       swap: raw.swap === true,
       show: raw.show === true,
       showdown: raw.showdown !== false,
+      spot: raw.spot !== false,
     };
   } catch { /* first run */ }
 }
@@ -316,10 +325,13 @@ async function stopReader() {
   }
 }
 
-// A new room is a new feed: nothing of the last game carries over.
+// A new room is a new feed: nothing of the last game carries over but the
+// series' starting decks, which only a later game of the same series reads.
 async function openRoom(room) {
   closeShowdown();
   feed = createFeed();
+  feed.decks = seriesDecks;
+  spotTracker = {};
   pushed = { live: '', followId: '', showdownKey: '' };
   // The last room's sockets close with the page; a frame still in flight
   // from one must not land in the new room's feed.
@@ -440,6 +452,7 @@ function sameOnAir(state) {
 }
 
 function changed() {
+  noteDecks(feed);
   if (reader && ['loading', 'waiting', 'live'].includes(status.state)) {
     const view = gameView(feed);
     if (view) setStatus('live', liveLine(view));
@@ -491,6 +504,45 @@ function push() {
       }
     }
   }
+  spotCards(view, h);
+}
+
+// ---- sideboard cards (2026-09-19) ----------------------------------------------
+//
+// Sam: "a 'sideboard card spotted' for when a sideboard card is added to the
+// hand after turn 1". What each player sided in is this game's starting deck
+// held against game 1's, or against the main deck of their list in Match
+// data (riftatlas-model.js sidedIn); a card of those that turns up in their
+// hand after turn 1 is spotted with the spot cue, which the Sideboard card
+// spotted graphic flies in while it is on air.
+let spotTracker = {};
+
+// A card's key for that comparison: the card index's own name when the card
+// resolves, so a RiftAtlas card and a line of a pasted list agree.
+const keyFor = (resolveCard) => (c) => {
+  const hit = resolveCard(c);
+  return normName(hit ? hit.cardName : c.name);
+};
+
+function sidedFor(view, h, state, l, r) {
+  const lists = {};
+  for (const [p, key] of [[l, 'left'], [r, 'right']]) {
+    if (!p) continue;
+    const deck = parseDecklist(state.preview.match[key].deckList || '');
+    lists[p.id] = { main: deck.main, sideboard: deck.sideboard };
+  }
+  return sidedIn(feed, view, { lists, keyOf: keyFor(h.resolveCard) });
+}
+
+function spotCards(view, h) {
+  const state = getState();
+  const sides = orientation(view, state.preview, config.swap);
+  // The tracker keeps up while spotting is off or preview holds another
+  // match, so neither spots every card drawn in the meantime once it clears.
+  const found = spotSideboardCards(feed, spotTracker, sidedFor(view, h, state, ...sides), { keyOf: keyFor(h.resolveCard) });
+  // A spot is a cue on air: only for the match on air.
+  if (!config.spot || !sameOnAir(state)) return;
+  for (const cue of spotActions(found, view, sides, state.preview.match, h.resolveCard)) applyUpdate(cue);
 }
 
 // The showdown the feed brought up is over (or the feed is going): it
@@ -529,6 +581,21 @@ function panelView() {
     const p = view.players.find((x) => x.id === id);
     return p ? (matchName(p) || p.name) : '';
   };
+  const keyOf = keyFor(h.resolveCard);
+  const sided = view.players.length === 2 ? sidedFor(view, h, state, l, r) : {};
+  const sidedLine = (p) => {
+    const s = sided[p.id];
+    if (!s) return null;
+    const cards = [];
+    const listed = new Set();
+    for (const c of (p.deck ? p.deck.cards : [])) {
+      const k = keyOf(c);
+      if (!s.extra.get(k) || listed.has(k)) continue;
+      listed.add(k);
+      cards.push({ ...card(c), extra: s.extra.get(k) });
+    }
+    return { against: s.against, mismatch: Boolean(s.mismatch), cards };
+  };
   const side = (p) => (p ? {
     id: p.id, name: p.name, matchName: matchName(p), seat: p.seat, score: p.score, wins: p.wins,
     legend: card(p.legend), champion: card(p.champion),
@@ -537,6 +604,7 @@ function panelView() {
     deck: p.deck ? { left: p.deck.left, total: p.deck.total } : null,
     trash: p.trash.length, clockMs: p.clockMs,
     active: view.live && view.activePlayerId === p.id,
+    sided: sidedLine(p),
   } : null);
   return {
     room: view.room, settled: view.settled, gameNumber: view.gameNumber, seriesLength: view.seriesLength, phase: view.phase,
@@ -585,7 +653,7 @@ export async function handleRiftAtlas(req, res, url, { readBody, sendJson }) {
     const b = await body();
     if (!b) { sendJson(res, 400, { ok: false, error: 'invalid JSON' }); return true; }
     const restart = b.show !== undefined && Boolean(b.show) !== config.show;
-    for (const k of ['live', 'follow', 'swap', 'show', 'showdown']) if (b[k] !== undefined) config[k] = Boolean(b[k]);
+    for (const k of ['live', 'follow', 'swap', 'show', 'showdown', 'spot']) if (b[k] !== undefined) config[k] = Boolean(b[k]);
     // A showdown the feed brought up goes when what brought it up is off.
     if (!config.live || !config.showdown) closeShowdown();
     // Turning live or the side swap back on writes at once, not at the next move.
@@ -618,6 +686,7 @@ export async function handleRiftAtlas(req, res, url, { readBody, sendJson }) {
     closeShowdown();
     await stopReader();
     feed = createFeed();
+    feed.decks = seriesDecks;
     setStatus('idle', 'Not connected.');
     answer();
     return true;

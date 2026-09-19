@@ -83,8 +83,21 @@ function paintSide(side, p, active) {
     p.battlefield ? p.battlefield.name : '',
   ].filter(Boolean);
   text.append(el('div', 'ra-bits', bits.join(' · ')));
+  if (p.sided && (p.sided.cards.length || p.sided.mismatch)) text.append(sidedLine(p.sided));
   row.append(text);
   return row;
+}
+
+// What this player sided in for this game and what that is held against
+// (game 1's deck, or their list in Match data): the cards the spotter
+// watches their hand for (2026-09-19).
+function sidedLine(s) {
+  if (s.mismatch) {
+    return el('div', 'ra-bits ra-sided warn', 'This deck does not match their list in Match data, so no sideboard cards are spotted');
+  }
+  const against = s.against === 'list' ? 'their list' : s.against;
+  const cards = s.cards.map((c) => `${c.extra > 1 ? `${c.extra}\u00d7 ` : ''}${c.name}`).join(', ');
+  return el('div', 'ra-bits ra-sided', `Sided in (against ${against}): ${cards}`);
 }
 
 // The open showdown in one line: where, who attacked, the might, and
@@ -146,6 +159,7 @@ function paint() {
   $('raFollow').checked = config.follow;
   $('raShowdown').checked = config.showdown !== false;
   $('raShow').checked = config.show;
+  $('raSpot').checked = config.spot !== false;
 
   const map = $('raMap');
   map.replaceChildren();
@@ -215,6 +229,7 @@ $('raLive').addEventListener('change', (ev) => act('/api/riftatlas/config', { li
 $('raFollow').addEventListener('change', (ev) => act('/api/riftatlas/config', { follow: ev.target.checked }));
 $('raShowdown').addEventListener('change', (ev) => act('/api/riftatlas/config', { showdown: ev.target.checked }));
 $('raShow').addEventListener('change', (ev) => act('/api/riftatlas/config', { show: ev.target.checked }));
+$('raSpot').addEventListener('change', (ev) => act('/api/riftatlas/config', { spot: ev.target.checked }));
 // A panel in a background tab has its timers throttled (to once a minute
 // after five minutes); coming back to it catches up at once.
 document.addEventListener('visibilitychange', () => {

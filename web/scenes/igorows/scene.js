@@ -167,15 +167,45 @@ function renderSide(p, side, m, animate) {
 // A strip of its own beside each player's camera. "all" is the three the
 // player brought in the order typed, the one in play marked with an arrow
 // and the ones played before greyed; "one" is the battlefield in play alone.
-// A player with no three typed still shows the one in play.
+// A player with no three typed still shows the one in play. A battlefield
+// whose game is decided (2026-09-19, Sam) carries its mark instead of the
+// grey: a crown with the game's number where the player won, in colour; a
+// red X with the number, tinted red, where they lost.
 function bfEntries(side, mode) {
   const now = String(side.battlefield || '').toLowerCase();
-  if (mode === 'one') {
-    return side.battlefield ? [{ name: side.battlefield, cardId: side.battlefieldCardId || '', now: false, played: false }] : [];
-  }
   const pool = (side.battlefields || []).map((b) => ({ ...b, now: Boolean(now) && b.name.toLowerCase() === now }));
+  if (mode === 'one') {
+    if (!side.battlefield) return [];
+    const mine = pool.find((b) => b.now) || {};
+    return [{ name: side.battlefield, cardId: side.battlefieldCardId || '', now: false, played: false, game: mine.game || 0, result: mine.result || '' }];
+  }
   if (!pool.length && side.battlefield) return [{ name: side.battlefield, cardId: side.battlefieldCardId || '', now: true, played: true }];
   return pool;
+}
+
+const RESULTS = ['won', 'lost'];
+
+// The name, with the result's mark before it once the game is decided.
+function bfName(b) {
+  const nm = document.createElement('span');
+  nm.className = 'nm';
+  if (!RESULTS.includes(b.result)) {
+    nm.textContent = b.name;
+    return nm;
+  }
+  const mark = document.createElement('span');
+  mark.className = `res ${b.result === 'won' ? 'crown' : 'cross'}`;
+  const shape = document.createElement('span');
+  shape.className = 'shape';
+  const game = document.createElement('span');
+  game.className = 'g';
+  game.textContent = b.game ? String(b.game) : '';
+  mark.append(shape, game);
+  const text = document.createElement('span');
+  text.className = 't';
+  text.textContent = b.name;
+  nm.append(mark, text);
+  return nm;
 }
 
 const bfShown = { l: null, r: null };
@@ -189,15 +219,13 @@ function renderBattlefields(p, side, mode) {
   box.classList.toggle('one', mode === 'one');
   box.replaceChildren(...list.map((b) => {
     const tile = document.createElement('div');
-    tile.className = `bft${b.now ? ' now' : ''}${b.played && !b.now ? ' played' : ''}`;
+    const result = RESULTS.includes(b.result) ? b.result : '';
+    tile.className = `bft${b.now ? ' now' : ''}${b.played && !b.now && !result ? ' played' : ''}${result ? ` ${result}` : ''}`;
     const img = document.createElement('img');
     img.className = 'art hidden';
     img.alt = '';
     img.draggable = false;
-    const nm = document.createElement('span');
-    nm.className = 'nm';
-    nm.textContent = b.name;
-    tile.append(img, nm);
+    tile.append(img, bfName(b));
     if (b.cardId) chainLoad(img, battlefieldSteps(b.cardId), rotateIfPortrait);
     return tile;
   }));

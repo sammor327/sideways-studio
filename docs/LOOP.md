@@ -214,6 +214,39 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19i (out of band: sideboard card spotted, battlefield results, 0.35.0)
+
+Sam's two asks. (1) "As part of the riftatlas integration, a 'sideboard
+card spotted' for when a sideboard card is added to the hand after turn 1,
+flying in a highlighted and featured card with the text 'Sideboard Card for
+[PLAYERNAMEHERE]' underneath". A broadcast view never flags sideboard cards
+(every deck card reads source "mainDeck"; RiftAtlas's client builds the
+board deck from `submittedDeck ?? deck`, which spectators do not get), so
+sided in = this game's broadcastDecksByPlayerId startingCount over the
+series' game 1 deck (noteDecks, kept across reconnects), else over the
+side's deckList main (its sideboard filters), with a >10-copy mismatch
+guard; a card id new to a hand after turn 1 (the first look at a room only
+primes) is spotted once per player and card a game, and the reader sends the
+`spot` cue while preview and program show the same names. New scene
+`sidespot`: the ringed, glowing card flies in from the player's side of the
+game window with the two-line plate, holds `hold` s off the spot's own
+wall-clock `at`, flies out; Show again / Take it down / Spot it by hand in
+Graphic features, "Spot sideboard cards" + a sided-in line in the Live game
+fold. (2) Rows overlay battlefields: "a crown with the number of the game
+over it for the player that won their battlefield, not greyscaled; lost:
+red tinted and a red X with the game number over it". Pool entries gained
+game + result; RiftAtlas results from each room's reports / wins step
+(seriesWinners), by hand from a +1 on game wins (recordGame), a result
+toggle beside each This game chip, kept by Populate/deck loads and the
+Tournament platform's reload. Verified: 331 tests (new test/sidespot.test.js
+on the recorded best of three: winners, battlefield games, sided-in
+baselines, spotting over the recorded patches, spot actions; the store's
+cue, recordGame, the pool shape), stills of the strip in both modes and the
+fly-in over the rows overlay from a scratch server (4791), panel probes.
+Built alongside the Rift Atlas setup session (0.34.0, rebased onto it) and
+the odds / graveyard session (rebasing onto this). Not seen yet: a real
+game 2 on RiftAtlas with a sided-in card drawn.
+
 ### 2026-09-19h (out of band: Live game precedence, showdowns from RiftAtlas, the showdown in the rows column)
 
 Sam, using Live game on Convergence #3, four asks. (1) A pasted decklist

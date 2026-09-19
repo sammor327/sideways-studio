@@ -20,7 +20,7 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'sponsor',
-  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing'];
+  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'sidespot'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -58,6 +58,7 @@ export const SCENE_LABELS = {
   vscard: 'Head to head, VS',
   pairings: 'Pairings',
   ongoing: 'Ongoing matches',
+  sidespot: 'Sideboard card spotted',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -250,6 +251,12 @@ export const DESIGNED = {
   decklists: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+  },
+  // Sideboard card spotted (2026-09-19): the card and its name plate, which
+  // takes the sideboard fly-in's plate ground.
+  sidespot: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 30, dim: 0 },
   },
   // The VS head to head (2026-09-19) stands on the Sideways Showdown ground
   // it was designed on; that plate carries its own grain.

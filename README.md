@@ -445,17 +445,32 @@ their list in one press, as if each were picked by hand (the champion is
 also staged as their featured card). **This game** makes one
 of them the battlefield in play (it becomes the player's Battlefield and is
 marked played); the arrow clears the played marks, and Reset match does too.
+Beside each battlefield is the result of the game played on it: a crown and
+the game's number where the player won it, an X where they lost it. A + on a
+player's game wins sets it for both players' battlefields in play (a minus
+takes it back); click it to set or change one by hand. Live game takes the
+results from RiftAtlas.
 
 - **Rows overlay battlefields** (Graphic features › rows, Battlefields): Off,
   This game's, or All three, played marked. They sit in a strip of their
   own beside each player's camera (under player 1's, over player 2's), apart
   from the hands: the three side by side with an arrow on this game's and
-  the ones played earlier greyed out.
+  the ones played earlier greyed out. A battlefield whose game is decided
+  keeps its colour with a gold crown and the game's number where the player
+  won it, and turns red under a red X with the number where they lost it.
 - **Sideboard fly-in** (1v1 graphics): both players' sideboards at once,
   player 1's across the top of the game flying in from the left, player 2's
   across the bottom from the right; or one player alone. Both plates span
   the game area at one card size, as large as fits. A player whose list has
   no sideboard is left out.
+- **Sideboard card spotted** (1v1 graphics, `/scenes/sidespot/`, 0.35.0): a
+  card a player sided in, flown in from their side of the game, lit up,
+  with "Sideboard Card for" and their name under it. It stays up for the
+  time set under Graphic features (eight seconds by default) and flies out.
+  TAKE it once: on air it waits and flies each card in as it is spotted.
+  Live game spots them (below); **Spot it** under Graphic features spots a
+  card by hand for either player, and **Show again** and **Take it down**
+  act on air at once too.
 - **Decklists side by side** (Between games, full frame): both players'
   lists with legend, runes, champion, battlefields, the main deck and,
   optionally, the sideboards.
@@ -465,7 +480,8 @@ marked played); the arrow clears the played marks, and Reset match does too.
   about two seconds. The game number counts from the game wins unless
   pinned under Graphic features.
 
-The game intro and the sideboard fly-in fit themselves into the table area
+The game intro, the sideboard fly-in and the sideboard card spotted fit
+themselves into the table area
 of whichever in-game overlay is up (the rows, the dual columns, the pillars,
 the bars, the sidebars, the POV) and take the whole frame with none. They
 play underneath the overlay: add their browser sources below your in-game
@@ -572,6 +588,23 @@ plus buffs; equipment and face-down cards left out), who has focus and every
 card played into it, and closes a few seconds after RiftAtlas settles it.
 The rows overlay shows it in its column; the Showdown graphic, switched on,
 shows it anywhere else.
+
+**Sideboard cards.** With **Spot sideboard cards** on (the default), a card
+a player sided in that turns up in their hand after turn 1 is spotted, and
+the Sideboard card spotted graphic flies it in while it is on air. RiftAtlas
+never says which cards came out of a sideboard, so the app works it out:
+from game 2 on, a card is sided in when that game's deck starts with more
+copies of it than the player's game 1 deck, which the app remembers when it
+saw game 1 (connect before game 1 starts). Otherwise it holds the deck
+against the main deck of the player's list in Match data (a list with a
+sideboard counts only the cards that sideboard names), and a list that is
+not this deck at all spots nothing. Each card is spotted once a game, and
+a card already in hand when the app joins a game is not. The Live game fold
+shows each player's sided-in cards and what they were held against.
+
+**Results.** RiftAtlas's own record of each game (both players report the
+winner) marks the battlefields: the one a player won on gets the crown and
+the game's number on the rows overlay, the one they lost on the red X.
 
 **Signing in.** Press **Sign in** and RiftAtlas opens in a normal Edge
 window. Sign in there with the account that has caster access, wait for the

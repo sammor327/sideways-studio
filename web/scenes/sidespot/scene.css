@@ -1,0 +1,128 @@
+/* Sideboard card spotted (2026-09-19, Sam: "a 'sideboard card spotted' for
+   when a sideboard card is added to the hand after turn 1. and it flys in a
+   highlighted and featured card with the text underneath it of 'Sideboard
+   Card for [PLAYERNAMEHERE]'").
+
+   The card a player sided in flies in over the game window from that
+   player's side, featured: an accent ring, a glow that breathes while it is
+   up and one light sweep as it lands, with the plate under it. It holds for
+   the graphic's hold time and flies back out. The game window is the table
+   area of whichever in-game overlay is up (web/shared/gamewindow.js), the
+   whole frame with none; the card sits against the window's edge on the
+   player's side, player 1 left, player 2 right, and the scene clips to the
+   window so it comes out from under the overlay's chrome.
+
+   Motion: --t runs the fly (in 0.9 s, out 0.45 s), --s the sweep once it has
+   landed, --b the landing pop, --p the glow's breath. Every read falls back
+   to settled: var(--t, 1), var(--s, 1). */
+
+.ss { position: absolute; inset: 0; }
+.ss.off { display: none; }
+.ss, .ss * { box-sizing: border-box; }
+
+.spot {
+  position: absolute;
+  left: calc(var(--x, 1320) * var(--u));
+  top: calc(var(--y, 195) * var(--u));
+  width: calc(420 * var(--u));
+  transform: scale(var(--k, 1));
+  transform-origin: 0 0;
+  perspective: calc(1600 * var(--u));
+}
+.lift {
+  position: relative;
+  opacity: clamp(0, calc(var(--t, 1) * 1.6), 1);
+  transform:
+    translateX(calc((1 - var(--t, 1)) * var(--dx, 700) * var(--u)))
+    rotateY(calc((1 - var(--t, 1)) * var(--ry, 38deg)))
+    scale(calc(1 + var(--b, 0) * 0.04));
+  transform-origin: 50% 45%;
+}
+
+/* The glow behind the card: the accent gradient, blurred, breathing. */
+.halo {
+  position: absolute;
+  left: calc(-22 * var(--u));
+  right: calc(-22 * var(--u));
+  top: calc(-22 * var(--u));
+  height: calc(627 * var(--u));
+  border-radius: calc(34 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  filter: blur(calc(26 * var(--u)));
+  opacity: calc((0.4 + var(--p, 0.5) * 0.32) * var(--t, 1));
+}
+
+/* The accent ring round the card. */
+.frame {
+  position: relative;
+  padding: calc(5 * var(--u));
+  border-radius: calc(20 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  box-shadow: 0 calc(20 * var(--u)) calc(50 * var(--u)) rgba(0, 0, 0, 0.6);
+}
+.card-box {
+  position: relative;
+  width: calc(410 * var(--u));
+  height: calc(573 * var(--u));
+  border-radius: calc(15 * var(--u));
+  overflow: hidden;
+  background: var(--ss-ink, #10151d);
+}
+.card-box .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.card-box .art.hidden { display: none; }
+/* End of the art's fallback chain: the card's name on a panel, never a
+   broken image on program. */
+.miss {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12%;
+  text-align: center;
+  background: linear-gradient(160deg, var(--ss-ink, #10151b), var(--ss-plate, #0a0d10));
+  color: var(--ss-text, #e8edf1);
+  font: italic 700 calc(38 * var(--u))/1.2 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.5 * var(--u));
+}
+.miss.gone { display: none; }
+/* One light sweep across the card as it lands. */
+.sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 36%, rgba(255, 255, 255, 0.42) 50%, rgba(255, 255, 255, 0) 64%);
+  transform: translateX(calc((var(--s, 1) * 2.6 - 1.3) * 100%));
+}
+
+/* "Sideboard Card for" and the player's name, on the look's ground. */
+.plate {
+  position: relative;
+  margin-top: calc(16 * var(--u));
+  padding: calc(12 * var(--u)) calc(20 * var(--u)) calc(14 * var(--u));
+  text-align: center;
+  overflow: hidden;
+  border-bottom: calc(4 * var(--u)) solid transparent;
+  border-image: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)) 1;
+  box-shadow: 0 calc(14 * var(--u)) calc(36 * var(--u)) rgba(0, 0, 0, 0.55);
+  opacity: clamp(0, calc((var(--t, 1) - 0.35) / 0.5), 1);
+}
+.plate .ground .g-shards, .plate .ground .g-shade, .plate .ground .g-glint { opacity: 0.3; }
+.plate .lead, .plate .who {
+  position: relative;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-transform: uppercase;
+}
+.plate .lead {
+  font: 800 calc(15 * var(--u))/1 var(--tes-font);
+  letter-spacing: calc(3.2 * var(--u));
+  color: var(--ss-accent-a, #11b6fb);
+}
+.plate .who {
+  margin-top: calc(9 * var(--u));
+  font: italic 800 calc(32 * var(--u))/1.05 var(--tes-font);
+  letter-spacing: calc(0.6 * var(--u));
+  color: var(--ss-text, #fff);
+}

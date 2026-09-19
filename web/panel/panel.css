@@ -561,6 +561,25 @@ textarea:focus { outline: 2px solid var(--tes-blue); }
 .bf-chip { grid-column: 1; width: 100%; height: 28px; padding: 0 8px; font-size: 11.5px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bf-chip.now { background: var(--tes-grad); color: #06110a; border-color: transparent; font-weight: 700; }
 .bf-chip.played:not(.now) { opacity: 0.55; text-decoration: line-through; }
+/* A decided game's mark beside each battlefield: crown (won), X (lost). */
+.bf-line { grid-column: 1; display: flex; gap: 4px; min-width: 0; }
+.bf-line .bf-chip { flex: 1 1 auto; min-width: 0; }
+.bf-chip.decided:not(.now) { opacity: 0.8; text-decoration: none; }
+.bf-res { flex: 0 0 auto; width: 44px; height: 28px; padding: 0; font-size: 12px; font-weight: 700; color: #8b98a5; }
+.bf-res.won { color: #2a1b00; background: linear-gradient(180deg, #ffe7a3, #e6ad2e); border-color: #b9821d; }
+.bf-res.lost { color: #fff; background: #b3261e; border-color: #7d1712; }
+/* Sideboard card spotted: the last card spotted, and spotting one by hand. */
+.spot-last { display: flex; align-items: center; gap: 10px; margin: 8px 0; min-height: 44px; font-size: 12.5px; }
+.spot-last .spot-thumb { width: 32px; height: 44px; object-fit: cover; border-radius: 3px; flex: 0 0 auto; }
+.spot-last .spot-thumb.hidden { visibility: hidden; }
+.spot-last div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.spot-last span { color: #8b98a5; font-size: 11.5px; }
+.spot-hand { display: flex; align-items: center; gap: 6px; }
+.spot-hand select { flex: 0 0 auto; max-width: 150px; }
+.spot-hand .picker-wrap { flex: 1 1 auto; min-width: 0; }
+.spot-hand > button { flex: 0 0 auto; white-space: nowrap; }
+.ra-sided { color: var(--tes-green, #1bef19); }
+.ra-sided.warn { color: #f0b429; }
 .bf-chips .clear-mini { grid-column: 2; grid-row: 1 / span 3; align-self: stretch; padding: 0 7px; }
 
 .theme-colors { display: flex; gap: 16px; }

@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.35.0 (2026-09-19)
+
+- New graphic: Sideboard card spotted (1v1 graphics, after the sideboard fly-in). When a player draws a card they sided in, it flies in over the game from their side, lit up, with "Sideboard Card for" and their name under it, stays up for eight seconds and flies out. TAKE it once and it waits on air for cards.
+- Live game spots them from RiftAtlas, from game 2 on, when the card turns up in a hand after turn 1. A card counts as sided in when that game's deck holds more copies of it than the player's game 1 deck (or, if the app did not see game 1, than the main deck of their list in Match data). "Spot sideboard cards" in the Live game fold switches it off; the fold lists what each player sided in.
+- Under Graphic features: how long a card stays up, Show again, Take it down, and Spot it to spot a card by hand for either player. All of them act on air at once.
+- Rows overlay battlefields: a battlefield whose game is decided now says how it went. The one a player won the game on keeps its colour and gets a gold crown with the game's number; the one they lost it on turns red under a red X with the number. Live game takes the results from RiftAtlas. By hand, the game wins do it: + on a player's game wins marks both players' battlefields in play with that game, and minus takes it back.
+- Match data › Decks and battlefields shows each battlefield's result beside it; click it to set or change one. Reset match and the clear arrow take results off, and reloading a match from the Tournament platform keeps them.
+
 ## 0.34.0 (2026-09-19)
 
 - Live game: a decklist you pasted (or TopDeck loaded) now wins over RiftAtlas: the legend, the champion and the three battlefields stay the list's. RiftAtlas still marks which battlefield is in play and which have been played.

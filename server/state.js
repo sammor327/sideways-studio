@@ -59,7 +59,11 @@ function defaultSide(name) {
     // The three battlefields the player brought, in the order typed, each
     // marked once it has been played this match. The one in play now is
     // `battlefield` above; making a pool entry the current battlefield marks
-    // it played (applySide). The rows overlay lists the pool.
+    // it played (applySide). The rows overlay lists the pool. A battlefield
+    // whose game is decided also carries that game's number and whether this
+    // player won it (game, result 'won' or 'lost', 2026-09-19): the rows
+    // overlay crowns it or crosses it out. A live feed says so itself; by
+    // hand, the game wins say it (recordGame).
     battlefields: [],
     score: 0, gameWins: 0,
   };
@@ -279,6 +283,14 @@ function defaultBank() {
       // window of whichever in-game overlay is up, player 1's across the top
       // and player 2's across the bottom ('both'), or one player's alone.
       sideboard: { visible: false, side: 'both' },
+      // Sideboard card spotted (2026-09-19, Sam: "a 'sideboard card spotted'
+      // for when a sideboard card is added to the hand after turn 1"): the
+      // card flies in over the game window, featured and lit, with "Sideboard
+      // Card for <player>" under it. spot is the latest card spotted (the
+      // spot cue: the RiftAtlas reader, or the panel by hand); the graphic,
+      // while it is on air, flies each new one in and out again `hold`
+      // seconds after it was spotted.
+      sidespot: { visible: false, hold: 8, spot: { id: 0, side: '', cardId: '', cardName: '', player: '', game: 0, turn: 0, at: 0 } },
       // Both players' decklists side by side, full frame.
       decklists: { visible: false, sideboards: true },
       // The game intro: both players' legend, champion and battlefield with
@@ -383,6 +395,8 @@ function mergeBank(bank, raw) {
   if (typeof bank.scenes.decklist.focusOn !== 'boolean') bank.scenes.decklist.focusOn = true;
   if (typeof bank.scenes.cardrow.background !== 'boolean') bank.scenes.cardrow.background = true;
   bank.scenes.sponsor.items = cleanSponsorItems(bank.scenes.sponsor.items);
+  bank.scenes.sidespot.spot = cleanSpot(bank.scenes.sidespot.spot);
+  bank.scenes.sidespot.hold = clampInt(bank.scenes.sidespot.hold, SPOT_HOLD_MIN, SPOT_HOLD_MAX);
   // The highlights and the legend table's roll (2026-09-19): clean lists and
   // a roll of the right shape, whatever an older or hand-edited save held.
   bank.scenes.standings.focus = cleanPlayerKeys(bank.scenes.standings.focus);
@@ -723,12 +737,67 @@ function applySide(side, patch) {
 }
 
 // One battlefield a player brought: its name, the card id its art resolves
-// against, and whether it has been played this match.
+// against, whether it has been played this match, and once its game is
+// decided, that game's number and whether this player won it. A result
+// means it was played.
 function cleanPoolEntry(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const name = cleanStr(raw.name || '', 40);
   if (!name) return null;
-  return { name, cardId: cleanCardId(raw.cardId || ''), played: Boolean(raw.played) };
+  const result = ['won', 'lost'].includes(raw.result) ? raw.result : '';
+  const game = result ? clampInt(raw.game ?? 0, 0, 5) : 0;
+  return { name, cardId: cleanCardId(raw.cardId || ''), played: Boolean(raw.played) || Boolean(result), game, result };
+}
+
+// A game decided by hand (2026-09-19): one side's game wins going up by one
+// settles game n, n being the games the two have won between them, so each
+// side's battlefield in play gets it, 'won' on the side that went up and
+// 'lost' on the other (the rows overlay's crown and red X). Going back down
+// by one takes that game's marks off again. Only a patch that sets game wins
+// does this, and a side whose patch brings its battlefields itself (a live
+// feed, Swap sides, Reset match) keeps what it brought.
+function recordGame(bank, before, pm) {
+  const m = bank.match;
+  const set = (key) => Boolean(pm[key] && typeof pm[key] === 'object' && pm[key].gameWins !== undefined);
+  const dl = m.left.gameWins - before.left;
+  const dr = m.right.gameWins - before.right;
+  let winner = '';
+  if (dl === 1 && dr === 0 && set('left')) winner = 'left';
+  else if (dr === 1 && dl === 0 && set('right')) winner = 'right';
+  let game = 0;
+  if (winner) game = m.left.gameWins + m.right.gameWins;
+  else if ((dl === -1 && dr === 0 && set('left')) || (dr === -1 && dl === 0 && set('right'))) game = before.left + before.right;
+  if (game < 1 || game > 5) return;
+  for (const key of ['left', 'right']) {
+    if (pm[key] && Array.isArray(pm[key].battlefields)) continue;
+    const side = m[key];
+    // One battlefield a game for each player: the game's marks come off the rest.
+    for (const e of side.battlefields) if (e.game === game) { e.game = 0; e.result = ''; }
+    if (!winner) continue;
+    const now = String(side.battlefield || '').toLowerCase();
+    const entry = now ? side.battlefields.find((e) => e.name.toLowerCase() === now) : null;
+    if (entry) Object.assign(entry, { played: true, game, result: key === winner ? 'won' : 'lost' });
+  }
+}
+
+// The latest card spotted (scenes.sidespot.spot): which side, the card, the
+// name printed under it, the game and turn it turned up in, when it was
+// spotted (ms; 0 once its time on screen is over) and a serial, so the same
+// card spotted twice flies in twice.
+const SPOT_HOLD_MIN = 3;
+const SPOT_HOLD_MAX = 30;
+function cleanSpot(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  return {
+    id: clampInt(r.id ?? 0, 0, Number.MAX_SAFE_INTEGER),
+    side: ['left', 'right'].includes(r.side) ? r.side : '',
+    cardId: cleanCardId(r.cardId ?? ''),
+    cardName: cleanStr(r.cardName ?? '', 80),
+    player: cleanStr(r.player ?? '', 40),
+    game: clampInt(r.game ?? 0, 0, 5),
+    turn: clampInt(r.turn ?? 0, 0, 99),
+    at: Math.max(0, Math.trunc(Number(r.at)) || 0),
+  };
 }
 
 // Shared by the card popup and by each side's featured POV card. cardType is
@@ -805,6 +874,7 @@ function applyBankPatch(bank, patch) {
     }
   }
 
+  const winsBefore = { left: bank.match.left.gameWins, right: bank.match.right.gameWins };
   if (patch.match && typeof patch.match === 'object') {
     if (patch.match.seriesLength !== undefined) {
       const sl = Number(patch.match.seriesLength);
@@ -827,6 +897,7 @@ function applyBankPatch(bank, patch) {
   const cap = winsNeeded(bank.match.seriesLength);
   bank.match.left.gameWins = Math.min(bank.match.left.gameWins, cap);
   bank.match.right.gameWins = Math.min(bank.match.right.gameWins, cap);
+  if (patch.match && typeof patch.match === 'object') recordGame(bank, winsBefore, patch.match);
 
   if (patch.scenes && typeof patch.scenes === 'object') {
     if (patch.scenes.scorebug && typeof patch.scenes.scorebug === 'object') {
@@ -1032,6 +1103,11 @@ function applyBankPatch(bank, patch) {
       const mu = patch.scenes.matchup;
       if (mu.visible !== undefined) bank.scenes.matchup.visible = Boolean(mu.visible);
       if (mu.game !== undefined) bank.scenes.matchup.game = clampInt(mu.game, 0, 5);
+    }
+    if (patch.scenes.sidespot && typeof patch.scenes.sidespot === 'object') {
+      const ss = patch.scenes.sidespot;
+      if (ss.visible !== undefined) bank.scenes.sidespot.visible = Boolean(ss.visible);
+      if (ss.hold !== undefined) bank.scenes.sidespot.hold = clampInt(ss.hold, SPOT_HOLD_MIN, SPOT_HOLD_MAX);
     }
   }
 }
@@ -1409,6 +1485,39 @@ export function applyUpdate(patch) {
           return { ok: false, error: 'unknown chain op' };
       }
     }
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // A sideboard card spotted (2026-09-19): a card a player sided in turned
+  // up in their hand. A cue like the clock: it lands in both banks at once
+  // and the graphic, while it is on air, flies the card in straight away.
+  // op 'show' (the default) spots a card on a side (the RiftAtlas reader, or
+  // the panel by hand); 'again' flies the last one in again; 'hide' ends its
+  // time on screen now and keeps it for 'again'.
+  if (patch.action === 'spot') {
+    const op = patch.op === undefined ? 'show' : patch.op;
+    const last = state.preview.scenes.sidespot.spot;
+    const serial = Math.max(last.id, state.program.scenes.sidespot.spot.id) + 1;
+    let next;
+    if (op === 'show') {
+      if (!['left', 'right'].includes(patch.side)) return { ok: false, error: 'side must be left or right' };
+      const cardId = cleanCardId(patch.cardId ?? '');
+      const cardName = cleanStr(patch.cardName ?? '', 80);
+      if (!cardId && !cardName) return { ok: false, error: 'a spot needs a card' };
+      next = cleanSpot({
+        id: serial, side: patch.side, cardId, cardName,
+        player: patch.player ?? state.preview.match[patch.side].name,
+        game: patch.game, turn: patch.turn, at: Date.now(),
+      });
+    } else if (op === 'again') {
+      if (!last.id) return { ok: false, error: 'nothing spotted yet' };
+      next = { ...last, id: serial, at: Date.now() };
+    } else if (op === 'hide') {
+      next = { ...last, at: 0 };
+    } else {
+      return { ok: false, error: 'unknown spot op' };
+    }
+    for (const bank of [state.preview, state.program]) bank.scenes.sidespot.spot = { ...next };
     bump();
     return { ok: true, version: state.version };
   }

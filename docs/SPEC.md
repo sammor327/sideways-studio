@@ -235,6 +235,16 @@ this set; the PSDs stay the visual reference.
     1-5, legends}`). VS or the games so far. The Tournament platform keeps
     its tables current on air (event.pairings.src + followPairings, the
     `follow` switch). A full-frame graphic on the pairings' ground.
+27. **Sideboard card spotted** (`sidespot`, 2026-09-19) — the card a player
+    sided in, flown in from their side of the game window (gamewindow.js,
+    clipped to it like the sideboard fly-in) with an accent ring, a
+    breathing glow and one light sweep, "Sideboard Card for <player>" on a
+    plate under it. `scenes.sidespot {visible, hold 3-30 s, spot {id, side,
+    cardId, cardName, player, game, turn, at}}`; the spot is the `spot` cue
+    (`{action:'spot', side, cardId, cardName, player?, game?, turn?}`, op
+    `again` re-flies the last under a new id, `hide` sets at 0), both banks
+    at once. On air the scene flies each new spot id in and out at
+    at + hold, wall clock; a reload mid-hold snaps.
 Standings by group (2026-09-19): event.standings rows carry `group`, kept
 sorted within each group by points, or by record when a group has no
 points (state.js sortStandings); `scenes.standings.group` picks the group
@@ -435,6 +445,28 @@ it on open and close); a chain entry may carry resolved. igorows gained
 showdownView (default true): the middle of the column's fourth tenant
 (card, then showdown, then hands, then logo), and web/shared/showdowndock.js
 stands the showdown scene down while it shows.
+
+Battlefield results and sideboard cards (2026-09-19, Sam). A pool entry is
+{name, cardId, played, game 0-5, result '' | 'won' | 'lost'} (a result means
+played; a game only with a result). The model reads each game's winner off
+the series' rooms (seriesWinners: a room counts its game once its
+winsByPlayerId add up to the game number; the winner is the one player
+pendingGameResult.winnerByReporterPlayerId names, else the one whose wins
+went up by one from the game before's room), pairs usedBattlefieldsByPlayerId
+(game 1 first) and the selected battlefield with those games
+(battlefieldGames), and the live patch marks the pool (markResults), between
+games too. By hand, state.js recordGame: a patch that raises one side's
+gameWins by one marks both sides' current battlefields with game n (the
+wins added up) won / lost, one that lowers it clears game n; a side whose
+patch carries battlefields is left alone. Sideboard cards: noteDecks keeps
+the earliest broadcastDecksByPlayerId (startingCount) per series|player
+across rooms and reconnects; sidedIn holds the game in view (game 2 on)
+against game 1's deck, else the side's deckList main (its sideboard, when
+it has one, names the candidates), else an earlier game, and gives up past
+SIDEBOARD_MAX (10) extra copies (the wrong list). spotSideboardCards diffs
+hand card ids per room (the first look only primes), after turn 1, once per
+player and card a game; spotActions turns them into spot cues, sent only
+while preview and program show the same names. Settings gain `spot`.
 
 ## Attribution and copy rules
 

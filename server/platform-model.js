@@ -467,9 +467,13 @@ export function matchPatch(ev, legendOf, { round, table, swap = false, bank, dec
       out.deckName = String(L.legend || '').split(',')[0];
       if (deck) {
         if (deck.champion) out.champion = deck.champion.name || deck.champion.raw || '';
-        // A reload mid-match keeps the battlefields already marked played.
-        const played = new Set(same[i] ? (cur[i].battlefields || []).filter((b) => b.played).map((b) => normName(b.name)) : []);
-        out.battlefields = deck.battlefields.slice(0, 3).map((b) => ({ name: b.name || b.raw, cardId: b.cardId || '', played: played.has(normName(b.name || b.raw)) }));
+        // A reload mid-match keeps the battlefields already marked played,
+        // and the result of each one's game (2026-09-19).
+        const had = new Map(same[i] ? (cur[i].battlefields || []).map((b) => [normName(b.name), b]) : []);
+        out.battlefields = deck.battlefields.slice(0, 3).map((b) => {
+          const prev = had.get(normName(b.name || b.raw)) || {};
+          return { name: b.name || b.raw, cardId: b.cardId || '', played: Boolean(prev.played), game: prev.game || 0, result: prev.result || '' };
+        });
         if (!out.legendCardId && deck.legend && deck.legend.cardId) out.legendCardId = deck.legend.cardId;
       }
     }

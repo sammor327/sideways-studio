@@ -180,8 +180,9 @@ function build(cards) {
   });
   const bySeed = (n) => PLAYERS.find((p) => p.seed === n);
   // A player's three battlefields; played marks the ones already used this
-  // match (game one's, and this game's, which is the side's battlefield).
-  const pool = (entries) => entries.map(([name, played]) => ({ name, cardId: card(name).cardId, played }));
+  // match (game one's, and this game's, which is the side's battlefield),
+  // and game one's carries its result: Mara won it, Theo lost it.
+  const pool = (entries) => entries.map(([name, played, game = 0, result = '']) => ({ name, cardId: card(name).cardId, played, game, result }));
 
   const diana = legend('diana-scorn-of-the-moon');
   const draven = legend('draven-glorious-executioner');
@@ -282,7 +283,7 @@ function build(cards) {
         score: 5, gameWins: 1, handCount: 6,
         hand: [handCard('Stupefy'), handCard('Ride the Wind'), handCard('Gust'), handCard('Moonfall'), handCard('Tideturner')],
         deckList: DECKLIST, deckName: 'Diana',
-        battlefields: pool([['Rockfall Path', true], ['Veiled Temple', true], ['Abandoned Hall', false]]),
+        battlefields: pool([['Rockfall Path', true, 1, 'won'], ['Veiled Temple', true], ['Abandoned Hall', false]]),
       },
       right: {
         name: 'Theo Brandt', record: '6-2-0', country: 'GB', pronouns: 'he/him', seed: '4TH',
@@ -297,7 +298,7 @@ function build(cards) {
         score: 3, gameWins: 0, handCount: 4,
         hand: [handCard('Falling Star'), handCard('Rebuke'), handCard('Spinning Axe', true)],
         deckList: DRAVEN_LIST, deckName: 'Draven',
-        battlefields: pool([['Zaun Warrens', true], ["Reaver's Row", true], ['Back-Alley Bar', false]]),
+        battlefields: pool([['Zaun Warrens', true, 1, 'lost'], ["Reaver's Row", true], ['Back-Alley Bar', false]]),
       },
     },
     scenes: {
@@ -322,6 +323,12 @@ function build(cards) {
   const chainCard = (name, side) => {
     const c = card(name);
     return { cardId: c.cardId, cardName: c.cardName, kind: c.cardId ? kindOf(c.cardId) : '', side };
+  };
+  // A card Theo sided in, spotted in his hand on turn 5 of game two.
+  const spotted = card('Hard Bargain');
+  bank.scenes.sidespot.spot = {
+    id: 1, side: 'right', cardId: spotted.cardId, cardName: spotted.cardName || 'Hard Bargain',
+    player: 'Theo Brandt', game: 2, turn: 5, at: Date.now(),
   };
   bank.match.showdown = {
     active: true,

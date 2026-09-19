@@ -206,6 +206,60 @@
 .bfstrip.one .bft .nm { font-size: calc(16 * var(--u)); letter-spacing: calc(0.6 * var(--u)); }
 .bft.played .art { filter: grayscale(1) brightness(0.55); }
 .bft.played .nm { color: rgba(255, 255, 255, 0.5); }
+/* A decided game (2026-09-19, Sam): the battlefield the player won it on
+   stays in colour with a gold crown carrying the game's number; the one they
+   lost it on is tinted red under a red X with the number over it. The mark
+   sits before the name. */
+.bft.won .nm, .bft.lost .nm { gap: calc(5 * var(--u)); padding: 0 calc(5 * var(--u)); }
+.bft .nm .t { min-width: 0; text-align: left; }
+.bft .nm .res {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(26 * var(--u));
+  height: calc(22 * var(--u));
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, 0.9));
+}
+.bft .nm .res .shape { position: absolute; inset: 0; }
+.bft .nm .res .g {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  font: 900 calc(12 * var(--u))/1 var(--tes-font);
+  letter-spacing: 0;
+}
+.bft .nm .res.crown .shape {
+  background: linear-gradient(180deg, #fff0bf 0%, #f5c542 42%, #c5861a 100%);
+  clip-path: polygon(4% 100%, 4% 20%, 27% 48%, 50% 2%, 73% 48%, 96% 20%, 96% 100%);
+}
+.bft .nm .res.crown .g { bottom: calc(1.5 * var(--u)); color: #3a2400; text-shadow: none; }
+.bft .nm .res.cross .shape::before, .bft .nm .res.cross .shape::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: calc(28 * var(--u));
+  height: calc(4 * var(--u));
+  margin: calc(-2 * var(--u)) 0 0 calc(-14 * var(--u));
+  border-radius: calc(2 * var(--u));
+  background: #ff3b30;
+}
+.bft .nm .res.cross .shape::before { transform: rotate(45deg); }
+.bft .nm .res.cross .shape::after { transform: rotate(-45deg); }
+.bft .nm .res.cross .g {
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: calc(13 * var(--u));
+  color: #fff;
+  text-shadow: 0 0 calc(3 * var(--u)) #000, 0 0 calc(2 * var(--u)) #000, 0 0 calc(1 * var(--u)) #000;
+}
+.bfstrip.one .bft .nm .res { width: calc(32 * var(--u)); height: calc(27 * var(--u)); }
+.bfstrip.one .bft .nm .res .g { font-size: calc(15 * var(--u)); }
+.bfstrip.one .bft .nm .res.cross .shape::before, .bfstrip.one .bft .nm .res.cross .shape::after {
+  width: calc(34 * var(--u)); margin-left: calc(-17 * var(--u));
+}
+.bft.won .nm { box-shadow: inset 0 0 0 calc(2 * var(--u)) #e9b54a; }
+.bft.lost .art { filter: grayscale(1) brightness(0.75); }
+.bft.lost::after { background: linear-gradient(180deg, rgba(205, 30, 30, 0.5), rgba(110, 0, 0, 0.72)); }
+.bft.lost .nm { color: rgba(255, 255, 255, 0.88); }
 /* The arrow on the one in play, pointing in from the camera's side. */
 .bft.now::before {
   content: ''; position: absolute; left: 50%; z-index: 2;

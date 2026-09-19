@@ -52,6 +52,7 @@ export function createFeed() {
     stale: false, // a patch could not be applied; waiting for a snapshot
     version: 0, // bumped on every change the view can see
     lastFrameAt: 0,
+    decks: new Map(), // series|player -> the earliest starting deck seen (noteDecks)
   };
 }
 
@@ -373,6 +374,8 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
   const used = (shell && shell.usedBattlefieldsByPlayerId) || {};
   const format = String((shell && shell.matchFormat) || (st && st.matchFormat) || '').toLowerCase();
 
+  const winners = seriesWinners(feed, room);
+  const gameNo = Math.max(1, Math.trunc(Number(shell && shell.gameNumber) || 1));
   const publicPlayers = (shell && Array.isArray(shell.publicPlayers)) ? shell.publicPlayers : [];
   const source = st && Array.isArray(st.players) && st.players.length ? st.players : publicPlayers;
   const players = source
@@ -397,6 +400,9 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
         champion: champ ? cardOf(champ) : null,
         battlefield: selected,
         usedBattlefields: Array.isArray(used[p.id]) ? used[p.id].map(String) : [],
+        // Each battlefield this player has played this series, by game, with
+        // whether they won that game once it is decided.
+        battlefieldGames: fieldGames(used[p.id], selected, gameNo, winners, String(p.id)),
         hand: b && Array.isArray(b.hand) ? b.hand.filter(isCard).map(cardOf) : [],
         handCount: b && Array.isArray(b.hand) ? b.hand.length : 0,
         trash: b && Array.isArray(b.trash) ? b.trash.filter(isCard).map(cardOf) : [],
@@ -431,6 +437,8 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
     gameNumber: Math.max(1, Math.trunc(Number(shell && shell.gameNumber) || 1)),
     format,
     seriesLength: FORMAT_LENGTH[format] || 0,
+    // The series' decided games: game number -> the winner's player id.
+    results: winners,
     phase: String((st && st.phase) || (shell && shell.phase) || ''),
     live: Boolean(g),
     stale: feed.stale,
@@ -442,6 +450,59 @@ export function gameView(feed, { now = Date.now(), resolveCard = null } = {}) {
     showdown: g ? showdownView(g, players, resolveCard) : null,
     events: g ? cardEvents(g.log, players) : [],
   };
+}
+
+// Who won each decided game of the series a room belongs to, by game number:
+// { 1: playerId, 2: playerId }. The players report each result on the
+// game's own room (pendingGameResult.winnerByReporterPlayerId, each naming
+// the winner), and that room's series wins then count the game. A game the
+// two report differently is left out, as is one with no report whose winner
+// the series wins do not show (one player's wins one up on the game
+// before's room). The page walks every room of the series on its way to the
+// live one, so the earlier games' rooms are there.
+export function seriesWinners(feed, room) {
+  const head = feed.shells.get(room);
+  if (!head) return {};
+  const series = head.seriesId || '';
+  const byGame = new Map();
+  for (const s of feed.shells.values()) {
+    if (!s || (s.seriesId || '') !== series) continue;
+    const n = Math.trunc(Number(s.gameNumber)) || 0;
+    if (n > 0) byGame.set(n, s);
+  }
+  const winsOf = (s) => {
+    const w = (s && s.winsByPlayerId) || {};
+    return Object.fromEntries(Object.entries(w).map(([id, n]) => [id, Math.max(0, Math.trunc(Number(n)) || 0)]));
+  };
+  const out = {};
+  for (const [n, s] of byGame) {
+    const wins = winsOf(s);
+    // Decided: the game's room counts it in the series wins.
+    if (Object.values(wins).reduce((t, x) => t + x, 0) < n) continue;
+    const reports = s.pendingGameResult && s.pendingGameResult.winnerByReporterPlayerId;
+    const named = reports && typeof reports === 'object' ? [...new Set(Object.values(reports).filter(Boolean).map(String))] : [];
+    if (named.length === 1 && Object.hasOwn(wins, named[0])) { out[n] = named[0]; continue; }
+    if (named.length) continue;
+    const before = n === 1 ? {} : (byGame.has(n - 1) ? winsOf(byGame.get(n - 1)) : null);
+    if (!before) continue;
+    const up = Object.keys(wins).filter((id) => wins[id] === (before[id] || 0) + 1);
+    if (up.length === 1) out[n] = up[0];
+  }
+  return out;
+}
+
+// A player's battlefields by game: the ones the series lists as used, in the
+// order they were played (game 1 first), then the one picked for the game in
+// view. result is 'won' or 'lost' once that game is decided, else ''; now
+// marks the game in view.
+function fieldGames(usedList, selected, gameNo, winners, playerId) {
+  const out = (Array.isArray(usedList) ? usedList : []).map((name, i) => ({ name: String(name), game: i + 1 }));
+  if (selected && !out.some((g) => g.game === gameNo || normName(g.name) === normName(selected))) out.push({ name: selected, game: gameNo });
+  return out.map((g) => ({
+    ...g,
+    result: winners[g.game] ? (winners[g.game] === playerId ? 'won' : 'lost') : '',
+    now: g.game === gameNo,
+  }));
 }
 
 // Each player's chess clock, counting the running stretch for whoever it is
@@ -583,9 +644,28 @@ function liveSide(p, cur, resolveCard, legendOf) {
       const bf = resolveCard({ name });
       pool.push({ name: name.slice(0, 40), cardId: bf ? bf.cardId : '', played: true });
     }
-    out.battlefields = pool;
+    out.battlefields = markResults(pool, p.battlefieldGames || []);
+  }
+  // Between games no battlefield is in play yet, but the games decided so
+  // far still mark the pool Match data holds.
+  if (!p.battlefield && Array.isArray(cur.battlefields) && cur.battlefields.length && (p.battlefieldGames || []).some((g) => g.result)) {
+    out.battlefields = markResults(cur.battlefields, p.battlefieldGames);
   }
   return out;
+}
+
+// The pool with RiftAtlas's word on each battlefield it saw played: a
+// decided game's number and whether this player won it (the rows overlay's
+// crown or red X). The battlefield of the game in play has no result yet, so
+// any it held comes off; an earlier game RiftAtlas has no result for keeps
+// what Match data says. Battlefields RiftAtlas never saw are left alone.
+function markResults(pool, games) {
+  return pool.map((e) => {
+    const g = games.find((x) => normName(x.name) === normName(e.name));
+    if (!g) return e;
+    if (g.result) return { ...e, played: true, game: g.game, result: g.result };
+    return g.now ? { ...e, played: true, game: 0, result: '' } : { ...e, played: true };
+  });
 }
 
 // The live patch for both sides, the series length and, while a game is on,
@@ -680,4 +760,149 @@ export function deckText(p) {
   }
   lines.push('', 'Main:', ...p.deck.cards.filter((c) => c.start > 0).map((c) => `${c.start} ${c.name}`));
   return lines.join('\n').trim();
+}
+
+// ---- Sideboard cards (2026-09-19) ---------------------------------------------
+//
+// Sam: a "sideboard card spotted" graphic "for when a sideboard card is added
+// to the hand after turn 1". A broadcast view never says which cards came out
+// of a sideboard: every card in a deck reads source "mainDeck", and the
+// registered list stays with RiftAtlas. What it does give is each game's
+// starting deck (broadcastDecksByPlayerId, a startingCount per card), so a
+// card is one the player sided in when this game's deck starts with more
+// copies of it than the deck they began the series with: game 1's, when the
+// reader saw it (noteDecks), else the main deck of their list in Match data.
+
+// Every starting deck the feed sees, keeping the earliest game of each
+// series per player (keyed series|player), so a later game can be held
+// against game 1. Called after each frame; nothing to do most of the time.
+export function noteDecks(feed) {
+  const g = feed.game;
+  if (!g || !g.state) return;
+  if (!feed.decks) feed.decks = new Map();
+  const shell = feed.shells.get(g.room);
+  const game = Math.trunc(Number(shell && shell.gameNumber)) || 0;
+  const decks = g.state.broadcastDecksByPlayerId;
+  if (!game || !decks || typeof decks !== 'object') return;
+  const series = String((shell && shell.seriesId) || g.room);
+  for (const [id, d] of Object.entries(decks)) {
+    const key = `${series}|${id}`;
+    const had = feed.decks.get(key);
+    if (had && had.game <= game) continue;
+    const cards = (d && Array.isArray(d.cards) ? d.cards : [])
+      .filter((e) => e && e.card && e.card.name)
+      .map((e) => ({ ...cardOf(e.card), start: Math.max(0, Math.trunc(Number(e.startingCount) || 0)) }));
+    if (cards.length) feed.decks.set(key, { game, cards });
+  }
+  // A long day of series: the newest few dozen are plenty.
+  while (feed.decks.size > 64) feed.decks.delete(feed.decks.keys().next().value);
+}
+
+// What each player sided in for the game in view: { [playerId]: { against,
+// extra } }, extra a Map of card key -> copies more than the baseline, and
+// against says what that was ('game 1', 'list', 'game 2', or '' for
+// nothing to hold it against). The baseline is game 1's deck when the reader
+// saw it, else the list in Match data (lists[playerId] = { main, sideboard }
+// as parseDecklist reads them; a list with a sideboard only counts the cards
+// that sideboard names), else the earliest earlier game the reader saw.
+// keyOf(card) gives a RiftAtlas card and a list line the same key (the
+// reader passes the card index's name for both). Game 1 has nothing sided
+// in, and a deck that differs from its baseline by more than a sideboard
+// holds is being held against the wrong list: nothing counts then
+// (mismatch).
+export const SIDEBOARD_MAX = 10;
+export function sidedIn(feed, view, { lists = {}, keyOf = (c) => normName(c.name) } = {}) {
+  const out = {};
+  if (!view || !view.live || view.gameNumber < 2) return out;
+  const shell = feed.shells.get(view.room);
+  const series = String((shell && shell.seriesId) || view.room);
+  const tally = (entries, count) => {
+    const m = new Map();
+    for (const c of entries) {
+      const k = keyOf(c);
+      if (k) m.set(k, (m.get(k) || 0) + count(c));
+    }
+    return m;
+  };
+  for (const p of view.players) {
+    if (!p.deck || !p.deck.cards.length) continue;
+    const seen = feed.decks && feed.decks.get(`${series}|${p.id}`);
+    const earlier = seen && seen.game < view.gameNumber ? seen : null;
+    const list = lists[p.id] && Array.isArray(lists[p.id].main) && lists[p.id].main.length ? lists[p.id] : null;
+    let base = null;
+    let board = null;
+    let against = '';
+    if (earlier && (earlier.game === 1 || !list)) {
+      base = tally(earlier.cards, (c) => c.start);
+      against = `game ${earlier.game}`;
+    } else if (list) {
+      base = tally(list.main, (e) => Math.max(0, Math.trunc(Number(e.qty)) || 0));
+      if (Array.isArray(list.sideboard) && list.sideboard.length) board = tally(list.sideboard, () => 1);
+      against = 'list';
+    }
+    if (!base) { out[p.id] = { against: '', extra: new Map() }; continue; }
+    const now = tally(p.deck.cards, (c) => c.start);
+    const extra = new Map();
+    for (const [k, n] of now) {
+      const more = n - (base.get(k) || 0);
+      if (more > 0 && (!board || board.has(k))) extra.set(k, more);
+    }
+    const total = [...extra.values()].reduce((t, n) => t + n, 0);
+    out[p.id] = total > SIDEBOARD_MAX ? { against, extra: new Map(), mismatch: true } : { against, extra };
+  }
+  return out;
+}
+
+// The cards that have just turned up in a hand and are ones the player
+// sided in (sided, from sidedIn), after turn `after`: [{ playerId, turn,
+// name, code, ... }]. tracker is the caller's own, one per feed ({ room,
+// seen, spotted, primed }). The first look at a room only learns what the
+// hands hold already, so a reader that joins mid-game spots nothing it did
+// not see arrive; a card is spotted once a game for each player.
+export function spotSideboardCards(feed, tracker, sided, { keyOf = (c) => normName(c.name), after = 1 } = {}) {
+  const g = feed.game;
+  if (!g || !g.state) return [];
+  if (tracker.room !== g.room) Object.assign(tracker, { room: g.room, seen: new Set(), spotted: new Set(), primed: false });
+  const turn = Math.max(0, Math.trunc(Number(g.state.turnNumber) || 0));
+  const out = [];
+  for (const p of g.state.players || []) {
+    const hand = p && p.board && Array.isArray(p.board.hand) ? p.board.hand : [];
+    for (const c of hand) {
+      if (!isCard(c) || !c.id || tracker.seen.has(c.id)) continue;
+      tracker.seen.add(c.id);
+      if (!tracker.primed || turn <= after) continue;
+      const card = cardOf(c);
+      const key = keyOf(card);
+      const mine = sided[p.id];
+      if (!key || !mine || !mine.extra.get(key)) continue;
+      const once = `${p.id}|${key}`;
+      if (tracker.spotted.has(once)) continue;
+      tracker.spotted.add(once);
+      out.push({ playerId: String(p.id), turn, ...card });
+    }
+  }
+  tracker.primed = true;
+  return out;
+}
+
+// The spot cues for the cards found, on the sides the players feed (sides:
+// orientation's [left, right]): the card by the index's id when it
+// resolves, and the name Match data prints for that side, or RiftAtlas's
+// own while the side is unnamed.
+export function spotActions(found, view, sides, match, resolveCard) {
+  const [l, r] = sides;
+  const out = [];
+  for (const s of found) {
+    const side = l && s.playerId === l.id ? 'left' : (r && s.playerId === r.id ? 'right' : '');
+    if (!side) continue;
+    const hit = resolveCard(s);
+    const named = match[side].name;
+    out.push({
+      action: 'spot', side,
+      cardId: hit ? hit.cardId : '', cardName: hit ? hit.cardName : s.name,
+      player: unnamed(named) ? (side === 'left' ? l : r).name : named,
+      game: view.gameNumber, turn: s.turn,
+    });
+  }
+  return out;
 }

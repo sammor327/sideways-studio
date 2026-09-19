@@ -31,9 +31,9 @@ describe('players\' decks and battlefields', () => {
       { name: 'Fourth' },
     ] } } });
     assert.deepEqual(getState().preview.match.right.battlefields, [
-      { name: 'Veiled Temple', cardId: 'SFD-221', played: true },
-      { name: 'Rockfall Path', cardId: '', played: false },
-      { name: 'Abandoned Hall', cardId: '', played: false },
+      { name: 'Veiled Temple', cardId: 'SFD-221', played: true, game: 0, result: '' },
+      { name: 'Rockfall Path', cardId: '', played: false, game: 0, result: '' },
+      { name: 'Abandoned Hall', cardId: '', played: false, game: 0, result: '' },
     ]);
   });
 

@@ -74,6 +74,7 @@
       <label class="inline" title="Points, game wins, hands, the battlefield in play, legend, champion, turn and whose turn go to preview and program at once, like the clock. Off: they wait in preview for TAKE."><input type="checkbox" id="raLive"> Live values straight to air</label>
       <label class="inline" title="Each card a player plays is staged in the card popup in preview, ready for TAKE."><input type="checkbox" id="raFollow"> Stage each card played in the card popup</label>
       <label class="inline" title="A showdown comes up by itself once it has started and the defending player has answered with a card, follows it (might, cards, focus) and closes a few seconds after RiftAtlas settles it. It airs on the rows overlay's column, or on the Showdown graphic when that is up."><input type="checkbox" id="raShowdown"> Showdowns come up by themselves</label>
+      <label class="inline" title="From game 2 on: a card a player sided in (their game 1 deck, or the list in Match data, holds fewer copies of it) that turns up in their hand after turn 1 is spotted, and the Sideboard card spotted graphic flies it in while that graphic is on air."><input type="checkbox" id="raSpot"> Spot sideboard cards</label>
       <label class="inline" title="The reader runs out of sight. Switch this on to watch the casting studio it is reading, in its own window."><input type="checkbox" id="raShow"> Show the RiftAtlas window</label>
     </div>
     <h5 class="ra-sub">Cards played</h5>
@@ -791,6 +792,11 @@
           <button id="toggleSideboard" class="scene-toggle">OFF</button>
           <p class="scene-note">Both players' sideboards at once, player 1 across the top and player 2 across the bottom, each flying in from their side (or one player alone, under Graphic features).</p>
         </div>
+        <div class="scene-row" data-scene="sidespot">
+          <div class="scene-name">Sideboard card spotted <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sidespotOnAir">ON AIR</button></div>
+          <button id="toggleSidespot" class="scene-toggle">OFF</button>
+          <p class="scene-note">A card a player sided in, flown in over the game with "Sideboard Card for" and their name when it turns up in their hand after turn 1. Once it is on air it waits and flies each card in as it is spotted: Live game spots them from RiftAtlas, or spot one by hand under Graphic features.</p>
+        </div>
       </div>
     </details>
 
@@ -1356,6 +1362,29 @@
         <span class="hint" id="sideboardHint">From each player's list under Match data &rsaquo; Decks and battlefields: player 1 flies in from the left across the top of the game, player 2 from the right across the bottom. A player whose list has no sideboard is left out.</span>
       </div>
     </div>
+    <div class="feature-group hidden" data-scene="sidespot">
+      <h3>Sideboard card spotted</h3>
+      <div class="scene-options">
+        <label class="inline" title="How long each spotted card stays up before it flies out">On screen
+          <select id="sidespotHold">
+            <option value="5">5 seconds</option>
+            <option value="8">8 seconds</option>
+            <option value="12">12 seconds</option>
+            <option value="20">20 seconds</option>
+            <option value="30">30 seconds</option>
+          </select>
+        </label>
+        <button type="button" id="sidespotAgain" title="Fly the last card spotted in again, on air at once">Show again</button>
+        <button type="button" id="sidespotHide" title="Fly the card on screen out now">Take it down</button>
+      </div>
+      <div class="spot-last" id="sidespotLast"></div>
+      <div class="spot-hand">
+        <select id="sidespotSide" aria-label="Whose sideboard card"><option value="left">Player 1</option><option value="right">Player 2</option></select>
+        <div class="picker-wrap card-cell"><img id="sidespotCardThumb" class="card-thumb hidden" alt=""><input id="sidespotCard" placeholder="Spot a card by hand&hellip;" autocomplete="off" aria-label="Spot a sideboard card by hand"><button id="sidespotCardClear" class="clear-x" title="Clear the card" aria-label="Clear the card">&times;</button><ul class="results" id="sidespotCardResults"></ul></div>
+        <button type="button" id="sidespotGo" disabled title="Spot this card for that player: it flies in on air at once">Spot it</button>
+      </div>
+      <p class="hint">Spots act on air at once, like the clock: TAKE this graphic once and it flies each card in as it is spotted, then out again. Live game (Match data) spots the cards a player sided in from game 2 on, when they turn up in hand after turn 1.</p>
+    </div>
     <div class="feature-group hidden" data-scene="decklists">
       <h3>Decklists side by side</h3>
       <div class="scene-options">
@@ -1655,6 +1684,10 @@
     <div class="url-row">
       <span class="url-label">Sideboard fly-in source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
       <div class="url-line"><input class="url-input" id="sideboardUrl" readonly><button data-copy="sideboardUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Sideboard card spotted source, 1920 &times; 1080, 60 fps (plays in the game window, above or below your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="sidespotUrl" readonly><button data-copy="sidespotUrl">Copy</button></div>
     </div>
     <div class="url-row">
       <span class="url-label">Decklists side by side source, 1920 &times; 1080, 60 fps</span>
