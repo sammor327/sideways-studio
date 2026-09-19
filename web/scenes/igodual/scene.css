@@ -444,11 +444,12 @@
 .hand .rune { width: calc(17 * var(--u)); height: calc(17 * var(--u)); object-fit: contain; }
 .hand .rune.hidden { display: none; }
 .hand .card.played { opacity: 0.35; }
+/* Sized off the name (10px on its 15), so a long name and its tag shrink together. */
 .hand .card.played .nm::after {
   content: ' · on the chain';
   color: var(--ss-accent-b, #1bef19);
-  font-size: calc(10 * var(--u));
-  letter-spacing: calc(1 * var(--u));
+  font-size: 0.667em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 

@@ -2,7 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, legendSteps } from '../../stage/art.js';
 import { artSteps, parseDeck } from '../../stage/decks.js';
-import { gameWindow } from '../../shared/gamewindow.js';
+import { clipToWindow, gameWindow } from '../../shared/gamewindow.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -116,6 +116,8 @@ async function render(state) {
     .map((key, i) => ({ key, side: bank.match[key], cards: (decks[i] && decks[i].sideboard) || [] }))
     .filter((p) => p.cards.length);
   for (const key of ['left', 'right']) plates[key].pos.classList.toggle('gone', !up.some((p) => p.key === key));
+  // Plays underneath the overlay: the plates fly out from under its chrome.
+  clipToWindow(root, gameWindow(bank));
 
   if (up.length) {
     // Both plates span the game window, one card size for both: as wide as

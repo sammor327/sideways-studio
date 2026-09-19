@@ -2,7 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, heroSteps, rotateIfPortrait } from '../../stage/art.js';
 import { artSteps, championCardId, loadChampions } from '../../stage/decks.js';
-import { fitInto, gameNumber, gameWindow } from '../../shared/gamewindow.js';
+import { clipToWindow, fitInto, gameNumber, gameWindow } from '../../shared/gamewindow.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -76,7 +76,10 @@ function render(state, first) {
   const m = bank.match;
   const cfg = bank.scenes.matchup || { visible: false, game: 0 };
 
-  const fit = fitInto(gameWindow(bank), 1600, 900, { margin: 20, max: 1.1 });
+  const win = gameWindow(bank);
+  const fit = fitInto(win, 1600, 900, { margin: 20, max: 1.1 });
+  // Plays underneath the overlay: nothing of it crosses the chrome.
+  clipToWindow(root, win);
   book.style.setProperty('--gx', fit.x.toFixed(1));
   book.style.setProperty('--gy', fit.y.toFixed(1));
   book.style.setProperty('--gs', fit.scale.toFixed(4));

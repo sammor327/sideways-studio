@@ -213,6 +213,10 @@ says whether this computer has it. **Download all fonts** saves every font
 in the list on this computer at once, so any of them works at a venue with
 no internet.
 
+No name on a graphic is ever cut short with "...": a player, team, legend,
+deck or event name too long for its box is set smaller until the whole
+name fits, and goes back to full size when a shorter one replaces it.
+
 Image uploads, and where they are drawn:
 
 - **Logo**: PNG or SVG with a transparent background, landscape, about
@@ -322,7 +326,10 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
 Match data › **Decks and battlefields** holds each player's own deck and the
 three battlefields they brought. Pick a saved deck (the deck editor saves
 them) or paste a list; loading a deck fills that player's three battlefields
-from its Battlefields section, or pick them by hand. **This game** makes one
+from its Battlefields section, or pick them by hand. **Populate from
+decklist** fills that player's legend, champion and three battlefields from
+their list in one press, as if each were picked by hand (the champion is
+also staged as their featured card). **This game** makes one
 of them the battlefield in play (it becomes the player's Battlefield and is
 marked played); the arrow clears the played marks, and Reset match does too.
 
@@ -347,8 +354,11 @@ marked played); the arrow clears the played marks, and Reset match does too.
 
 The game intro and the sideboard fly-in fit themselves into the table area
 of whichever in-game overlay is up (the rows, the dual columns, the pillars,
-the bars, the sidebars, the POV) and take the whole frame with none. Add
-their browser sources above your in-game overlay.
+the bars, the sidebars, the POV) and take the whole frame with none. They
+play underneath the overlay: add their browser sources below your in-game
+overlay's (the combined /output/ source already stacks them that way). Each
+also clips itself to the table area, so its plates come out from under the
+overlay's panels however the sources are layered.
 
 ## Decklists
 

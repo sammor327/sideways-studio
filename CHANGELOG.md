@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.25.0 (2026-09-18)
+
+- No name is cut short with "..." any more. A player, team, legend, deck or event name too long for its box is set smaller until the whole name fits, on every graphic, and goes back to full size for a shorter name.
+- Sponsor plate: pick a corner while it stays docked. With Dock into the overlay on (the default), Top left, Top right, Bottom left and Bottom right put the plate in that corner of whichever in-game overlay is up, clear of its panels and in its look; Auto is the overlay's own spot as before. With it off, the corners sit on the frame edge as before.
+- Sponsor plate on the POV overlay: its own spot moved above the featured card, which it used to cover.
+- Game intro and sideboard fly-in: they now play underneath the in-game overlays, so the sideboards slide out from under the overlay's panels. In OBS, put their browser sources below your overlay's (the combined output source already does).
+- Match data: a Populate from decklist button per player, under Decks and battlefields, fills their legend, champion and three battlefields from their decklist in one press.
+- Rows overlay: the stray line under Active turn is gone. It was the divider between the two hand lists, and it now shows only while both hands are listed.
+
 ## 0.24.2 (2026-09-18)
 
 - A font picked under Look now reaches graphics that are already open. Before, a font downloaded after a browser source opened (a first pick, or Download all fonts) stayed in the default font until the source was refreshed. Refresh your browser sources once after this update; from then on font changes go live on their own.

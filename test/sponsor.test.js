@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { sponsorDock, sponsorHost, sponsorSlot, sponsorWindowOpen, SPONSOR_DOCKS, FADE_MS } from '../web/shared/sponsor.js';
+import { sponsorDock, sponsorHost, sponsorSlot, sponsorWindowOpen, SPONSOR_DOCKS, SPONSOR_CORNER_DOCKS, FADE_MS } from '../web/shared/sponsor.js';
 
 let applyUpdate;
 let getState;
@@ -35,10 +35,32 @@ describe('sponsor plate: docking', () => {
     assert.equal(dock.x, 1566);
     assert.equal(dock.y, 24);
   });
-  it('a pinned corner wins over the overlay and drops the host look', () => {
+  it('docked, a corner is the overlay\'s own corner spot in its look', () => {
     const dock = sponsorDock(bankWith(['igo1v1'], { position: 'bl' }));
+    assert.equal(dock.host, 'igo1v1');
+    assert.deepEqual([dock.x, dock.y, dock.w], [...SPONSOR_CORNER_DOCKS.igo1v1.bl, SPONSOR_CORNER_DOCKS.igo1v1.w]);
+    assert.equal(dock.radius, SPONSOR_DOCKS.igo1v1.radius);
+  });
+  it('docked with no overlay up, a corner is the frame corner', () => {
+    const dock = sponsorDock(bankWith([], { position: 'bl' }));
+    assert.equal(dock.host, '');
+    assert.deepEqual([dock.x, dock.y], [24, 946]);
+  });
+  it('undocked, a corner pins to the frame and drops the host look', () => {
+    const dock = sponsorDock(bankWith(['igo1v1'], { position: 'bl', dock: false }));
     assert.equal(dock.host, '');
     assert.equal(dock.y, 946);
+    assert.equal(sponsorDock(bankWith(['igo1v1'], { dock: false })).x, 1566);
+  });
+  it('every overlay has all four docked corners, inside the frame', () => {
+    assert.deepEqual(Object.keys(SPONSOR_CORNER_DOCKS).sort(), Object.keys(SPONSOR_DOCKS).sort());
+    for (const [key, set] of Object.entries(SPONSOR_CORNER_DOCKS)) {
+      for (const c of ['tl', 'tr', 'bl', 'br']) {
+        const [x, y] = set[c];
+        assert.ok(x >= 0 && x + set.w <= 1920, `${key} ${c}`);
+        assert.ok(y >= 0 && y + Math.round(set.w / 3) <= 1080, `${key} ${c}`);
+      }
+    }
   });
   it('every dock stays inside the frame', () => {
     for (const [key, d] of Object.entries(SPONSOR_DOCKS)) {
@@ -92,6 +114,13 @@ describe('sponsor plate: state', () => {
     assert.equal(cfg.every, 60);
     assert.equal(cfg.duration, 5);
     assert.equal(cfg.position, 'auto');
+    assert.equal(cfg.dock, true);
+  });
+  it('docking switches off and on', () => {
+    applyUpdate({ scenes: { sponsor: { dock: 0 } } });
+    assert.equal(getState().preview.scenes.sponsor.dock, false);
+    applyUpdate({ scenes: { sponsor: { dock: 'yes' } } });
+    assert.equal(getState().preview.scenes.sponsor.dock, true);
   });
   it('rows overlay pieces switch off one by one', () => {
     applyUpdate({ scenes: { igorows: { activeTurn: false, points: false, turnCounter: 'no' } } });

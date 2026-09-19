@@ -29,6 +29,16 @@ export function gameWindow(bank) {
   return { ...(GAME_WINDOWS[host] || FULL_FRAME), host };
 }
 
+// Clip a full-stage graphic to a game window, so whatever moves in from
+// outside it appears from under the overlay's chrome, whichever way the
+// browser sources are layered (Sam, 2026-09-18: the game intro and the
+// sideboard fly-in play underneath the overlays). The whole frame clips
+// nothing. The element must fill the 1920x1080 stage.
+export function clipToWindow(el, win) {
+  const full = win.x <= 0 && win.y <= 0 && win.x + win.w >= 1920 && win.y + win.h >= 1080;
+  el.style.clipPath = full ? '' : `inset(calc(${win.y} * var(--u)) calc(${1920 - win.x - win.w} * var(--u)) calc(${1080 - win.y - win.h} * var(--u)) calc(${win.x} * var(--u)))`;
+}
+
 // A dw x dh design centred in a window with a margin, scaled down to fit and
 // never up past `max`: { scale, x, y } in design pixels.
 export function fitInto(win, dw, dh, { margin = 24, max = 1 } = {}) {

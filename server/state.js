@@ -204,7 +204,9 @@ function defaultBank() {
       // 'auto') or pinned to a corner. every/duration: 0 minutes = up the
       // whole time it is on, otherwise the first `duration` seconds of every
       // `every` minutes. label is an optional tag such as "Presented by".
-      sponsor: { visible: false, items: [], interval: 10, position: 'auto', label: '', every: 0, duration: 20 },
+      // dock: sit in the in-game overlay that is up (position = its own spot
+      // or its corner spot); off pins the plate to the frame corner.
+      sponsor: { visible: false, items: [], interval: 10, position: 'auto', dock: true, label: '', every: 0, duration: 20 },
       // --- the decks round (2026-09-18) ---
       // Sideboard fly-in: the players' sideboards flying in over the game
       // window of whichever in-game overlay is up, player 1's across the top
@@ -742,6 +744,7 @@ function applyBankPatch(bank, patch) {
       if (sp.items !== undefined) cfg.items = cleanSponsorItems(sp.items);
       if (sp.interval !== undefined) cfg.interval = clampInt(sp.interval, 3, 120);
       if (SPONSOR_POSITIONS.includes(sp.position)) cfg.position = sp.position;
+      if (sp.dock !== undefined) cfg.dock = Boolean(sp.dock);
       if (sp.label !== undefined) cfg.label = cleanStr(sp.label, 30);
       if (sp.every !== undefined) cfg.every = clampInt(sp.every, 0, 60);
       if (sp.duration !== undefined) cfg.duration = clampInt(sp.duration, 5, 300);

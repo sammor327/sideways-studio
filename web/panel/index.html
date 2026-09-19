@@ -269,6 +269,12 @@
         <div class="cell" data-side="right"><textarea id="rdeckList" rows="3" spellcheck="false" placeholder="Legend: Draven, Glorious Executioner&#10;..." aria-label="Player 2 decklist"></textarea></div>
       </div>
 
+      <div class="field-row" data-field="deck">
+        <span class="row-label sub" title="Fills the player's legend, champion and three battlefields from their decklist, as if each were picked by hand. The champion is also staged as their featured card, as the champion picker does.">From the list</span>
+        <div class="cell" data-side="left"><button type="button" class="deck-fill" id="ldeckFill" title="Fill Player 1's legend, champion and battlefields from their decklist">Populate from decklist</button></div>
+        <div class="cell" data-side="right"><button type="button" class="deck-fill" id="rdeckFill" title="Fill Player 2's legend, champion and battlefields from their decklist">Populate from decklist</button></div>
+      </div>
+
       <div class="field-row" data-field="battlefieldPool">
         <span class="row-label sub">Battlefield 1</span>
         <div class="cell picker-wrap card-cell" data-side="left">
@@ -995,15 +1001,16 @@
       <h3>Sponsor plate</h3>
       <p class="scene-note" id="sponsorDock"></p>
       <div class="scene-options">
-        <label class="inline" title="Auto docks the plate into the in-game overlay that is up (its logo panel, event block or a spare corner); a corner pins it there whatever is up">Position
+        <label class="inline" title="Docked, the plate sits in the in-game overlay that is up and takes its look: Auto is the overlay's own spot (its logo panel, event block or a spare corner), a corner is that overlay's corner, clear of its panels. Undocked, a corner pins the plate to the frame corner whatever is up">Position
           <select id="sponsorPosition">
-            <option value="auto">Auto: dock into the overlay</option>
+            <option value="auto">Auto: the overlay's own spot</option>
             <option value="tl">Top left</option>
             <option value="tr">Top right</option>
             <option value="bl">Bottom left</option>
             <option value="br">Bottom right</option>
           </select>
         </label>
+        <label class="inline" title="On: the plate docks into whichever in-game overlay is up, in the corner picked, and wears its look. Off: it sits on the frame corner in its own look"><input type="checkbox" id="sponsorDocked" checked> Dock into the overlay</label>
         <label class="inline" title="Seconds each sponsor stays up before the next fades in">Rotate every <input type="number" id="sponsorInterval" class="num-mini" min="3" max="120"> s</label>
         <label class="inline" title="0 keeps the plate up the whole time it is on. Otherwise it shows for the first N seconds of every M minutes, on its own">Show every <input type="number" id="sponsorEvery" class="num-mini" min="0" max="60"> min</label>
         <label class="inline" title="How long each appearance lasts when Show every is above 0">for <input type="number" id="sponsorDuration" class="num-mini" min="5" max="300"> s</label>

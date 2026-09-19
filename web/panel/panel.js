@@ -1432,6 +1432,49 @@ async function loadSideDeck(side, list, deckName) {
   })) } } });
 }
 
+// Populate from decklist (Sam, 2026-09-18): the player's legend, champion
+// and three battlefields from their own list, as if each were picked by
+// hand. The legend brings its slug and card id (so its art lands
+// everywhere), the champion its card, staged as the featured card as the
+// champion picker does, and the battlefields keep any played marks. The
+// button says what it filled.
+async function fillFromDeck(side, btn) {
+  const sd = state && state.preview.match[side];
+  const deck = sd ? await deckSummary(sd.deckList || '') : null;
+  const patch = {};
+  const got = [];
+  if (deck && deck.legend) {
+    const l = legendCatalog.find((x) => x.cardId && x.cardId === deck.legend.cardId)
+      || legendCatalog.find((x) => x.name.toLowerCase() === deck.legend.name.toLowerCase());
+    Object.assign(patch, l
+      ? { legend: l.name, legendSlug: l.slug, legendCardId: l.cardId || deck.legend.cardId || '' }
+      : { legend: deck.legend.name, legendSlug: '', legendCardId: deck.legend.cardId || '' });
+    got.push('legend');
+  }
+  if (deck && deck.champion) {
+    const c = championCatalog.find((x) => x.cardId === deck.champion.cardId)
+      || championCatalog.find((x) => x.cardName.toLowerCase() === deck.champion.name.toLowerCase());
+    const name = c ? c.cardName : deck.champion.name;
+    Object.assign(patch, { champion: name, card: { cardId: c ? c.cardId : (deck.champion.cardId || ''), cardName: name } });
+    got.push('champion');
+  }
+  if (deck && deck.battlefields.length) {
+    const played = new Map((sd.battlefields || []).map((b) => [b.name.toLowerCase(), b.played]));
+    patch.battlefields = deck.battlefields.slice(0, 3).map((b) => ({
+      name: b.name,
+      cardId: b.cardId || '',
+      played: played.get(b.name.toLowerCase()) || false,
+    }));
+    got.push(`${patch.battlefields.length} battlefield${patch.battlefields.length === 1 ? '' : 's'}`);
+  }
+  if (got.length) post({ match: { [side]: patch } });
+  const said = got.length ? `Filled the ${got.join(', ')}`
+    : (sd && sd.deckList.trim() ? 'No legend, champion or battlefields in the list' : 'No decklist for this player');
+  btn.textContent = said;
+  clearTimeout(btn.resetTimer);
+  btn.resetTimer = setTimeout(() => { btn.textContent = 'Populate from decklist'; }, 2500);
+}
+
 // One slot of a player's three: a pick replaces it (or joins the end), a
 // clear takes it off and the rest move up.
 function setPoolEntry(side, i, entry) {
@@ -1464,6 +1507,7 @@ for (const [p, side] of SIDES) {
   };
   ta.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 700); });
   ta.addEventListener('blur', flush);
+  $(`${p}deckFill`).addEventListener('click', () => fillFromDeck(side, $(`${p}deckFill`)));
   for (let i = 0; i < 3; i += 1) {
     wirePicker(`${p}bfp${i}`, `${p}bfp${i}Results`, {
       search: (q) => battlefieldCatalog.filter((b) => b.cardName.toLowerCase().includes(q)),
@@ -1476,6 +1520,7 @@ for (const [p, side] of SIDES) {
 }
 
 function renderDeckLine(p, list) {
+  $(`${p}deckFill`).disabled = !list.trim();
   const line = $(`${p}deckLine`);
   if (line.dataset.list === list) return;
   line.dataset.list = list;
@@ -3485,6 +3530,7 @@ function sponsorError(msg) {
 
 $('toggleSponsor').addEventListener('click', () => toggleScene('sponsor'));
 $('sponsorPosition').addEventListener('change', () => post({ scenes: { sponsor: { position: $('sponsorPosition').value } } }));
+$('sponsorDocked').addEventListener('change', () => post({ scenes: { sponsor: { dock: $('sponsorDocked').checked } } }));
 for (const [id, field] of [['sponsorInterval', 'interval'], ['sponsorEvery', 'every'], ['sponsorDuration', 'duration']]) {
   $(id).addEventListener('change', () => post({ scenes: { sponsor: { [field]: Number($(id).value) } } }));
 }
@@ -3530,6 +3576,7 @@ $('sponsorAdd').addEventListener('click', async () => {
 function renderSponsor(s) {
   const cfg = s.preview.scenes.sponsor;
   if (document.activeElement !== $('sponsorPosition')) $('sponsorPosition').value = cfg.position || 'auto';
+  if (document.activeElement !== $('sponsorDocked')) $('sponsorDocked').checked = cfg.dock !== false;
   if (document.activeElement !== $('sponsorInterval')) $('sponsorInterval').value = cfg.interval;
   if (document.activeElement !== $('sponsorEvery')) $('sponsorEvery').value = cfg.every;
   if (document.activeElement !== $('sponsorDuration')) $('sponsorDuration').value = cfg.duration;
@@ -3540,7 +3587,7 @@ function renderSponsor(s) {
   btn.textContent = cfg.visible ? 'ON' : 'OFF';
   btn.classList.toggle('on', cfg.visible);
   const dock = sponsorDock(s.preview);
-  const where = dock.host ? `Docks into ${dock.label}` : (cfg.position === 'auto' ? `No in-game overlay in preview: sits in ${dock.label}` : `Pinned to ${dock.label}`);
+  const where = dock.host ? `Docks into ${dock.label}` : (cfg.dock === false ? `Pinned to ${dock.label}` : `No in-game overlay in preview: sits in ${dock.label}`);
   const cycle = cfg.every > 0 ? `, up for ${cfg.duration} s every ${cfg.every} min` : '';
   $('sponsorDock').textContent = `${where} at ${dock.w} x ${dock.h}${cycle}.`;
   renderSponsorList(cfg.items);

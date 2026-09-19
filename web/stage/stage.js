@@ -5,6 +5,7 @@
 import { resolveLook, lookVars } from '../shared/look.js';
 import { tileBank } from '../shared/looktiles.js';
 import { ensureFontFace } from '../shared/fontsheet.js';
+import { installNameFit, scheduleNameFit } from './fitnames.js';
 
 export function stageParams() {
   const p = new URLSearchParams(location.search);
@@ -75,6 +76,7 @@ export function currentLook(state, scene) {
 
 export function initStage({ scene = 'igodual', onState }) {
   const params = stageParams();
+  installNameFit();
   if (params.transparent) document.documentElement.classList.add('transparent');
   document.documentElement.dataset.theme = params.theme;
 
@@ -123,6 +125,8 @@ export function initStage({ scene = 'igodual', onState }) {
     first = false;
     applyTheme(shown.theme, scene);
     onState(shown, wasFirst);
+    // Names shrink to fit instead of ending in an ellipsis (fitnames.js).
+    scheduleNameFit();
     if (wasFirst && scene !== 'decklist') markReadyWhenLoaded();
   }
 

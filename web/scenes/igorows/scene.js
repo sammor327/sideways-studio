@@ -220,6 +220,7 @@ const params = initStage({
     const handR = Boolean(scene.hand) && handTotal(m.right) > 0;
     renderHand('l', m.left, handL, lanes, art);
     renderHand('r', m.right, handR, lanes, art);
+    root.classList.toggle('two-hands', handL && handR);
 
     const turnOn = scene.turnCounter !== false && m.turn > 0;
     const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');

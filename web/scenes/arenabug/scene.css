@@ -80,11 +80,14 @@
 .pname { font: 800 calc(30 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .rec { font: 500 calc(14 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.4 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; }
 .rec:empty { display: none; }
+/* Capped, so a long round title shrinks to fit (web/stage/fitnames.js)
+   instead of squeezing both player names out of the bar. */
 .round {
+  max-width: calc(420 * var(--u)); min-width: 0; overflow: hidden;
   padding: 0 calc(30 * var(--u)); height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
   border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); border-right: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
 }
-.round .t { font: 800 calc(24 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.4 * var(--u)); color: var(--ss-text, #fff); white-space: nowrap; }
-.round .s { font: 500 calc(12 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; margin-top: calc(4 * var(--u)); }
+.round .t { font: 800 calc(24 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.4 * var(--u)); color: var(--ss-text, #fff); white-space: nowrap; max-width: 100%; overflow: hidden; }
+.round .s { font: 500 calc(12 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; margin-top: calc(4 * var(--u)); max-width: 100%; overflow: hidden; }
 .round .s:empty { display: none; }

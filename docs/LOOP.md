@@ -214,6 +214,73 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-18k (out of band: docked sponsor corners; the rows divider)
+
+Sam: keep the sponsor plate's auto dock but give it corner choices. New
+`scenes.sponsor.dock` (default true). Docked with an overlay up, Auto is
+the overlay's own spot as before and a corner is SPONSOR_CORNER_DOCKS
+[host][corner] (web/shared/sponsor.js), in the host's radius and look;
+with no overlay up, or dock off, the frame corners as before (dock off +
+Auto = top right). The 32 corner spots came from transparent renders of
+each overlay with the sample match (alpha > 24 = chrome, variants unioned:
+rows + battlefields, dual + hand), searched for the plate position nearest
+each frame corner that clears the chrome dilated by 16px, counting the tag
+strip on the inner side (scratch cornerfit.py; dockcheck.py re-verifies).
+Plate width per overlay is its auto width, except the portrait pillars
+(330, not 450, inside an 830 game area) and the arena bug (270, so the
+bottom corners fit beside the score bar). The POV auto spot moved from
+y 652 to y 300: at 652 it covered the featured card's rules text whenever
+a card was staged (the column starts at y 425 then). The panel gains a Dock into the
+overlay checkbox; the dock note reads "Docks into the rows overlay, top
+left" and so on.
+
+Sam: "a random HR under the active turn" on the rows overlay. The 1px
+divider between the two hands sits in the infos grid's row 2; with the
+hands off or empty both info rows collapse and it rode up to y 250, right
+under player 1's Active turn row. It now shows only while both hands are
+listed (`.two-hands` on the root).
+
+Sam: the game intro and the sideboard fly-in should animate underneath the
+overlays. They were stacked above the in-game overlays in /output/ and both
+monitors, and the README told OBS users to add them above; the sideboard
+plates flew in across the chrome. Now: both sit below `pov` and the IGOs in
+web/output and web/monitor, the README says to add their sources below the
+overlay, and each clips itself to the game window (clipToWindow in
+web/shared/gamewindow.js, a clip-path inset on the full-stage root; the
+whole frame clips nothing), so the plates emerge from under the chrome even
+with the sources layered the other way.
+
+Sam: a "Populate information from decklist" for the legend, champion and
+battlefields. Match data > Decks and battlefields gains a From the list row
+with a Populate from decklist button per player (disabled with no list).
+fillFromDeck in panel.js reads the list through the same /api/decklist/parse
+summary and posts one patch: the legend matched to the legend catalog by
+card id then name (name, slug, card id; a legend missing from the catalog
+still gets its name and card id), the champion matched to the champion
+catalog (the champion line plus `card`, staged as the featured card exactly
+as the champion picker does) and the first three battlefields, keeping any
+played marks. The button reads back what it filled for 2.5 s.
+
+Sam: no name shortened with "...", the font just smaller so the whole name
+fits no matter what. web/stage/fitnames.js, installed by initStage and run
+after every state, on DOM changes (async deck renders, art; clock cells
+ignored), on font load and on resize: every single-line text box (white-
+space nowrap, overflow clipped) whose scrollWidth exceeds its clientWidth
+gets its font scaled by the measured ratio (x0.985, up to 8 passes, floor
+a fifth of the designed size), written as calc(n * var(--u)). The designed
+(or the scene's own fitText) size is the ceiling and is restored before
+each pass, so a shorter name grows back; a box that type alone cannot fit
+(images overflowing it) is left as it was. Verified with 40-character
+player names and long team, deck, event and round names across all 26
+graphics (scratch overflowscan.js + clipscan.js via evalmany.mjs): 48
+boxes fitted, 0 cut off, nothing clipped by an ancestor. Two needed layout
+fixes: the " · on the chain" tag in the rows and dual hand lists was a
+fixed size wider than the row on its own (now em-relative to the name), and
+the arena bug's round title sat in an uncapped auto column that squeezed
+both names to 6 px wide (now capped at 420 and clipped, so it shrinks).
+Still true: the arena bug's name slot is only ~200 px beside the record
+and legend, so a 40-character name there fits at about 6 px.
+
 ### 2026-09-18j (out of band: decklists side by side lose the header)
 
 Sam: remove the diamond in the upper left of the head to head decklists and

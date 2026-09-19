@@ -553,6 +553,7 @@ textarea:focus { outline: 2px solid var(--tes-blue); }
 .deck-cell select { width: 100%; }
 .deck-line { font-size: 11px; color: #8b98a5; min-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .deck-line.warn { color: #f0b429; }
+.deck-fill { width: 100%; }
 /* One size for every chip (Sam, 2026-09-18): a column of equal chips the
    width of the cell, one per battlefield, the arrow beside them. */
 .bf-chips { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; }

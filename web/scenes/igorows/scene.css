@@ -80,7 +80,10 @@
 .info { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .info.top { grid-row: 1; }
 .info.bot { grid-row: 4; }
-.divider { grid-row: 2; height: calc(1 * var(--u)); margin: calc(14 * var(--u)) 0; background: var(--ss-frame, #26303c); }
+/* The rule between the two hands, only while both are listed: alone it
+   rode up under the Active turn row (Sam, 2026-09-18). */
+.divider { grid-row: 2; height: calc(1 * var(--u)); margin: calc(14 * var(--u)) 0; background: var(--ss-frame, #26303c); display: none; }
+.two-hands .divider { display: block; }
 .hand { display: flex; flex-direction: column; min-height: 0; }
 /* --hs slides a hand in from the left edge of the column and back out. */
 .hand.gone { display: none; }
@@ -154,7 +157,8 @@
 .card .strip { flex: 0 0 auto; width: calc(48 * var(--u)); height: calc(28 * var(--u)); object-fit: cover; object-position: center 22%; border-radius: calc(3 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); background: var(--ss-ink, #10151d); }
 .card .strip.missing { visibility: hidden; }
 .card.played { opacity: 0.35; }
-.card.played .nm::after { content: ' · on the chain'; color: var(--ss-accent-b, #1bef19); font-size: calc(11 * var(--u)); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; }
+/* Sized off the name (11px on its 15), so a long name and its tag shrink together. */
+.card.played .nm::after { content: ' · on the chain'; color: var(--ss-accent-b, #1bef19); font-size: 0.733em; letter-spacing: 0.09em; text-transform: uppercase; }
 .hand.typed .card { border-left: calc(3 * var(--u)) solid transparent; padding-left: calc(7 * var(--u)); }
 .hand.typed .card.kind-reaction { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.08); }
 .hand.typed .card.kind-action { border-left-color: var(--ss-accent-a, #11b6fb); background: rgba(17, 182, 251, 0.08); }
