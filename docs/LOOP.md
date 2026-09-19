@@ -214,6 +214,50 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19e (out of band: the card popup docks into the rows and dual-column overlays, 0.31.0)
+
+Sam: "for the card preview, can we make an overlay specific version of it
+that animates out the hand or event logo and animates in the highlighted
+card over the overlay cover", then, shown the rows version, "release it as
+0.31.0 and do the dual columns too". Read first as the rows overlay, whose
+column middle already swapped the event logo and the hands with slides
+(0.21.0 / 0.22.0).
+
+Rows: the middle holds one of three, in priority: the card popup's card
+(docked while the popup is on in that bank and `igorows.cardDock`, default
+true, a new IGO flag and panel switch "Dock featured card"), else the
+hands, else the logo. The card is 290x405 (258x360 with both battlefield
+strips): the whole card with its own rounded corners and a drop shadow
+kept inside the column, a short trim line, the name (wraps, never shrinks)
+and the type. A battlefield turns landscape on the loaded file's evidence,
+and the art takes the popup's full, thumb, named-panel chain. The rule
+between two hands got its own slider so it never stands alone over a
+docked card.
+
+Dual columns: each column's bottom takes turns the same way. Left: the
+event block or player 1's hand. Right: the card frame, player 2's hand, or
+the docked card, which now takes the place from the hand (before, the
+hand kept the slot and the popup flew). Things slide out past their
+column's screen edge; the card slot turns the way the popup turns
+(`--cs`, rotateY 55deg), replacing the old `--flip` on a card change.
+
+Shared pieces: `web/stage/slide.js` (`Slider`, now handing back the move
+under way when asked the same way again, where the rows' old one answered
+"settled" and could let the next thing in early; `SwapSlot`, a place whose
+content changes: out, fill out of sight, in, turning round when asked
+back; `loadArt`, the art chain with a 1.2 s cap on the wait) and
+`web/shared/carddock.js` (`cardDockHost(bank)`, the one rule the popup
+stands down on; `dockCard(bank, host)`). Tests: test/carddock.test.js plus
+the rows defaults and flag in state-experimental (258 total). Verified on
+a scratch server (port 4751, full.pack hard-linked into its data dir) with
+a CDP timeline recorder: whatever leaves is out by about 520 ms, the next
+thing in by about 1040 ms, in every direction on both overlays, including
+a card pulled and put back mid-exit, anim=0 snapping, and the dock off
+letting the popup fly. Gotchas: a background tab in headless Chrome
+paints so rarely that screenshots of it stall (open the page to shoot
+last and bring it to the front) and its timers throttle; for a mid-slide
+still, set the clock property by hand, which is exactly the pose.
+
 ### 2026-09-19d (out of band: Live game from RiftAtlas)
 
 Sam, during Convergence #3: "For sideways studio, we can use this:

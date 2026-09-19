@@ -302,8 +302,12 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  /* --ev slides the block out past the column's left edge while player 1's
+     hand holds the bottom of the column, and back in after it. */
+  opacity: var(--ev, 1);
+  transform: translateX(calc((1 - var(--ev, 1)) * -350 * var(--u)));
 }
-.event.hidden { display: none; }
+.event.gone { display: none; }
 .event-logo {
   width: calc(120 * var(--u));
   height: calc(110 * var(--u));
@@ -353,9 +357,12 @@
 /* --- cards in hand --- */
 
 /* The bottom of a column carries exactly one block: the event block on the
-   left, the docked featured card on the right, or, with the hand on, that
-   player's cards in hand. A side with nothing listed keeps what it had, so
-   an empty hand is never an empty column.
+   left, the card frame on the right, or, with the hand on, that player's
+   cards in hand; the card popup's card, docked while the popup is on, takes
+   the bottom right from player 2's hand in turn. Whatever leaves slides out
+   past its column's screen edge before the next one slides in. A side with
+   nothing listed keeps what it had, so an empty hand is never an empty
+   column.
 
    Room for eight rows above the clock, eleven without it; a longer hand
    tightens a step (.compact), then scrolls, and the header count is the
@@ -370,7 +377,11 @@
   flex-direction: column;
   overflow: hidden;
 }
-.hand.hidden { display: none; }
+.hand.gone { display: none; }
+/* --hs slides a hand out past its column's screen edge and back in. */
+.hand { opacity: var(--hs, 1); }
+.col.left .hand { transform: translateX(calc((1 - var(--hs, 1)) * -350 * var(--u))); }
+.col.right .hand { transform: translateX(calc((1 - var(--hs, 1)) * 350 * var(--u))); }
 .dual.clock-on .hand { bottom: calc(100 * var(--u)); }
 .hand .h {
   display: flex;
@@ -480,10 +491,13 @@
   border-radius: calc(10 * var(--u));
   overflow: hidden;
   background: var(--ss-plate, #07090c);
-  /* --flip is a JS clock on a card change: the slot turns to show the new card. */
-  transform: perspective(calc(1200 * var(--u))) rotateY(calc((1 - var(--flip, 1)) * 90deg));
+  /* --cs slides the slot out past the right edge of the frame, turned the
+     way the card popup turns, and in again with whatever it holds next: a
+     card, another card, or the empty frame (stage/slide.js). */
+  opacity: var(--cs, 1);
+  transform: perspective(calc(1200 * var(--u))) translateX(calc((1 - var(--cs, 1)) * 350 * var(--u))) rotateY(calc((1 - var(--cs, 1)) * 55deg));
 }
-.card-slot.hidden { display: none; }
+.card-slot.gone { display: none; }
 .card-slot .art { border-radius: calc(10 * var(--u)); }
 .slot-empty {
   position: absolute;

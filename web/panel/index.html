@@ -826,7 +826,7 @@
         <div class="scene-row popup-row" data-scene="cardpopup">
           <div class="scene-name">Card popup <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardOnAir">ON AIR</button></div>
           <button id="toggleCard" class="scene-toggle">OFF</button>
-          <p class="scene-note" id="cardpopupNote">One card flies in over the feed. Search it under Graphic features &rsaquo; Card popup; with nothing staged, a click here opens that search.</p>
+          <p class="scene-note" id="cardpopupNote">One card flies in over the feed, or docks into the rows, dual-column or portrait overlay when one is up. Search it under Graphic features &rsaquo; Card popup; with nothing staged, a click here opens that search.</p>
         </div>
         <div class="scene-row" data-scene="cardrow">
           <div class="scene-name">Card row <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="cardrowOnAir">ON AIR</button></div>
@@ -917,7 +917,7 @@
           <span class="muted" id="stagedType"></span>
         </div>
       </div>
-      <span class="hint">Staging a card switches the card popup on in preview; TAKE airs it. The dual-column and portrait pillar overlays dock this same card when their Dock featured card is on.</span>
+      <span class="hint">Staging a card switches the card popup on in preview; TAKE airs it. The rows, dual-column and portrait pillar overlays dock this same card when their Dock featured card is on.</span>
     </div>
     <div class="feature-group hidden" data-scene="cardrow">
       <h3>Card row</h3>
@@ -994,8 +994,8 @@
         <label class="inline"><input type="checkbox" id="igoDualTrack" checked> Point track</label>
         <label class="inline"><input type="checkbox" id="igoDualEvent" checked> Event block</label>
         <label class="inline"><input type="checkbox" id="igoDualClock" checked> Clock</label>
-        <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
-        <label class="inline" title="Each player's cards in hand fill the bottom of their own column. The event block and the docked card stand down under it, and come back when a side has no cards listed"><input type="checkbox" id="igoDualHand"> Cards in hand</label>
+        <label class="inline" title="Shows the card popup's card in the bottom-right slot instead of the popup flying in over the feed: player 2's hand (or the empty card frame) slides out, the card slides in, and they come back when the card popup goes off"><input type="checkbox" id="igoDualCard" checked> Dock featured card</label>
+        <label class="inline" title="Each player's cards in hand fill the bottom of their own column: the event block and the card frame slide out for them, and slide back in when a side has no cards listed. A docked featured card takes player 2's place while the card popup is on"><input type="checkbox" id="igoDualHand"> Cards in hand</label>
         <label class="inline" title="The hand in the order the cards were typed, copies on one row with a count (2x, 3x). Marked by type colours each row by what the card can do: reactions green, actions blue. A hand longer than its box scrolls: five seconds at the top, down to the last card, five seconds there, back up">Hand as
           <select id="igoDualHandStyle">
             <option value="list">List</option>
@@ -1051,7 +1051,8 @@
         <label class="inline" title="The accent bar under the active player's camera and the ACTIVE TURN label"><input type="checkbox" id="igoRowsActive" checked> Active turn</label>
         <label class="inline" title="The points box on each player's bar"><input type="checkbox" id="igoRowsPoints" checked> Points</label>
         <label class="inline" title="Turn N after the round title on the bottom bar"><input type="checkbox" id="igoRowsTurn" checked> Turn counter</label>
-        <label class="inline" title="The theme's event logo in the middle of the column (the event name when no logo is uploaded). It slides out while a hand is listed and back in when the hands clear"><input type="checkbox" id="igoRowsLogo" checked> Event logo</label>
+        <label class="inline" title="The theme's event logo in the middle of the column (the event name when no logo is uploaded). It slides out while a hand is listed or a featured card is docked, and back in when they clear"><input type="checkbox" id="igoRowsLogo" checked> Event logo</label>
+        <label class="inline" title="Shows the card popup's card in the middle of the column instead of the popup flying in over the feed: the hands or the event logo slide out, the card slides in with its name, and they come back when the card popup goes off"><input type="checkbox" id="igoRowsCard" checked> Dock featured card</label>
         <label class="inline" title="The round clock at the right end of the bottom bar, running from the match timer"><input type="checkbox" id="igoRowsClock" checked> Round clock</label>
         <label class="inline" title="A strip beside each player's camera: the battlefield this game is on, or the three they brought side by side with an arrow on this game's and the ones played earlier greyed out. Set them under Match data &rsaquo; Decks and battlefields">Battlefields
           <select id="igoRowsBattlefields">

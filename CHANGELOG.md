@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.31.0 (2026-09-19)
+
+- The card popup docks into the rows overlay. With the rows overlay up, a card you stage and TAKE no longer flies in over the table: the hands (or the event logo) slide out of the middle of the left column and the card slides in over the column with its name and type under it. Take the card popup off and the card slides out and the hands or the logo come back. A new card while one is docked swaps it the same way, and cards typed into a hand meanwhile are there when the hands return.
+- Dock featured card, a new switch in the rows overlay's Graphic features (on by default), turns this off: the card popup then flies in over the feed as before.
+- Dual columns: the docked card now takes the bottom right from player 2's cards in hand. The hand slides out, the card slides in, and the hand comes back when the card popup goes off; before, the hand kept the slot and the popup flew in over the table instead. With no hand listed, the empty card frame slides out for the card the same way.
+- Dual columns: every change at the bottom of a column now slides. The event block slides out for player 1's hand and back when it clears, the card frame slides out for player 2's hand, and a card change slides the old card out and the new one in.
+- The card popup's search shows under Graphic features whenever the rows or dual-column overlay is in preview with its dock on.
+
 ## 0.30.0 (2026-09-19)
 
 - New: Live game, at the top of Match data. Type a RiftAtlas room code (or paste the caster link) and press Connect: the game in that room fills Match data as it is played. Points, game wins, both hands, the battlefield in play, legends, champions, the turn counter and whose turn it is follow the game by themselves, and a best of three is followed from game to game. The fold lists every card played, and a click on one stages it in the card popup.

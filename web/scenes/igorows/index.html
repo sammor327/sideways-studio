@@ -61,6 +61,19 @@
         <div class="logo-name" id="eventName"></div>
         <div class="logo-round" id="round"></div>
       </div>
+      <!-- The card popup's card, docked: it takes the middle of the column
+           from the hands or the logo while the popup is on. -->
+      <div class="card-dock gone" id="cardDock">
+        <div class="dock-inner">
+          <div class="dock-card">
+            <img class="art hidden" id="dockArt" alt="" draggable="false">
+            <div class="dock-fallback" id="dockFallback"><span id="dockFallbackName"></span></div>
+          </div>
+          <div class="dock-trim"></div>
+          <div class="dock-name" id="dockName"></div>
+          <div class="dock-type" id="dockType"></div>
+        </div>
+      </div>
       <div class="under bot">
         <div class="dots" id="rdots"></div>
         <span class="label active-label" id="ractive">Active turn</span>

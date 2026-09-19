@@ -3,6 +3,8 @@ import { SeekClock, bump } from '../../stage/seekclock.js';
 import {
   chainLoad, clearArt, cardSteps, legendSteps, heroSteps, battlefieldSteps, rotateIfPortrait,
 } from '../../stage/art.js';
+import { Slider, SwapSlot, loadArt } from '../../stage/slide.js';
+import { dockCard } from '../../shared/carddock.js';
 import { handEls, handKey, handTotal, handUp, HandScroller } from '../../stage/exp.js';
 import { setClock } from '../../shared/clockcells.js';
 import { groupHand } from '../../shared/handlist.js';
@@ -10,12 +12,11 @@ import { groupHand } from '../../shared/handlist.js';
 const $ = (id) => document.getElementById(id);
 const dual = $('dual');
 const inOut = new SeekClock(dual, '--t', 550);
-const flip = new SeekClock($('cardSlot'), '--flip', 420);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 // What each slot currently shows, so a state push that changes nothing
 // about a slot never restarts its image load.
-const shown = { legend: {}, hero: {}, bf: {}, card: null, hand: {} };
+const shown = { legend: {}, hero: {}, bf: {}, hand: {} };
 const scrollers = { l: new HandScroller($('lhandView'), $('lhandCards')), r: new HandScroller($('rhandView'), $('rhandCards')) };
 
 function loadLegend(p, side) {
@@ -58,33 +59,55 @@ function loadBattlefield(p, side) {
   chainLoad(img, battlefieldSteps(id), rotateIfPortrait);
 }
 
-// The docked featured card is the card popup's card while the popup is on;
-// the popup itself stands down (see cardpopup/scene.js). Empty: the trim
-// ring or the event logo, dimmed, never a blank box.
-function loadCard(bank, logo, animate) {
-  const cp = bank.scenes.cardpopup;
-  const id = cp.visible ? (cp.card.cardId || '') : '';
-  const img = $('slotImg');
-  const empty = $('slotEmpty');
+// --- the bottom of each column (2026-09-19) ---
+//
+// Each column's bottom holds one thing at a time, and whatever is there
+// slides out past the column's screen edge before the next one slides in
+// (stage/slide.js), as in the rows column. Left: the event block, or player
+// 1's cards in hand. Right: the card frame, player 2's cards in hand, or
+// the card popup's card, which takes the place from either while the popup
+// is on and Dock featured card is (Sam: the hand or the logo animates out,
+// the card animates in; shared/carddock.js, the popup stands down
+// meanwhile). A new card slides the old one out first. A side with nothing
+// listed keeps what it had, so switching the hand on before the spotter
+// types never empties a column.
+//
+// The card's art gets a moment to load out of sight before it moves in, but
+// never more than ART_WAIT_MS: a slow file lands where the card already is.
+const ART_WAIT_MS = 1200;
+// The card frame with no card in it: the event logo dimmed, or a quiet trim
+// ring, never a blank box.
+const FRAME = { key: '#frame', card: null };
+
+function renderFrame(logo) {
   const slotLogo = $('slotLogo');
-  const mark = $('slotMark');
   if (slotLogo.getAttribute('src') !== (logo || null)) {
     if (logo) slotLogo.src = logo; else slotLogo.removeAttribute('src');
   }
   slotLogo.classList.toggle('hidden', !logo);
-  mark.classList.toggle('hidden', Boolean(logo));
-  if (shown.card === id) return;
-  const changed = shown.card !== null;
-  shown.card = id;
-  if (!id) {
-    clearArt(img);
-    empty.classList.remove('hidden');
-    return;
-  }
-  chainLoad(img, cardSteps(id), () => empty.classList.add('hidden'));
-  img.onerror = ((next) => () => { next(); if (!img.getAttribute('src')) empty.classList.remove('hidden'); })(img.onerror);
-  if (changed && animate) flip.play({ from: 0, to: 1 });
+  $('slotMark').classList.toggle('hidden', Boolean(logo));
 }
+
+// The slot's content for `item`: the frame, or a card over it. The frame
+// shows under the art until the art is up, and again if no file loads.
+function fillSlot(item) {
+  const img = $('slotImg');
+  const empty = $('slotEmpty');
+  empty.classList.remove('hidden');
+  if (!item.card) {
+    clearArt(img);
+    return Promise.resolve();
+  }
+  return loadArt(img, cardSteps(item.card.cardId), {
+    cap: ART_WAIT_MS,
+    onShow: () => empty.classList.add('hidden'),
+    onFail: () => empty.classList.remove('hidden'),
+  });
+}
+
+const eventSlide = new Slider($('eventBlock'), '--ev', 450);
+const handSlide = { l: new Slider($('lhandBlock'), '--hs', 450), r: new Slider($('rhandBlock'), '--hs', 450) };
+const slot = new SwapSlot($('cardSlot'), '--cs', 500, { fill: fillSlot });
 
 function renderPips(el, seriesLength, gameWins, animate) {
   const slots = winsNeeded(seriesLength);
@@ -178,20 +201,21 @@ function fitName(el, raw) {
 }
 
 // A player's cards in hand, in the bottom of their own column, always in
-// the order they were typed. `up` (handUp) is what stands the event block
-// or the docked card down: a side with nothing listed keeps what it had, so
-// switching the hand on before the spotter types never empties a column.
-// Past the row budget (eight rows above the clock, with or without art) the
-// rows tighten a step, counted from the rows rather than measured, because
-// a browser source that is not drawing reports no layout at all; a hand
-// still longer than its box then scrolls through its cards.
+// the order they were typed. `up` (handUp) is what slides the event block
+// or the card frame out for it (onState). Past the row budget (eight rows
+// above the clock, with or without art) the rows tighten a step, counted
+// from the rows rather than measured, because a browser source that is not
+// drawing reports no layout at all; a hand still longer than its box then
+// scrolls through its cards. A hand on its way out keeps its last cards
+// until it is off the column; one a docked card has taken the place of
+// stays up to date out of sight.
 function renderHand(p, side, up, lanes, art) {
   const block = $(`${p}handBlock`);
   const list = side.hand || [];
-  block.classList.toggle('hidden', !up);
   block.classList.toggle('typed', lanes);
+  if (!up) return;
   block.classList.toggle('compact', groupHand(list).length > 8);
-  setText($(`${p}handCount`), up ? String(handTotal(side)) : '');
+  setText($(`${p}handCount`), String(handTotal(side)));
   const key = handKey(list, art);
   if (shown.hand[p] !== key) {
     shown.hand[p] = key;
@@ -241,15 +265,35 @@ const params = initStage({
     logoEl.classList.toggle('hidden', !logo);
     setText($('eventName'), bank.event.name || '');
     setText($('roundTitle'), bank.event.roundTitle || '');
-    // The hand takes the bottom of each column from whatever was there.
     const lanes = scene.handStyle === 'lanes';
     const art = scene.handArt !== false;
     const leftHand = handUp(scene, m.left);
     const rightHand = handUp(scene, m.right);
     renderHand('l', m.left, leftHand, lanes, art);
     renderHand('r', m.right, rightHand, lanes, art);
+    renderFrame(logo);
 
-    $('eventBlock').classList.toggle('hidden', !scene.eventBlock || leftHand);
+    // Left: player 1's hand, else the event block.
+    const left = leftHand ? 'hand' : (scene.eventBlock ? 'event' : '');
+    const lout = Promise.all([
+      left !== 'hand' && handSlide.l.set(false, first),
+      left !== 'event' && eventSlide.set(false, first),
+    ]);
+    if (left === 'hand') handSlide.l.set(true, first, lout);
+    if (left === 'event') eventSlide.set(true, first, lout);
+
+    // Right: the docked card while the popup is on, else player 2's hand,
+    // else the empty frame.
+    const card = dockCard(bank, 'igodual');
+    const right = card ? 'card' : (rightHand ? 'hand' : (scene.cardSlot ? 'frame' : ''));
+    const rout = Promise.all([
+      right !== 'hand' && handSlide.r.set(false, first),
+      (right === 'hand' || right === '') && slot.set(null, first),
+    ]);
+    if (right === 'hand') handSlide.r.set(true, first, rout);
+    if (right === 'card') slot.set({ key: card.cardId, card }, first, rout);
+    if (right === 'frame') slot.set(FRAME, first, rout);
+
     // The clock outlived the block it used to sit in: with the hand up it
     // answers to its own switch, and both hands end above its baseline.
     const clockOn = scene.clock && (scene.eventBlock || leftHand);
@@ -257,9 +301,6 @@ const params = initStage({
     dual.classList.toggle('clock-on', clockOn);
     timerState = m.timer || timerState;
     setClock($('clock'), clockText());
-
-    $('cardSlot').classList.toggle('hidden', !scene.cardSlot || rightHand);
-    loadCard(bank, logo, animate);
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);

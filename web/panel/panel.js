@@ -2365,7 +2365,7 @@ $('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mo
 $('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
 $('igoRowsHandStyle').addEventListener('change', () => post({ scenes: { igorows: { handStyle: $('igoRowsHandStyle').value } } }));
 $('igoRowsHandArt').addEventListener('change', () => post({ scenes: { igorows: { handArt: $('igoRowsHandArt').checked } } }));
-for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock']]) {
+for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock'], ['igoRowsCard', 'cardDock']]) {
   $(id).addEventListener('change', () => post({ scenes: { igorows: { [flag]: $(id).checked } } }));
 }
 $('igoRowsShowdown').addEventListener('change', () => post({ scenes: { igorows: { showdown: $('igoRowsShowdown').checked } } }));
@@ -3149,7 +3149,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('decklistsSideboards')) $('decklistsSideboards').checked = prev.scenes.decklists.sideboards !== false;
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
-  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock']]) {
+  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock'], ['igoRowsCard', 'cardDock']]) {
     if (document.activeElement !== $(id)) $(id).checked = rw[flag] !== false;
   }
   const hf = prev.scenes.handfan;
@@ -3457,7 +3457,8 @@ function featureShown(key, s) {
   if (armedFeatures.has(key)) return true;
   if (key === 'cardpopup') {
     return Boolean((scenes.igodual.visible && scenes.igodual.cardSlot)
-      || (scenes.igoportrait.visible && scenes.igoportrait.cardWell));
+      || (scenes.igoportrait.visible && scenes.igoportrait.cardWell)
+      || (scenes.igorows.visible && scenes.igorows.cardDock !== false));
   }
   return false;
 }

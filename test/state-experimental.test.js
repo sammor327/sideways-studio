@@ -66,7 +66,7 @@ describe('experimental overlay fields', () => {
     } });
     const sc = getState().preview.scenes;
     assert.deepEqual(sc.igoportrait, { visible: true, mode: 'webcam', topBar: true, handCam: true, cardWell: false });
-    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, battlefields: 'off' });
+    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true, battlefields: 'off' });
     applyUpdate({ scenes: { igorows: { handStyle: 'lanes', showdown: true }, handfan: { visible: true, side: 'right', opponent: false, showdown: true } } });
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
     assert.deepEqual(getState().preview.scenes.handfan, { visible: true, side: 'right', opponent: false, showdown: true, identity: true, clock: true });
@@ -93,6 +93,15 @@ describe('experimental overlay fields', () => {
     applyUpdate({ scenes: { igodual: { handArt: 0 }, igorows: { handArt: false } } });
     assert.equal(getState().preview.scenes.igodual.handArt, false);
     assert.equal(getState().preview.scenes.igorows.handArt, false);
+  });
+
+  it('switches the rows overlay\'s docked featured card like the other docks', () => {
+    applyUpdate({ scenes: { igorows: { cardDock: 0 } } });
+    assert.equal(getState().preview.scenes.igorows.cardDock, false);
+    applyUpdate({ scenes: { igorows: { cardDock: 'yes' } } });
+    assert.equal(getState().preview.scenes.igorows.cardDock, true, 'a truthy value switches it on');
+    applyUpdate({ scenes: { igorows: { mode: 'webcam' } } });
+    assert.equal(getState().preview.scenes.igorows.cardDock, true, 'a patch that leaves it out keeps it');
   });
 
   it('cleans the up-next tables, casters and seeds on the event', () => {

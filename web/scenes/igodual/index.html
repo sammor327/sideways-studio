@@ -48,7 +48,7 @@
       <!-- Bottom of the column: the event block, or player 1's hand when
            the cards-in-hand list claims the space. The clock rides below
            either one, on the baseline it has always had. -->
-      <div class="hand hidden" id="lhandBlock">
+      <div class="hand gone" id="lhandBlock">
         <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="lhandCount"></span></div>
         <div class="cards" id="lhandView"><div class="scroll" id="lhandCards"></div></div>
       </div>
@@ -92,9 +92,10 @@
       </div>
       <div class="pips" id="rpips"></div>
 
-      <!-- Bottom of the column: the docked featured card, or player 2's
-           hand when the cards-in-hand list claims the space. -->
-      <div class="hand hidden" id="rhandBlock">
+      <!-- Bottom of the column: the card frame, or player 2's hand when the
+           cards-in-hand list claims the space, or the card popup's card,
+           which takes the space from either while the popup is on. -->
+      <div class="hand gone" id="rhandBlock">
         <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="rhandCount"></span></div>
         <div class="cards" id="rhandView"><div class="scroll" id="rhandCards"></div></div>
       </div>

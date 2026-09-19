@@ -137,7 +137,9 @@ function defaultBank() {
       // the card popup's card and stands in for the popup while it is on).
       // hand claims the bottom of both columns for that player's cards in
       // hand, in the rows overlay's two styles; whatever a column had down
-      // there stands down under it, and comes back when the hand goes off.
+      // there slides out for it and comes back when the hand goes off,
+      // except that the card popup's card, docked while the popup is on,
+      // takes the bottom right from player 2's hand in turn.
       // handArt puts each card's art beside its name, in either style.
       igodual: {
         visible: false, mode: 'legend', track: true, clock: true, eventBlock: true, cardSlot: true,
@@ -178,8 +180,11 @@ function defaultBank() {
       // Rows: slim bars top and bottom and a left column with both cameras
       // and the cards-in-hand list (the Magic grammar). handStyle 'list' or
       // 'lanes', which marks each card's type on its row (neither style sorts
-      // the hand); handArt puts each card's art beside its name.
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true,
+      // the hand); handArt puts each card's art beside its name. cardDock
+      // docks the card popup's card in the middle of the column while the
+      // popup is on (the hands or the event logo slide out for it) instead
+      // of the popup flying in over the feed.
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true,
         // Battlefields in each player's block: 'off', 'one' (this game's) or
         // 'all' (the three brought, the played ones marked).
         battlefields: 'off' },
@@ -744,7 +749,7 @@ function applyBankPatch(bank, patch) {
     const IGO_FLAGS = {
       igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand', 'handArt'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
-      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo', 'clock'],
+      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo', 'clock', 'cardDock'],
     };
     for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {

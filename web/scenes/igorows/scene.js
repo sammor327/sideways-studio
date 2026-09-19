@@ -1,56 +1,55 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
-import { chainLoad, clearArt, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
+import { chainLoad, clearArt, cardSteps, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
+import { Slider, SwapSlot, loadArt } from '../../stage/slide.js';
 import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
 import { setClock } from '../../shared/clockcells.js';
+import { rowsDockCard } from '../../shared/carddock.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
 const inOut = new SeekClock(root, '--t', 550);
 
-// Something that slides in from the column's left edge and back out: the
-// event logo and each player's hand. `set` returns when its move settles, so
-// one slide can wait for another: the hands come in once the logo is out,
-// the logo comes back once the hands are out. A move that is overtaken by
-// the opposite one never settles, so nothing waiting on it fires late.
-class Slider {
-  constructor(el, prop, ms) {
-    this.el = el;
-    this.prop = prop;
-    this.clock = new SeekClock(el, prop, ms);
-    this.on = null;
-  }
+// --- the docked featured card (2026-09-19) ---
+//
+// Sam: an overlay version of the card popup that animates out the hand or
+// the event logo and animates the card in over the column. It is the card
+// popup's own card, shown while the popup is on in this bank and Dock
+// featured card is (shared/carddock.js; the popup stands down meanwhile),
+// in the middle of the column where the hands and the logo take turns, with
+// its name and type under it. It comes in from the column's edge with the
+// popup's turn once whatever held the middle is out; a new card slides the
+// old one out first; a card on its way out keeps its art until it is off
+// the column, as a hand does (stage/slide.js does the taking of turns).
+//
+// The art gets a moment to load out of sight before the card moves in, so
+// it never arrives as an empty frame, but never more than ART_WAIT_MS: a
+// slow file lands where the card already is.
+const ART_WAIT_MS = 1200;
 
-  now() {
-    const v = parseFloat(this.el.style.getPropertyValue(this.prop));
-    return Number.isFinite(v) ? v : (this.on ? 0 : 1);
-  }
-
-  set(show, first, wait = Promise.resolve()) {
-    if (show === this.on) return Promise.resolve();
-    this.on = show;
-    if (first) {
-      this.el.classList.toggle('gone', !show);
-      this.clock.seek(show ? 1 : 0);
-      return Promise.resolve();
-    }
-    if (show) {
-      if (this.el.classList.contains('gone')) this.clock.seek(0);
-      this.clock.stop();
-      return wait.then(() => {
-        if (!this.on) return new Promise(() => {});
-        this.el.classList.remove('gone');
-        return this.clock.play({ from: this.now(), to: 1 });
-      });
-    }
-    return this.clock.play({ from: this.now(), to: 0 }).then(() => {
-      if (!this.on) this.el.classList.add('gone');
-    });
-  }
+// Name, type and art for the docked card, through the popup's fallback
+// chain (full art, the thumb, a named panel).
+function fillDock(card) {
+  const dockEl = $('cardDock');
+  const fallback = $('dockFallback');
+  setText($('dockName'), card.cardName || '');
+  setText($('dockType'), card.cardType || '');
+  setText($('dockFallbackName'), card.cardName || 'No card');
+  fallback.classList.remove('on');
+  dockEl.classList.remove('bf');
+  return loadArt($('dockArt'), cardSteps(card.cardId), {
+    cap: ART_WAIT_MS,
+    // Battlefields are landscape cards stored portrait: turned on the
+    // loaded file's evidence, as the popup does, never a per-card flag.
+    onShow: (img) => dockEl.classList.toggle('bf', card.cardType === 'Battlefield' && img.naturalHeight > img.naturalWidth),
+    onFail: () => fallback.classList.add('on'),
+  });
 }
 
 const logoSlide = new Slider($('logoWell'), '--lg', 450);
 const handSlide = { l: new Slider($('lhandBlock'), '--hs', 450), r: new Slider($('rhandBlock'), '--hs', 450) };
+const ruleSlide = new Slider(document.querySelector('#root .divider'), '--hs', 450);
+const dock = new SwapSlot($('cardDock'), '--cd', 500, { key: (card) => card.cardId, fill: fillDock });
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
 const shown = { hero: {}, hand: {} };
@@ -220,21 +219,32 @@ const params = initStage({
     const handR = Boolean(scene.hand) && handTotal(m.right) > 0;
     renderHand('l', m.left, handL, lanes, art);
     renderHand('r', m.right, handR, lanes, art);
-    root.classList.toggle('two-hands', handL && handR);
 
     const turnOn = scene.turnCounter !== false && m.turn > 0;
     const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
-    const logoUp = renderLogo(state, bank, scene, round) && !handL && !handR;
-    // The middle of the column holds one thing at a time: the outgoing
-    // side slides out before the incoming side slides in.
-    if (logoUp) {
-      const out = Promise.all([handSlide.l.set(false, first), handSlide.r.set(false, first)]);
-      logoSlide.set(true, first, out);
-    } else {
-      const out = logoSlide.set(false, first);
+    const logoHas = renderLogo(state, bank, scene, round);
+    const card = rowsDockCard(bank);
+    // The middle of the column holds one thing at a time: the docked card
+    // while the card popup is on, else the hands while either player has
+    // one listed, else the event logo. Whatever is leaving slides out
+    // before the one coming in slides in, and the hands keep their lists up
+    // to date while a card holds their place.
+    const middle = card ? 'card' : (handL || handR ? 'hands' : (logoHas ? 'logo' : ''));
+    const twoHands = middle === 'hands' && handL && handR;
+    const out = Promise.all([
+      middle !== 'card' && dock.set(null, first),
+      middle !== 'hands' && handSlide.l.set(false, first),
+      middle !== 'hands' && handSlide.r.set(false, first),
+      !twoHands && ruleSlide.set(false, first),
+      middle !== 'logo' && logoSlide.set(false, first),
+    ]);
+    if (middle === 'card') dock.set(card, first, out);
+    if (middle === 'hands') {
       handSlide.l.set(handL, first, out);
       handSlide.r.set(handR, first, out);
+      if (twoHands) ruleSlide.set(true, first, out);
     }
+    if (middle === 'logo') logoSlide.set(true, first, out);
 
     $('clock').classList.toggle('hidden', scene.clock === false);
     timerState = m.timer || timerState;

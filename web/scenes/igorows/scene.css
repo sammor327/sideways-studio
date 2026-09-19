@@ -81,9 +81,11 @@
 .info.top { grid-row: 1; }
 .info.bot { grid-row: 4; }
 /* The rule between the two hands, only while both are listed: alone it
-   rode up under the Active turn row (Sam, 2026-09-18). */
-.divider { grid-row: 2; height: calc(1 * var(--u)); margin: calc(14 * var(--u)) 0; background: var(--ss-frame, #26303c); display: none; }
-.two-hands .divider { display: block; }
+   rode up under the Active turn row (Sam, 2026-09-18). It fades out and in
+   with the hands on its own --hs clock, so it never stands alone over a
+   docked card while the hands are out. */
+.divider { grid-row: 2; height: calc(1 * var(--u)); margin: calc(14 * var(--u)) 0; background: var(--ss-frame, #26303c); opacity: var(--hs, 1); }
+.divider.gone { display: none; }
 .hand { display: flex; flex-direction: column; min-height: 0; }
 /* --hs slides a hand in from the left edge of the column and back out. */
 .hand.gone { display: none; }
@@ -239,3 +241,63 @@
 .logo-name:empty { display: none; }
 .logo-round { font: 700 calc(18 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-text-muted, #9aa7b6); overflow-wrap: anywhere; }
 .logo-round:empty { display: none; }
+
+/* --- docked featured card (2026-09-19) ---
+   The card popup's card in the middle of the column, in the box the hands
+   and the event logo take turns in, while the popup is on and Dock featured
+   card is: the card at nearly the column's width (the whole card, its own
+   rounded corners, a shadow that stays inside the column), a short trim
+   line, its name and its type. Both battlefield strips leave 500 px, so the
+   card steps down a size there. A battlefield turns landscape, as the popup
+   does. --cd is its clock: 1 settled, 0 slid out past the column's left
+   edge, turned the way the popup turns. */
+.card-dock {
+  position: absolute; left: calc(16 * var(--u)); right: calc(16 * var(--u)); top: calc(236 * var(--u)); bottom: calc(230 * var(--u));
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  perspective: calc(1400 * var(--u));
+}
+.card-dock.gone { display: none; }
+.bf-l .card-dock { top: calc(292 * var(--u)); }
+.bf-r .card-dock { bottom: calc(288 * var(--u)); }
+.dock-inner {
+  display: flex; flex-direction: column; align-items: center; gap: calc(10 * var(--u));
+  width: 100%;
+  opacity: var(--cd, 1);
+  transform: translateX(calc((1 - var(--cd, 1)) * -340 * var(--u))) rotateY(calc((1 - var(--cd, 1)) * -55deg));
+}
+.dock-card {
+  --cw: 290; --ch: 405;
+  position: relative; flex: none;
+  width: calc(var(--cw) * var(--u)); height: calc(var(--ch) * var(--u));
+  filter: drop-shadow(0 calc(8 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, 0.6));
+}
+.bf-l.bf-r .dock-card { --cw: 258; --ch: 360; }
+.card-dock.bf .dock-card { --ch: 208; }
+.bf-l.bf-r .card-dock.bf .dock-card { --ch: 185; }
+.dock-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.dock-card img.hidden { display: none; }
+.card-dock.bf .dock-card img {
+  inset: auto; left: 50%; top: 50%;
+  width: calc(var(--ch) * var(--u)); height: calc(var(--cw) * var(--u));
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+/* End of the art's fallback chain: a named panel, never a broken image. */
+.dock-fallback {
+  position: absolute; inset: 0; display: none;
+  align-items: center; justify-content: center; text-align: center;
+  padding: calc(20 * var(--u));
+  border-radius: calc(14 * var(--u));
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  background: linear-gradient(160deg, var(--ss-ink, #10151d), var(--ss-plate, #0a0d12));
+  color: var(--ss-text, #fff);
+  font: italic 700 calc(26 * var(--u))/1.25 var(--tes-font);
+  text-transform: uppercase; letter-spacing: calc(1 * var(--u));
+  overflow-wrap: anywhere;
+}
+.dock-fallback.on { display: flex; }
+.dock-trim { flex: none; width: calc(64 * var(--u)); height: calc(3 * var(--u)); margin-top: calc(4 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); }
+.dock-name { max-width: 100%; font: 800 calc(22 * var(--u))/1.15 var(--tes-font); text-transform: uppercase; text-align: center; color: var(--ss-text, #fff); overflow-wrap: anywhere; }
+.dock-name:empty { display: none; }
+.dock-type { font: 600 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-text-muted, #9aa7b6); }
+.dock-type:empty { display: none; }

@@ -77,7 +77,11 @@ truth, all 1920x1080; composite previews were verified 2026-08-09):
    name, round title and the round clock. Bottom right: the card popup's
    card, docked (the popup stands down while docked). Top centre: a mirrored
    1-8-1 point track lighting each player's current points. Each extra
-   (track, clock, event block, card slot) switches off on its own.
+   (track, clock, event block, card slot) switches off on its own. Since
+   0.31.0 each column's bottom block takes turns with that player's cards in
+   hand by sliding out past the screen edge before the next one slides in,
+   and the docked card takes the bottom right from player 2's hand while
+   the popup is on (it used to give way to the hand and let the popup fly).
 
 Two standalone transparent sources beyond the PSDs:
 
@@ -101,7 +105,11 @@ data and unread:
 11. **IGO rows** (`igorows`) — the Magic Pro Tour grammar: 75px bars top and
     bottom, one player each, a 330px left column with both cameras, series
     dots, the active-turn mark and the CARDS IN HAND list (resolved cards
-    with energy and domain runes) plus a HOLDS line.
+    with energy and domain runes; the HOLDS line went in 0.8.0). The middle of the
+    column holds one of the event logo, the hands or (cardDock, default on)
+    the card popup's card, docked while the popup is on; the popup stands
+    down meanwhile, and the outgoing one slides out before the incoming one
+    slides in (shared/carddock.js holds the dock rule for every overlay).
 12. **Arena score bug** (`arenabug`) — the Pokémon wide-shot bug on the
     1-to-8 track: eight hexes per side, games box, name bar with legend
     thumbs, records and the round title, an event and clock lozenge.

@@ -1,6 +1,6 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
-import { handUp } from '../../stage/exp.js';
+import { cardDockHost } from '../../shared/carddock.js';
 
 const $ = (id) => document.getElementById(id);
 const popup = $('popup');
@@ -65,15 +65,13 @@ const params = initStage({
     const bank = sceneBank(state, params);
     const cp = bank.scenes.cardpopup;
     const card = cp.card;
-    // The dual-column overlay docks this same card bottom right while it is
-    // on with its card slot enabled, and the portrait pillars dock it in the
-    // right pillar, so the popup stands down rather than airing the card
-    // twice. The dual's slot goes to player 2's cards in hand when those are
-    // up, and then the popup flies again rather than the card vanishing.
-    const dual = bank.scenes.igodual;
-    const pillars = bank.scenes.igoportrait;
-    const dualDocks = Boolean(dual && dual.visible && dual.cardSlot && !handUp(dual, bank.match.right));
-    const docked = dualDocks || Boolean(pillars && pillars.visible && pillars.cardWell);
+    // The rows overlay docks this same card in the middle of its column, the
+    // dual-column overlay bottom right and the portrait pillars in the right
+    // pillar, each while it is on with its dock switch on, so the popup
+    // stands down rather than airing the card twice. On the rows and the
+    // dual columns the card takes its place from a listed hand, which slides
+    // out for it (shared/carddock.js).
+    const docked = Boolean(cardDockHost(bank));
     const visible = params.force || (cp.visible && !docked);
     $('hiddenHint').classList.toggle('on',
       !params.transparent && !params.preview && !visible);

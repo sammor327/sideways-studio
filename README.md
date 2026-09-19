@@ -159,7 +159,8 @@ the folds and the heights. The card popup's search and staged card, and the
 card row's four slots, live in Graphic features with each graphic's options.
 Neither graphic goes into preview empty, so clicking one with nothing picked
 opens its group there to pick from; the popup's search also shows while the
-dual-column or portrait pillar overlay is in preview docking the staged card.
+rows, dual-column or portrait pillar overlay is in preview docking the staged
+card.
 TAKE, CLEAR PROGRAM and CLEAR PREVIEW stay at the top of their column
 and the tip about them is TAKE's hover text; what is on air fills the
 column from the bottom.
@@ -240,7 +241,12 @@ The dual-column in-game overlay (`/scenes/igodual/`) follows the Regional
 Qualifier broadcast layout: two player columns around a near-square table
 camera, with the round clock, seed badges, the docked featured card and a
 mirrored point track. Crop the table camera to roughly 1214 x 1080 between
-the columns.
+the columns. The bottom of each column holds one thing at a time and slides
+it out past the screen edge before the next one comes in: on the left the
+event block or player 1's cards in hand; on the right the card frame,
+player 2's cards in hand, or the card popup's card, which takes the place
+from either while the popup is on (**Dock featured card**, on by default)
+and gives it back when the popup goes off.
 
 The 2v2 bars overlay (`/scenes/igobars/`) follows the Regional Qualifier
 showmatch layout: team 1 on a bar across the top edge, team 2 across the
@@ -273,8 +279,14 @@ and their source URLs are in Setup's browser source links.
   legend, champion, archetype and runes; the round title and turn on the
   bottom bar), and a 330 px left column with both camera windows, the series
   dots, an active-turn mark and the cards-in-hand list with each card's
-  cost, plus a "holds" line. The table camera gets x 330 to 1920, y 75 to
-  1005.
+  cost. The table camera gets x 330 to 1920, y 75 to 1005. The middle of the
+  column holds one thing at a time: the event logo with the round under it,
+  the hands once a card is listed, and, with **Dock featured card** on (the
+  default), the card popup's card while the popup is on. Whatever is there
+  slides out to the left before the next one slides in, so staging a card
+  takes the hands or the logo out and brings the card in over the column
+  with its name and type, instead of the popup flying in over the table;
+  taking the popup off brings them back.
 - **Arena score bug** (`/scenes/arenabug/`): the wide-shot bug for stage and
   player cameras: eight numbered hexes per side lit up to each player's
   points, a games box, and a name bar with legend thumbnails, country chips,
