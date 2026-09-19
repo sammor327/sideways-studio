@@ -1,0 +1,196 @@
+/* Results ticker (2026-09-19): the round's tables along the bottom of the
+   frame, a page at a time. web/shared/ticker.js places the bar (--x, --y,
+   --w, --h in design pixels): the bottom of the frame, or with an in-game
+   overlay up the bottom of the game area it leaves; there the bar takes
+   that overlay's look, like the sponsor plate.
+
+   The bar is the slate's feature-tables strip: the plate colour with a
+   frame line on top, the label box in the accents at its left (cut on a
+   slant, the Sideways arrow), then the tables. Each table reads across:
+   TABLE and its number in the accent, the player's legend icon and name,
+   the games in the middle (the winner's in the accent, FINAL under them;
+   LIVE under the games so far; VS before any), the opponent mirrored. The
+   player who lost dims, their icon greyed. Names shrink to fit their half,
+   never cut (stage/fitnames.js).
+
+   Motion, all written by scene.js from the wall clock (never CSS
+   animation, which an occluded browser source freezes):
+   --t   the bar wipes in from the left and back out; every read is
+         var(--t, 1).
+   --p   one table's turn, per slot: the face on show rolls up and away
+         over the top of a cube while the next page's face rolls up into
+         view from under it. A slot at rest carries .still and draws its
+         front face flat, which is also what it draws if --p never moves.
+   --pg  the thin line along the top of the tables, filling while a page
+         holds.
+   --b   a pulse on a result that lands while its table is on show. */
+
+.ticker { position: absolute; inset: 0; pointer-events: none; }
+.ticker.off { display: none; }
+.ticker, .ticker * { box-sizing: border-box; }
+
+.bar {
+  position: absolute;
+  left: calc(var(--x, 0) * var(--u));
+  top: calc(var(--y, 1006) * var(--u));
+  width: calc(var(--w, 1920) * var(--u));
+  height: calc(var(--h, 74) * var(--u));
+  display: flex;
+  align-items: stretch;
+  background: var(--ss-plate, #10151d);
+  border-top: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  clip-path: inset(0 calc((1 - var(--t, 1)) * 100%) 0 0);
+}
+
+/* --- the label box --- */
+
+.key {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 calc(220 * var(--u));
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(6 * var(--u));
+  padding: 0 calc(34 * var(--u)) 0 calc(22 * var(--u));
+  margin-top: calc(-1 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  color: var(--ss-plate, #0a0d12);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 20 * var(--u)) 100%, 0 100%);
+}
+.key .rd { font: 700 calc(12 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; opacity: 0.8; white-space: nowrap; overflow: hidden; }
+.key .rd:empty { display: none; }
+.key .tt { font: 800 calc(27 * var(--u))/0.95 var(--tes-font); letter-spacing: calc(0.4 * var(--u)); text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+
+/* --- the tables --- */
+
+.track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  margin-left: calc(-20 * var(--u));
+  padding-left: calc(14 * var(--u));
+}
+.track.hidden { display: none; }
+.slot {
+  position: relative;
+  flex: 0 0 calc(var(--sw, 600) * var(--u));
+  height: 100%;
+  overflow: hidden;
+  perspective: calc(900 * var(--u));
+}
+/* The rule between two tables. */
+.slot + .slot::before {
+  content: '';
+  position: absolute; left: 0; top: calc(14 * var(--u)); bottom: calc(14 * var(--u));
+  width: calc(1 * var(--u));
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 1;
+}
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  transform-origin: 50% 50% calc(var(--h, 74) * -0.5 * var(--u));
+}
+.slot.still .face.b { display: none; }
+.slot:not(.still) .face.a { transform: rotateX(calc(var(--p, 0) * 90deg)); }
+.slot:not(.still) .face.b { transform: rotateX(calc((var(--p, 0) - 1) * 90deg)); }
+/* A face turning away from the camera darkens as it goes. */
+.slot:not(.still) .face::after { content: ''; position: absolute; inset: 0; background: #000; pointer-events: none; }
+.slot:not(.still) .face.a::after { opacity: calc(var(--p, 0) * 0.6); }
+.slot:not(.still) .face.b::after { opacity: calc((1 - var(--p, 0)) * 0.6); }
+
+.tbl {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: calc(58 * var(--u)) minmax(0, 1fr) calc(100 * var(--u)) minmax(0, 1fr);
+  align-items: center;
+  column-gap: calc(8 * var(--u));
+  padding: 0 calc(18 * var(--u)) 0 calc(8 * var(--u));
+}
+
+.tb { display: flex; flex-direction: column; align-items: center; gap: calc(4 * var(--u)); }
+.tb .k { font: 700 calc(9 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+.tb .n { font: 800 calc(25 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-accent-b, #1bef19); white-space: nowrap; }
+.tb.none { visibility: hidden; }
+
+.pl { display: flex; align-items: center; gap: calc(12 * var(--u)); min-width: 0; height: 100%; }
+.pl.r { flex-direction: row-reverse; }
+.pl .nm { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; font: 800 calc(22 * var(--u))/1.1 var(--tes-font); letter-spacing: calc(0.3 * var(--u)); text-transform: uppercase; color: var(--ss-text, #fff); }
+.pl.r .nm { text-align: right; }
+.pl.lost .nm { color: var(--ss-text-muted, #9aa7b6); opacity: 0.75; }
+
+/* The legend icon: Rift Registry's cutout on a soft fill in a ring, the
+   winner's ring in the accent. The ring sits over the art (::after). */
+.ic {
+  flex: none;
+  position: relative;
+  width: calc(50 * var(--u));
+  height: calc(50 * var(--u));
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 70%), var(--ss-ink, #0a0d12);
+}
+.ic::after { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 0 calc(1.5 * var(--u)) var(--ss-frame, #26303c); }
+.ic .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+.ic .art.hidden { display: none; }
+.ic .art.icon-tier { object-position: center 20%; }
+.ic .art.crop-legend { object-position: center 18%; }
+.ic.none { background: transparent; }
+.ic.none::after { box-shadow: inset 0 0 0 calc(1.5 * var(--u)) rgba(255, 255, 255, 0.12); }
+.pl.won .ic::after { box-shadow: inset 0 0 0 calc(2.5 * var(--u)) var(--ss-accent-b, #1bef19); }
+.pl.lost .ic { opacity: 0.6; filter: grayscale(0.85); }
+.no-legends .ic { display: none; }
+
+/* The result. */
+.mid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  transform: scale(calc(1 + var(--b, 0) * 0.18));
+}
+.mid .sc { display: flex; align-items: baseline; justify-content: center; gap: calc(7 * var(--u)); font: 800 calc(30 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-text, #fff); white-space: nowrap; }
+.mid .sc .g.w { color: var(--ss-accent-b, #1bef19); }
+.mid .sc .g.l { color: var(--ss-text-muted, #9aa7b6); }
+.mid .sc .dash { font-weight: 500; color: var(--ss-text-muted, #9aa7b6); }
+.mid .st { font: 700 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; }
+.mid .st:empty { display: none; }
+.mid.vs .sc { font-size: calc(19 * var(--u)); letter-spacing: calc(2.4 * var(--u)); color: var(--ss-text-muted, #9aa7b6); }
+.mid.live .st { display: flex; align-items: center; gap: calc(5 * var(--u)); color: var(--ss-accent-b, #1bef19); }
+.mid.live .st::before { content: ''; width: calc(6 * var(--u)); height: calc(6 * var(--u)); border-radius: 50%; background: currentColor; }
+
+/* --- the line under a filter that leaves nothing, and the page line --- */
+
+.note {
+  position: absolute;
+  left: calc(220 * var(--u)); right: 0; top: 0; bottom: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 calc(24 * var(--u));
+  font: 700 calc(18 * var(--u))/1 var(--tes-font);
+  letter-spacing: calc(2.4 * var(--u));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.note.on { display: flex; }
+
+.prog {
+  position: absolute;
+  left: calc(200 * var(--u)); right: 0; top: calc(-1 * var(--u));
+  height: calc(2 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  transform-origin: left center;
+  transform: scaleX(var(--pg, 0));
+  opacity: 0.85;
+}
+.prog.hidden { display: none; }

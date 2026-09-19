@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Results ticker</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="ticker off" id="root">
+    <div class="bar" id="bar">
+      <div class="key"><span class="rd" id="round"></span><span class="tt" id="title">Results</span></div>
+      <div class="track" id="track"></div>
+      <div class="note" id="note"></div>
+      <div class="prog hidden" id="prog"></div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The results ticker is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+  <div class="stage-diag" id="emptyHint">The results ticker has no tables to show: load a round from the Tournament platform tab, or type the tables under Match data › Pairings. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

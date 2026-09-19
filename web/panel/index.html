@@ -947,6 +947,11 @@
           <button id="toggleOngoing" class="scene-toggle">OFF</button>
           <p class="scene-note">The pairings' tables still being played, bigger the fewer are left. Loaded from the Tournament platform tab, finished tables leave it on their own.</p>
         </div>
+        <div class="scene-row" data-scene="ticker">
+          <div class="scene-name">Results ticker <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="tickerOnAir">ON AIR</button></div>
+          <button id="toggleTicker" class="scene-toggle">OFF</button>
+          <p class="scene-note">The round's tables along the bottom of the screen, a page at a time: each player's legend icon and name and the result, rolling on to the next tables every few seconds. With an in-game overlay up it fits along the bottom of the game area. Results come in from the Tournament platform tab as tables finish.</p>
+        </div>
         <div class="scene-row" data-scene="result">
           <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
           <button id="toggleResult" class="scene-toggle">OFF</button>
@@ -1349,6 +1354,36 @@
         <span class="hint">Draws the tables under Match data › Pairings that have no result yet: up to 12 in one column, bigger the fewer there are, then two columns, 32 a page.</span>
       </div>
       <p class="hint" id="ongoingCount"></p>
+    </div>
+    <div class="feature-group hidden" data-scene="ticker">
+      <h3>Results ticker</h3>
+      <p class="scene-note" id="tickerWhere"></p>
+      <div class="scene-options">
+        <label class="inline" title="Which of the round's tables the ticker turns through">Show
+          <select id="tickerShow">
+            <option value="all">Every table</option>
+            <option value="playing">Still playing</option>
+            <option value="done">Finished only</option>
+          </select>
+        </label>
+        <label class="inline" title="How many tables share the bar at once. As many as fit gives each table room for a ten-letter name a side: two across the full width, one between the dual columns or the portrait pillars">At a time
+          <select id="tickerPer">
+            <option value="0">As many as fit</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </label>
+        <label class="inline" title="Seconds each page of tables holds before they roll on to the next">Each page <input type="number" id="tickerHold" class="num-mini" min="3" max="30"> s</label>
+      </div>
+      <div class="scene-options">
+        <label class="inline" title="Each player's legend icon beside their name. Switch off while the legends are not known yet"><input type="checkbox" id="tickerLegends" checked> Legend icons</label>
+        <label class="inline" title="On: with an in-game overlay up, the ticker runs along the bottom of the game area that overlay leaves, as wide as it, and wears its look. Off: always the full width of the bottom of the frame"><input type="checkbox" id="tickerDock" checked> Fit to the in-game overlay</label>
+        <label class="inline" title="The word in the ticker's label box, under the round. Empty: Results, or Still playing when only those show">Label <input id="tickerTitle" maxlength="24" autocomplete="off" placeholder="Results"></label>
+      </div>
+      <p class="hint" id="tickerPlan"></p>
+      <p class="hint" id="tickerLegendNote"></p>
     </div>
     <div class="feature-group hidden" data-scene="legendstats">
       <h3>Legend distribution</h3>
@@ -1763,6 +1798,10 @@
     <div class="url-row">
       <span class="url-label">Ongoing matches source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="ongoingUrl" readonly><button data-copy="ongoingUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Results ticker source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="tickerUrl" readonly><button data-copy="tickerUrl">Copy</button></div>
     </div>
     <div class="url-row">
       <span class="url-label">Result source, 1920 &times; 1080, 60 fps</span>

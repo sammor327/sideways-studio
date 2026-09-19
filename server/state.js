@@ -20,6 +20,7 @@ import {
   ROLL_OPS, ROLL_SPEEDS, ROLL_SPEED_DEFAULT, ROLL_STATES, SLICE_MODES, SLICES_DEFAULT, TOP_DEFAULT, TOP_MAX, TOP_MIN, rollElapsed,
 } from '../web/shared/legendstats.js';
 import { FOCUS_MAX, nextFocus, pairingsPageOf, playerKey, standingsPlaceOf } from '../web/shared/focus.js';
+import { HOLD_DEFAULT, HOLD_MAX, HOLD_MIN, TICKER_PER_MAX, TICKER_SHOWS } from '../web/shared/ticker.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -287,6 +288,15 @@ function defaultBank() {
       // matches"): the tables of event.pairings that have not finished,
       // bigger the fewer there are, 32 a page at most.
       ongoing: { visible: false, page: 1, legends: true },
+      // Results ticker (2026-09-19, Sam: "an ongoing ticker that fits at the
+      // bottom of the screen ... rotate and animate through them all"): the
+      // tables of event.pairings along the bottom of the frame, a page at a
+      // time, turning every `hold` seconds (web/shared/ticker.js). show: 'all',
+      // 'playing' (no result yet) or 'done'; per: tables a page, 0 = as many
+      // as the bar fits; legends: each player's legend icon; dock: with an
+      // in-game overlay up, run along the bottom of the game area it leaves;
+      // title: the label box's word ('' = "Results", "Still playing").
+      ticker: { visible: false, show: 'all', per: 0, hold: HOLD_DEFAULT, legends: true, dock: true, title: '' },
       // Result strip: the match winner and where they go next.
       result: { visible: false },
       // Sponsor plate: a 3:1 plate rotating through items every `interval`
@@ -438,6 +448,12 @@ function mergeBank(bank, raw) {
   if (!SLICE_MODES.includes(ls.slices)) ls.slices = SLICES_DEFAULT;
   if (!Object.hasOwn(ROLL_SPEEDS, ls.speed)) ls.speed = ROLL_SPEED_DEFAULT;
   for (const flag of ['autoRoll', 'loop']) if (typeof ls[flag] !== 'boolean') ls[flag] = true;
+  const tk = bank.scenes.ticker;
+  if (!TICKER_SHOWS.includes(tk.show)) tk.show = 'all';
+  tk.per = clampInt(tk.per, 0, TICKER_PER_MAX);
+  tk.hold = clampInt(tk.hold, HOLD_MIN, HOLD_MAX);
+  for (const flag of ['legends', 'dock']) if (typeof tk[flag] !== 'boolean') tk[flag] = true;
+  if (typeof tk.title !== 'string') tk.title = '';
 }
 
 // The highlight lists (web/shared/focus.js): standings players by
@@ -1209,6 +1225,17 @@ function applyBankPatch(bank, patch) {
       if (og.visible !== undefined) bank.scenes.ongoing.visible = Boolean(og.visible);
       if (og.page !== undefined) bank.scenes.ongoing.page = clampInt(og.page, 1, PAIRINGS_PAGES);
       if (og.legends !== undefined) bank.scenes.ongoing.legends = Boolean(og.legends);
+    }
+    if (patch.scenes.ticker && typeof patch.scenes.ticker === 'object') {
+      const tk = patch.scenes.ticker;
+      if (tk.visible !== undefined) bank.scenes.ticker.visible = Boolean(tk.visible);
+      if (TICKER_SHOWS.includes(tk.show)) bank.scenes.ticker.show = tk.show;
+      if (tk.per !== undefined) bank.scenes.ticker.per = clampInt(tk.per, 0, TICKER_PER_MAX);
+      if (tk.hold !== undefined) bank.scenes.ticker.hold = clampInt(tk.hold, HOLD_MIN, HOLD_MAX);
+      for (const flag of ['legends', 'dock']) {
+        if (tk[flag] !== undefined) bank.scenes.ticker[flag] = Boolean(tk[flag]);
+      }
+      if (tk.title !== undefined) bank.scenes.ticker.title = cleanStr(tk.title ?? '', 24);
     }
     if (patch.scenes.legendstats && typeof patch.scenes.legendstats === 'object') {
       const ls = patch.scenes.legendstats;

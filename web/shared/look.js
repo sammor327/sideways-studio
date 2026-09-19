@@ -20,7 +20,7 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'sponsor',
-  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot'];
+  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -61,6 +61,7 @@ export const SCENE_LABELS = {
   odds: 'Odds to draw',
   trash: 'Trash',
   sidespot: 'Sideboard card spotted',
+  ticker: 'Results ticker',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -238,6 +239,13 @@ export const DESIGNED = {
   ongoing: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 25 },
+  },
+  // The results ticker (2026-09-19) is the slate's feature-tables strip on
+  // its own: a plate only, in the slate's panel colours. Fitted to an
+  // in-game overlay it wears that overlay's look instead (web/shared/ticker.js).
+  ticker: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
   // The decks round (2026-09-18). The game intro's two pages and the side
   // by side decklists share the full screens' gradient ground; the sideboard

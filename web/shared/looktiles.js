@@ -41,6 +41,7 @@ export const TILES = [
   { key: 'lowerthird-coming', scene: 'lowerthird', group: 'parts', variant: 'Coming up', vary: { mode: 'coming' } },
   { key: 'lowerthird-custom', scene: 'lowerthird', group: 'parts', variant: 'Custom text', vary: { mode: 'custom' } },
   { key: 'result', scene: 'result', group: 'parts' },
+  { key: 'ticker', scene: 'ticker', group: 'parts' },
   { key: 'matchup', scene: 'matchup', group: 'parts' },
   { key: 'sideboard', scene: 'sideboard', group: 'parts' },
   { key: 'odds', scene: 'odds', group: 'parts', variant: 'Both players', vary: { side: 'both' } },

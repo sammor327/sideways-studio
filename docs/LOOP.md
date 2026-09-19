@@ -214,6 +214,35 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19l (out of band: the results ticker, 0.38.0)
+
+Sam: "an ongoing ticker that fits at the bottom of the screen, shows the
+ongoing results of pairings and matches ... name, legend icon, and the
+result of the game ... similar to the slate's feature tables and rotate and
+animate through them all". Built the `ticker` overlay over event.pairings
+(the rows the pairings and ongoing matches draw, so the platform's follow
+feed keeps it current on air): the slate strip's 74px bar with a slanted
+label box, a page of tables at a time, a per-table cube roll between pages,
+wall-clock pages so every copy agrees (the sponsor plate's rule). Every
+in-game overlay has chrome along the frame's bottom (renders of all eight
+with the sample match: the dual columns' event block, the rows' bottom bar,
+the bars' cluster, the arena bug at y 860-1025, the POV columns), so the
+bar fits to the bottom of GAME_WINDOWS[host] by default and wears the
+host's look; the arena bug's window is the frame above y 844. Design calls:
+"legend icon" = the RR icon cutout in a ring (winner's ring in the accent,
+loser greyed); two tables across the full width because C3's names run to
+16 letters at p90 (33 max) and three a page left a median name shrunk;
+pages split as even as they go; between beats a count change under a
+filter waits for the beat unless a table on show left, so results landing
+elsewhere never jolt the page; a result landing on show patches in place
+(icons kept) and pulses; a clock set back mid-turn restarts the turn
+rather than holding it. The lower third (0.36.0 anchoring) now rises above
+tickerBox where they meet (rows, bars, arena bug). Verified: 25 new tests
+(384), stills from a scratch server (4795, C3 Round 2's 108 tables with a
+spread of results) of every result state, the roll mid-turn, the wipe-in,
+the fit on six overlays, the lower third stacked over it, 3 and 4 a page,
+the look-builder tile, and the panel's row and options in headless Chrome.
+
 ### 2026-09-19k (out of band: odds to draw, the trash)
 
 Sam: "an 'Odds to draw' sheet that we can toggle on and off and choose
@@ -347,7 +376,7 @@ showdown tenant (showdownView), P1's half on top and P2's below like the
 hands, might in each header, the cards as hand rows newest first, resolved
 dimmed; the showdown scene stands down while it shows (shared/showdowndock.js,
 the card dock's rule), and its strip and takeover dim resolved cards and
-count "2 on the chain · 4 played". Verified: 304 tests (new: the showdown
+count "2 on the chain ï¿½ 4 played". Verified: 304 tests (new: the showdown
 lifecycle on synthetic frames, might, a reaction unit from hand, a snapshot
 mid-showdown, precedence, the match.showdown sanitizer, the stand-down rule);
 the rows column and the strip screenshotted from a scratch server (4750)

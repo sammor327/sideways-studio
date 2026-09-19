@@ -7,7 +7,10 @@
 // With no overlay up, or the switch off, both keep their frame places: the
 // tag 60px in from the top right, the lower third 96px up from the bottom.
 // Either way neither sits on the sponsor plate while that is on: the tag
-// drops below it, the lower third rises above it.
+// drops below it, the lower third rises above it. The lower third rises
+// above the results ticker the same way (web/shared/ticker.js), which runs
+// along the bottom of the same game area on the rows, the 2v2 bars and the
+// arena bug.
 //
 // Shared by the two scenes (where to draw), the panel (what they anchor
 // to) and the tests; pure, like sponsor.js. Every spot is in 1920x1080
@@ -20,6 +23,7 @@
 // the game area.
 import { GAME_WINDOWS } from './gamewindow.js';
 import { SPONSOR_DOCKS, SPONSOR_HOSTS, sponsorDock } from './sponsor.js';
+import { tickerBox } from './ticker.js';
 
 // The corner tag's top right corner on each overlay: its right edge and top.
 export const TAG_ANCHORS = {
@@ -137,8 +141,11 @@ export function lowerThirdPlace(bank, { w = 0, h = LT_H, align = 'center' } = {}
   const bh = h * scale;
   const boxAt = (bottom) => ({ x: align === 'left' ? x : x - bw / 2, y: bottom - bh, w: bw, h: bh });
   let bottom = run.bottom;
-  const sp = sponsorBox(bank);
-  if (sp && overlaps(boxAt(bottom), sp)) bottom = sp.y - GAP;
+  // The ticker first (it runs along the very bottom), then the plate: the
+  // bar rises above whichever it would sit on.
+  for (const box of [tickerBox(bank), sponsorBox(bank)]) {
+    if (box && overlaps(boxAt(bottom), box)) bottom = box.y - GAP;
+  }
   return { host, x, bottom, scale, clip: clipFor(host, boxAt(bottom)) };
 }
 

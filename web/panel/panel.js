@@ -19,6 +19,7 @@ import { standingsStep, standingsView } from '../shared/standings.js';
 import { playerKey } from '../shared/focus.js';
 import { cardKey, drawChance, drawPool, formatChance, poolLine } from '../shared/odds.js';
 import { flowText } from '../shared/trash.js';
+import { tickerPlan } from '../shared/ticker.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -83,6 +84,7 @@ const SCENE_FIELDS = {
   legendstats: ['legendStats', 'eventName'],
   pairings: ['pairings', 'eventName', 'roundTitle'],
   ongoing: ['pairings', 'eventName', 'roundTitle'],
+  ticker: ['pairings', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
   sponsor: [],
   // The decks round (2026-09-18).
@@ -128,6 +130,7 @@ const SCENE_NAMES = {
   legendstats: 'the legend distribution',
   pairings: 'the pairings',
   ongoing: 'the ongoing matches',
+  ticker: 'the results ticker',
   result: 'the result strip',
   sponsor: 'the sponsor plate',
   matchup: 'the game intro',
@@ -147,7 +150,7 @@ const SCENE_SHORT = {
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', ongoing: 'Ongoing', result: 'Result',
-  legendstats: 'Legends', sponsor: 'Sponsor',
+  legendstats: 'Legends', sponsor: 'Sponsor', ticker: 'Ticker',
   matchup: 'Game intro', sideboard: 'Sideboard', sidespot: 'Sideboard spot', decklists: 'Decklists 2up', vscard: 'VS card',
   odds: 'Odds', trash: 'Trash',
 };
@@ -841,7 +844,7 @@ $('resetMatch').addEventListener('click', () => {
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
-      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, result: { visible: false }, sponsor: { visible: false },
+      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, ticker: { visible: false }, result: { visible: false }, sponsor: { visible: false },
       matchup: { visible: false }, sideboard: { visible: false }, sidespot: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
       odds: { visible: false }, trash: { visible: false },
     },
@@ -1230,7 +1233,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'ticker', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2357,13 +2360,13 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', odds: 'toggleOdds', trash: 'toggleTrash', sidespot: 'toggleSidespot' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', odds: 'toggleOdds', trash: 'toggleTrash', sidespot: 'toggleSidespot', ticker: 'toggleTicker' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', odds: 'oddsOnAir', trash: 'trashOnAir', sidespot: 'sidespotOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', odds: 'oddsOnAir', trash: 'trashOnAir', sidespot: 'sidespotOnAir', ticker: 'tickerOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
@@ -2392,7 +2395,7 @@ for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings', 'l
     setFullScene(key, !state.preview.scenes[key].visible);
   });
 }
-for (const key of ['cornertag', 'lowerthird', 'result']) {
+for (const key of ['cornertag', 'lowerthird', 'result', 'ticker']) {
   $(EXP_TOGGLES[key]).addEventListener('click', () => {
     if (!state) return;
     post({ scenes: { [key]: { visible: !state.preview.scenes[key].visible } } });
@@ -3518,6 +3521,80 @@ $('ongoingPrev').addEventListener('click', () => { if (state) post({ scenes: { o
 $('ongoingNext').addEventListener('click', () => { if (state) post({ scenes: { ongoing: { page: Math.min(ongoingPages(), (state.preview.scenes.ongoing.page || 1) + 1) } } }); });
 $('ongoingLegends').addEventListener('change', () => post({ scenes: { ongoing: { legends: $('ongoingLegends').checked } } }));
 
+// --- the results ticker: which tables, how many at a time, how long a page holds ---
+$('tickerShow').addEventListener('change', () => post({ scenes: { ticker: { show: $('tickerShow').value } } }));
+$('tickerPer').addEventListener('change', () => post({ scenes: { ticker: { per: Number($('tickerPer').value) } } }));
+$('tickerHold').addEventListener('change', () => post({ scenes: { ticker: { hold: Number($('tickerHold').value) } } }));
+for (const [id, flag] of [['tickerLegends', 'legends'], ['tickerDock', 'dock']]) {
+  $(id).addEventListener('change', () => post({ scenes: { ticker: { [flag]: $(id).checked } } }));
+}
+{
+  const el = $('tickerTitle');
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { ticker: { title: el.value } } }); };
+  el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  el.addEventListener('blur', flush);
+}
+
+const spanText = (ms) => {
+  const s = Math.round(ms / 1000);
+  return s >= 60 ? `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}` : `${s} s`;
+};
+
+// Where the bar sits as preview has it, and what it turns through: how many
+// tables, how many at a time, and how long before the first page comes
+// round again.
+function renderTicker(s) {
+  const prev = s.preview;
+  const cfg = prev.scenes.ticker;
+  if (document.activeElement !== $('tickerShow')) $('tickerShow').value = cfg.show || 'all';
+  if (document.activeElement !== $('tickerPer')) $('tickerPer').value = String(cfg.per || 0);
+  if (document.activeElement !== $('tickerHold')) $('tickerHold').value = cfg.hold;
+  if (document.activeElement !== $('tickerLegends')) $('tickerLegends').checked = cfg.legends !== false;
+  if (document.activeElement !== $('tickerDock')) $('tickerDock').checked = cfg.dock !== false;
+  if (document.activeElement !== $('tickerTitle')) $('tickerTitle').value = cfg.title || '';
+  $('tickerTitle').placeholder = cfg.show === 'playing' ? 'Still playing' : 'Results';
+
+  const plan = tickerPlan(prev);
+  const pr = prev.event.pairings || {};
+  let where;
+  if (plan.host === 'arenabug') where = 'Sits above the arena score bug, the full width of the frame, in its look.';
+  else if (plan.host) where = `Fits along the bottom of the game area ${SCENE_NAMES[plan.host] || plan.host} leaves, in its look.`;
+  else if (cfg.dock === false) where = 'Runs the full width of the bottom of the frame, in its own look.';
+  else where = 'No in-game overlay in preview: runs the full width of the bottom of the frame.';
+  $('tickerWhere').textContent = where;
+
+  const round = pr.label ? ` in ${pr.label}` : '';
+  let line;
+  if (!plan.total) {
+    line = 'No pairings loaded yet: load a round from the Tournament platform tab, or type the tables under Match data › Pairings. The ticker stays off the screen until there are tables.';
+  } else if (!plan.tables) {
+    line = cfg.show === 'playing'
+      ? `Every table${round} has finished: the ticker says so until the next round is loaded.`
+      : `No table${round} has finished yet: the ticker says results come in as tables finish.`;
+  } else {
+    const s = plan.tables === 1 ? '' : 's';
+    const what = cfg.show === 'playing' ? `table${s} still playing` : (cfg.show === 'done' ? `finished table${s}` : `table${s}`);
+    line = `${plan.tables} ${what}${round}, ${plan.per} at a time: `
+      + (plan.pages > 1 ? `${plan.pages} pages, round again every ${spanText(plan.cycleMs)}.` : 'one page, no turning.')
+      + (pr.src ? ' Results come in from TopDeck while Keep results up to date is on.' : ' Typed tables: close one with "= 2-1" under Match data › Pairings.');
+  }
+  $('tickerPlan').textContent = line;
+
+  // With the icons on, say when players have no legend to show (TopDeck
+  // shows legends only once the organizer allows it): they get an empty ring.
+  const players = (pr.rows || []).flatMap((r) => [r.left, r.right]).filter((p) => p && p.name);
+  const known = players.filter((p) => p.legendSlug || p.legendCardId).length;
+  let note = '';
+  if (cfg.legends !== false && players.length && !known) note = 'None of these players has a legend yet, so the ticker shows empty rings where the icons go. Switch Legend icons off, or load the pairings again once the legends are known.';
+  else if (cfg.legends !== false && known < players.length) {
+    const n = players.length - known;
+    note = `${n} of ${players.length} players ${n === 1 ? 'has' : 'have'} no legend and show${n === 1 ? 's' : ''} an empty ring.`;
+  }
+  $('tickerLegendNote').textContent = note;
+  $('tickerLegendNote').classList.toggle('warn', Boolean(note));
+}
+
 // The Legends switch's note: with it on, say when rows have no legend to
 // show (TopDeck shows legends only once the organizer allows it, and a
 // typed row may name none), since the graphic then draws empty slots.
@@ -3998,6 +4075,7 @@ function renderExtras(s) {
       : `${left.length} of ${total} table${total === 1 ? '' : 's'}${pr.label ? ` in ${pr.label}` : ''} still playing.`
         + (pr.src ? ' Loaded from TopDeck: the Tournament platform brings in results as they arrive while Keep results up to date is on.' : ' Typed: close a table with "= 2-1" under Match data › Pairings and it leaves the board.');
   }
+  renderTicker(s);
   renderBracketEditor(s);
   if (document.activeElement !== $('choseFirst')) $('choseFirst').value = prev.match.choseFirst || '';
   if (document.activeElement !== $('resultWinner')) $('resultWinner').value = (prev.match.result && prev.match.result.winner) || '';

@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.38.0 (2026-09-19)
+
+- New graphic, Results ticker (Between games, an overlay): the round's tables along the bottom of the screen, like the slate's feature tables. Each table shows its number, both players' legend icons and names, and the result: the games with the winner's in the accent colour and FINAL under them, DRAW, the games so far with LIVE, or VS before any are in. The player who lost dims and their icon greys. Every few seconds the tables roll over to the next ones like a cube turning, one after another from the left, and round again after the last.
+- With an in-game overlay up, the ticker fits along the bottom of the game area that overlay leaves, as wide as it and in its colours, so it never covers the overlay's panels: between the dual columns, above the rows overlay's bottom bar, above the arena bug. Fit to the in-game overlay under Graphic features switches that off.
+- Graphic features › Results ticker: show every table, the ones still playing or only the finished ones; how many tables at a time (As many as fit gives each table room for a ten-letter name a side, which is two across the full width); seconds a page; legend icons; and the word in its label box, under the round (Results unless you type your own). A line says how many tables it turns through and how long before it comes round again.
+- Results come in on their own: with the Tournament platform's Keep results up to date on, a result lands in place on air and pulses once, and with Still playing, a table that finishes rolls away.
+- The lower third rises above the ticker where the two would meet (the rows overlay, the 2v2 bars, the arena bug).
+
 ## 0.37.0 (2026-09-19)
 
 - New graphic, Odds to draw (1v1 graphics): the cards a player's deck can still give them, the likeliest first, each with its chance of being the next draw (or of turning up at least once in the next 2 to 5 draws) and a bar as long as that chance against the likeliest card's. It sits on that player's side of the game window of whichever in-game overlay is up; pick Player 1, Player 2 or both, how many cards it lists (the rest are summed on its last line) and card art under Graphic features. The deck is the player's list under Match data › Decks and battlefields less every card seen this game, or a RiftAtlas game's own count.

@@ -393,6 +393,24 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   times), 32 a page. A table shows VS, or its games so far when the platform
   has them. With the Tournament platform's **Keep results up to date** on,
   a table leaves the board on air the moment its result is in.
+- **Results ticker** (`/scenes/ticker/`, 2026-09-19): an overlay bar along
+  the bottom of the screen, the slate's feature-tables strip on its own: a
+  label box (the round over "Results") and a page of the round's tables
+  from the pairings, each with its number, both players' legend icons and
+  names, and the games (the winner's in the accent, FINAL under them), a
+  draw, the games so far (LIVE) or VS. Every 6 seconds (3 to 30) the tables
+  roll over to the next page like a cube turning, one after another from
+  the left, round and round; which page is up is wall-clock arithmetic, so
+  every copy of the source shows the same one. **Show** every table, the
+  ones still playing or the finished ones; **At a time** as many as fit
+  (room for a ten-letter name a side: two across the full width, one
+  between the dual columns) or 1 to 4. With an in-game overlay up it runs
+  along the bottom of the game area the overlay leaves, as wide as it and
+  in the overlay's look (**Fit to the in-game overlay**, on by default), and
+  the lower third rises above it where they would meet. With the Tournament
+  platform keeping results up to date, a result lands in place and pulses;
+  between page turns the page only changes early when a table on show
+  leaves (it finished, with Still playing).
 - **Head to head, VS** (`/scenes/vscard/`, 0.27.0): the Sideways Showdown
   head to head, laid out from its PSD. Each player's legend card stands
   tilted either side of a big VS on the glowing-arrows ground, the upper
@@ -566,7 +584,8 @@ preview** writes every table of the round picked under Matches (only the
 picked group's, when a group chip is on) with each finished table's result
 and the round's byes; press it again during the round to bring in new
 results (a different round or group starts on page one, the same one stays
-on its page). The same tables feed the **Ongoing matches** graphic. With
+on its page). The same tables feed the **Ongoing matches** graphic and the
+**Results ticker**. With
 **Keep results up to date, on air too** on (the default), every refresh
 brings new results into the pairings preview and program already hold,
 each in its own bank and without a TAKE (`event.pairings.src` names the

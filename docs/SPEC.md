@@ -269,6 +269,22 @@ this set; the PSDs stay the visual reference.
     their Flow cost and, with flowFirst, first (web/shared/trash.js).
     `scenes.trash {visible, side, art, flowFirst}`; a long trash scrolls
     with the hand lists' HandScroller. An empty trash airs as "Empty".
+30. **Results ticker** (`ticker`, 2026-09-19) — an overlay bar the slate
+    ticker's height (74px) over event.pairings: a label box (220px, the
+    round over the title) and a page of tables, each its number, a legend
+    icon (icon tier, then hero crop, then card thumb) and name a side, and
+    the result (web/shared/ticker.js tableResult: final, draw, live, vs).
+    `scenes.ticker {visible, show all|playing|done, per 0-4 (0 = the run
+    over 620px, at most 4), hold 3-30 s, legends, dock, title}`. Pages as
+    even as they go (tickerPages); the page up is wall-clock arithmetic
+    (tickerSlot); a turn rolls each slot like a cube (--p, 620 ms, 120 ms
+    apart); between beats the page turns early only when a table on show
+    leaves the filter, otherwise changed tables patch in place and a
+    changed result pulses (--b). Placement (tickerSpot): the frame's
+    bottom, or with `dock` the bottom of GAME_WINDOWS[host] (the arena bug:
+    the frame above y 844), in the host's look unless the ticker's own look
+    is on; the lower third rises above tickerBox (anchor.js). Airs only
+    with at least one table.
 Per-side fields (2026-09-19): trash[60] (hand-card fields less played, plus
 flow {energy, power, domain} or null), drawn[] ({cardId, cardName, n}: the
 copies seen to leave the main deck, by name) and deckLeft[] (a live feed's
