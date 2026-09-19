@@ -88,7 +88,9 @@ function defaultBank() {
       // bracket and the standings.
       schedule: [], scheduleNow: -1, format: '', commands: '', sponsors: '', nextName: '', nextWhen: '', champion: '',
       bracket: { format: 'se8', players: [], results: {} },
-      standings: { rows: [], cut: 8 },
+      // label: the standings' own line ("Group 2 · after Round 3"), set by the
+      // Tournament platform; empty falls back to "after <round title>".
+      standings: { rows: [], cut: 8, label: '' },
     },
     match: {
       seriesLength: 3,
@@ -564,6 +566,10 @@ function applyBankPatch(bank, patch) {
       const st = patch.event.standings;
       if (Array.isArray(st.rows)) bank.event.standings.rows = st.rows.slice(0, 64).map(cleanStandingsRow).filter(Boolean);
       if (st.cut !== undefined && [0, 4, 8, 16, 32].includes(Number(st.cut))) bank.event.standings.cut = Number(st.cut);
+      // New rows without a label (the Studio's hand-typed editor) drop the
+      // last one, so "Group 2" never sits over rows typed for something else.
+      if (st.label !== undefined) bank.event.standings.label = cleanStr(st.label, 60);
+      else if (Array.isArray(st.rows)) bank.event.standings.label = '';
     }
   }
 

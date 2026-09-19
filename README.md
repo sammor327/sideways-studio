@@ -360,6 +360,38 @@ overlay's (the combined /output/ source already stacks them that way). Each
 also clips itself to the table area, so its plates come out from under the
 overlay's panels however the sources are layered.
 
+## Tournament platform (TopDeck.gg)
+
+The **Tournament platform** tab at the top of the panel connects a live
+TopDeck.gg event. Paste the event's link (or its id, like `convergence-3`)
+and press Connect. An API key is optional: with one (free, from TopDeck's
+developer portal) the data comes from TopDeck's API; without one, from the
+event's public page. A pooled event's groups always come from the public
+page, since the API does not carry them. The event is read again every 30
+seconds while **Every 30 s** is on.
+
+**Matches** lists every table of the chosen round (the newest by default),
+with a group filter and a player search. Click a match and both players load
+into preview at once: name, record going into the round, legend, pronouns,
+seed (bracket), and, once TopDeck shows decks, the list, champion and three
+battlefields; the round title becomes "Round 3 · Group 2" or "Semifinals".
+A new pairing starts at 0 points and games and clears the last players'
+hand-typed extras (team, store, finishes, hand); clicking the pairing that is
+already up keeps what you have counted. A finished table brings its game
+score. **Swap sides** reloads it with the players the other way round, and
+**+** adds a table to the Up next board.
+
+**Standings to preview** writes a group's standings (TopDeck's own points
+and tiebreaks, labelled "Group 2 · after Round 3"), and **Bracket to
+preview** writes the Top 8 or Top 16 as TopDeck ran it. Everything lands in
+preview; TAKE airs it. The right side shows every graphic that draws this
+data, from the preview bank, so a click shows at once what it filled.
+
+The event, the key and the refresh switch live in `data/platform.json`. The
+key never goes into the state the graphics receive, and the panel only
+shows its last four characters. Data provided by
+[TopDeck.gg](https://topdeck.gg); their API asks for that credit.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are

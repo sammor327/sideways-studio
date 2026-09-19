@@ -66,7 +66,11 @@ const params = initStage({
     const pages = Math.max(1, Math.ceil(rows.length / PER_PAGE));
     const page = Math.min(pages, Math.max(1, scene.page || 1));
 
-    setText($('sub'), [bank.event.name, bank.event.roundTitle && `after ${bank.event.roundTitle}`, st.cut ? `Top ${st.cut} cut` : ''].filter(Boolean).join(' · '));
+    // The standings' own label (the Tournament platform writes "Group 2 ·
+    // after Round 3") wins over the match's round title, which may already be
+    // the next round.
+    const when = st.label || (bank.event.roundTitle && `after ${bank.event.roundTitle}`);
+    setText($('sub'), [bank.event.name, when, st.cut ? `Top ${st.cut} cut` : ''].filter(Boolean).join(' · '));
     setText($('page'), pages > 1 ? `Page ${page} of ${pages}` : '');
     renderRows(rows, st.cut || 0, page);
     $('empty').classList.toggle('hidden', rows.length > 0);

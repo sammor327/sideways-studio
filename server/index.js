@@ -26,6 +26,7 @@ import { buildDeck } from './decklist.js';
 import { sampleBank } from './sample.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
 import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
+import { initPlatform, handlePlatform } from './platform.js';
 import { findBrowser, renderStill, shutdownStills } from './still.js';
 import { legendSlug } from '../web/scenes/decklist/layout.js';
 import { ALL_SOURCES, APP_PAGES, sourceUrls } from '../web/shared/sources.js';
@@ -94,6 +95,9 @@ function readBody(req, limit = 1024 * 1024) {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+
+  // The Tournament platform tab: TopDeck.gg events (server/platform.js).
+  if (await handlePlatform(req, res, url, { readBody, sendJson })) return;
 
   if (url.pathname === '/api/state' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -802,6 +806,7 @@ async function start() {
   await initLegends();
   await initState();
   await initLibrary();
+  await initPlatform();
   try {
     const files = (await readdir(DATA_DIR_THEME)).filter((f) => LOGO_EXT.includes(f.split('.').pop()));
     logoFile = files.find((f) => f.startsWith('logo.')) || null;

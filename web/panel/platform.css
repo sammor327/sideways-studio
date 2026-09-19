@@ -1,0 +1,117 @@
+/* The Tournament platform tab (2026-09-18, web/panel/platform.js). Loaded
+   after lookbuilder.css, whose toolbar, segment buttons and tile grid it
+   reuses for the graphics on the right. */
+
+body[data-view="platform"] .workspace { display: none; }
+body:not([data-view="platform"]) .platform-view { display: none; }
+
+.platform-view {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 560px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 20px;
+}
+
+.platform-side {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.platform-side > .card { flex: 0 0 auto; overflow: visible; gap: 10px; }
+.platform-side > .pf-matches { flex: 1 1 auto; min-height: 260px; overflow: hidden; }
+
+/* --- connection --- */
+.pf-source {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--tes-green);
+}
+.pf-field { display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: center; gap: 10px; }
+.pf-field > span { font-size: 12px; color: #8b98a5; }
+.pf-field input { width: 100%; min-width: 0; }
+.pf-go { color: #06110a; background: var(--tes-grad); border-color: transparent; font-weight: 800; }
+.pf-status { margin: 0; font-size: 12.5px; line-height: 1.45; color: #cdd6de; }
+.pf-status.bad, .pf-last.bad { color: #f08b8b; }
+.pf-status.warn { color: #f2c46d; }
+.pf-connect .hint a { color: var(--tes-blue); }
+
+/* --- the match picker --- */
+.pf-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pf-filters select { max-width: 230px; }
+.pf-filters input[type="search"] { flex: 1; min-width: 120px; }
+.pf-filters .seg button { padding: 4px 9px; font-size: 12px; }
+
+.pf-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-right: 4px;
+}
+.pf-empty { margin: 12px 4px; font-size: 12.5px; color: #8b98a5; }
+.pf-row {
+  display: grid;
+  grid-template-columns: 38px 26px minmax(0, 1fr) 58px minmax(0, 1fr) 26px;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 3px 6px;
+  font-size: 12.5px;
+  background: #12161b;
+  border: 1px solid #1e242b;
+  cursor: pointer;
+  outline: none;
+}
+.pf-row:hover, .pf-row:focus-visible { border-color: #3d4a57; background: #161b21; }
+.pf-row.on { border-color: var(--tes-blue); box-shadow: 0 0 0 1px var(--tes-blue); background: #102029; }
+.pf-t { font-weight: 800; color: #e8edf1; font-variant-numeric: tabular-nums; }
+.pf-g { font-size: 11px; font-weight: 700; color: #8b98a5; }
+.pf-p { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pf-p.pf-right { justify-content: flex-end; }
+.pf-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #cdd6de; }
+.pf-p.won .pf-n { color: #fff; font-weight: 700; }
+.pf-row.done .pf-p:not(.won) .pf-n { color: #7d8894; }
+.pf-p.dropped .pf-n { text-decoration: line-through; }
+.pf-r { flex: 0 0 auto; font-size: 11px; color: #8b98a5; font-variant-numeric: tabular-nums; }
+.pf-ic { width: 24px; height: 24px; flex: 0 0 auto; object-fit: cover; border-radius: 50%; background: #1a2027; }
+.pf-ic.none { visibility: hidden; }
+.pf-score { text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; color: #e8edf1; }
+.pf-live {
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--tes-green);
+}
+.pf-live::before { content: '\25CF\00a0'; }
+.pf-row.pending .pf-score { font-size: 11px; font-weight: 600; color: #8b98a5; }
+.pf-add { padding: 0; width: 24px; height: 24px; font-size: 15px; line-height: 1; }
+
+/* --- standings and bracket --- */
+.pf-event .row select { max-width: 150px; }
+.pf-last { margin: 0; font-size: 12.5px; line-height: 1.45; color: #9fe6a8; min-height: 18px; }
+
+/* --- the graphics --- */
+.platform-stage .pf-loaded {
+  flex: 1;
+  min-width: 200px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8edf1;
+}
+.pf-tile { cursor: default; }
+
+@media (max-width: 1500px) {
+  .platform-view { grid-template-columns: 500px minmax(0, 1fr); }
+}
+@media (max-width: 1100px) {
+  .platform-view { flex: none; grid-template-columns: minmax(0, 1fr); }
+  .pf-tiles { overflow: visible; }
+}

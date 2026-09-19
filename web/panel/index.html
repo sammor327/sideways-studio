@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/theme/fonts.css">
 <link rel="stylesheet" href="./panel.css">
 <link rel="stylesheet" href="./lookbuilder.css">
+<link rel="stylesheet" href="./platform.css">
 </head>
 <body>
 <header>
@@ -19,6 +20,7 @@
   <nav class="view-tabs" role="tablist" aria-label="Views">
     <button type="button" class="view-tab on" role="tab" id="tabStudio" data-view="studio" aria-selected="true">Studio</button>
     <button type="button" class="view-tab" role="tab" id="tabLook" data-view="look" aria-selected="false" tabindex="-1">Look and setup</button>
+    <button type="button" class="view-tab" role="tab" id="tabPlatform" data-view="platform" aria-selected="false" tabindex="-1">Tournament platform</button>
   </nav>
   <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
 </header>
@@ -1495,6 +1497,82 @@
       <span class="look-live" title="The look is not cued like a graphic: a change airs on every graphic that is up the moment it is made.">Edits air at once</span>
     </div>
     <div class="look-tiles" id="lookTiles"></div>
+  </section>
+</div>
+
+<!-- The Tournament platform (2026-09-18, Sam): a live event from TopDeck.gg.
+     Connection and the match picker down the left; every graphic that draws
+     the event's data on the right, showing the preview bank, so a click on a
+     match shows at once what it filled (platform.js, server/platform.js). -->
+<div class="platform-view" id="platformView">
+  <div class="platform-side">
+    <section class="card pf-connect">
+      <div class="data-head">
+        <h2>TopDeck.gg</h2>
+        <span class="pf-source" id="pfSource"></span>
+      </div>
+      <label class="pf-field"><span>Event</span>
+        <input id="pfEvent" spellcheck="false" autocomplete="off" placeholder="topdeck.gg/event/convergence-3, or just convergence-3">
+      </label>
+      <label class="pf-field"><span>API key</span>
+        <input id="pfKey" type="password" spellcheck="false" autocomplete="off" placeholder="Optional: paste your TopDeck API key">
+      </label>
+      <div class="row">
+        <button type="button" id="pfConnect" class="pf-go">Connect</button>
+        <button type="button" id="pfRefresh">Refresh now</button>
+        <label class="inline" title="Pull the event again every 30 seconds while an event is connected"><input type="checkbox" id="pfAuto" checked> Every 30 s</label>
+      </div>
+      <p class="pf-status" id="pfStatus" role="status">Not connected.</p>
+      <p class="hint">With an API key (free, from TopDeck's developer portal) the data comes from TopDeck's API; without one, from the event's public page. Groups always come from the public page. Data provided by <a href="https://topdeck.gg" target="_blank" rel="noopener">TopDeck.gg</a>.</p>
+    </section>
+
+    <section class="card pf-matches">
+      <div class="data-head">
+        <h2>Matches</h2>
+        <span class="muted" id="pfRoundInfo"></span>
+      </div>
+      <div class="pf-filters">
+        <select id="pfRound" aria-label="Round"></select>
+        <div class="seg" id="pfGroups" role="group" aria-label="Group"></div>
+        <input id="pfSearch" type="search" placeholder="Find a player" aria-label="Find a player">
+      </div>
+      <div class="pf-list" id="pfList"></div>
+      <p class="hint">Click a match: both players, their records going in, legends, decks, battlefields and the round load into PREVIEW at once. TAKE airs them. <strong>+</strong> adds the table to the Up next board.</p>
+    </section>
+
+    <section class="card pf-event">
+      <h2>Standings and bracket</h2>
+      <div class="row">
+        <select id="pfStandGroup" aria-label="Standings for"></select>
+        <select id="pfCut" aria-label="Cut line">
+          <option value="4">Top 4 cut</option>
+          <option value="8">Top 8 cut</option>
+          <option value="16">Top 16 cut</option>
+          <option value="0">No cut line</option>
+        </select>
+        <button type="button" id="pfStandings">Standings to preview</button>
+      </div>
+      <div class="row">
+        <button type="button" id="pfBracket">Bracket to preview</button>
+        <button type="button" id="pfUpNextClear">Clear Up next</button>
+      </div>
+      <p class="pf-last" id="pfLast" role="status"></p>
+    </section>
+  </div>
+
+  <section class="look-stage platform-stage" aria-label="Every graphic that draws the event's data">
+    <div class="look-toolbar">
+      <div class="pf-loaded" id="pfLoaded">No match loaded from TopDeck yet.</div>
+      <button type="button" id="pfSwap" disabled title="Load the same match with the players on the other sides">Swap sides</button>
+      <div class="seg" role="group" aria-label="What sits behind the overlays">
+        <span class="seg-label">Behind</span>
+        <button type="button" data-pf-backdrop="checker">Grid</button>
+        <button type="button" data-pf-backdrop="dark">Dark</button>
+        <button type="button" data-pf-backdrop="table">Table</button>
+      </div>
+      <span class="look-live pf-cued" title="Everything here lands in the preview bank, like an edit in the Studio.">Loads into preview</span>
+    </div>
+    <div class="look-tiles pf-tiles" id="pfTiles"></div>
   </section>
 </div>
 

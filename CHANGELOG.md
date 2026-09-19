@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.26.0 (2026-09-19)
+
+- New tab: Tournament platform. Connect a TopDeck.gg event by pasting its link (an API key is optional) and the app reads it again every 30 seconds.
+- Pick any match from the round's list (filter by group, search by player) and both players load into preview at once: name, record going in, legend, pronouns, and once TopDeck shows decks, their decklist, champion and three battlefields. The round title fills in too, like "Round 3 · Group 2". TAKE airs it.
+- A new pairing starts at 0 points and games and clears the last players' typed extras; clicking the match already up keeps your counts. Swap sides flips the players.
+- Standings to preview writes a group's standings with TopDeck's own tiebreaks, and Bracket to preview writes the Top 8 or Top 16 as it stands. The + beside a match adds it to the Up next board.
+- Every graphic that draws the event's data sits on the right of the tab, showing your preview, so you see what a click filled before you TAKE.
+- Standings: the line under the title can now name the group ("Group 2 · after Round 3"). Standings typed by hand in the Studio clear it.
+
 ## 0.25.0 (2026-09-18)
 
 - No name is cut short with "..." any more. A player, team, legend, deck or event name too long for its box is set smaller until the whole name fits, on every graphic, and goes back to full size for a shorter name.

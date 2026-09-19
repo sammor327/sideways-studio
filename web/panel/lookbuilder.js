@@ -59,8 +59,13 @@ const footLead = footLine && footLine.firstChild && footLine.firstChild.nodeType
 const STUDIO_FOOT = footLead ? footLead.nodeValue : '';
 const LOOK_FOOT = STUDIO_FOOT.replace(/^[^·]*·/, 'Look edits are not cued: they air at once on every graphic that is up. ·');
 
+// The header's tabs, in order: the Studio, this builder, and the Tournament
+// platform (platform.js, which listens for 'sideways:view').
+const VIEWS = [...document.querySelectorAll('.view-tab')].map((tab) => tab.dataset.view);
+const viewFromHash = () => (VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'studio');
+
 function setView(next, { remember = true } = {}) {
-  view = next === 'look' ? 'look' : 'studio';
+  view = VIEWS.includes(next) ? next : 'studio';
   document.body.dataset.view = view;
   if (footLead) footLead.nodeValue = view === 'look' ? LOOK_FOOT : STUDIO_FOOT;
   for (const tab of document.querySelectorAll('.view-tab')) {
@@ -71,9 +76,10 @@ function setView(next, { remember = true } = {}) {
   }
   // The hash keeps the tab across a reload without adding history steps.
   if (remember) {
-    const url = view === 'look' ? '#look' : `${location.pathname}${location.search}`;
+    const url = view === 'studio' ? `${location.pathname}${location.search}` : `#${view}`;
     history.replaceState(null, '', url);
   }
+  window.dispatchEvent(new CustomEvent('sideways:view', { detail: view }));
   if (view === 'look') {
     applyPrefs();
     observeTiles();
@@ -86,16 +92,17 @@ function setView(next, { remember = true } = {}) {
 
 for (const tab of document.querySelectorAll('.view-tab')) {
   tab.addEventListener('click', () => setView(tab.dataset.view));
-  // Left and right move between the two tabs, the usual tablist keys.
+  // Left and right move between the tabs, the usual tablist keys.
   tab.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     e.preventDefault();
-    const next = view === 'look' ? 'studio' : 'look';
+    const step = e.key === 'ArrowRight' ? 1 : -1;
+    const next = VIEWS[(VIEWS.indexOf(view) + step + VIEWS.length) % VIEWS.length];
     setView(next);
     document.querySelector(`.view-tab[data-view="${next}"]`).focus();
   });
 }
-window.addEventListener('hashchange', () => setView(location.hash === '#look' ? 'look' : 'studio', { remember: false }));
+window.addEventListener('hashchange', () => setView(viewFromHash(), { remember: false }));
 
 // --- the grid ---
 
@@ -409,4 +416,4 @@ $('lookScope').addEventListener('change', () => {
   if (zoomAt >= 0) zoomEdit.disabled = scopeValue() === tiles[zoomAt].tile.scene;
 });
 
-setView(location.hash === '#look' ? 'look' : 'studio', { remember: false });
+setView(viewFromHash(), { remember: false });

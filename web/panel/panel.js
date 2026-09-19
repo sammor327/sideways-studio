@@ -2,6 +2,7 @@ import {
   COLOR_HELP, COLOR_KEYS, COLOR_LABELS, DESIGNED, LOOK_SCENES, PRESETS, SCENE_LABELS, resolveLook,
 } from '../shared/look.js';
 import { renderLookBuilder } from './lookbuilder.js';
+import { renderPlatform } from './platform.js';
 import { setClock } from '../shared/clockcells.js';
 import { setOffline } from '../shared/offline.js';
 import { refreshFontSheet } from '../shared/fontsheet.js';
@@ -648,6 +649,7 @@ function render(s) {
   renderOnAir(s);
   renderLook(s.theme);
   renderLookBuilder(s);
+  renderPlatform(s);
   renderDecks(s);
   renderExtras(s);
   revealNewGraphics(s);
