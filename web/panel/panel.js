@@ -103,7 +103,7 @@ const SCENE_FIELDS = {
   vscard: ['name', 'legend', 'legendText', 'roundTitle', 'eventName'],
   // The odds to draw and the trash (2026-09-19).
   odds: ['name', 'country', 'legend', 'deck', 'hand', 'handCount', 'trash', 'drawn'],
-  trash: ['name', 'country', 'legend', 'trash'],
+  trash: ['name', 'country', 'legend', 'trash', 'banished'],
   // The card popup and the card row carry their content in their own
   // Graphic features groups (the search, the four slots), not in Match data;
   // listed so putting them in preview unfolds that card.
@@ -834,13 +834,13 @@ $('seriesLength').addEventListener('change', () => {
 });
 
 $('resetMatch').addEventListener('click', () => {
-  if (!confirm('Reset match in preview? Scores and game wins go to zero, trashes and cards drawn are cleared, and all graphics switch off. Press TAKE afterward to put the reset on air.')) return;
+  if (!confirm('Reset match in preview? Scores and game wins go to zero, trashes, banished cards and cards drawn are cleared, and all graphics switch off. Press TAKE afterward to put the reset on air.')) return;
   // A new match: no battlefield has been played yet.
   const unplayed = (side) => (state ? state.preview.match[side].battlefields || [] : []).map((b) => ({ ...b, played: false, game: 0, result: '' }));
   post({
     match: {
-      left: { score: 0, gameWins: 0, battlefields: unplayed('left'), trash: [], drawn: [], deckLeft: [] },
-      right: { score: 0, gameWins: 0, battlefields: unplayed('right'), trash: [], drawn: [], deckLeft: [] },
+      left: { score: 0, gameWins: 0, battlefields: unplayed('left'), trash: [], banished: [], drawn: [], deckLeft: [] },
+      right: { score: 0, gameWins: 0, battlefields: unplayed('right'), trash: [], banished: [], drawn: [], deckLeft: [] },
       choseFirst: '', result: { winner: '', note: '' },
     },
     scenes: {
@@ -866,7 +866,7 @@ const SWAP_FIELDS = [
   'champion2', 'score', 'gameWins', 'seed',
   'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'handUnknown',
   'team', 'store', 'seasonRecord', 'bestFinish', 'finishes',
-  'deckList', 'deckName', 'deckFrom', 'battlefields', 'trash', 'drawn', 'deckLeft',
+  'deckList', 'deckName', 'deckFrom', 'battlefields', 'trash', 'banished', 'drawn', 'deckLeft',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -2504,9 +2504,10 @@ $('oddsArt').addEventListener('change', () => post({ scenes: { odds: { art: $('o
 $('trashSide').addEventListener('change', () => post({ scenes: { trash: { side: $('trashSide').value } } }));
 $('trashFlowFirst').addEventListener('change', () => post({ scenes: { trash: { flowFirst: $('trashFlowFirst').checked } } }));
 $('trashArt').addEventListener('change', () => post({ scenes: { trash: { art: $('trashArt').checked } } }));
+$('trashBanished').addEventListener('change', () => post({ scenes: { trash: { banished: $('trashBanished').checked } } }));
 $('newGame').addEventListener('click', () => {
-  if (!confirm('New game in preview? Both players\' hands, hand counts, trashes and cards drawn are cleared, and every card goes back in the deck. Press TAKE afterward to put it on air.')) return;
-  const fresh = { hand: [], handCount: 0, trash: [], drawn: [], deckLeft: [] };
+  if (!confirm('New game in preview? Both players\' hands, hand counts, trashes, banished cards and cards drawn are cleared, and every card goes back in the deck. Press TAKE afterward to put it on air.')) return;
+  const fresh = { hand: [], handCount: 0, trash: [], banished: [], drawn: [], deckLeft: [] };
   post({ match: { left: fresh, right: fresh } });
 });
 
@@ -2623,12 +2624,102 @@ function renderTrashChips(p, sd) {
     x.type = 'button';
     x.className = 'clear-x';
     x.textContent = '\u00d7';
-    x.title = 'Take it out of the trash (banished, or played from the trash)';
+    x.title = 'Take it out of the trash';
     x.setAttribute('aria-label', `Take ${c.cardName || c.cardId} out of the trash`);
     x.addEventListener('click', () => {
       if (!state) return;
       const next = (state.preview.match[side].trash || []).filter((_, j) => j !== i);
       post({ match: { [side]: { trash: next } } });
+    });
+    // Banish it (2026-09-19): a Flow card played from the trash, or an effect
+    // that banishes from there. One edit, so the deck tracker counts nothing.
+    const ban = document.createElement('button');
+    ban.type = 'button';
+    ban.className = 'to-trash to-banish';
+    ban.innerHTML = BANISH_ICON;
+    ban.title = 'Banish it (a Flow card played from the trash, or banished by an effect)';
+    ban.setAttribute('aria-label', `Banish ${c.cardName || c.cardId}`);
+    ban.addEventListener('click', () => {
+      if (!state) return;
+      const cur = state.preview.match[side];
+      const card = (cur.trash || [])[i];
+      if (!card) return;
+      const { flow, ...rest } = card;
+      post({ match: { [side]: {
+        trash: (cur.trash || []).filter((_, j) => j !== i),
+        banished: [...(cur.banished || []), rest].slice(-BANISHED_MAX),
+      } } });
+    });
+    row.append(ban);
+    row.append(x);
+    return row;
+  }));
+}
+
+// Banishment (2026-09-19, Sam: "include what has been banished"): each
+// player's banished cards, which the trash graphic lists under the trash.
+// Typed in like the trash, or moved there from the trash by a trash row's
+// banish button (a Flow card played from the trash).
+const BANISH_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M6.5 17.5l11-11"/></svg>';
+const BANISHED_MAX = 60;
+
+for (const [p, side] of SIDES) {
+  wireCardList($(`${p}banishedSearch`), $(`${p}banishedResults`), (card) => {
+    if (!state) return;
+    const banished = state.preview.match[side].banished || [];
+    if (banished.length >= BANISHED_MAX) return;
+    const entry = { cardId: card.cardId, cardName: card.cardName, energy: card.energy ?? null, domains: card.domains || [], kind: card.kind || '' };
+    post({ match: { [side]: { banished: [...banished, entry] } } });
+  });
+}
+
+// The banished cards as they went, a row per card like the trash's, greyed;
+// the × takes one out.
+function renderBanishedChips(p, sd) {
+  const banished = sd.banished || [];
+  const box = $(`${p}banishedChips`);
+  const search = $(`${p}banishedSearch`);
+  const full = banished.length >= BANISHED_MAX;
+  if (search.disabled !== full) {
+    search.disabled = full;
+    search.placeholder = full ? `Full: ${BANISHED_MAX} cards` : 'Add a card\u2026';
+  }
+  const key = JSON.stringify(banished);
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  const side = p === 'l' ? 'left' : 'right';
+  if (!banished.length) {
+    box.replaceChildren(Object.assign(document.createElement('div'), { className: 'hand-card unknown', textContent: 'Nothing banished yet' }));
+    return;
+  }
+  box.replaceChildren(...banished.map((c, i) => {
+    const row = document.createElement('div');
+    row.className = `hand-card trash-card banished-card ${side}`;
+    const img = document.createElement('img');
+    img.className = 'card-thumb';
+    img.alt = '';
+    img.onerror = () => img.classList.add('hidden');
+    img.src = cardThumbSrc(c.cardId);
+    const name = document.createElement('span');
+    name.className = 'nm';
+    name.textContent = c.cardName || c.cardId;
+    row.append(img, name);
+    if (c.energy !== null && c.energy !== undefined) {
+      const small = document.createElement('small');
+      small.textContent = String(c.energy);
+      small.title = `${c.energy} energy`;
+      row.append(small);
+    }
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'clear-x';
+    x.textContent = '\u00d7';
+    x.title = 'Take it off the banished list';
+    x.setAttribute('aria-label', `Take ${c.cardName || c.cardId} off the banished list`);
+    x.addEventListener('click', () => {
+      if (!state) return;
+      const next = (state.preview.match[side].banished || []).filter((_, j) => j !== i);
+      post({ match: { [side]: { banished: next } } });
     });
     row.append(x);
     return row;
@@ -4235,6 +4326,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('trashSide')) $('trashSide').value = tr.side || 'left';
   if (document.activeElement !== $('trashFlowFirst')) $('trashFlowFirst').checked = tr.flowFirst !== false;
   if (document.activeElement !== $('trashArt')) $('trashArt').checked = tr.art !== false;
+  if (document.activeElement !== $('trashBanished')) $('trashBanished').checked = tr.banished !== false;
   if (document.activeElement !== $('decklistsSideboards')) $('decklistsSideboards').checked = prev.scenes.decklists.sideboards !== false;
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
@@ -4380,6 +4472,7 @@ function renderExtras(s) {
     $(`${p}handOut`).textContent = sd.handCount || 0;
     renderHandChips(p, sd);
     renderTrashChips(p, sd);
+    renderBanishedChips(p, sd);
     renderDeckTrack(p, sd);
   }
   $('turnOut').textContent = prev.match.turn || 0;

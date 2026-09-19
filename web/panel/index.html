@@ -515,7 +515,7 @@
       <summary><h4 class="section-label">Trash and draw odds</h4></summary>
 
       <div class="field-row" data-field="trash">
-        <span class="row-label" title="Riftbound's graveyard. The Trash graphic lists these cards, the newest first. Search a card and press Enter to add it. A card with Flow (playable from the trash for its Flow cost, then banished) lights up in the player's colour. A card's × takes it out (banished, or played from the trash). A card in hand moves here with its trash button, and a spell resolving off the showdown chain lands here by itself. A RiftAtlas game fills this on its own.">Trash</span>
+        <span class="row-label" title="Riftbound's graveyard. The Trash graphic lists these cards, the newest first. Search a card and press Enter to add it. A card with Flow (playable from the trash for its Flow cost, then banished) lights up in the player's colour. A card's banish button moves it to Banished (a Flow card played from the trash); its × takes it out. A card in hand moves here with its trash button, and a spell resolving off the showdown chain lands here by itself. A RiftAtlas game fills this on its own.">Trash</span>
         <div class="cell hand-cell" data-side="left">
           <div class="picker-wrap">
             <input id="ltrashSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a card to the trash">
@@ -532,6 +532,24 @@
         </div>
       </div>
 
+      <div class="field-row" data-field="banished">
+        <span class="row-label" title="The cards each player has banished this game, the oldest first. The Trash graphic lists them under the trash, greyed. Search a card and press Enter to add it; a trash card's banish button moves it here (a Flow card played from the trash). A card's &times; takes it out. A RiftAtlas game fills this on its own.">Banished</span>
+        <div class="cell hand-cell" data-side="left">
+          <div class="picker-wrap">
+            <input id="lbanishedSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 1 add a banished card">
+            <ul class="results" id="lbanishedResults"></ul>
+          </div>
+          <div class="hand-chips" id="lbanishedChips"></div>
+        </div>
+        <div class="cell hand-cell" data-side="right">
+          <div class="picker-wrap">
+            <input id="rbanishedSearch" placeholder="Add a card&hellip;" autocomplete="off" aria-label="Player 2 add a banished card">
+            <ul class="results" id="rbanishedResults"></ul>
+          </div>
+          <div class="hand-chips" id="rbanishedChips"></div>
+        </div>
+      </div>
+
       <div class="field-row" data-field="drawn">
         <span class="row-label" title="Every card of the player's main deck (their list under Decks and battlefields, less the chosen champion) with the copies still in the deck. Cards added to the hand or the trash come off by themselves; a unit that dies after being played is not counted twice. − takes a copy out, + puts one back, for a card seen anywhere else or a mistake. A RiftAtlas game counts the deck itself, sideboarding included.">Left in deck</span>
         <div class="cell deck-track" data-side="left"><span class="deck-line" id="ldeckLeftLine"></span><div class="track-list" id="ltrackList"></div></div>
@@ -539,8 +557,8 @@
       </div>
 
       <div class="field-row" data-field="drawn">
-        <span class="row-label" title="Between games: both players' hands, hand counts, trashes and cards drawn cleared, and every card back in the deck. Lands in preview; TAKE puts it on air.">New game</span>
-        <div class="cell span2"><button type="button" id="newGame" class="danger-ghost">Clear both hands, trashes and cards drawn</button></div>
+        <span class="row-label" title="Between games: both players' hands, hand counts, trashes, banished cards and cards drawn cleared, and every card back in the deck. Lands in preview; TAKE puts it on air.">New game</span>
+        <div class="cell span2"><button type="button" id="newGame" class="danger-ghost">Clear both hands, trashes, banished cards and cards drawn</button></div>
       </div>
     </details>
 
@@ -1592,7 +1610,8 @@
         </label>
         <label class="inline" title="Cards with Flow (playable from the trash) at the top of the list, ahead of the rest"><input type="checkbox" id="trashFlowFirst" checked> Flow cards first</label>
         <label class="inline"><input type="checkbox" id="trashArt" checked> Card art</label>
-        <span class="hint">The cards under Match data &rsaquo; Trash and draw odds, the newest first. A card with Flow lights up with its Flow cost, and the sheet's last line says what Flow does. A trash longer than the sheet scrolls through, the way the hand lists do.</span>
+        <label class="inline" title="The player's banished cards under the trash, greyed, below a Banished label"><input type="checkbox" id="trashBanished" checked> Banished cards</label>
+        <span class="hint">The cards under Match data &rsaquo; Trash and draw odds, the newest first. A card with Flow lights up with its Flow cost, and the sheet's last line says what Flow does. The player's banished cards follow under a Banished label, greyed. A trash longer than the sheet scrolls through, the way the hand lists do.</span>
       </div>
     </div>
     <div class="feature-group hidden" data-scene="decklists">

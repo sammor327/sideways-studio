@@ -7,7 +7,7 @@ import path from 'node:path';
 import {
   cardKey, drawChance, drawPool, formatChance, oddsRows, poolLine, unknownInHand,
 } from '../web/shared/odds.js';
-import { flowText, trashCounts, trashRows } from '../web/shared/trash.js';
+import { banishedRows, flowText, trashCounts, trashRows } from '../web/shared/trash.js';
 import { SHEET_W, placeSheets, rowsThatFit, sheetHeight, sheetSlots } from '../web/shared/sidesheets.js';
 import { parseFlow } from '../server/carddb.js';
 import {
@@ -104,6 +104,17 @@ describe('the trash as the graphic lists it', () => {
     assert.deepEqual(trashRows(trash).map((r) => r.cardName), ['Flowy', 'Alpha', 'Beta']);
     assert.deepEqual(trashCounts(trash), { cards: 4, flow: 1 });
     assert.deepEqual(trashRows(null), []);
+  });
+
+  it('lists the banished cards newest first, copies together, none of them lit', () => {
+    const banished = [
+      { cardId: 'F', cardName: 'Flowy', flow: { energy: 4, power: 1, domain: 'Fury' } },
+      { cardId: 'A', cardName: 'Alpha' },
+      { cardId: 'F', cardName: 'Flowy', flow: { energy: 4, power: 1, domain: 'Fury' } },
+    ];
+    assert.deepEqual(banishedRows(banished).map((r) => [r.cardName, r.qty, r.flow]), [['Flowy', 2, null], ['Alpha', 1, null]]);
+    assert.equal(banished[0].flow.energy, 4, 'the list it was given is left alone');
+    assert.deepEqual(banishedRows(undefined), []);
   });
 
   it('reads a Flow cost the way the card prints it', () => {
@@ -220,6 +231,28 @@ describe('the trash and the drawn tally in the store', () => {
     assert.deepEqual(tally('left'), { Unit: 2, Spell: 1, Fresh: 1 });
   });
 
+  it('keeps the banished cards, without Flow, and counts them out of the deck', () => {
+    applyUpdate({ match: { left: { hand: [], trash: [], banished: [], drawn: [] } } });
+    applyUpdate({ match: { left: { trash: [card('Brittle Steel', { flow: { energy: 4, power: 1, domain: 'Fury' } })] } } });
+    assert.deepEqual(tally('left'), { 'Brittle Steel': 1 }, 'burned straight into the trash');
+    // Played from the trash for its Flow cost, then banished: one edit, a move.
+    applyUpdate({ match: { left: { trash: [], banished: [card('Brittle Steel', { flow: { energy: 4, power: 1, domain: 'Fury' } })] } } });
+    const left = getState().preview.match.left;
+    assert.deepEqual(left.banished.map((c) => [c.cardName, c.flow]), [['Brittle Steel', null]], 'nothing plays a card out of banishment');
+    assert.deepEqual(tally('left'), { 'Brittle Steel': 1 });
+    // A card banished straight off the deck counts; one banished off the
+    // board after it was drawn does not count again.
+    applyUpdate({ match: { left: { hand: [card('Unit')] } } });
+    applyUpdate({ match: { left: { hand: [] } } });
+    applyUpdate({ match: { left: { banished: [card('Brittle Steel'), card('Unit'), card('Fresh')] } } });
+    assert.deepEqual(tally('left'), { 'Brittle Steel': 1, Unit: 1, Fresh: 1 });
+    applyUpdate({ match: { left: { banished: Array.from({ length: 70 }, (_, i) => card(`B${i}`)), drawn: [] } } });
+    assert.equal(getState().preview.match.left.banished.length, 60);
+    assert.equal(getState().preview.match.left.banished[0].cardName, 'B10', 'the oldest go first');
+    applyUpdate({ match: { left: { banished: [null, 'junk', { cardName: '' }], drawn: [] } } });
+    assert.deepEqual(getState().preview.match.left.banished, []);
+  });
+
   it('takes a tally that comes with the patch as it is', () => {
     applyUpdate({ match: { left: { hand: [card('A'), card('B')], drawn: [{ cardName: 'Z', n: 2 }, { cardName: 'Z', n: 1 }, { cardName: 'Q', n: 0 }, { n: 1 }] } } });
     assert.deepEqual(tally('left'), { Z: 3 });
@@ -260,12 +293,13 @@ describe('the trash and the drawn tally in the store', () => {
   it('whitelists the odds and trash graphics', () => {
     const bank = buildBank({});
     assert.deepEqual(bank.scenes.odds, { visible: false, side: 'left', draws: 1, rows: 10, art: true });
-    assert.deepEqual(bank.scenes.trash, { visible: false, side: 'left', art: true, flowFirst: true });
+    assert.deepEqual(bank.scenes.trash, { visible: false, side: 'left', art: true, flowFirst: true, banished: true });
+    assert.deepEqual(bank.match.left.banished, []);
     assert.deepEqual(bank.match.left.trash, []);
-    applyUpdate({ scenes: { odds: { visible: true, side: 'both', draws: 3, rows: 12, art: false, extra: 1 }, trash: { visible: true, side: 'right', art: false, flowFirst: false } } });
+    applyUpdate({ scenes: { odds: { visible: true, side: 'both', draws: 3, rows: 12, art: false, extra: 1 }, trash: { visible: true, side: 'right', art: false, flowFirst: false, banished: false } } });
     let sc = getState().preview.scenes;
     assert.deepEqual(sc.odds, { visible: true, side: 'both', draws: 3, rows: 12, art: false });
-    assert.deepEqual(sc.trash, { visible: true, side: 'right', art: false, flowFirst: false });
+    assert.deepEqual(sc.trash, { visible: true, side: 'right', art: false, flowFirst: false, banished: false });
     applyUpdate({ scenes: { odds: { side: 'middle', draws: 99, rows: 7 }, trash: { side: 'up' } } });
     sc = getState().preview.scenes;
     assert.equal(sc.odds.side, 'both');
@@ -295,6 +329,7 @@ describe('a RiftAtlas game fills the trash and the deck', () => {
     const left = patch.match.left;
     const p = v.players[0];
     assert.deepEqual(left.trash.map((c) => c.cardName), p.trash.map((c) => c.name));
+    assert.deepEqual(left.banished.map((c) => c.cardName), p.banished.map((c) => c.name), 'the banished cards come along too');
     assert.equal(left.trash[0].cardId, 'OGN-043', 'resolved against the index where it can be');
     assert.equal(left.deckLeft.reduce((t, c) => t + c.left, 0), p.deck.left);
     assert.equal(left.drawn.reduce((t, d) => t + d.n, 0), p.deck.total - p.deck.left);

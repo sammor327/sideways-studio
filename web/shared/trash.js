@@ -9,6 +9,9 @@
 import { groupHand } from './handlist.js';
 
 export const TRASH_MAX = 60;
+// Banishment (2026-09-19): the cards banished this game, listed under the
+// trash on the same graphic.
+export const BANISHED_MAX = 60;
 export const FLOW_DOMAINS = ['Body', 'Calm', 'Chaos', 'Fury', 'Mind', 'Order'];
 
 // The newest card first (the top of the pile), copies of a card on one row
@@ -18,6 +21,13 @@ export function trashRows(list, { flowFirst = true } = {}) {
   const rows = groupHand([...(Array.isArray(list) ? list : [])].reverse());
   if (!flowFirst) return rows;
   return [...rows.filter((r) => r.flow), ...rows.filter((r) => !r.flow)];
+}
+
+// The banished cards the way the graphic lists them: the newest first,
+// copies of a card on one row. Nothing is lit: a banished card is out of
+// the game.
+export function banishedRows(list) {
+  return groupHand([...(Array.isArray(list) ? list : [])].reverse().map((c) => (c && typeof c === 'object' ? { ...c, flow: null } : c)));
 }
 
 // How many cards a trash holds and how many of them have Flow.

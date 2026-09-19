@@ -721,6 +721,9 @@ function liveSide(p, cur, resolveCard, legendOf, { fill = false } = {}) {
     // the copies gone from it, so the panel's deck tracker agrees. Between
     // games there is no board and no deck, and both start over.
     trash: p.trash.slice(-60).map(liveCard),
+    // The banished cards the same way (2026-09-19), under the trash on the
+    // trash graphic.
+    banished: (p.banished || []).slice(-60).map(liveCard),
     deckLeft: deckCards.map((c) => ({ ...liveCard(c), left: Math.min(12, c.left) })),
     drawn: deckCards.filter((c) => c.start > c.left).map((c) => {
       const card = liveCard(c);

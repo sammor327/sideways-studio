@@ -1205,6 +1205,11 @@ button.focus-toggle.on { color: #06110a; background: var(--tes-grad); border-col
 .hand-card .to-trash:hover { color: var(--side); border-color: #3a444f; }
 .field-row[data-field="trash"] { align-items: start; }
 .field-row[data-field="trash"] > .row-label { padding-top: 9px; }
+/* Banishment (2026-09-19): the banished list reads like the trash, greyed. */
+.field-row[data-field="banished"] { align-items: start; }
+.field-row[data-field="banished"] > .row-label { padding-top: 9px; }
+.hand-card.banished-card .card-thumb { filter: grayscale(1); opacity: 0.7; }
+.hand-card.banished-card .nm { color: #8b98a5; }
 .deck-track { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .track-list { display: flex; flex-direction: column; gap: 1px; max-height: 260px; overflow-y: auto; }
 .track-list:empty { display: none; }

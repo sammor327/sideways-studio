@@ -568,18 +568,24 @@ too small for them. Either can show one player or both.
 - **Trash** (1v1 graphics): the player's trash, Riftbound's graveyard, the
   newest card first. A card with Flow (playable from the trash for its Flow
   cost, then banished) lights up with its Flow cost and, with Flow cards
-  first on, leads the list. A long trash scrolls through like the hand lists.
-  With both graphics on the same player, the trash stands beside the odds.
+  first on, leads the list. Under the trash, below a Banished label, come
+  the cards that player has banished, greyed (switch them off under Graphic
+  features). A long list scrolls through like the hand lists. With both
+  graphics on the same player, the trash stands beside the odds.
 
-**Match data › Trash and draw odds** holds each player's trash, the deck
-tracker and New game. Cards leave the deck by themselves: a card added to the
+**Match data › Trash and draw odds** holds each player's trash, their
+banished cards, the deck tracker and New game. A trash card's banish button
+moves it to the banished list, which is where a Flow card goes once it has
+been played from the trash. Cards leave the deck by themselves: a card added to the
 hand or the trash comes off, a unit that dies after being played is not
 counted twice, and a card burned off the top of the deck is. The tracker's
 − and + correct it for anything the lists do not show. A hand card's trash
 button moves it into the trash, a spell resolving off the showdown chain
-lands there by itself, and a RiftAtlas game fills both trashes and counts
-both decks on its own. New game clears both hands, trashes and cards drawn
-between games; Reset match clears the trashes and cards drawn too.
+lands there by itself, and a RiftAtlas game fills both trashes, both
+banished lists and counts both decks on its own. A card banished off the
+top of the deck comes off the tracker; one banished after it was played
+does not come off twice. New game clears both hands, trashes, banished
+lists and cards drawn between games; Reset match clears them too.
 
 ## Tournament platform (TopDeck.gg)
 

@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.43.0 (2026-09-19)
+
+- The Trash graphic lists what has been banished (Sam): the player's banished cards follow the trash under a Banished label, greyed, with their own count in the line under the player's name. Switch them off under Graphic features › Trash.
+- Match data › Trash and draw odds has a Banished list per player, filled the same way as the trash. A trash card's new banish button moves it across, which is what happens to a Flow card played from the trash.
+- A RiftAtlas game fills both lists on its own, and banished cards count as out of the deck for the odds: a card banished off the top of the deck comes off the tracker, one banished after it was played does not come off twice.
+- New game and Reset match clear the banished lists with everything else.
+
 ## 0.42.0 (2026-09-19)
 
 - Live game fills empty decklists: a player with no list under Match data › Decks and battlefields gets the deck RiftAtlas shows, as a decklist paste: legend, champion, the battlefields played so far, the runes once all twelve are out, and the main deck they started the series with (RiftAtlas never shows a sideboard). The deck picker says "(from RiftAtlas)". No more pressing Load players for the decks.

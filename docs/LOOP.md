@@ -214,6 +214,27 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19o (out of band: banishment on the trash graphic)
+
+Sam: "for the graveyard tool can we make sure to include what has been
+banished?" Banishment is where a Flow card ends up once it is played from
+the trash, so the trash graphic now lists side.banished under the trash,
+below a Banished label row (a row of the list itself, so it scrolls and
+rises with the cards) and greyed, since nothing plays a card back out of
+banishment; the head line counts them. New: side.banished[60]
+(cleanBanishedCard = a trash card with flow forced null), scenes.trash
+.banished, web/shared/trash.js banishedRows, RiftAtlas liveSide writing
+p.banished (gameView already read the zone), a Banished row in Match data
+and a banish button on every trash row (one edit: trash out, banished in,
+so the tally counts nothing). The drawn tally generalised from two lists to
+three (SEEN_ZONES): losses anywhere cancel gains anywhere, the hand's first,
+then the piles' remaining gains come off the board when a copy is out but
+unlisted, else off the deck. 21 tests in test/odds-trash.test.js, 418 in the
+tree; the sample match banishes Brittle Steel (played from the trash with
+Flow) and keeps Perfect Execution lit in it, which is the story the tile
+tells. Verified on scratch 4803: the graphic both sides, the panel's banish
+button, a typed banish counting off the deck, the switch, New game.
+
 ### 2026-09-19p (out of band: Live game fills empty decklists, 0.42.0)
 
 Sam: "For the live game on sideways studio, can we auto populate the

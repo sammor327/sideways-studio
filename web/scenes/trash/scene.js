@@ -2,10 +2,12 @@
 // newest first, on their side of the game window, or both players' at once.
 // Cards with [FLOW] light up with their Flow cost and, with Flow first on,
 // lead the list (web/shared/trash.js). The rows are the hand lists' rows.
+// Under the trash, the player's banished cards (2026-09-19, Sam: "include
+// what has been banished"), greyed, below a label row of their own.
 import { initStage, sceneBank } from '../../stage/stage.js';
 import { DOMAINS, cardRow, runeSrc } from '../../stage/exp.js';
 import { gameWindow } from '../../shared/gamewindow.js';
-import { trashCounts, trashRows } from '../../shared/trash.js';
+import { banishedRows, trashCounts, trashRows } from '../../shared/trash.js';
 import { Sheet, SheetVisibility, placeSheets, sheetSlots, rowsThatFit, sheetHeight, sheetSides } from '../../stage/sidesheet.js';
 
 const $ = (id) => document.getElementById(id);
@@ -62,15 +64,38 @@ function emptyRow() {
   return row;
 }
 
-function subLine({ cards, flow }) {
-  if (!cards) return 'Empty';
-  return `${cards} card${cards === 1 ? '' : 's'}${flow ? ` · ${flow} with Flow` : ''}`;
+// The label between the trash and the banished cards: a row of the list,
+// so it scrolls and rises in with them.
+function sectionRow(count) {
+  const row = document.createElement('div');
+  row.className = 'card section';
+  const label = document.createElement('span');
+  label.textContent = 'Banished';
+  const n = document.createElement('b');
+  n.textContent = String(count);
+  row.append(label, n);
+  return row;
+}
+
+// A banished card: the hand lists' row, greyed, with its printed cost.
+function banishedRow(r, art) {
+  const row = cardRow(r, art);
+  row.classList.add('banished');
+  return row;
+}
+
+function subLine({ cards, flow }, banished) {
+  const parts = [cards ? `${cards} card${cards === 1 ? '' : 's'}` : 'Empty'];
+  if (flow) parts.push(`${flow} with Flow`);
+  if (banished) parts.push(`${banished} banished`);
+  return parts.join(' · ');
 }
 
 function render(state) {
   const bank = sceneBank(state, params);
-  const cfg = bank.scenes.trash || { visible: false, side: 'left', art: true, flowFirst: true };
+  const cfg = bank.scenes.trash || { visible: false, side: 'left', art: true, flowFirst: true, banished: true };
   const art = cfg.art !== false;
+  const showBanished = cfg.banished !== false;
   const win = gameWindow(bank);
   const fit = rowsThatFit(win, ROW_H);
   const up = sheetSides(cfg).map((key) => {
@@ -78,9 +103,14 @@ function render(state) {
     const trash = side.trash || [];
     const rows = trashRows(trash, { flowFirst: cfg.flowFirst !== false });
     const counts = trashCounts(trash);
-    const viewRows = Math.max(1, Math.min(rows.length, fit));
+    const banished = showBanished ? (side.banished || []) : [];
+    const bRows = banishedRows(banished);
+    // The trash's rows (or the line saying it is empty), then the label and
+    // the banished cards when there are any.
+    const total = Math.max(1, rows.length) + (bRows.length ? 1 + bRows.length : 0);
+    const viewRows = Math.max(1, Math.min(total, fit));
     const foot = counts.flow ? FLOW_NOTE : '';
-    return { key, side, trash, rows, counts, viewRows, foot, height: sheetHeight(viewRows, ROW_H, Boolean(foot)) };
+    return { key, side, trash, rows, counts, banished, bRows, viewRows, foot, height: sheetHeight(viewRows, ROW_H, Boolean(foot)) };
   });
   for (const key of ['left', 'right']) sheets[key].show(up.some((p) => p.key === key));
 
@@ -91,9 +121,13 @@ function render(state) {
   });
   up.forEach((p, i) => {
     const sheet = sheets[p.key];
-    sheet.head(p.side, subLine(p.counts));
-    const key = JSON.stringify([art, cfg.flowFirst !== false, p.trash.map((c) => [c.cardId, c.cardName, c.energy, (c.domains || []).join(','), c.flow])]);
-    sheet.rows(key, () => (p.rows.length ? p.rows.map((r) => trashRow(r, art)) : [emptyRow()]));
+    sheet.head(p.side, subLine(p.counts, p.banished.length));
+    const cardKeyOf = (c) => [c.cardId, c.cardName, c.energy, (c.domains || []).join(','), c.flow];
+    const key = JSON.stringify([art, cfg.flowFirst !== false, p.trash.map(cardKeyOf), p.banished.map(cardKeyOf)]);
+    sheet.rows(key, () => [
+      ...(p.rows.length ? p.rows.map((r) => trashRow(r, art)) : [emptyRow()]),
+      ...(p.bRows.length ? [sectionRow(p.banished.length), ...p.bRows.map((r) => banishedRow(r, art))] : []),
+    ]);
     sheet.foot(p.foot);
     sheet.place(places[p.key], { height: p.height, viewRows: p.viewRows, rowH: ROW_H, delay: i * 0.12 });
   });

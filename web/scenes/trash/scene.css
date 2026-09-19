@@ -37,3 +37,22 @@
   transform: rotate(45deg);
   border: calc(2 * var(--su)) solid var(--ss-text-muted, #9aa7b6);
 }
+
+/* Banishment (2026-09-19): the player's banished cards under the trash, a
+   label row between (a row of the list, so it scrolls and rises with the
+   cards), each card greyed: out of the game for good. */
+.card.section {
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: calc(8 * var(--su));
+  border-left-color: transparent;
+  border-bottom: calc(1 * var(--su)) solid var(--ss-frame, #26303c);
+  font: 800 calc(12 * var(--su))/1 var(--tes-font);
+  letter-spacing: calc(2 * var(--su));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+}
+.card.section b { font-weight: 800; color: var(--ss-text, #fff); }
+.card.banished .strip { filter: grayscale(1) brightness(0.7); }
+.card.banished .nm, .card.banished .qty { color: var(--ss-text-muted, #9aa7b6); }
+.card.banished .rune { filter: grayscale(1); opacity: 0.7; }

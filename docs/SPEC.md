@@ -270,8 +270,11 @@ this set; the PSDs stay the visual reference.
 29. **Trash** (`trash`, 2026-09-19) — side.trash newest first, copies on
     one row, Flow cards (carddb parseFlow: `[FLOW n and m Domain]`) lit with
     their Flow cost and, with flowFirst, first (web/shared/trash.js).
-    `scenes.trash {visible, side, art, flowFirst}`; a long trash scrolls
-    with the hand lists' HandScroller. An empty trash airs as "Empty".
+    `scenes.trash {visible, side, art, flowFirst, banished}`; a long list
+    scrolls with the hand lists' HandScroller. An empty trash airs as
+    "Empty". With `banished`, side.banished follows under a Banished label
+    row (one row of the list, so it scrolls and rises with the cards),
+    greyed: nothing plays a card back out of banishment (2026-09-19).
 30. **Results ticker** (`ticker`, 2026-09-19) — an overlay bar the slate
     ticker's height (74px) over event.pairings: a label box (220px, the
     round over the title) and a page of tables, each its number, a legend
@@ -313,13 +316,15 @@ this set; the PSDs stay the visual reference.
     platform (load kind `matrix`, platform-model.js matrixPatch). The
     arithmetic is web/shared/matrix.js. A full-frame graphic.
 Per-side fields (2026-09-19): trash[60] (hand-card fields less played, plus
-flow {energy, power, domain} or null), drawn[] ({cardId, cardName, n}: the
-copies seen to leave the main deck, by name) and deckLeft[] (a live feed's
-per-card count). A patch with hand or trash and no drawn updates the tally
-(state.js applyDeckSeen): new hand copies were drawn; new trash copies came
-off the board when a copy is out but in neither list, else off the deck; a
-hand-trash move in one patch counts nothing. The chain's resolve and close
-put a resolved spell, reaction or action into its side's trash.
+flow {energy, power, domain} or null), banished[60] (the same, flow always
+null), drawn[] ({cardId, cardName, n}: the copies seen to leave the main
+deck, by name) and deckLeft[] (a live feed's per-card count). A patch with
+hand, trash or banished and no drawn updates the tally (state.js
+applyDeckSeen over SEEN_ZONES = hand, trash, banished): new hand copies were
+drawn; new trash or banished copies came off the board when a copy is out
+but in none of the lists, else off the deck; a move between lists in one
+patch counts nothing, the hand's gain matched first. The chain's resolve
+and close put a resolved spell, reaction or action into its side's trash.
 Standings by group (2026-09-19): event.standings rows carry `group`, kept
 sorted within each group by points, or by record when a group has no
 points (state.js sortStandings); `scenes.standings.group` picks the group
@@ -545,7 +550,8 @@ hand card ids per room (the first look only primes), after turn 1, once per
 player and card a game; spotActions turns them into spot cues, sent only
 while preview and program show the same names. Settings gain `spot`.
 
-The live patch also carries each side's trash (resolved like the hand),
+The live patch also carries each side's trash and banished cards (resolved
+like the hand),
 deckLeft (every card RiftAtlas counts in the deck, `broadcastDecksByPlayerId`)
 and drawn (startingCount less count per card), so the odds to draw are
 exact and the panel's deck tracker agrees (2026-09-19). Between games there

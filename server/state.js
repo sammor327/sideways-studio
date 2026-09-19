@@ -13,7 +13,7 @@ import { DATA_DIR } from './runtime.js';
 import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } from '../web/shared/look.js';
 import { flowOf, kindOf } from './carddb.js';
 import { DRAWS_MAX, ROWS_CHOICES, ROWS_DEFAULT, cardKey, countBy } from '../web/shared/odds.js';
-import { TRASH_MAX } from '../web/shared/trash.js';
+import { BANISHED_MAX, TRASH_MAX } from '../web/shared/trash.js';
 import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
 import { SPONSOR_MAX, SPONSOR_POSITIONS } from '../web/shared/sponsor.js';
 import {
@@ -74,6 +74,10 @@ function defaultSide(name) {
     // panel; deckLeft is a live feed's own count of each card left in the
     // deck, which the odds take over the list while it is there.
     trash: [], drawn: [], deckLeft: [],
+    // Banishment (2026-09-19, Sam: "include what has been banished"): the
+    // cards banished this game, the oldest first, the trash graphic's
+    // second list. A Flow card ends here once it is played from the trash.
+    banished: [],
     // The three battlefields the player brought, in the order typed, each
     // marked once it has been played this match. The one in play now is
     // `battlefield` above; making a pool entry the current battlefield marks
@@ -356,8 +360,9 @@ function defaultBank() {
       odds: { visible: false, side: 'left', draws: 1, rows: ROWS_DEFAULT, art: true },
       // Trash: the cards in a player's trash, newest first, the Flow cards
       // (playable from there) lit up and, with flowFirst, listed ahead of
-      // the rest (web/shared/trash.js); art as the odds'.
-      trash: { visible: false, side: 'left', art: true, flowFirst: true },
+      // the rest (web/shared/trash.js); art as the odds'. banished lists
+      // the player's banished cards under the trash (2026-09-19).
+      trash: { visible: false, side: 'left', art: true, flowFirst: true, banished: true },
     },
   };
 }
@@ -444,7 +449,7 @@ function mergeBank(bank, raw) {
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
     if (!Array.isArray(side.battlefields)) side.battlefields = [];
-    for (const key of ['trash', 'drawn', 'deckLeft']) if (!Array.isArray(side[key])) side[key] = [];
+    for (const key of ['trash', 'banished', 'drawn', 'deckLeft']) if (!Array.isArray(side[key])) side[key] = [];
   }
   for (const key of Object.keys(fresh.scenes)) {
     bank.scenes[key] = { ...fresh.scenes[key], ...bank.scenes[key] };
@@ -629,6 +634,13 @@ function cleanTrashCard(raw) {
   return { ...rest, flow };
 }
 
+// A banished card: a trash card's fields, with no Flow to light up, since
+// nothing plays a card back out of banishment.
+function cleanBanishedCard(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  return cleanTrashCard({ ...raw, flow: null });
+}
+
 // The drawn tally: how many copies of each card have left the deck, one
 // entry a card by name (odds.js cardKey), so two printings count as one.
 function cleanDrawn(raw) {
@@ -659,31 +671,43 @@ function cleanDeckLeft(raw) {
   }).filter(Boolean);
 }
 
-// The drawn tally follows the hand and the trash (2026-09-19): a copy new
-// to the hand was drawn; a copy new to the trash came off the board when a
-// copy is out of the deck but in neither list (a unit that died), and off
-// the deck itself otherwise (burned); a card moving between the hand and
-// the trash in one edit (a discard) was out already. Taking a card off
-// either list gives nothing back to the deck: it went to the board or was
-// banished, and a copy counted by mistake is put back in the panel.
+// The drawn tally follows the hand, the trash and banishment (2026-09-19):
+// a copy new to the hand was drawn; a copy new to the trash or banished
+// came off the board when a copy is out of the deck but in none of the
+// three lists (a unit that died), and off the deck itself otherwise
+// (burned); a card moving between the lists in one edit (a discard, a Flow
+// card played from the trash and banished) was out already. Taking a card
+// off a list gives nothing back to the deck: it went to the board, and a
+// copy counted by mistake is put back in the panel.
+const SEEN_ZONES = ['hand', 'trash', 'banished'];
+const seenCounts = (side) => Object.fromEntries(SEEN_ZONES.map((z) => [z, countBy(side[z])]));
 function applyDeckSeen(side, before) {
-  const hand = countBy(side.hand);
-  const trash = countBy(side.trash);
+  const now = seenCounts(side);
   const drawn = new Map(side.drawn.map((d) => [cardKey(d), { ...d }]));
   const cards = new Map();
-  for (const c of [...side.hand, ...side.trash]) if (!cards.has(cardKey(c))) cards.set(cardKey(c), c);
+  for (const z of SEEN_ZONES) for (const c of side[z]) if (!cards.has(cardKey(c))) cards.set(cardKey(c), c);
   let changed = false;
   for (const [key, card] of cards) {
-    let dh = (hand.get(key) || 0) - (before.hand.get(key) || 0);
-    let dt = (trash.get(key) || 0) - (before.trash.get(key) || 0);
-    if (dh > 0 && dt < 0) { const m = Math.min(dh, -dt); dh -= m; dt += m; }
-    if (dt > 0 && dh < 0) { const m = Math.min(dt, -dh); dt -= m; dh += m; }
-    if (dh <= 0 && dt <= 0) continue;
+    const d = {};
+    for (const z of SEEN_ZONES) d[z] = (now[z].get(key) || 0) - (before[z].get(key) || 0);
+    // Copies that left one list for another in the same edit were out
+    // already; the hand's gain is matched first, so a card taken back into
+    // the hand from the trash is no draw.
+    let moved = SEEN_ZONES.reduce((t, z) => t + Math.max(0, -d[z]), 0);
+    for (const z of SEEN_ZONES) {
+      const m = Math.min(Math.max(0, d[z]), moved);
+      d[z] -= m;
+      moved -= m;
+    }
+    const toHand = Math.max(0, d.hand);
+    const toPiles = Math.max(0, d.trash) + Math.max(0, d.banished);
+    if (!toHand && !toPiles) continue;
     const cur = drawn.get(key) || { cardId: card.cardId, cardName: card.cardName, n: 0 };
-    let n = cur.n + Math.max(0, dh);
-    if (dt > 0) {
-      const away = Math.max(0, n - (hand.get(key) || 0) - ((trash.get(key) || 0) - dt));
-      n += Math.max(0, dt - away);
+    let n = cur.n + toHand;
+    if (toPiles) {
+      const listed = SEEN_ZONES.reduce((t, z) => t + (now[z].get(key) || 0), 0);
+      const away = Math.max(0, n - (listed - toPiles));
+      n += Math.max(0, toPiles - away);
     }
     if (n !== cur.n) {
       drawn.set(key, { ...cur, n: Math.min(12, n) });
@@ -866,15 +890,16 @@ function applySide(side, patch) {
   if (patch.handCount !== undefined) side.handCount = clampInt(patch.handCount, 0, 20);
   if (patch.holds !== undefined) side.holds = cleanStr(patch.holds, 80);
   if (patch.handUnknown !== undefined) side.handUnknown = clampInt(patch.handUnknown, 0, 20);
-  // Cards reaching the hand or the trash have left the deck (the drawn
-  // tally, applyDeckSeen), unless the patch brings the tally itself (a
-  // live feed, Swap sides, a new game, the panel's deck tracker).
-  const seenBefore = (Array.isArray(patch.hand) || Array.isArray(patch.trash)) && !Array.isArray(patch.drawn)
-    ? { hand: countBy(side.hand), trash: countBy(side.trash) } : null;
+  // Cards reaching the hand, the trash or banishment have left the deck
+  // (the drawn tally, applyDeckSeen), unless the patch brings the tally
+  // itself (a live feed, Swap sides, a new game, the deck tracker).
+  const seenBefore = (Array.isArray(patch.hand) || Array.isArray(patch.trash) || Array.isArray(patch.banished)) && !Array.isArray(patch.drawn)
+    ? seenCounts(side) : null;
   // Up to 20 listed cards, the most the hand count itself takes.
   if (Array.isArray(patch.hand)) side.hand = patch.hand.map(cleanHandCard).filter(Boolean).slice(0, 20);
   // The trash keeps its newest 60: more than a deck holds.
   if (Array.isArray(patch.trash)) side.trash = patch.trash.map(cleanTrashCard).filter(Boolean).slice(-TRASH_MAX);
+  if (Array.isArray(patch.banished)) side.banished = patch.banished.map(cleanBanishedCard).filter(Boolean).slice(-BANISHED_MAX);
   if (Array.isArray(patch.drawn)) side.drawn = cleanDrawn(patch.drawn);
   if (Array.isArray(patch.deckLeft)) side.deckLeft = cleanDeckLeft(patch.deckLeft);
   if (seenBefore) applyDeckSeen(side, seenBefore);
@@ -1367,6 +1392,7 @@ function applyBankPatch(bank, patch) {
       if (['left', 'right', 'both'].includes(t.side)) cfg.side = t.side;
       if (t.art !== undefined) cfg.art = Boolean(t.art);
       if (t.flowFirst !== undefined) cfg.flowFirst = Boolean(t.flowFirst);
+      if (t.banished !== undefined) cfg.banished = Boolean(t.banished);
     }
     if (patch.scenes.sidespot && typeof patch.scenes.sidespot === 'object') {
       const ss = patch.scenes.sidespot;

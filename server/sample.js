@@ -315,6 +315,7 @@ function build(cards) {
         // The trash, oldest first; the drawn tally the odds read follows
         // from the hand and the trash through the store's own rule.
         trash: [handCard('Stacked Deck'), handCard('Ravenbloom Student'), handCard('Gust'), handCard('Morbid Return')],
+        banished: [handCard('Temporal Breach')],
         deckList: DECKLIST, deckName: 'Diana',
         battlefields: pool([['Rockfall Path', true, 1, 'won'], ['Veiled Temple', true], ['Abandoned Hall', false]]),
       },
@@ -330,8 +331,10 @@ function build(cards) {
         champion2: 'Jinx, Demolitionist', teamName: 'Axe Throwers',
         score: 3, gameWins: 0, handCount: 4,
         hand: [handCard('Falling Star'), handCard('Rebuke'), handCard('Spinning Axe', true)],
-        // Two Flow cards in Theo's trash, so the tile shows them lit.
-        trash: [handCard('Brittle Steel'), handCard('Noxus Hopeful'), handCard('Perfect Execution'), handCard('Cleave'), handCard('Overzealous Fan')],
+        // A Flow card in Theo's trash, so the tile shows it lit, and
+        // another already played from there and banished.
+        trash: [handCard('Noxus Hopeful'), handCard('Perfect Execution'), handCard('Cleave'), handCard('Overzealous Fan')],
+        banished: [handCard('Brittle Steel')],
         deckList: DRAVEN_LIST, deckName: 'Draven',
         battlefields: pool([['Zaun Warrens', true, 1, 'lost'], ["Reaver's Row", true], ['Back-Alley Bar', false]]),
       },
