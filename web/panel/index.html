@@ -669,6 +669,18 @@
         </div>
       </div>
     </details>
+
+    <details class="field-section fold" data-sec="pairings">
+      <summary><h4 class="section-label">Pairings</h4></summary>
+
+      <div class="field-row" data-field="pairings">
+        <span class="row-label" title="One table per line, the Up next shape with the table number first: Table 12: Dax (US, 2-1) [Viktor] vs Shoji (KR, 2-1) [Yasuo]. Add = 2-1 at the end once the table has finished (= draw for a draw), and a Bye: line for the players sitting out. 32 tables a page, 128 at most. The Tournament platform tab fills this for you.">Pairings</span>
+        <div class="cell span2 standings-cell">
+          <textarea id="pairingsText" rows="5" spellcheck="false" placeholder="Table 1: Dax (US, 2-1) [Viktor] vs Shoji (KR, 2-1) [Yasuo] = 2-1&#10;Table 2: Margaux (FR, 2-1) [Jinx] vs Guubums (CN, 2-1) [Irelia]&#10;Bye: Nadia Frost"></textarea>
+          <p class="hint" id="pairingsHint"></p>
+        </div>
+      </div>
+    </details>
   </div>
 </aside>
 
@@ -841,6 +853,11 @@
           <div class="scene-name">Legend distribution <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="legendstatsOnAir">ON AIR</button></div>
           <button id="toggleLegendstats" class="scene-toggle">OFF</button>
           <p class="scene-note">The most played legends: a pie beside a table of each legend's share and win rate. Fill it under Match data &rsaquo; Legend distribution, or load it from the Tournament platform tab.</p>
+        </div>
+        <div class="scene-row" data-scene="pairings">
+          <div class="scene-name">Pairings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="pairingsOnAir">ON AIR</button></div>
+          <button id="togglePairings" class="scene-toggle">OFF</button>
+          <p class="scene-note">Every table of the round, 32 a page in two columns, with each finished table's result. Load a round from the Tournament platform tab, or type the tables under Match data &rsaquo; Pairings.</p>
         </div>
         <div class="scene-row" data-scene="result">
           <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
@@ -1175,8 +1192,24 @@
           <output id="standingsPage">1</output>
           <button type="button" id="standingsNext" class="clear-mini">&rsaquo;</button>
         </label>
+        <label class="inline" title="Each player's legend portrait beside their name and the legend's name in its own column. Switch off while the legends are not known yet, so the graphic shows no empty column."><input type="checkbox" id="standingsLegends" checked> Legends</label>
         <span class="hint">Twenty rows a page. Rows and the cut are under Match data › Standings.</span>
       </div>
+      <p class="hint" id="standingsLegendNote"></p>
+    </div>
+    <div class="feature-group hidden" data-scene="pairings">
+      <h3>Pairings</h3>
+      <div class="scene-options">
+        <label class="inline">Page
+          <button type="button" id="pairingsPrev" class="clear-mini">&lsaquo;</button>
+          <output id="pairingsPage">1</output>
+          <button type="button" id="pairingsNext" class="clear-mini">&rsaquo;</button>
+        </label>
+        <label class="inline" title="Each player's legend portrait and legend name. Switch off while the legends are not known yet."><input type="checkbox" id="pairingsLegends" checked> Legends</label>
+        <label class="inline" title="A finished table shows its games, the winner's in the accent colour, and dims the player who lost. Off, every table reads VS."><input type="checkbox" id="pairingsResults" checked> Results</label>
+        <span class="hint">32 tables a page. The tables are under Match data › Pairings; the Tournament platform tab loads a whole round (or one group) at once, and loading it again brings in new results.</span>
+      </div>
+      <p class="hint" id="pairingsLegendNote"></p>
     </div>
     <div class="feature-group hidden" data-scene="legendstats">
       <h3>Legend distribution</h3>
@@ -1505,6 +1538,10 @@
       <div class="url-line"><input class="url-input" id="legendstatsUrl" readonly><button data-copy="legendstatsUrl">Copy</button></div>
     </div>
     <div class="url-row">
+      <span class="url-label">Pairings source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="pairingsUrl" readonly><button data-copy="pairingsUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
       <span class="url-label">Result source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="resultUrl" readonly><button data-copy="resultUrl">Copy</button></div>
     </div>
@@ -1603,7 +1640,7 @@
     </section>
 
     <section class="card pf-event">
-      <h2>Standings, legends and bracket</h2>
+      <h2>Standings, pairings, legends and bracket</h2>
       <div class="row">
         <select id="pfStandGroup" aria-label="Standings for"></select>
         <select id="pfCut" aria-label="Cut line">
@@ -1613,6 +1650,10 @@
           <option value="0">No cut line</option>
         </select>
         <button type="button" id="pfStandings">Standings to preview</button>
+      </div>
+      <div class="row">
+        <button type="button" id="pfPairings" title="Every table of the round picked under Matches (and of its group, when one is picked) onto the Pairings graphic. Press again to bring in new results.">Pairings to preview</button>
+        <span class="pf-what" id="pfPairingsWhat"></span>
       </div>
       <div class="row">
         <select id="pfLegendGroup" aria-label="Legend distribution for"></select>

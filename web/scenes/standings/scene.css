@@ -1,9 +1,16 @@
 /* Standings (starter kit, 2026-09-15; spec output 2): one full-width table
-   the way a results sheet reads. Rank, player with legend thumbnail and
+   the way a results sheet reads. Rank, player with legend portrait and
    country chip, legend, record, points, then the three tiebreaks right
    aligned. Twenty rows a page at 39px, alternate rows shaded, the cut drawn
    as an accent rule under the last qualifying row with a small Cut tag;
    rows below the cut dim slightly so the bubble stays visible.
+
+   Legends (2026-09-19, Sam): the legend's face in a 54 x 36 slot before the
+   name, the legend's name in its own column to the right. With the Legends
+   switch off (scenes.standings.legends) the slot and the column are not
+   drawn and the player column takes the room. The columns are fixed widths
+   (scene.js), so a long name shrinks to its column (stage/fitnames.js)
+   instead of pushing the numbers across.
 
    Motion: --t fades the frame and brings the heading across; every read is
    var(--t, 1). The rows (2026-09-19) move on their own two clocks: --r
@@ -26,7 +33,7 @@
 .head .sub { font: 700 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); margin-left: calc(26 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .head .pg { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); white-space: nowrap; }
 
-table { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1760 * var(--u)); border-collapse: separate; border-spacing: 0; background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); clip-path: inset(0); }
+table { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1760 * var(--u)); table-layout: fixed; border-collapse: separate; border-spacing: 0; background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); clip-path: inset(0); }
 /* Separate borders (not collapsed) so each row's rule, and the cut line,
    is painted by the row and travels and fades with it. */
 /* A row's progress in (--p) and out (--q). The 0.998 makes the last row land
@@ -41,11 +48,20 @@ th { font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(2 *
 th.n, th.tb { text-align: right; }
 td { padding: 0 calc(14 * var(--u)); height: calc(39 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 tr:nth-child(even) td { background: rgba(255, 255, 255, 0.025); }
-td.rk { font: 700 calc(22 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); width: calc(96 * var(--u)); position: relative; }
-td.pl { font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; max-width: calc(560 * var(--u)); }
-td.pl .k-thumb { display: inline-block; width: calc(30 * var(--u)); height: calc(30 * var(--u)); border-radius: calc(4 * var(--u)); vertical-align: middle; margin-right: calc(12 * var(--u)); }
-td.pl .k-chip { margin-right: calc(8 * var(--u)); }
-td.lg { font-size: calc(16 * var(--u)); color: var(--ss-text, #dfe6ee); max-width: calc(420 * var(--u)); }
+td.rk { font: 700 calc(22 * var(--u))/1 var(--tes-font); color: var(--ss-accent-b, #1bef19); position: relative; }
+td.pl { font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; }
+td.pl .who { display: flex; align-items: center; gap: calc(12 * var(--u)); min-width: 0; }
+td.pl .k-chip { margin-right: calc(-4 * var(--u)); }
+td.pl .nm { min-width: 0; overflow: hidden; white-space: nowrap; }
+/* The portrait: the legend's face, square cornered like the overlays' camera
+   wells, framed in the panel rule. */
+td.pl .pt { flex: none; position: relative; width: calc(54 * var(--u)); height: calc(36 * var(--u)); overflow: hidden; background: var(--ss-ink, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+td.pl .pt.none { background: transparent; border-color: rgba(255, 255, 255, 0.08); }
+td.pl .pt .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; }
+td.pl .pt .art.hidden { display: none; }
+td.pl .pt .art.crop-legend { object-position: center 18%; }
+td.pl .pt .art.icon-tier { object-fit: contain; padding: 6%; }
+td.lg { font: 500 calc(17 * var(--u))/1 var(--tes-font); color: var(--ss-text, #dfe6ee); }
 td.n { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-align: right; font-variant-numeric: tabular-nums; }
 td.tb { text-align: right; color: var(--ss-text-muted, #9aa7b6); font-variant-numeric: tabular-nums; font-size: calc(16 * var(--u)); }
 tr.cut td { border-bottom: calc(2 * var(--u)) solid var(--ss-accent-b, #1bef19); }

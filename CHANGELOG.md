@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.29.0 (2026-09-19)
+
+- New graphic: Pairings, every table of the round on one graphic, 32 tables a page in two columns. Each table reads across: the table number, the player's legend portrait, name, record going in and legend, then VS, then the opponent. A finished table shows its games with the winner's number in the accent colour and dims the player who lost; a draw says so. The byes and how many tables have finished run along the bottom. It is under Between games, after Standings, with Page, Legends and Results in its Graphic features.
+- Tournament platform: Pairings to preview loads the round picked under Matches, or only the picked group's tables when a group is on, with every result so far and the round's byes. Press it again during the round to bring in new results; the page on screen stays where it is.
+- Pairings by hand: Match data › Pairings takes one table a line, like "Table 12: Dax (US, 2-1) [Viktor] vs Shoji (KR, 2-1) [Yasuo] = 2-1". Add "= draw" for a draw, "= W-L" or "= L-W" for a win with no games reported, and a "Bye:" line for the players sitting out.
+- Standings: each player's legend portrait now sits before their name, bigger, with the legend's name in its own column to the right. The new Legends switch in the standings' Graphic features takes both away for an event whose legends are not known yet, and a note under it says when some players have no legend.
+- Standings: a very long name now gets smaller to fit its column instead of pushing the numbers across.
+- Legend distribution: data arriving while the graphic is on air no longer shows an empty panel for a moment before the pie draws, and clearing the data lets the rows leave before the "no legend data yet" line comes in.
+
 ## 0.28.0 (2026-09-19)
 
 - New graphic: Legend distribution, under Between games. The most played legends as a pie on the left and a table on the right: each legend's face, its name, its share of the field and its win rate. The pie sweeps round with each face landing on its slice, and the rows follow one after another.

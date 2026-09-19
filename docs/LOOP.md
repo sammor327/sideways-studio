@@ -214,6 +214,51 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19c (out of band: legend portraits on the standings, the pairings graphic, 0.29.0)
+
+Sam, during Convergence #3 round 1, two asks. (1) "Make the standings show
+the legend portrait next to them and the legend name to the right ... a
+toggle option in case legend options are not available." The standings had
+a 30 px legend thumb and a Legend column all along, but Sam's live
+standings had been loaded while TopDeck still withheld legends, so the
+graphic aired empty dark squares and an empty column. Now each row has a
+54 x 36 portrait before the name (art.js portraitSteps: the hero face crop
+first, then the legend card's painting, then the icon; the face reads at
+that size where the card painting does not), the legend's name in its own
+column, and `scenes.standings.legends` (default true, older saves filled by
+mergeBank's scene spread) drops both. The table went to table-layout:
+fixed with widths set per mode in scene.js (the player column takes the
+rest), so a long name shrinks to its column (fitnames) instead of widening
+it; the name sits in its own span so only it is fitted. The panel's
+standings group gained the Legends switch and a note (amber) when some or
+all rows have no legend. (2) "A pairing graphic to review all the current
+matches for the round": the new `pairings` scene, the standings' sister
+sheet. event.pairings {rows[128], label, byes[16]}, each row a table number,
+two up-next table sides, status, score [l, r] and winner left/right/draw;
+scenes.pairings {visible, page 1-4, legends, results}. 32 tables a page in
+two columns of 16 (half the page each, left takes the odd one), so one
+64-player group of a Convergence round is one page. A finished table shows
+its games (winner's number in accent B, "W - L" for a win with no games,
+"Draw") and dims the loser; records are left off when every one is 0-0.
+Loaded by the platform tab's Pairings to preview (pairingsPatch: the round
+picked under Matches, only the picked group's tables when a group chip is
+on; a bracket round ignores the group; a different label resets the page,
+the same one keeps it; fills an empty event name) or typed under Match
+data › Pairings in the up-next line shape plus "= 2-1" / "= draw" /
+"= W-L" and "Bye:" lines. The standings' page machinery moved to
+web/stage/pager.js (createPager(root, paint)) and both scenes use it;
+re-ran session 37ef8734's entrance / turn / rapid-turn checks on both
+(rows in from the left, the next page from the right, every row settled
+on the wanted page after two quick turns). Verified on a scratch server (port
+4745, from a clean worktree) against the live event's public page: Round 1,
+107 tables, 13 finished, legends for all; Group 2 loaded 32 tables in one
+click. Tests: test/pairings.test.js, the 'platform: pairings' block. Built
+off 8dd4464 in parallel with the legend distribution (19b below), which Sam
+released first as 0.28.0; this work was then moved onto 3eca8a5 (0.28.0 plus
+its scene fix) by stash, fast-forward and pop, both sessions' additions after
+the standings blocks kept side by side, and released as 0.29.0 on Sam's go
+the same afternoon (the RiftAtlas live-game session takes 0.30.0).
+
 ### 2026-09-19b (out of band: the legend distribution, 0.28.0)
 
 Sam: "a legend distribution graphic to showcase the most played legends ...

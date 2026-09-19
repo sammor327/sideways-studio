@@ -54,6 +54,7 @@ export const TILES = [
   { key: 'bracket', scene: 'bracket', group: 'full' },
   { key: 'standings', scene: 'standings', group: 'full' },
   { key: 'legendstats', scene: 'legendstats', group: 'full' },
+  { key: 'pairings', scene: 'pairings', group: 'full' },
   { key: 'decklist', scene: 'decklist', group: 'full' },
   { key: 'decklists', scene: 'decklists', group: 'full' },
 ];

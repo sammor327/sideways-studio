@@ -98,6 +98,12 @@ function defaultBank() {
       // up to); label and note are the graphic's sub line and foot line, set
       // by whichever source filled the rows.
       legendStats: { rows: [], total: 0, label: '', note: '' },
+      // The round's pairings (2026-09-19, Sam: "a pairing graphic to review
+      // all the current matches for the round"): one row a table, each side
+      // an up-next table side, with the table's result once it is in. label
+      // names the round ("Round 3 · Group 2", set by the Tournament platform);
+      // empty falls back to the round title. byes: the players sitting out.
+      pairings: { rows: [], label: '', byes: [] },
     },
     match: {
       seriesLength: 3,
@@ -207,13 +213,20 @@ function defaultBank() {
       // decklist: the player's own list (side.deckList) down the left.
       profile: { visible: false, side: 'left', camera: true, decklist: false },
       // Bracket and standings draw event.bracket and event.standings.
+      // legends: the legend portrait beside each player and the legend's
+      // name to the right (2026-09-19, Sam); off for an event whose legends
+      // are not known yet.
       bracket: { visible: false },
-      standings: { visible: false, page: 1 },
+      standings: { visible: false, page: 1, legends: true },
       // The legend distribution: a pie of the legends played and a table of
       // their shares, the win rate column switchable (Sam: "make the win rate
       // option able to be toggled"). top is how many legends get a slice of
       // their own; the rest fold into Other.
       legendstats: { visible: false, winRate: true, top: TOP_DEFAULT },
+      // Pairings draw event.pairings, 32 tables a page in two columns.
+      // legends as the standings'; results marks the finished tables with
+      // their games and dims the player who lost.
+      pairings: { visible: false, page: 1, legends: true, results: true },
       // Result strip: the match winner and where they go next.
       result: { visible: false },
       // Sponsor plate: a 3:1 plate rotating through items every `interval`
@@ -312,6 +325,9 @@ function mergeBank(bank, raw) {
   if (!Array.isArray(bank.event.standings.rows)) bank.event.standings.rows = [];
   bank.event.legendStats = { ...fresh.event.legendStats, ...(bank.event.legendStats || {}) };
   if (!Array.isArray(bank.event.legendStats.rows)) bank.event.legendStats.rows = [];
+  bank.event.pairings = { ...fresh.event.pairings, ...(bank.event.pairings || {}) };
+  if (!Array.isArray(bank.event.pairings.rows)) bank.event.pairings.rows = [];
+  if (!Array.isArray(bank.event.pairings.byes)) bank.event.pairings.byes = [];
   bank.match.result = { ...fresh.match.result, ...(bank.match.result || {}) };
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
@@ -492,6 +508,28 @@ function cleanLegendRow(raw) {
   };
 }
 
+// A pairing: the table number, both players as up-next table sides, and the
+// table's state. status is '' (unknown), 'pending', 'live' or 'done'; score
+// is the games each side won, left first; winner is the side that took the
+// match, or 'draw'. A row needs at least one name. 128 tables is four pages
+// of 32: a 256-player round.
+const PAIRINGS_MAX = 128;
+const PAIRINGS_PAGES = 4;
+function cleanPairing(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const left = cleanTableSide(raw.left);
+  const right = cleanTableSide(raw.right);
+  if (!left.name && !right.name) return null;
+  const score = Array.isArray(raw.score) ? raw.score : [];
+  return {
+    table: clampInt(raw.table, 0, 9999),
+    left, right,
+    status: ['pending', 'live', 'done'].includes(raw.status) ? raw.status : '',
+    score: [clampInt(score[0] ?? 0, 0, 9), clampInt(score[1] ?? 0, 0, 9)],
+    winner: ['left', 'right', 'draw'].includes(raw.winner) ? raw.winner : '',
+  };
+}
+
 function applySide(side, patch) {
   if (patch.name !== undefined) side.name = cleanStr(patch.name, 40);
   if (patch.record !== undefined) side.record = cleanStr(patch.record, 12);
@@ -615,6 +653,16 @@ function applyBankPatch(bank, patch) {
       if (ls.total !== undefined) cur.total = clampInt(ls.total, 0, 99999);
       if (ls.label !== undefined) cur.label = cleanStr(ls.label, 60);
       if (ls.note !== undefined) cur.note = cleanStr(ls.note, 160);
+    }
+    if (patch.event.pairings && typeof patch.event.pairings === 'object') {
+      const pr = patch.event.pairings;
+      if (Array.isArray(pr.rows)) bank.event.pairings.rows = pr.rows.slice(0, PAIRINGS_MAX).map(cleanPairing).filter(Boolean);
+      // The standings' rule: new rows without a label (typed in the Studio)
+      // drop the last one, and the byes that came with it.
+      if (pr.label !== undefined) bank.event.pairings.label = cleanStr(pr.label, 60);
+      else if (Array.isArray(pr.rows)) bank.event.pairings.label = '';
+      if (Array.isArray(pr.byes)) bank.event.pairings.byes = pr.byes.slice(0, 16).map((b) => cleanStr(b ?? '', 40)).filter(Boolean);
+      else if (Array.isArray(pr.rows)) bank.event.pairings.byes = [];
     }
   }
 
@@ -787,6 +835,14 @@ function applyBankPatch(bank, patch) {
       const st = patch.scenes.standings;
       if (st.visible !== undefined) bank.scenes.standings.visible = Boolean(st.visible);
       if (st.page !== undefined) bank.scenes.standings.page = clampInt(st.page, 1, 4);
+      if (st.legends !== undefined) bank.scenes.standings.legends = Boolean(st.legends);
+    }
+    if (patch.scenes.pairings && typeof patch.scenes.pairings === 'object') {
+      const pr = patch.scenes.pairings;
+      if (pr.visible !== undefined) bank.scenes.pairings.visible = Boolean(pr.visible);
+      if (pr.page !== undefined) bank.scenes.pairings.page = clampInt(pr.page, 1, PAIRINGS_PAGES);
+      if (pr.legends !== undefined) bank.scenes.pairings.legends = Boolean(pr.legends);
+      if (pr.results !== undefined) bank.scenes.pairings.results = Boolean(pr.results);
     }
     if (patch.scenes.legendstats && typeof patch.scenes.legendstats === 'object') {
       const ls = patch.scenes.legendstats;

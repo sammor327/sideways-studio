@@ -245,6 +245,23 @@ function build(cards) {
           };
         }),
       },
+      // The last Swiss round on the pairings graphic: the field paired down
+      // the standings, five tables finished (one drawn) and three playing.
+      pairings: {
+        label: 'Round 8',
+        rows: Array.from({ length: (PLAYERS.length + FIELD.length) / 2 }, (_, i) => {
+          const field = [...PLAYERS, ...FIELD];
+          const [a, b, winner] = [[2, 1, 'left'], [0, 2, 'right'], [2, 0, 'left'], [1, 1, 'draw'], [1, 2, 'right']][i] || [0, 0, ''];
+          return {
+            table: i + 1,
+            left: tableSide({ ...field[2 * i], seed: 0 }),
+            right: tableSide({ ...field[2 * i + 1], seed: 0 }),
+            status: winner ? 'done' : 'live',
+            score: [a, b],
+            winner,
+          };
+        }),
+      },
     },
     match: {
       seriesLength: 3,

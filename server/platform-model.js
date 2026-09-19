@@ -538,3 +538,44 @@ export function legendStatsPatch(ev, legendOf, { group = 0 } = {}) {
     lead: s.rows[0] ? s.rows[0].legend : '',
   };
 }
+
+// A whole round onto the pairings graphic (2026-09-19): every table of the
+// round, or of one group in a pooled Swiss, in table order, each player with
+// the record they took into the round and their legend, and each finished
+// table with its games and who won. The byes of that round (and group) go
+// with them. Loading a different round or group puts the graphic back on
+// its first page; loading the same one again (fresh results) keeps the page
+// that is up.
+export const PAIRINGS_MAX = 128;
+export function pairingsPatch(ev, legendOf, { round, group: wanted = 0, bank }) {
+  const [stage, num] = String(round || '').split(':');
+  const st = stage === 'bracket' ? ev.bracket : stage === 'swiss' ? ev.swiss : null;
+  const r = st && st.rounds[num];
+  if (!r) return { error: 'That round is no longer on TopDeck. Refresh and pick again.' };
+  // Groups split the Swiss only; a bracket round is one field.
+  const group = stage === 'swiss' ? wanted : 0;
+  const groupOf = (e) => (stage === 'swiss' && ev.entrants.get(e) ? ev.entrants.get(e).group : 0);
+  const tables = r.tables.filter((t) => !group || groupOf(t.es[0]) === group);
+  if (!tables.length) return { error: group ? `Group ${group} has no tables in ${roundLabel(stage, r)}.` : `${roundLabel(stage, r)} has no tables yet.` };
+  const rec = recordsBefore(ev, stage, r);
+  const tside = (e) => {
+    const ent = e && ev.entrants.get(e);
+    return ent ? { name: ent.name.slice(0, 40), record: rec.get(e) || '', ...legendOf(ent.leader) } : { name: '' };
+  };
+  const rows = tables.slice(0, PAIRINGS_MAX).map((t) => {
+    const winner = !t.done ? ''
+      : t.winnerE ? (['left', 'right'][t.es.indexOf(t.winnerE)] || '')
+        : t.wins[0] > t.wins[1] ? 'left' : t.wins[1] > t.wins[0] ? 'right' : (t.draws || t.wins[0]) ? 'draw' : '';
+    return { table: t.t, left: tside(t.es[0]), right: tside(t.es[1]), status: t.status, score: [t.wins[0], t.wins[1]], winner };
+  });
+  const label = [roundLabel(stage, r), group ? `Group ${group}` : ''].filter(Boolean).join(' · ');
+  const byes = (r.byes || []).filter((e) => !group || groupOf(e) === group)
+    .map((e) => (ev.entrants.get(e) || {}).name).filter(Boolean).map((name) => name.slice(0, 40));
+  const patch = { event: { pairings: { rows, label, byes } } };
+  if (!bank || !bank.event.pairings || bank.event.pairings.label !== label) patch.scenes = { pairings: { page: 1 } };
+  if (bank && !bank.event.name && ev.name) patch.event.name = ev.name.slice(0, 80);
+  return {
+    patch, label, count: rows.length, done: rows.filter((x) => x.status === 'done').length,
+    byes: byes.length, dropped: Math.max(0, tables.length - PAIRINGS_MAX),
+  };
+}

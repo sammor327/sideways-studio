@@ -74,6 +74,16 @@ function paintConnection() {
   for (const id of ['pfStandings', 'pfLegends', 'pfBracket', 'pfUpNextClear']) $(id).disabled = !summary;
   $('pfBracket').disabled = !summary || !summary.bracketReady;
   $('pfBracket').title = summary && !summary.bracketReady ? 'The bracket has not started on TopDeck yet' : '';
+  paintPairingsButton();
+}
+
+// What Pairings to preview loads: the round picked under Matches and, in a
+// pooled Swiss, the group picked there.
+function paintPairingsButton() {
+  const r = currentRound();
+  const tables = r ? r.tables.filter((t) => !ui.group || t.group === ui.group).length : 0;
+  $('pfPairings').disabled = !tables;
+  $('pfPairingsWhat').textContent = r ? `${r.label}${ui.group ? ` · Group ${ui.group}` : ''} · ${tables} table${tables === 1 ? '' : 's'}` : '';
 }
 
 $('pfEvent').addEventListener('input', () => { $('pfEvent').dataset.dirty = '1'; });
@@ -171,6 +181,7 @@ function paintRounds() {
       .map(([v, t]) => Object.assign(el('option', '', t), { value: String(v) })));
     if ([...lg.options].some((o) => o.value === keep)) lg.value = keep;
   }
+  paintPairingsButton();
 }
 
 $('pfRound').addEventListener('change', () => {
@@ -299,6 +310,14 @@ $('pfLegends').addEventListener('click', () => {
   loadExtra({ kind: 'legends', group },
     (res) => `The legend distribution${group ? ` for group ${group}` : ''} is in preview: ${res.players} players on ${res.legends} legends, ${res.lead} the most played${res.unknown ? ` (${res.unknown} with no legend on TopDeck left out)` : ''}. TAKE to air.`);
 });
+$('pfPairings').addEventListener('click', () => {
+  const r = currentRound();
+  if (!r) return;
+  const plural = (k, word) => `${k} ${word}${k === 1 ? '' : 's'}`;
+  loadExtra({ kind: 'pairings', round: r.id, group: ui.group }, (res) => `${res.label} pairings are in preview: ${plural(res.count, 'table')}`
+    + `${res.done ? `, ${res.done} finished` : ''}${res.byes ? `, ${plural(res.byes, 'bye')}` : ''}`
+    + `${res.dropped ? ` (the first 128: ${res.dropped} more do not fit; pick a group)` : ''}. TAKE to air.`);
+});
 $('pfBracket').addEventListener('click', () => loadExtra({ kind: 'bracket' },
   (res) => `The ${res.format === 'se16' ? 'Top 16' : 'Top 8'} is in preview with ${res.results} result${res.results === 1 ? '' : 's'}. TAKE to air.`));
 $('pfUpNextClear').addEventListener('click', () => loadExtra({ kind: 'upnext-clear' }, 'Up next is empty in preview.'));
@@ -355,7 +374,7 @@ async function poll() {
 const PF_TILES = [
   { label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
   { label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
-  { label: 'Event graphics', keys: ['standings', 'legendstats', 'bracket', 'slate'] },
+  { label: 'Event graphics', keys: ['standings', 'legendstats', 'pairings', 'bracket', 'slate'] },
 ];
 
 const PREFS_KEY = 'sidewaysStudio.platform';

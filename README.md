@@ -317,6 +317,25 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   old page out and the next one in from the side you paged toward), and a
   **result strip**. The slate's Starting soon, Be right back and Thanks
   modes carry the day's schedule, a camera window and the champion.
+- **Standings legends** (0.29.0): each player's legend portrait (the
+  legend's face) sits before their name and the legend's name has its own
+  column to the right. The **Legends** switch in the standings' Graphic
+  features turns both off, for an event whose legends are not known yet;
+  with it on, a note under the switch says when some rows have no legend.
+- **Pairings** (`/scenes/pairings/`, 0.29.0): every table of a round, 32 a
+  page in two columns of 16. Each table reads across: the table number, the
+  player (legend portrait, name, then their record going into the round and
+  their legend), VS or the result, and the opponent mirrored. A finished
+  table shows its games with the winner's in the accent colour and dims the
+  player who lost; a draw says so. Records are left off when every one is
+  0-0 (a first round), and the byes and how many tables have finished run
+  along the foot. The Tournament platform tab loads a whole round (or one
+  group of it); by hand, type one table a line under Match data ›
+  **Pairings**: `Table 12: Dax (US, 2-1) [Viktor] vs Shoji (KR, 2-1)
+  [Yasuo] = 2-1`, with `= draw` for a draw, `= W-L` or `= L-W` for a win
+  with no games reported, and a `Bye: Name, Name` line. Graphic features
+  pages it and has the **Legends** and **Results** switches. Its pages turn
+  the way the standings' do.
 - **Head to head, VS** (`/scenes/vscard/`, 0.27.0): the Sideways Showdown
   head to head, laid out from its PSD. Each player's legend card stands
   tilted either side of a big VS on the glowing-arrows ground, the upper
@@ -412,7 +431,12 @@ score. **Swap sides** reloads it with the players the other way round, and
 **+** adds a table to the Up next board.
 
 **Standings to preview** writes a group's standings (TopDeck's own points
-and tiebreaks, labelled "Group 2 · after Round 3"), and **Bracket to
+and tiebreaks, labelled "Group 2 · after Round 3"), **Pairings to
+preview** writes every table of the round picked under Matches (only the
+picked group's, when a group chip is on) with each finished table's result
+and the round's byes; press it again during the round to bring in new
+results (a different round or group starts on page one, the same one stays
+on its page). **Bracket to
 preview** writes the Top 8 or Top 16 as TopDeck ran it. **Legend
 distribution to preview** counts the whole event or one group: how many
 players TopDeck lists for each legend, and each legend's win rate against the

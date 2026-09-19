@@ -886,6 +886,10 @@ details.scene-section > .scene-group { margin-top: 10px; }
 .feature-group h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .feature-group .scene-options { padding-left: 0; }
 .feature-group .search-wrap > input { width: 100%; }
+/* The Legends switch's note (standings, pairings): amber while the graphic
+   would draw empty legend slots, gone when there is nothing to say. */
+.feature-group p.hint:empty { display: none; }
+.feature-group p.hint.warn { color: #ffb347; }
 
 /* --- foldable control cards: the heading folds its card away ---
    The control band holds more than a short screen shows at once, so Graphic

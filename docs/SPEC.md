@@ -154,7 +154,12 @@ this set; the PSDs stay the visual reference.
 21. **Standings** (`standings`, spec output 2) — event.standings {rows[64]
     (name, country, legend, record, points, OMW, GW, OGW), cut 0/4/8/16/32}
     as one full-width table, twenty rows a page (scene.page), the cut drawn
-    under the last qualifying row.
+    under the last qualifying row. Since 2026-09-19 each row carries the
+    legend's portrait (the hero face crop, then the legend card's painting,
+    then the icon: art.js portraitSteps) before the name and the legend's
+    name in its own column; `scenes.standings.legends` (default true) drops
+    both for an event whose legends are not known. Fixed column widths, so
+    a long name shrinks (fitnames) rather than widening its column.
 22. **Result strip** (`result`) — the match winner (match.result.winner, or
     whoever holds the series) with legend art, round and game chips, the
     "advances to" note and a transparent camera well; the series score as a
@@ -179,14 +184,29 @@ this set; the PSDs stay the visual reference.
     the standings count live in web/shared/legendstats.js; the Tournament
     platform fills it from TopDeck (legendStats in server/platform-model.js).
     A full-frame graphic.
+25. **Pairings** (`pairings`, 2026-09-19) — every table of a round:
+    event.pairings {rows[128] (table, left and right as up-next table
+    sides, status '' / pending / live / done, score [left, right], winner
+    left / right / draw), label ("Round 3 · Group 2"; empty falls back to
+    the round title), byes[16]}. 32 tables a page in two columns of 16
+    (scene.page 1-4), each table read across: number, player (portrait,
+    name, record going in and legend), VS or the games, opponent mirrored.
+    `scenes.pairings {visible, page, legends, results}`: legends as the
+    standings'; results off keeps every table at VS. Records are left off
+    when every one is 0-0. Filled by the Tournament platform (kind
+    `pairings`: a round, optionally one group; a different round or group
+    resets the page, the same one keeps it) or typed under Match data ›
+    Pairings. Its pages turn like the standings' (web/stage/pager.js, shared
+    since this round). A full-frame graphic on the standings' ground.
 The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume
 clock, next match and event.commands; thanks names event.champion with
 their legend art and event.nextName / nextWhen. Sides gained team, store,
 seasonRecord, bestFinish, finishes; casters gained a handle. Full-frame
-graphics (slate, decklist, match card, profile, bracket, standings) switch
-each other off in preview.
+graphics (slate, decklist, match card, VS card, profile, bracket,
+standings, pairings, side-by-side decklists) switch each other off in
+preview.
 
 New per-side fields: record, country (2-3 letters), pronouns, archetype,
 handCount, hand[] (cardId, cardName, energy, domains), holds. New match

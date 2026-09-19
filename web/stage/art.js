@@ -54,6 +54,20 @@ export function legendSteps(side) {
   return steps;
 }
 
+// A legend portrait in a small slot beside a player's name (the standings
+// and the pairings, 2026-09-19): the face crop the holder windows use, then
+// the legend card's painting, then the icon cutout on the slot's fill.
+export function portraitSteps(side) {
+  const steps = [];
+  if (side.legendSlug) steps.push({ src: `/legendart/hero/${side.legendSlug}.png` });
+  if (side.legendCardId) {
+    steps.push({ src: `/cardart/full/${side.legendCardId}.webp`, cls: 'crop-legend' });
+    steps.push({ src: `/cardart/thumb/${side.legendCardId}.webp`, cls: 'crop-legend' });
+  }
+  if (side.legendSlug) steps.push({ src: `/legendart/icon/${side.legendSlug}.webp`, cls: 'icon-tier' });
+  return steps;
+}
+
 // A holder window in legend mode: the hero cutout fills it, the icon cutout
 // is centered on the fill, and with no legend the fill stands alone.
 export function heroSteps(side) {

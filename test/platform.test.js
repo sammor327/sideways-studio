@@ -5,7 +5,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   parseEventId, decodeFirestore, buildFromFeed, feedExtras, buildFromApi, standings,
-  summarize, standingsPatch, bracketModel, bracketPatch, matchPatch, upNextPatch,
+  summarize, standingsPatch, bracketModel, bracketPatch, matchPatch, upNextPatch, pairingsPatch,
 } from '../server/platform-model.js';
 
 const BS = String.fromCharCode(92);
@@ -232,5 +232,59 @@ describe('platform: patches', () => {
     assert.equal(upNextPatch(feed(), legendOf, { round: 'swiss:2', table: 1, bank }).patch.event.tables.length, 1);
     bank.event.tables = [1, 2, 3, 4].map((i) => ({ label: `Table ${i + 10}`, left: { name: 'x' }, right: { name: 'y' } }));
     assert.ok(upNextPatch(feed(), legendOf, { round: 'swiss:2', table: 2, bank }).error);
+  });
+});
+
+describe('platform: pairings', () => {
+  const pairingsBank = (label = '') => ({ event: { name: '', pairings: { rows: [], label, byes: [] } } });
+
+  it('loads one group\'s tables of a round with records going in, legends and results', () => {
+    const out = pairingsPatch(feed(), legendOf, { round: 'swiss:2', group: 1, bank: pairingsBank() });
+    const pr = out.patch.event.pairings;
+    assert.equal(pr.label, 'Round 2 · Group 1');
+    assert.deepEqual(pr.rows.map((r) => r.table), [1, 2]);
+    const [t1, t2] = pr.rows;
+    assert.equal(t1.left.name, 'Player 1');
+    assert.equal(t1.left.record, '1-0', 'the record going into round 2');
+    assert.equal(t1.left.legendCardId, 'OGN-001');
+    assert.deepEqual([t1.status, t1.score, t1.winner], ['done', [2, 1], 'left']);
+    assert.deepEqual([t2.right.name, t2.score, t2.winner], ['Player 4', [0, 2], 'right']);
+    assert.equal(t2.left.legend, 'Leader B', 'the first of two leaders');
+    assert.deepEqual(pr.byes, []);
+    assert.equal(out.count, 2);
+    assert.equal(out.done, 2);
+    assert.equal(out.patch.event.name, 'Test Open', 'an empty event name is filled');
+  });
+
+  it('marks a draw, and a finished table with no games as no result', () => {
+    const [draw, noShow] = pairingsPatch(feed(), legendOf, { round: 'swiss:1', group: 2 }).patch.event.pairings.rows;
+    assert.deepEqual([draw.status, draw.score, draw.winner], ['done', [1, 1], 'draw']);
+    assert.deepEqual([noShow.status, noShow.winner], ['done', '']);
+  });
+
+  it('reads every table of the round with no group, and a bracket round whatever group is asked for', () => {
+    assert.equal(pairingsPatch(feed(), legendOf, { round: 'swiss:1' }).patch.event.pairings.rows.length, 4);
+    const semis = pairingsPatch(feed(), legendOf, { round: 'bracket:2', group: 1 });
+    assert.equal(semis.patch.event.pairings.label, 'Semifinals');
+    const [done, live] = semis.patch.event.pairings.rows;
+    assert.deepEqual([done.left.name, done.right.name, done.winner], ['Player 5', 'Player 1', 'right']);
+    assert.deepEqual([live.status, live.winner], ['live', '']);
+    assert.equal(semis.done, 1);
+  });
+
+  it('turns back to page one for a new round or group, not for fresh results of the same one', () => {
+    assert.deepEqual(pairingsPatch(feed(), legendOf, { round: 'swiss:2', group: 1, bank: pairingsBank('Round 1 · Group 1') }).patch.scenes, { pairings: { page: 1 } });
+    assert.equal(pairingsPatch(feed(), legendOf, { round: 'swiss:2', group: 1, bank: pairingsBank('Round 2 · Group 1') }).patch.scenes, undefined);
+  });
+
+  it('answers a round that is gone, or a group with no tables, with an error', () => {
+    assert.ok(pairingsPatch(feed(), legendOf, { round: 'swiss:9' }).error);
+    assert.ok(pairingsPatch(feed(), legendOf, { round: 'swiss:1', group: 3 }).error);
+  });
+
+  it('comes out the same from the API once the groups are added', () => {
+    const page = feed();
+    const ev = buildFromApi(api, feedExtras(page));
+    assert.deepEqual(pairingsPatch(ev, legendOf, { round: 'swiss:2', group: 2 }).patch, pairingsPatch(page, legendOf, { round: 'swiss:2', group: 2 }).patch);
   });
 });

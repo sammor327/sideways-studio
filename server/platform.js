@@ -21,7 +21,7 @@ import { listLegends } from './legends.js';
 import { buildDeck } from './decklist.js';
 import {
   parseEventId, decodeFirestore, buildFromFeed, feedExtras, buildFromApi, summarize,
-  standingsPatch, bracketPatch, matchPatch, upNextPatch, legendStatsPatch, normName,
+  standingsPatch, bracketPatch, matchPatch, upNextPatch, legendStatsPatch, pairingsPatch, normName,
 } from './platform-model.js';
 
 const FILE = path.join(DATA_DIR, 'platform.json');
@@ -256,6 +256,8 @@ export async function handlePlatform(req, res, url, { readBody, sendJson }) {
       out = upNextPatch(model, legendOf, { round: b.round, table: b.table, bank });
     } else if (b.kind === 'upnext-clear') {
       out = { patch: { event: { tables: [] } } };
+    } else if (b.kind === 'pairings') {
+      out = pairingsPatch(model, legendOf, { round: b.round, group: Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0))), bank });
     } else {
       sendJson(res, 400, { ok: false, error: 'unknown kind' });
       return true;
