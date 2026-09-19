@@ -27,6 +27,7 @@ import { sampleBank } from './sample.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
 import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
 import { initPlatform, handlePlatform } from './platform.js';
+import { initRiftAtlas, handleRiftAtlas, shutdownRiftAtlas } from './riftatlas.js';
 import { findBrowser, renderStill, shutdownStills } from './still.js';
 import { legendSlug } from '../web/scenes/decklist/layout.js';
 import { ALL_SOURCES, APP_PAGES, sourceUrls } from '../web/shared/sources.js';
@@ -98,6 +99,8 @@ const server = http.createServer(async (req, res) => {
 
   // The Tournament platform tab: TopDeck.gg events (server/platform.js).
   if (await handlePlatform(req, res, url, { readBody, sendJson })) return;
+  // A RiftAtlas casting studio's live game (server/riftatlas.js).
+  if (await handleRiftAtlas(req, res, url, { readBody, sendJson })) return;
 
   if (url.pathname === '/api/state' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -686,6 +689,7 @@ async function quitApp(reason) {
   console.log(`  ${reason}. Sideways Studio is stopping.`);
   closeAppWindow();
   await shutdownStills().catch(() => {});
+  await shutdownRiftAtlas();
   server.close();
   // Sockets that a browser source is holding open would keep the process
   // alive well past the point the operator asked it to stop. The delay is
@@ -807,6 +811,7 @@ async function start() {
   await initState();
   await initLibrary();
   await initPlatform();
+  await initRiftAtlas();
   try {
     const files = (await readdir(DATA_DIR_THEME)).filter((f) => LOGO_EXT.includes(f.split('.').pop()));
     logoFile = files.find((f) => f.startsWith('logo.')) || null;

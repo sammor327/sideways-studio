@@ -214,6 +214,39 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19d (out of band: Live game from RiftAtlas)
+
+Sam, during Convergence #3: "For sideways studio, we can use this:
+play.riftatlas.com/game/caster?room=QZGSU", RiftAtlas's casting studio,
+which shows a whole game (hands included) to accounts with the caster role.
+The page is Next.js with Clerk sign-in; the game is a PartyKit room per game
+(`realtime.riftatlas-workers.com/parties/match/<room>`) sending a room shell
+(series chain, wins, players), an `authoritative_snapshot` and then
+`authoritative_patch_commit` operations; a broadcast view gets hands in the
+clear and decks as remaining counts. Built: server/riftatlas-model.js (pure:
+frames to a game, the page's patch operations ported one for one, the view,
+live and identity patches), server/riftatlas.js (the reader, settings,
+routes under /api/riftatlas), the `live` action in state.js, and the Live
+game fold (web/panel/riftatlas.js/.css) at the top of Match data. Verified
+against RiftAtlas itself: 107 recorded patches applied in order give exactly
+the snapshot the page took after a reload at the same sequence (the fixture,
+test/fixtures/riftatlas-series.json, names replaced); on a scratch server
+(port 4750) a live best of three filled Match data in both banks (both
+decks parsed with nothing unresolved), a fresh profile reports signed out,
+Sign in opens a plain window and the reader restarts headless once it
+closes, and Quit leaves no browser behind. Traps met: Google refuses sign-in
+in any browser started with the DevTools port ("This browser or app may not
+be secure"), so sign-in is a plain window on the same profile and the
+reader runs on the session Clerk keeps; headed Edge relaunches itself unless
+given --edge-skip-compat-layer-relaunch (the address is also read from
+DevToolsActivePort); attaching to the page twice doubles every frame;
+connecting mid-series walks game 1, game 2, ... so nothing is written until
+the view settles on the chain's head; a panel in a background tab has its
+poll throttled, so it refreshes on becoming visible; a page cannot post to
+localhost from https without a browser permission prompt, which is why this
+is not a bookmarklet. Not done: 2v2 rooms, the chain into the showdown
+graphic, reconnecting on launch.
+
 ### 2026-09-19c (out of band: legend portraits on the standings, the pairings graphic, 0.29.0)
 
 Sam, during Convergence #3 round 1, two asks. (1) "Make the standings show

@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## Unreleased
+
+- New: Live game, at the top of Match data. Type a RiftAtlas room code (or paste the caster link) and press Connect: the game in that room fills Match data as it is played. Points, game wins, both hands, the battlefield in play, legends, champions, the turn counter and whose turn it is follow the game by themselves, and a best of three is followed from game to game. The fold lists every card played, and a click on one stages it in the card popup.
+- Live values go straight to air, like the clock, while the players on air are the players in preview. Load a new pairing into preview and they wait there until TAKE. Switch "Live values straight to air" off to keep everything in preview.
+- Names never change by themselves, so names from the Tournament platform stay as they are. Load players brings RiftAtlas's names, legends, battlefields and each player's full deck into preview, for a match nobody loaded from TopDeck.
+- It needs a RiftAtlas account with caster access. Press Sign in once: RiftAtlas opens in its own window, you sign in there (Google works), close it, and the reader starts on its own, out of sight. RiftAtlas keeps you signed in after that.
+- "Stage each card played in the card popup" puts every card a player plays into the card popup in preview, ready for TAKE.
+
 ## 0.29.0 (2026-09-19)
 
 - New graphic: Pairings, every table of the round on one graphic, 32 tables a page in two columns. Each table reads across: the table number, the player's legend portrait, name, record going in and legend, then VS, then the opponent. A finished table shows its games with the winner's number in the accent colour and dims the player who lost; a draw says so. The byes and how many tables have finished run along the bottom. It is under Between games, after Standings, with Page, Legends and Results in its Graphic features.

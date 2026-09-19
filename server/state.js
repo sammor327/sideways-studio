@@ -1155,6 +1155,16 @@ export function applyUpdate(patch) {
     bump();
     return { ok: true, version: state.version };
   }
+  // A live game feed (RiftAtlas, riftatlas.js): the game itself says what
+  // the points, the hands and the turn are, so the same match patch lands in
+  // both banks at once, like a cue, through the same whitelist as any edit.
+  // Only match data rides it; anything else in the body is ignored.
+  if (patch.action === 'live') {
+    if (!patch.match || typeof patch.match !== 'object') return { ok: false, error: 'live needs match data' };
+    for (const bank of [state.preview, state.program]) applyBankPatch(bank, { match: patch.match });
+    bump();
+    return { ok: true, version: state.version };
+  }
   if (patch.action !== undefined) return { ok: false, error: 'unknown action' };
 
   applyBankPatch(state.preview, patch);

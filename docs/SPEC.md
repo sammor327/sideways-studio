@@ -312,6 +312,34 @@ state owns content. All mutations pass the server-side whitelist sanitizer in
   (initial chip / named placeholder panel). A broken img glyph on program
   output is a shipping bug.
 
+## Live game data (RiftAtlas, 2026-09-19)
+
+server/riftatlas.js keeps an Edge (Chrome as the fallback) with its own
+profile (data/riftatlas) on the casting studio
+(`play.riftatlas.com/game/caster?room=`) and reads, through the DevTools
+protocol's Network events, the frames the page's realtime sockets
+(`realtime.riftatlas-workers.com/parties/match/<room>`) receive. It sends
+RiftAtlas nothing. server/riftatlas-model.js (pure) keeps each room's shell
+doc (the series chain previousRoomCode / nextRoomCode, winsByPlayerId,
+matchFormat, publicPlayers, usedBattlefieldsByPlayerId, phase) and the live
+room's `authoritative_snapshot`, and applies each
+`authoritative_patch_commit` in sequence (a gap or an unknown operation
+marks the feed stale until the page's next snapshot). The view is the head
+of the chain once settled: its shell names no next room and, in game, its
+snapshot is in. The live patch per side: score, gameWins, hand (resolved
+cards) and handCount, legend, champion (the card whose source is
+`champion`), battlefield and the pool's played marks (topped up to three
+from the rooms seen), plus seriesLength, turn and activeSide. It lands as
+`{action: 'live', match}` (both banks, through the match whitelist only)
+while preview and program show the same names, and as a preview edit
+otherwise. Load players adds names and a deck paste (legend, champion, the
+battlefields seen, runes once all 12 are face up, the main deck as it
+started the game). Card codes resolve exactly, case-blind, by base number,
+then by name. Settings: data/riftatlas.json {room, live, follow, swap,
+show}; the room is not reconnected on launch. Sign-in is a plain window on
+the same profile, because Google refuses sign-in while the DevTools port is
+open; the reader runs headless with the ordinary user agent.
+
 ## Attribution and copy rules
 
 - **Riot fan-content attribution line on every full-frame scene** (bracket,

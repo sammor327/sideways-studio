@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./panel.css">
 <link rel="stylesheet" href="./lookbuilder.css">
 <link rel="stylesheet" href="./platform.css">
+<link rel="stylesheet" href="./riftatlas.css">
 </head>
 <body>
 <header>
@@ -51,6 +52,32 @@
       <button id="resetMatch" class="danger-ghost">Reset match</button>
     </div>
   </div>
+
+  <!-- Live game: a RiftAtlas room read into the match as it is played. The
+       reader runs in the app (server/riftatlas.js); this fold drives it
+       (riftatlas.js). -->
+  <details class="field-section live-feed" id="raFold">
+    <summary><h4 class="section-label">Live game</h4><span class="ra-dot" id="raDot"></span><span class="ra-line" id="raLine">Not connected</span></summary>
+    <p class="hint">A RiftAtlas room as its casting studio shows it: points, hands, turn, battlefields and every card played, into Match data as the game goes. Needs a RiftAtlas account with caster access.</p>
+    <div class="ra-connect">
+      <input id="raRoom" maxlength="200" autocomplete="off" spellcheck="false" placeholder="Room code or caster link" aria-label="RiftAtlas room code or caster link">
+      <button type="button" id="raConnect" class="ra-go">Connect</button>
+      <button type="button" id="raSignIn" title="Opens RiftAtlas in its own window. Sign in there with the account that has caster access, then close that window: the reader starts on its own.">Sign in</button>
+    </div>
+    <p class="ra-status" id="raStatus"></p>
+    <div class="ra-map" id="raMap"></div>
+    <div class="ra-actions">
+      <button type="button" id="raLoad" title="Names, legends, battlefields and each player's deck from RiftAtlas into preview, for a match nobody loaded from the Tournament platform">Load players</button>
+      <button type="button" id="raSwap" title="Put RiftAtlas player 1 on the Player 2 side. Sides follow the names already in Match data when they match.">Swap feed sides</button>
+    </div>
+    <div class="ra-switches">
+      <label class="inline" title="Points, game wins, hands, the battlefield in play, legend, champion, turn and whose turn go to preview and program at once, like the clock. Off: they wait in preview for TAKE."><input type="checkbox" id="raLive"> Live values straight to air</label>
+      <label class="inline" title="Each card a player plays is staged in the card popup in preview, ready for TAKE."><input type="checkbox" id="raFollow"> Stage each card played in the card popup</label>
+      <label class="inline" title="The reader runs out of sight. Switch this on to watch the casting studio it is reading, in its own window."><input type="checkbox" id="raShow"> Show the RiftAtlas window</label>
+    </div>
+    <h5 class="ra-sub">Cards played</h5>
+    <div class="ra-cards" id="raCards"></div>
+  </details>
 
   <div class="field-grid">
     <div class="grid-head">

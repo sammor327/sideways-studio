@@ -451,6 +451,52 @@ key never goes into the state the graphics receive, and the panel only
 shows its last four characters. Data provided by
 [TopDeck.gg](https://topdeck.gg); their API asks for that credit.
 
+## Live game (RiftAtlas)
+
+**Live game**, the first fold of Match data, reads a game on RiftAtlas (the
+online simulator Convergence is played on) the way RiftAtlas's own casting
+studio shows it, and writes it into Match data as it is played. It needs a
+RiftAtlas account with the caster role.
+
+Type the room code (the letters after `room=` in the caster link, or paste
+the whole link) and press **Connect**. The app opens the casting studio for
+that room in a copy of Edge that runs out of sight and reads what the page
+receives; it follows a best of three from one game's room to the next by
+itself. From then on points, game wins, both players' hands (the casting
+studio sees every card), hand counts, the battlefield in play (marked played
+in the player's pool), legend, champion, the turn counter and whose turn it
+is follow the game. **Cards played** lists the latest cards with who played
+them; click one to stage it in the card popup, or switch on **Stage each
+card played in the card popup** to have each card staged as it is played.
+
+**Live values straight to air** (on by default) writes those values into
+preview and program together, like the clock, while the players on air are
+the players in preview. Load a new pairing into preview (Tournament
+platform, or typing) and the values wait in preview until TAKE; switch it
+off to keep everything in preview. Names never change on their own, so the
+names the Tournament platform loaded stay. **Load players** brings
+RiftAtlas's names, legends, battlefields and each player's full deck (as a
+decklist paste) into preview, for a match nobody loaded from TopDeck. Sides
+follow the names already in Match data when they match; **Swap feed sides**
+turns the feed round otherwise.
+
+**Signing in.** Press **Sign in** and RiftAtlas opens in a normal Edge
+window. Sign in there with the account that has caster access, wait for the
+casting studio, and close the window: the reader starts on its own. Google
+refuses to sign anyone in to a browser the app can read, which is why
+signing in has a window of its own; RiftAtlas keeps the session after that,
+and the reader uses it with no Google involved. The sign-in lives in
+`data/riftatlas` (a browser profile of its own, like the app window's);
+delete that folder to forget it. **Show the RiftAtlas window** runs the
+reader in a visible window, to watch what it is reading. The room is
+remembered but not reconnected when the app starts, so yesterday's game
+never pours into Match data: press Connect.
+
+The app sends RiftAtlas nothing of its own: the page does its own talking and
+the app only reads what it receives. That is RiftAtlas's own realtime data,
+which RiftAtlas can change whenever it updates; the room line says when the
+app cannot follow. 1v1 rooms only for now.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are

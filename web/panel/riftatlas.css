@@ -1,0 +1,78 @@
+/* The Live game fold at the top of Match data (web/panel/riftatlas.js):
+   a RiftAtlas room read into the match as it is played. */
+
+.live-feed > summary { display: flex; align-items: center; gap: 8px; }
+.live-feed > summary .section-label { flex: 0 0 auto; }
+.live-feed > *:not(summary) { margin-top: 8px; }
+.live-feed .hint { font-size: 12px; }
+
+.ra-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; background: #3a444e; }
+.ra-dot.ok { background: var(--tes-green); box-shadow: 0 0 6px var(--tes-green); }
+.ra-dot.wait { background: #f2c46d; }
+.ra-dot.bad { background: #f08b8b; }
+.ra-line {
+  min-width: 0;
+  margin-left: auto;
+  font-size: 12px;
+  color: #cdd6de;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ra-connect { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; }
+.ra-connect input { min-width: 0; }
+.ra-go { color: #06110a; background: var(--tes-grad); border-color: transparent; font-weight: 800; }
+.ra-status { margin: 0; font-size: 12.5px; line-height: 1.45; color: #cdd6de; }
+.ra-status.wait { color: #f2c46d; }
+.ra-status.bad { color: #f08b8b; }
+
+.ra-map { display: flex; flex-direction: column; gap: 4px; }
+.ra-map:empty { display: none; }
+.ra-side {
+  display: grid;
+  grid-template-columns: 22px 24px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+  border-left: 2px solid transparent;
+}
+.ra-side.active { border-left-color: var(--tes-green); background: rgba(27, 239, 25, 0.05); }
+.ra-who { font-size: 11px; font-weight: 700; color: #8b98a5; }
+.ra-empty { grid-column: 2 / 4; font-size: 12px; color: #8b98a5; }
+.ra-thumb { width: 24px; height: 34px; object-fit: cover; background: #1a2027; }
+.ra-thumb.none { visibility: visible; }
+.ra-text { display: flex; flex-direction: column; min-width: 0; }
+.ra-name { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #e8edf1; overflow-wrap: anywhere; }
+.ra-bits { font-size: 11.5px; color: #8b98a5; overflow-wrap: anywhere; }
+.ra-turn {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #06110a;
+  background: var(--tes-green);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.ra-note { margin: 2px 0 0; }
+
+.ra-actions { display: flex; gap: 6px; }
+.ra-actions button.on { border-color: var(--tes-blue); color: #e8edf1; }
+.ra-switches { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; color: #cdd6de; }
+.ra-switches label { font-size: 12.5px; color: #cdd6de; cursor: pointer; }
+.ra-switches input[type="checkbox"] { width: 15px; height: 15px; margin: 0; flex: 0 0 auto; accent-color: var(--tes-blue); }
+
+.ra-sub { margin: 10px 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8b98a5; font-weight: 600; }
+.ra-cards { display: flex; flex-direction: column; gap: 2px; max-height: 330px; overflow-y: auto; }
+.ra-card {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 3px 6px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.ra-card:hover { background: #141a20; border-color: #2a333c; }
+.ra-card.on { border-color: var(--tes-green); }

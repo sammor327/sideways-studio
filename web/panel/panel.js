@@ -3,6 +3,7 @@ import {
 } from '../shared/look.js';
 import { renderLookBuilder } from './lookbuilder.js';
 import { renderPlatform } from './platform.js';
+import { renderRiftAtlas } from './riftatlas.js';
 import { setClock } from '../shared/clockcells.js';
 import { setOffline } from '../shared/offline.js';
 import { refreshFontSheet } from '../shared/fontsheet.js';
@@ -659,6 +660,7 @@ function render(s) {
   renderLook(s.theme);
   renderLookBuilder(s);
   renderPlatform(s);
+  renderRiftAtlas(s);
   renderDecks(s);
   renderExtras(s);
   revealNewGraphics(s);
