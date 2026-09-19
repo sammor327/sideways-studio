@@ -2,6 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, heroSteps } from '../../stage/art.js';
 import { clockText, applyVisibility } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -210,9 +211,9 @@ function setLogo(imgEl, markEl, logo) {
 let countdownState = null;
 function paintClocks() {
   const text = clockText(countdownState);
-  setText($('countdown'), text);
-  setText($('holdClock'), text);
-  setText($('brbClock'), text);
+  setClock($('countdown'), text);
+  setClock($('holdClock'), text);
+  setClock($('brbClock'), text);
 }
 setInterval(() => {
   if (!root.classList.contains('off')) paintClocks();

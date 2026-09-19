@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Decklists Side by Side</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="dls off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="top">
+      <div class="k-lockup"><div class="mark"></div><img class="logo hidden" id="logo" alt="" draggable="false"><div class="t"><span id="eventName"></span><small id="roundTitle"></small></div></div>
+      <div class="ttl">Decklists</div>
+      <div class="round" id="series"></div>
+    </div>
+    <div class="half l" id="lhalf"></div>
+    <div class="divider"></div>
+    <div class="half r" id="rhalf"></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The side by side decklists are hidden: switch them on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

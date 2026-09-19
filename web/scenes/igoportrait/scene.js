@@ -2,6 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps, legendSteps, heroSteps } from '../../stage/art.js';
 import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -101,7 +102,7 @@ function renderSide(p, side, m, active, animate) {
 
 let timerState = null;
 setInterval(() => {
-  if (!root.classList.contains('off')) setText($('tbClock'), clockText(timerState));
+  if (!root.classList.contains('off')) setClock($('tbClock'), clockText(timerState));
 }, 250);
 
 let shownVisible = null;
@@ -129,7 +130,7 @@ const params = initStage({
     const round = [bank.event.roundTitle, m.turn > 0 ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
     setText($('tbRound'), round);
     timerState = m.timer || timerState;
-    setText($('tbClock'), clockText(timerState));
+    setClock($('tbClock'), clockText(timerState));
 
     const logo = state.theme.logo || '';
     const logoEl = $('eventLogo');

@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Game Intro</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="mu off" id="root">
+    <div class="book" id="book">
+      <div class="page l" id="lpage">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+        <div class="title"><div class="t" id="roundTitle"></div><div class="sub" id="eventName"></div></div>
+        <div class="portrait"><div class="portrait-in"><img class="art hidden" id="lhero" alt="" draggable="false"></div></div>
+        <div class="banner"><span class="n" id="lname"></span></div>
+        <div class="line"><span class="k-chip" id="lcountry"></span><span class="lg" id="llegend"></span></div>
+        <div class="pair">
+          <div class="slot champ" id="lchampSlot"><span class="k-label">Champion</span><div class="cardbox"><img class="art hidden" id="lchamp" alt="" draggable="false"></div></div>
+          <div class="slot bf" id="lbfSlot"><span class="k-label">Battlefield</span><div class="cardbox land"><img class="art hidden" id="lbf" alt="" draggable="false"></div></div>
+        </div>
+      </div>
+      <div class="spine"></div>
+      <div class="vs"><span>VS</span></div>
+      <div class="page r" id="rpage">
+        <div class="ground">
+          <div class="g-fill"></div><div class="g-image"></div>
+          <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+          <div class="g-grain"></div><div class="g-dim"></div>
+        </div>
+        <div class="title"><div class="t" id="gameTitle"></div><div class="sub" id="series"></div></div>
+        <div class="portrait"><div class="portrait-in"><img class="art hidden" id="rhero" alt="" draggable="false"></div></div>
+        <div class="banner"><span class="n" id="rname"></span></div>
+        <div class="line"><span class="k-chip" id="rcountry"></span><span class="lg" id="rlegend"></span></div>
+        <div class="pair">
+          <div class="slot champ" id="rchampSlot"><span class="k-label">Champion</span><div class="cardbox"><img class="art hidden" id="rchamp" alt="" draggable="false"></div></div>
+          <div class="slot bf" id="rbfSlot"><span class="k-label">Battlefield</span><div class="cardbox land"><img class="art hidden" id="rbf" alt="" draggable="false"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The game intro is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

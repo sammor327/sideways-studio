@@ -2,6 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, legendSteps } from '../../stage/art.js';
 import { clockText, fitText, applyVisibility } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -53,7 +54,7 @@ function renderSide(p, side, animate) {
 
 let timerState = null;
 setInterval(() => {
-  if (!root.classList.contains('off')) setText($('clock'), clockText(timerState));
+  if (!root.classList.contains('off')) setClock($('clock'), clockText(timerState));
 }, 250);
 
 let shownVisible = null;
@@ -82,7 +83,7 @@ const params = initStage({
     setText($('cornerEvent'), bank.event.name || '');
     $('corner').classList.toggle('hidden', !scene.clock);
     timerState = m.timer || timerState;
-    setText($('clock'), clockText(timerState));
+    setClock($('clock'), clockText(timerState));
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);

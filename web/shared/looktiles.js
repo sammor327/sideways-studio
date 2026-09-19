@@ -24,6 +24,7 @@ export const TILES = [
   { key: 'igobars', scene: 'igobars', group: 'igo' },
   { key: 'igoportrait', scene: 'igoportrait', group: 'igo' },
   { key: 'igorows', scene: 'igorows', group: 'igo' },
+  { key: 'igorows-bf', scene: 'igorows', group: 'igo', variant: 'Battlefields, all three', vary: { battlefields: 'all' } },
   { key: 'pov', scene: 'pov', group: 'igo' },
 
   { key: 'scorebug', scene: 'scorebug', group: 'parts' },
@@ -39,6 +40,8 @@ export const TILES = [
   { key: 'lowerthird-interview', scene: 'lowerthird', group: 'parts', variant: 'Interview', vary: { mode: 'interview' } },
   { key: 'lowerthird-coming', scene: 'lowerthird', group: 'parts', variant: 'Coming up', vary: { mode: 'coming' } },
   { key: 'result', scene: 'result', group: 'parts' },
+  { key: 'matchup', scene: 'matchup', group: 'parts' },
+  { key: 'sideboard', scene: 'sideboard', group: 'parts' },
 
   { key: 'slate', scene: 'slate', group: 'full', variant: 'Up next', vary: { mode: 'upnext' } },
   { key: 'slate-starting', scene: 'slate', group: 'full', variant: 'Starting soon', vary: { mode: 'starting' } },
@@ -49,6 +52,7 @@ export const TILES = [
   { key: 'bracket', scene: 'bracket', group: 'full' },
   { key: 'standings', scene: 'standings', group: 'full' },
   { key: 'decklist', scene: 'decklist', group: 'full' },
+  { key: 'decklists', scene: 'decklists', group: 'full' },
 ];
 
 const BY_KEY = new Map(TILES.map((t) => [t.key, t]));

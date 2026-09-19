@@ -1,7 +1,8 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, bump } from '../../stage/seekclock.js';
-import { chainLoad, clearArt, heroSteps } from '../../stage/art.js';
+import { chainLoad, clearArt, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
 import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -123,6 +124,48 @@ function renderSide(p, side, m, animate) {
   loadHero(p, side);
 }
 
+// --- battlefields (2026-09-18) ---
+//
+// A strip of its own beside each player's camera. "all" is the three the
+// player brought in the order typed, the one in play marked with an arrow
+// and the ones played before greyed; "one" is the battlefield in play alone.
+// A player with no three typed still shows the one in play.
+function bfEntries(side, mode) {
+  const now = String(side.battlefield || '').toLowerCase();
+  if (mode === 'one') {
+    return side.battlefield ? [{ name: side.battlefield, cardId: side.battlefieldCardId || '', now: false, played: false }] : [];
+  }
+  const pool = (side.battlefields || []).map((b) => ({ ...b, now: Boolean(now) && b.name.toLowerCase() === now }));
+  if (!pool.length && side.battlefield) return [{ name: side.battlefield, cardId: side.battlefieldCardId || '', now: true, played: true }];
+  return pool;
+}
+
+const bfShown = { l: null, r: null };
+function renderBattlefields(p, side, mode) {
+  const box = $(`${p}bfs`);
+  const list = mode === 'one' || mode === 'all' ? bfEntries(side, mode) : [];
+  const key = JSON.stringify([mode, list]);
+  if (bfShown[p] === key) return list.length > 0;
+  bfShown[p] = key;
+  box.classList.toggle('gone', !list.length);
+  box.classList.toggle('one', mode === 'one');
+  box.replaceChildren(...list.map((b) => {
+    const tile = document.createElement('div');
+    tile.className = `bft${b.now ? ' now' : ''}${b.played && !b.now ? ' played' : ''}`;
+    const img = document.createElement('img');
+    img.className = 'art hidden';
+    img.alt = '';
+    img.draggable = false;
+    const nm = document.createElement('span');
+    nm.className = 'nm';
+    nm.textContent = b.name;
+    tile.append(img, nm);
+    if (b.cardId) chainLoad(img, battlefieldSteps(b.cardId), rotateIfPortrait);
+    return tile;
+  }));
+  return list.length > 0;
+}
+
 // The event logo: the theme logo, or the event name when none is uploaded,
 // with the round title and turn under it. The logo answers to its own
 // switch; the round shows either way.
@@ -141,7 +184,7 @@ function renderLogo(state, bank, scene, round) {
 
 let timerState = null;
 setInterval(() => {
-  if (!root.classList.contains('off')) setText($('clock'), clockText(timerState));
+  if (!root.classList.contains('off')) setClock($('clock'), clockText(timerState));
 }, 250);
 
 let shownVisible = null;
@@ -167,6 +210,9 @@ const params = initStage({
 
     renderSide('l', m.left, m, animate);
     renderSide('r', m.right, m, animate);
+    const bfMode = scene.battlefields || 'off';
+    root.classList.toggle('bf-l', renderBattlefields('l', m.left, bfMode));
+    root.classList.toggle('bf-r', renderBattlefields('r', m.right, bfMode));
     root.classList.toggle('showdown', Boolean(scene.showdown));
     const lanes = scene.handStyle === 'lanes';
     const art = scene.handArt !== false;
@@ -191,7 +237,7 @@ const params = initStage({
 
     $('clock').classList.toggle('hidden', scene.clock === false);
     timerState = m.timer || timerState;
-    setText($('clock'), clockText(timerState));
+    setClock($('clock'), clockText(timerState));
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);

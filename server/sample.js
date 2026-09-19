@@ -51,6 +51,46 @@ const DECKLIST = [
   '1 Vex, Apathetic',
 ].join('\n');
 
+// Theo's deck: FlipDeck's transcribed Draven list, whose plate left the
+// battlefields blank, so three real ones are named here for the sample.
+const DRAVEN_LIST = [
+  'Legend: Draven, Glorious Executioner',
+  'Champion: Draven, Showboat',
+  'Battlefields:',
+  "1 Reaver's Row",
+  '1 Zaun Warrens',
+  '1 Back-Alley Bar',
+  'Runes:',
+  '6 Fury Rune',
+  '6 Chaos Rune',
+  'Main:',
+  '1 Brittle Steel',
+  '1 Cleave',
+  '2 Falling Star',
+  '2 Gust',
+  '1 Perfect Execution',
+  '2 Rebuke',
+  '3 Stacked Deck',
+  '1 Switcheroo',
+  '3 Darius, Trifarian',
+  '2 Ferrous Forerunner',
+  "3 Kai'Sa, Survivor",
+  '3 Noxus Hopeful',
+  '3 Overzealous Fan',
+  '2 Pouty Poro',
+  "2 Rek'Sai, Breacher",
+  '3 Tideturner',
+  '2 Vex, Apathetic',
+  '3 Spinning Axe',
+  'Sideboard:',
+  '1 Brittle Steel',
+  '2 Brynhir Thundersong',
+  '2 Hard Bargain',
+  '1 Ocean Drake',
+  '3 Ravenbloom Prefect',
+  '1 Rebuke',
+].join('\n');
+
 // The eight in the top cut, by seed. The match on the tiles is the first
 // semifinal: seed 1 (Mara) against seed 4 (Theo).
 const PLAYERS = [
@@ -117,6 +157,9 @@ function build(cards) {
     ...legend(p.legend),
   });
   const bySeed = (n) => PLAYERS.find((p) => p.seed === n);
+  // A player's three battlefields; played marks the ones already used this
+  // match (game one's, and this game's, which is the side's battlefield).
+  const pool = (entries) => entries.map(([name, played]) => ({ name, cardId: card(name).cardId, played }));
 
   const diana = legend('diana-scorn-of-the-moon');
   const draven = legend('draven-glorious-executioner');
@@ -194,6 +237,8 @@ function build(cards) {
         champion2: 'Ahri, Alluring', teamName: 'Moonlit Rift',
         score: 5, gameWins: 1, handCount: 6,
         hand: [handCard('Stupefy'), handCard('Ride the Wind'), handCard('Gust'), handCard('Moonfall'), handCard('Tideturner')],
+        deckList: DECKLIST, deckName: 'Diana',
+        battlefields: pool([['Rockfall Path', true], ['Veiled Temple', true], ['Abandoned Hall', false]]),
       },
       right: {
         name: 'Theo Brandt', record: '6-2-0', country: 'GB', pronouns: 'he/him', seed: '4TH',
@@ -207,6 +252,8 @@ function build(cards) {
         champion2: 'Jinx, Demolitionist', teamName: 'Axe Throwers',
         score: 3, gameWins: 0, handCount: 4,
         hand: [handCard('Falling Star'), handCard('Rebuke'), handCard('Spinning Axe', true)],
+        deckList: DRAVEN_LIST, deckName: 'Draven',
+        battlefields: pool([['Zaun Warrens', true], ["Reaver's Row", true], ['Back-Alley Bar', false]]),
       },
     },
     scenes: {

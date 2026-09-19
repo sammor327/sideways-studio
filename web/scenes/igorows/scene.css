@@ -164,6 +164,56 @@
 .showdown .sd-pill { display: inline-flex; }
 .showdown .active-label { display: none; }
 
+/* --- battlefields (2026-09-18, Sam's mock) ---
+   Their own strip, apart from the hands: under player 1's camera and over
+   player 2's. "All" is the three battlefields the player brought, side by
+   side in the order typed; "one" is this game's alone across the column.
+   The one in play carries an arrow on its camera side; the ones played
+   earlier are greyed out. The series dots, the hand lists and the logo move
+   over to make room for a side that has a strip.
+
+   Each tile shows the card's painting: battlefield art is stored portrait,
+   so the image is turned flat and sized so the painting (x 0.20..0.69,
+   y 0.06..0.94 of the file, the window the POV crops) covers the tile. */
+.bfstrip { position: absolute; left: 0; width: calc(330 * var(--u)); height: calc(56 * var(--u)); display: flex; }
+.bfstrip.top { top: calc(190 * var(--u)); }
+.bfstrip.bot { top: calc(834 * var(--u)); }
+.bfstrip.gone { display: none; }
+.bft { position: relative; flex: 1 1 0; min-width: 0; overflow: hidden; background: var(--ss-ink, #10151d); }
+.bft + .bft { border-left: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+.bft .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.bft .art.hidden { display: none; }
+.bft .art.crop-battlefield { inset: auto; left: 50%; top: 50%; width: calc(114.1 * var(--u)); height: calc(159.4 * var(--u)); transform: translate(-50%, calc(-50% + 6.1 * var(--u))) rotate(90deg); }
+.bfstrip.one .bft .art.crop-battlefield { width: calc(268.3 * var(--u)); height: calc(374.7 * var(--u)); transform: translate(-50%, calc(-50% + 14.2 * var(--u))) rotate(90deg); }
+.bft::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.42)); }
+.bft .nm {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 calc(6 * var(--u));
+  text-align: center;
+  font: 800 calc(12.5 * var(--u))/1.1 var(--tes-font);
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0, 0, 0, 0.95);
+  overflow: hidden;
+}
+.bfstrip.one .bft .nm { font-size: calc(16 * var(--u)); letter-spacing: calc(0.6 * var(--u)); }
+.bft.played .art { filter: grayscale(1) brightness(0.55); }
+.bft.played .nm { color: rgba(255, 255, 255, 0.5); }
+/* The arrow on the one in play, pointing in from the camera's side. */
+.bft.now::before {
+  content: ''; position: absolute; left: 50%; z-index: 2;
+  margin-left: calc(-10 * var(--u));
+  border-left: calc(10 * var(--u)) solid transparent;
+  border-right: calc(10 * var(--u)) solid transparent;
+}
+.bfstrip.bot .bft.now::before { bottom: 0; border-bottom: calc(10 * var(--u)) solid var(--ss-accent-b, #1bef19); }
+.bfstrip.top .bft.now::before { top: 0; border-top: calc(10 * var(--u)) solid var(--ss-accent-b, #1bef19); }
+.bf-l .under.top { top: calc(252 * var(--u)); }
+.bf-l .infos, .bf-l .logo-well { top: calc(292 * var(--u)); }
+.bf-r .under.bot { top: calc(798 * var(--u)); }
+.bf-r .infos, .bf-r .logo-well { bottom: calc(288 * var(--u)); }
+
 /* --- event logo ---
    The theme logo (or the event name, when no logo is uploaded) centred in
    the column between the two cameras, the round title under it. --lg is its

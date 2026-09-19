@@ -4,6 +4,7 @@ import {
   chainLoad, clearArt, cardSteps, legendSteps, heroSteps, battlefieldSteps, rotateIfPortrait,
 } from '../../stage/art.js';
 import { handEls, handKey, handTotal, handUp, HandScroller } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 import { groupHand } from '../../shared/handlist.js';
 
 const $ = (id) => document.getElementById(id);
@@ -144,7 +145,7 @@ function clockText() {
   return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`;
 }
 setInterval(() => {
-  if (!dual.classList.contains('off')) setText($('clock'), clockText());
+  if (!dual.classList.contains('off')) setClock($('clock'), clockText());
 }, 250);
 
 // The banner is 282px wide and the name is set at 30px caps; a long name
@@ -255,7 +256,7 @@ const params = initStage({
     $('clock').classList.toggle('hidden', !clockOn);
     dual.classList.toggle('clock-on', clockOn);
     timerState = m.timer || timerState;
-    setText($('clock'), clockText());
+    setClock($('clock'), clockText());
 
     $('cardSlot').classList.toggle('hidden', !scene.cardSlot || rightHand);
     loadCard(bank, logo, animate);

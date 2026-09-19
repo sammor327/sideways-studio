@@ -250,6 +250,80 @@
       </div>
     </details>
 
+    <!-- Decks and battlefields (2026-09-18): each player's own list, for the
+         sideboard fly-in and the side by side decklists, and the three
+         battlefields they brought, for the rows overlay. Loading a deck fills
+         its battlefields; This game marks the one in play. -->
+    <details class="field-section fold" data-sec="decks">
+      <summary><h4 class="section-label">Decks and battlefields</h4></summary>
+
+      <div class="field-row" data-field="deck">
+        <span class="row-label" title="One of your saved decks (the deck editor saves them), or paste a list under it. Loading a deck fills that player's three battlefields.">Deck</span>
+        <div class="cell deck-cell" data-side="left"><select id="ldeckPick" aria-label="Player 1 deck"></select><span class="deck-line" id="ldeckLine"></span></div>
+        <div class="cell deck-cell" data-side="right"><select id="rdeckPick" aria-label="Player 2 deck"></select><span class="deck-line" id="rdeckLine"></span></div>
+      </div>
+
+      <div class="field-row" data-field="deck">
+        <span class="row-label sub" title="The same paste the Decklist card takes: Legend, Champion, Battlefields, Runes, Main and Sideboard sections.">Paste a list</span>
+        <div class="cell" data-side="left"><textarea id="ldeckList" rows="3" spellcheck="false" placeholder="Legend: Diana, Scorn of the Moon&#10;Champion: Diana, Lunari&#10;Main:&#10;3 Stupefy" aria-label="Player 1 decklist"></textarea></div>
+        <div class="cell" data-side="right"><textarea id="rdeckList" rows="3" spellcheck="false" placeholder="Legend: Draven, Glorious Executioner&#10;..." aria-label="Player 2 decklist"></textarea></div>
+      </div>
+
+      <div class="field-row" data-field="battlefieldPool">
+        <span class="row-label sub">Battlefield 1</span>
+        <div class="cell picker-wrap card-cell" data-side="left">
+          <img id="lbfp0Thumb" class="card-thumb hidden" alt="">
+          <input id="lbfp0" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 battlefield 1">
+          <button id="lbfp0Clear" class="clear-x" title="Take this battlefield off the list" aria-label="Clear Player 1 battlefield 1">&times;</button>
+          <ul class="results" id="lbfp0Results"></ul>
+        </div>
+        <div class="cell picker-wrap card-cell" data-side="right">
+          <img id="rbfp0Thumb" class="card-thumb hidden" alt="">
+          <input id="rbfp0" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 battlefield 1">
+          <button id="rbfp0Clear" class="clear-x" title="Take this battlefield off the list" aria-label="Clear Player 2 battlefield 1">&times;</button>
+          <ul class="results" id="rbfp0Results"></ul>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="battlefieldPool">
+        <span class="row-label sub">Battlefield 2</span>
+        <div class="cell picker-wrap card-cell" data-side="left">
+          <img id="lbfp1Thumb" class="card-thumb hidden" alt="">
+          <input id="lbfp1" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 battlefield 2">
+          <button id="lbfp1Clear" class="clear-x" title="Take this battlefield off the list" aria-label="Clear Player 1 battlefield 2">&times;</button>
+          <ul class="results" id="lbfp1Results"></ul>
+        </div>
+        <div class="cell picker-wrap card-cell" data-side="right">
+          <img id="rbfp1Thumb" class="card-thumb hidden" alt="">
+          <input id="rbfp1" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 battlefield 2">
+          <button id="rbfp1Clear" class="clear-x" title="Take this battlefield off the list" aria-label="Clear Player 2 battlefield 2">&times;</button>
+          <ul class="results" id="rbfp1Results"></ul>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="battlefieldPool">
+        <span class="row-label sub">Battlefield 3</span>
+        <div class="cell picker-wrap card-cell" data-side="left">
+          <img id="lbfp2Thumb" class="card-thumb hidden" alt="">
+          <input id="lbfp2" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 1 battlefield 3">
+          <button id="lbfp2Clear" class="clear-x" title="Take this battlefield off the list" aria-label="Clear Player 1 battlefield 3">&times;</button>
+          <ul class="results" id="lbfp2Results"></ul>
+        </div>
+        <div class="cell picker-wrap card-cell" data-side="right">
+          <img id="rbfp2Thumb" class="card-thumb hidden" alt="">
+          <input id="rbfp2" placeholder="Search battlefields&hellip;" autocomplete="off" aria-label="Player 2 battlefield 3">
+          <button id="rbfp2Clear" class="clear-x" title="Take this battlefield off the list" aria-label="Clear Player 2 battlefield 3">&times;</button>
+          <ul class="results" id="rbfp2Results"></ul>
+        </div>
+      </div>
+
+      <div class="field-row" data-field="battlefieldPool">
+        <span class="row-label" title="Click the battlefield this game is on: it becomes the player's Battlefield above and is marked played. The rows overlay lights it and fades the ones played before. The arrow clears the played marks for a new match (Reset match does it too).">This game</span>
+        <div class="cell bf-chips" data-side="left" id="lbfChips"></div>
+        <div class="cell bf-chips" data-side="right" id="rbfChips"></div>
+      </div>
+    </details>
+
     <details class="field-section fold" data-sec="teams">
       <summary><h4 class="section-label">2v2 teams</h4></summary>
 
@@ -637,6 +711,16 @@
           <button id="toggleShowdown" class="scene-toggle">OFF</button>
           <p class="scene-note" id="showdownNote">The cards played onto a showdown, in play order, the newest lifted because it resolves first. Airs only while a showdown is open: Open under Match data &rsaquo; Hands and showdown, which also switches this graphic on in preview.</p>
         </div>
+        <div class="scene-row" data-scene="matchup">
+          <div class="scene-name">Game intro <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="matchupOnAir">ON AIR</button></div>
+          <button id="toggleMatchup" class="scene-toggle">OFF</button>
+          <p class="scene-note">Round and game number over both players' legend, champion and battlefield, built in over the game window of the in-game overlay that is up.</p>
+        </div>
+        <div class="scene-row" data-scene="sideboard">
+          <div class="scene-name">Sideboard fly-in <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sideboardOnAir">ON AIR</button></div>
+          <button id="toggleSideboard" class="scene-toggle">OFF</button>
+          <p class="scene-note">Both players' sideboards at once, player 1 across the top and player 2 across the bottom, each flying in from their side (or one player alone, under Graphic features).</p>
+        </div>
       </div>
     </details>
 
@@ -721,6 +805,11 @@
         <div class="scene-row" data-scene="result">
           <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
           <button id="toggleResult" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="decklists">
+          <div class="scene-name">Decklists side by side <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="decklistsOnAir">ON AIR</button></div>
+          <button id="toggleDecklists" class="scene-toggle">OFF</button>
+          <p class="scene-note">Both players' decks at once, from each player's list under Match data &rsaquo; Decks and battlefields.</p>
         </div>
       </div>
     </details>
@@ -880,6 +969,13 @@
         <label class="inline" title="Turn N after the round title on the bottom bar"><input type="checkbox" id="igoRowsTurn" checked> Turn counter</label>
         <label class="inline" title="The theme's event logo in the middle of the column (the event name when no logo is uploaded). It slides out while a hand is listed and back in when the hands clear"><input type="checkbox" id="igoRowsLogo" checked> Event logo</label>
         <label class="inline" title="The round clock at the right end of the bottom bar, running from the match timer"><input type="checkbox" id="igoRowsClock" checked> Round clock</label>
+        <label class="inline" title="A strip beside each player's camera: the battlefield this game is on, or the three they brought side by side with an arrow on this game's and the ones played earlier greyed out. Set them under Match data &rsaquo; Decks and battlefields">Battlefields
+          <select id="igoRowsBattlefields">
+            <option value="off">Off</option>
+            <option value="one">This game's</option>
+            <option value="all">All three, played marked</option>
+          </select>
+        </label>
         <div class="row">
           <label class="file-btn">Upload logo<input type="file" id="igoRowsLogoFile" accept=".png,.jpg,.jpeg,.webp,.svg" hidden></label>
           <button id="igoRowsLogoRemove">Remove logo</button>
@@ -1038,6 +1134,38 @@
     <div class="feature-group hidden" data-scene="result">
       <h3>Result</h3>
       <div class="scene-options"><span class="hint">The winner and the "advances to" line are under Match data › Match card and result. Unset, the strip names whoever holds the series.</span></div>
+    </div>
+    <div class="feature-group hidden" data-scene="matchup">
+      <h3>Game intro</h3>
+      <div class="scene-options">
+        <label class="inline" title="Auto counts from the game wins: 1-0 is game 2">Game
+          <select id="matchupGame">
+            <option value="0">Auto</option>
+            <option value="1">Game 1</option>
+            <option value="2">Game 2</option>
+            <option value="3">Game 3</option>
+            <option value="4">Game 4</option>
+            <option value="5">Game 5</option>
+          </select>
+        </label>
+        <span class="hint">The round is Event &rsaquo; Round title. Each side shows its legend, champion and Battlefield from Match data. It fits itself into whichever in-game overlay is up; TAKE plays the build, and taking it off fades it out.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="sideboard">
+      <h3>Sideboard fly-in</h3>
+      <div class="scene-options">
+        <label class="inline">Player
+          <select id="sideboardSide"><option value="both">Both, player 1 on top</option><option value="left">Player 1 only</option><option value="right">Player 2 only</option></select>
+        </label>
+        <span class="hint" id="sideboardHint">From each player's list under Match data &rsaquo; Decks and battlefields: player 1 flies in from the left across the top of the game, player 2 from the right across the bottom. A player whose list has no sideboard is left out.</span>
+      </div>
+    </div>
+    <div class="feature-group hidden" data-scene="decklists">
+      <h3>Decklists side by side</h3>
+      <div class="scene-options">
+        <label class="inline"><input type="checkbox" id="decklistsSideboards" checked> Sideboards</label>
+        <span class="hint">Each half reads that player's list under Match data &rsaquo; Decks and battlefields.</span>
+      </div>
     </div>
   </section>
 
@@ -1304,6 +1432,18 @@
     <div class="url-row">
       <span class="url-label">Result source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="resultUrl" readonly><button data-copy="resultUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Game intro source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="matchupUrl" readonly><button data-copy="matchupUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Sideboard fly-in source, 1920 &times; 1080, 60 fps (put it above your in-game overlay)</span>
+      <div class="url-line"><input class="url-input" id="sideboardUrl" readonly><button data-copy="sideboardUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Decklists side by side source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="decklistsUrl" readonly><button data-copy="decklistsUrl">Copy</button></div>
     </div>
     <p class="hint">Card data and art come from Rift Registry, saved on this computer: no venue internet needed once downloaded. Add <code>&amp;side=left</code> to the popup URL to mirror it. vMix: add each URL as a Web Browser input at 1920 × 1080, tick "Use Transparent Background", and set FPS to 60.</p>
     </details>

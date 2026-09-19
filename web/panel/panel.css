@@ -547,6 +547,18 @@ textarea:focus { outline: 2px solid var(--tes-blue); }
 .clock-out { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 60px; }
 .clock-len { font-size: 12px; color: #8b98a5; }
 .clock-len input { width: 48px; text-align: center; padding: 5px 4px; }
+/* Decks and battlefields (2026-09-18): the deck picker's summary line and
+   the This game chips, lit for the battlefield in play, faded once played. */
+.deck-cell { display: flex; flex-direction: column; gap: 4px; }
+.deck-cell select { width: 100%; }
+.deck-line { font-size: 11px; color: #8b98a5; min-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deck-line.warn { color: #f0b429; }
+.bf-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.bf-chips .muted { font-size: 11px; }
+.bf-chip { max-width: 100%; padding: 4px 8px; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bf-chip.now { background: var(--tes-grad); color: #06110a; border-color: transparent; font-weight: 700; }
+.bf-chip.played:not(.now) { opacity: 0.55; text-decoration: line-through; }
+.bf-chips .clear-mini { padding: 3px 7px; }
 
 .theme-colors { display: flex; gap: 16px; }
 .logo-row { display: flex; align-items: center; gap: 12px; }

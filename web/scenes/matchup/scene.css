@@ -1,0 +1,242 @@
+/* Game intro (2026-09-18, Sam, from a Hearthstone broadcast's game card):
+   two pages side by side in the overlays' own square shapes (Sam: no
+   arched doorway), a VS between the two legends. Each carries a player's
+   legend card painting in a window of one standard size, their name on a
+   bar, the country and the legend under it,
+   and this game's champion and battlefield cards; the round sits over the
+   left page and the game number over the right. The book is designed at
+   1600x900 and sits in the game window of whichever in-game overlay is up
+   (--gx, --gy, --gs from web/shared/gamewindow.js), scaled to fit; with
+   none up it takes the frame.
+
+   Motion: --t (1.8 s) opens the book from the spine, then drops the titles,
+   raises the legend windows, opens the name bars and flips the two cards
+   in, each stage a slice of --t. --o (0.4 s) fades it all out. Every read
+   falls back to settled: var(--t, 1), var(--o, 1). */
+
+.mu { position: absolute; inset: 0; opacity: var(--o, 1); }
+.mu.off { display: none; }
+.mu, .mu * { box-sizing: border-box; }
+
+.book {
+  position: absolute;
+  left: calc(var(--gx, 160) * var(--u));
+  top: calc(var(--gy, 90) * var(--u));
+  width: calc(1600 * var(--u));
+  height: calc(900 * var(--u));
+  transform: scale(var(--gs, 1));
+  transform-origin: 0 0;
+  perspective: calc(2600 * var(--u));
+  --pg: clamp(0, calc(var(--t, 1) / 0.32), 1);
+  --ti: clamp(0, calc((var(--t, 1) - 0.22) / 0.25), 1);
+  --ar: clamp(0, calc((var(--t, 1) - 0.28) / 0.32), 1);
+  --bn: clamp(0, calc((var(--t, 1) - 0.48) / 0.22), 1);
+  --nm: clamp(0, calc((var(--t, 1) - 0.58) / 0.2), 1);
+  --c1: clamp(0, calc((var(--t, 1) - 0.66) / 0.2), 1);
+  --c2: clamp(0, calc((var(--t, 1) - 0.76) / 0.24), 1);
+}
+
+/* --- the pages, opening from the spine --- */
+.page {
+  position: absolute;
+  top: 0;
+  width: calc(785 * var(--u));
+  height: 100%;
+  overflow: hidden;
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-ink, #0a0d12);
+  box-shadow: 0 calc(30 * var(--u)) calc(80 * var(--u)) rgba(0, 0, 0, 0.55);
+  opacity: var(--pg);
+}
+.page.l { left: 0; transform-origin: right center; transform: rotateY(calc((1 - var(--pg)) * 88deg)); }
+.page.r { right: 0; transform-origin: left center; transform: rotateY(calc((1 - var(--pg)) * -88deg)); }
+.page::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: calc(5 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  z-index: 1;
+}
+.page .ground .g-shards, .page .ground .g-shade, .page .ground .g-glint { opacity: 0.35; }
+.spine {
+  position: absolute;
+  left: calc(797 * var(--u));
+  width: calc(6 * var(--u));
+  top: calc(40 * var(--u));
+  bottom: calc(40 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  box-shadow: 0 0 calc(18 * var(--u)) var(--ss-accent-a, #11b6fb);
+  transform: scaleY(var(--pg));
+  opacity: var(--pg);
+}
+
+/* --- titles: the round on the left, the game on the right --- */
+.title {
+  position: absolute;
+  left: calc(30 * var(--u)); right: calc(30 * var(--u)); top: calc(36 * var(--u));
+  text-align: center;
+  opacity: var(--ti);
+  transform: translateY(calc((1 - var(--ti)) * -30 * var(--u)));
+}
+.title .t {
+  font: 800 calc(56 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+  color: var(--ss-text, #f3f6f9);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 calc(3 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, 0.6);
+}
+.title .sub {
+  margin-top: calc(10 * var(--u));
+  font: 500 calc(16 * var(--u))/1.2 var(--tes-font);
+  letter-spacing: calc(2.4 * var(--u));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.title .sub:empty { display: none; }
+
+/* --- the legend in its window: square-cornered like the overlay's camera
+   wells, one size for both players, showing the legend card's painting in
+   the crop the dual columns and the POV use (x 250..700 of the 744x1039
+   card), started at y 70 rather than 30 so the card frame's gold top line
+   stays out, scaled to the 300x390 window --- */
+.portrait {
+  position: absolute;
+  left: 50%;
+  top: calc(146 * var(--u));
+  width: calc(300 * var(--u));
+  height: calc(390 * var(--u));
+  margin-left: calc(-150 * var(--u));
+  overflow: hidden;
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-ink, #0a0d12);
+  box-shadow: 0 calc(16 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.55);
+  opacity: var(--ar);
+  transform: translateY(calc((1 - var(--ar)) * 60 * var(--u))) scale(calc(0.94 + 0.06 * var(--ar)));
+}
+.portrait-in {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, var(--ss-plate, #10151d), var(--ss-ink, #0a0d12) 75%);
+}
+.portrait-in .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 18%; }
+.portrait-in .art.hidden { display: none; }
+.portrait-in .art.crop-legend {
+  inset: auto;
+  left: calc(-166.7 * var(--u));
+  top: calc(-46.7 * var(--u));
+  width: calc(496 * var(--u));
+  height: calc(692.7 * var(--u));
+}
+.portrait-in .art.icon-tier { object-fit: contain; padding: 22%; opacity: 0.6; }
+
+/* --- VS, centred on the spine between the two legends --- */
+.vs {
+  position: absolute;
+  left: calc(730 * var(--u));
+  top: calc(271 * var(--u));
+  width: calc(140 * var(--u));
+  height: calc(140 * var(--u));
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  background: var(--ss-plate, #10151d);
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  box-shadow: 0 0 calc(40 * var(--u)) rgba(0, 0, 0, 0.7);
+  opacity: var(--ar);
+  transform: scale(calc(0.6 + 0.4 * var(--ar)));
+}
+.vs span {
+  font: 800 calc(72 * var(--u))/1 var(--tes-font);
+  letter-spacing: calc(2 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- the name bar, a plate like the overlay's player bars, opening from
+   its middle --- */
+.banner {
+  position: absolute;
+  left: 50%;
+  top: calc(552 * var(--u));
+  width: calc(580 * var(--u));
+  height: calc(72 * var(--u));
+  margin-left: calc(-290 * var(--u));
+  display: grid;
+  place-items: center;
+  padding: 0 calc(28 * var(--u));
+  background: var(--ss-plate, #10151d);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  transform: scaleX(var(--bn));
+}
+.banner .n {
+  position: relative;
+  max-width: 100%;
+  font: 800 calc(42 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+  color: var(--ss-text, #f3f6f9);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: var(--nm);
+}
+
+.line {
+  position: absolute;
+  left: calc(40 * var(--u)); right: calc(40 * var(--u)); top: calc(640 * var(--u));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  opacity: var(--nm);
+}
+.line .k-chip { font-size: calc(15 * var(--u)); padding: calc(5 * var(--u)) calc(8 * var(--u)) calc(4 * var(--u)); }
+.line .lg {
+  font: 800 calc(22 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+  color: var(--ss-accent-b, #1bef19);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.line .lg:empty { display: none; }
+
+/* --- this game's champion and battlefield, flipping in --- */
+.pair {
+  position: absolute;
+  left: 0; right: 0; top: calc(684 * var(--u));
+  display: flex;
+  justify-content: center;
+  gap: calc(34 * var(--u));
+}
+.slot { display: flex; flex-direction: column; align-items: center; gap: calc(8 * var(--u)); }
+.slot.empty { display: none; }
+.slot .k-label { font-size: calc(13 * var(--u)); }
+.slot.champ { opacity: var(--c1); transform: perspective(calc(900 * var(--u))) rotateY(calc((1 - var(--c1)) * 90deg)); }
+.slot.bf { opacity: var(--c2); transform: perspective(calc(900 * var(--u))) rotateY(calc((1 - var(--c2)) * 90deg)); }
+.cardbox {
+  position: relative;
+  width: calc(129 * var(--u));
+  height: calc(180 * var(--u));
+  border-radius: calc(8 * var(--u));
+  overflow: hidden;
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-plate, #10151d);
+  box-shadow: 0 calc(10 * var(--u)) calc(26 * var(--u)) rgba(0, 0, 0, 0.55);
+}
+.cardbox.land { width: calc(251 * var(--u)); }
+.cardbox .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cardbox .art.hidden { display: none; }
+/* Battlefield art is stored portrait: turn the whole card to lie flat in
+   the landscape box. */
+.cardbox.land .art.crop-battlefield {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  width: calc(180 * var(--u));
+  height: calc(251 * var(--u));
+  transform: translate(-50%, -50%) rotate(90deg);
+}

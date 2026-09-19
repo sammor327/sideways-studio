@@ -1,6 +1,7 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { clockText, applyVisibility } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -8,7 +9,7 @@ const inOut = new SeekClock(root, '--t', 500);
 
 let countdownState = null;
 setInterval(() => {
-  if (!root.classList.contains('off')) setText($('clock'), clockText(countdownState));
+  if (!root.classList.contains('off')) setClock($('clock'), clockText(countdownState));
 }, 250);
 
 let shownVisible = null;
@@ -39,7 +40,7 @@ const params = initStage({
     setText($('main'), main);
     setText($('sub'), sub);
     countdownState = ev.countdown || countdownState;
-    setText($('clock'), clockText(countdownState));
+    setClock($('clock'), clockText(countdownState));
     // A clock that was never set (0 counting up from 0) is noise, not a time.
     const c = ev.countdown || {};
     $('clock').classList.toggle('hidden', !(c.countdown > 0 || c.running || c.elapsed > 0));

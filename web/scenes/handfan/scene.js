@@ -2,6 +2,7 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps } from '../../stage/art.js';
 import { clockText, renderRunes, loadLegendDomains, legendDomains } from '../../stage/exp.js';
+import { setClock } from '../../shared/clockcells.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -99,7 +100,7 @@ function renderTop(side, on) {
 
 let timerState = null;
 setInterval(() => {
-  if (!root.classList.contains('off')) setText($('clock'), clockText(timerState));
+  if (!root.classList.contains('off')) setClock($('clock'), clockText(timerState));
 }, 250);
 
 let shownVisible = null;
@@ -166,7 +167,7 @@ const params = initStage({
 
     setText($('round'), [bank.event.roundTitle, m.turn > 0 ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · '));
     timerState = m.timer || timerState;
-    setText($('clock'), clockText(timerState));
+    setClock($('clock'), clockText(timerState));
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);

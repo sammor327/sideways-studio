@@ -214,6 +214,124 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-18g (out of band: sideboards one size, the versus screen; not released)
+
+Sam: both sideboards the same size, filling the screen across; on the game
+intro, drop the blue/green rule between the legend and the name, put a VS
+between the two legends, standardise the legend images and use card art.
+
+Sideboard plates now both span the game window (width = window - 48) and
+share one card width: the smaller of what the longer sideboard allows
+across that width and what the window's height allows with both plates
+stacked, capped at 260; the cards centre on their row. Scale is always 1
+(the plates are sized in window pixels).
+
+Game intro: the legend is the legend card's own painting (full art, then
+the thumb, hero cutout only without a card id) in a 300x390 window for both
+players, cropped x 250..700 like the dual columns and the POV but from y 70
+(not 30) so the card frame's gold top line stays out. The trim bar under
+the window and the one on top of the name bar are gone. A 140px square VS
+badge (plate, frame border, 72px trim-gradient text) sits on the spine at
+the legends' middle and arrives with them.
+
+Card counts on the sideboard fly-in and the side by side decklists now use
+the decklist graphic's own style (Sam): a plain white number at the card's
+top left (left 9%, top 10%), 800 weight, 40% of the card's width (the side
+by side's sideboard row at the rack's 30/92), 'Akzidenz-Grotesk Next' with
+the theme font winning under html.theme-font, the decklist's three-layer
+black shadow, no badge.
+
+### 2026-09-18f (out of band: Sam's four notes on the decks round; not released)
+
+1. Rows battlefields follow Sam's mock: a strip of three art tiles (110x56,
+   the painting zoomed to cover, name in 12.5px caps) beside each camera,
+   under player 1's (y 190) and over player 2's (y 834); the one in play
+   carries an accent-B arrow on the camera side, played ones are greyscale
+   at 55% brightness. "One" = this game's alone, one full-width tile.
+2. The strip is its own element (`.bfstrip`, outside `.infos`), so the hands
+   never share space with it; `.bf-l` / `.bf-r` move the dots row, the hand
+   area and the logo well over by the strip's height on that side only.
+3. Game intro pages lose every round shape: square pages and spine, the
+   legend in a square window (400x364, 2px frame, 5px trim bar under it like
+   an active camera well), a straight name bar (plate, 1px frame, 4px trim
+   top) instead of the ribbon. Cards keep their card corners.
+4. Sideboard fly-in shows both players by default (`side: 'both'`, still
+   'left' / 'right'): player 1's plate against the top of the game window
+   from the left, player 2's against the bottom from the right 0.12 of --t
+   later, one shared scale and card size; a player with no sideboard is left
+   out. Plates are square now too. Panel select: Both / Player 1 only /
+   Player 2 only; sceneDraws and the thumbnail's empty check know 'both'.
+
+Replay: the round's scripts were edited in place (patch_decks_rows.py
+rewritten; delta.py applies a change to a script's new text and the live
+file together) so a clean worktree replay still equals the tree.
+
+### 2026-09-18e (out of band: players' decks, battlefields, sideboard fly-in, side by side decklists, game intro; not released)
+
+Sam, with a Hearthstone game-card screenshot: battlefields on the rows
+overlay's left column (one, or all three to track which have been played),
+a sideboard fly-in per player, a side by side decklist graphic, and an
+animated game intro (legend, champion, battlefield, name, game and round)
+that works with the rows overlay and the other overlays.
+
+State: side `deckList` (6000, cleanMultiline) + `deckName`, side
+`battlefields[<=3] {name, cardId, played}` (cleanPoolEntry). applySide marks
+the pool entry played when `battlefield` itself is in the patch and matches
+(case-insensitive), so Reset match (a pool-only patch clearing the marks)
+is not undone. Scenes: `igorows.battlefields` off|one|all (default off),
+`sideboard {side}`, `decklists {sideboards}`, `matchup {game 0..5}`.
+`web/shared/gamewindow.js`: GAME_WINDOWS per host overlay (rows 330,75 1590x930;
+pillars 545,64 830x1016; dual 350..1570; bars y 145..935; 2v2 < 1508; 1v1 < 1615;
+POV 297..1623), host priority as the sponsor's, `fitInto` (design centred, capped
+scale), `gameNumber`. `web/stage/decks.js`: parseDeck (server parse, cached per
+text, unresolved not kept), champion name -> card id via /api/champions.
+
+Scenes: `matchup` (1600x900 book, two pages opening from a spine on --t 1.8 s
+in stage slices via clamp(), --o 0.4 s fade out; arch legend art full tier,
+ribbon banner, champion + battlefield cards, the battlefield turned flat),
+`sideboard` (plate hugs its cards, one row, flies from the player's side by
+--dx, cards rise staggered; stays down with no sideboard), `decklists` (full
+frame halves, grid width = max over column counts of min(by width, by height)).
+Rows: `.bfs` block per player (P1 above the hand, P2 below), 'one' = a single
+48px row, 'all' = header "N of 3 played" + rows, Now/Played tags; strips zoom
+the painting (81.5x113.8 rotated, +4.3 y); logo well pulls in under bf-one /
+bf-all. Panel: Match data fold "Decks and battlefields" (deck select from the
+library with an "(edited)" state, paste with 700 ms debounce, three pool
+pickers, This game chips + clear-played); loading a deck refills the pool
+keeping played marks by name. Rows Battlefields select; Game intro / Sideboard
+rows in 1v1, Decklists 2up in Between games (FULL_SCENES); swap + reset carry
+the new fields. Sample match carries both lists and pools. Look builder tiles
++5. Tests: test/state-decks.test.js (11), 194 pass.
+
+Verified on scratch port 4735: every graphic isolated and over the rows
+overlay, the intro over the dual columns, P2's sideboard over the pillars,
+the intro's build at 350 / 800 / 1300 ms, and the panel flows (library pick
+refills the pool, a chip sets the battlefield and marks it, full-frame
+exclusivity). Gotcha: the preview monitor stacks every scene page, so a
+scene listed there before its folder exists covers the whole monitor with
+a 404 page.
+
+### 2026-09-18d (out of band: clocks in fixed cells; not released)
+
+Sam: make the timer monospaced so it does not push things as the time
+changes. Measured first: `font-variant-numeric: tabular-nums` was already on
+the rows, portrait, hand fan, dual and corner tag clocks and did nothing
+useful, because the heavy Segoe UI weights ignore tabular figures. The rows
+overlay's bottom-bar clock (on air on Sam's app) drew "11:11" at 84.6px and
+"00:00" at 96.6px and shoved the bar beside it every second; the hand fan's
+did the same. The others only held because their boxes are fixed size.
+
+Fix: `web/shared/clockcells.js` `setClock(el, text)`. Each digit sits in an
+inline-block cell as wide as the widest digit of the element's own computed
+font (canvas-measured, cached per font + letter spacing, re-measured when a
+web font finishes loading), inside one `span.ck` wrapper so a flex or grid
+clock box (the corner tag's is a grid) still centres a single item. The
+clock keeps the look's font, never swaps to a code face. textContent stays
+the plain time. Used by every scene clock (dual, rows, portrait, arena bug,
+hand fan, corner tag, and the slate's three) and the panel's two readouts.
+Verified: 00:00 / 11:11 / 88:88 / 17:41 give identical widths and identical
+neighbour positions in all seven scenes; only 100+ minutes adds a cell.
+
 ### 2026-09-18c (out of band: Setup joins the look tab, the Decklist gets a column; not released)
 
 Sam, straight after the Look builder: move Setup to the new page too, and give

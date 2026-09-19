@@ -309,6 +309,39 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   in-game overlay is on; "Takeover band" is the full lower band with both
   cameras and hands over the battlefield's art.
 
+## Players' decks, battlefields and the game intro
+
+Match data › **Decks and battlefields** holds each player's own deck and the
+three battlefields they brought. Pick a saved deck (the deck editor saves
+them) or paste a list; loading a deck fills that player's three battlefields
+from its Battlefields section, or pick them by hand. **This game** makes one
+of them the battlefield in play (it becomes the player's Battlefield and is
+marked played); the arrow clears the played marks, and Reset match does too.
+
+- **Rows overlay battlefields** (Graphic features › rows, Battlefields): Off,
+  This game's, or All three, played marked. They sit in a strip of their
+  own beside each player's camera (under player 1's, over player 2's), apart
+  from the hands: the three side by side with an arrow on this game's and
+  the ones played earlier greyed out.
+- **Sideboard fly-in** (1v1 graphics): both players' sideboards at once,
+  player 1's across the top of the game flying in from the left, player 2's
+  across the bottom from the right; or one player alone. Both plates span
+  the game area at one card size, as large as fits. A player whose list has
+  no sideboard is left out.
+- **Decklists side by side** (Between games, full frame): both players'
+  lists with legend, runes, champion, battlefields, the main deck and,
+  optionally, the sideboards.
+- **Game intro** (1v1 graphics): the round and the game number over both
+  players' legend (the legend card's painting, one size for both, a VS
+  between them), name, champion and this game's battlefield, built in over
+  about two seconds. The game number counts from the game wins unless
+  pinned under Graphic features.
+
+The game intro and the sideboard fly-in fit themselves into the table area
+of whichever in-game overlay is up (the rows, the dual columns, the pillars,
+the bars, the sidebars, the POV) and take the whole frame with none. Add
+their browser sources above your in-game overlay.
+
 ## Decklists
 
 The deck editor at http://localhost:4700/decklist/ is where decklists are

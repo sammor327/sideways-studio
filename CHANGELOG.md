@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.24.0 (2026-09-18)
+
+- New graphic: Game intro. The round and the game number over both players' legend art, name, champion and this game's battlefield, with a VS between them. It builds in over the game area of whichever in-game overlay is up.
+- New graphic: Sideboard fly-in. Both players' sideboards at once, player 1 across the top flying in from the left and player 2 across the bottom from the right, filling the game area (or one player alone).
+- New graphic: Decklists side by side. Both players' decks, full screen: legend, runes, champion, battlefields, main deck and sideboards.
+- Match data has a new Decks and battlefields section: pick each player's saved deck or paste a list, set the three battlefields they brought (loading a deck fills them in), and click This game to mark the one being played.
+- Rows overlay: a new Battlefields option. A strip beside each player's camera with their three battlefields, an arrow on this game's and the ones already played greyed out, or just this game's.
+- Clocks no longer change width as they tick, so nothing beside a clock moves. This covers every graphic's clock and the panel's own.
+
 ## 0.23.0 (2026-09-18)
 
 - New tab: Look and setup, beside Studio at the top of the panel. The look controls run down the left and every graphic is laid out on the right, 30 in all (including the slate's four screens, the lower third's three and both showdown styles), so you see a change on all of them at once.

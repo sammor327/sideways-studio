@@ -2,6 +2,7 @@ import {
   COLOR_HELP, COLOR_KEYS, COLOR_LABELS, DESIGNED, LOOK_SCENES, PRESETS, SCENE_LABELS, resolveLook,
 } from '../shared/look.js';
 import { renderLookBuilder } from './lookbuilder.js';
+import { setClock } from '../shared/clockcells.js';
 import { setOffline } from '../shared/offline.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
@@ -55,7 +56,7 @@ const SCENE_FIELDS = {
   igoportrait: ['seriesLength', 'name', 'score', 'gameWins', 'seed', 'record', 'country', 'legend', 'legendText',
     'champion', 'championText', 'archetype', 'handCount', 'turn', 'eventName', 'roundTitle', 'roundsRemaining', 'timer', 'card'],
   igorows: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'pronouns', 'legend', 'legendText',
-    'champion', 'championText', 'archetype', 'handCount', 'hand', 'turn', 'roundTitle'],
+    'champion', 'championText', 'archetype', 'handCount', 'hand', 'turn', 'roundTitle', 'battlefield', 'battlefieldPool'],
   arenabug: ['seriesLength', 'name', 'score', 'gameWins', 'record', 'country', 'legend', 'legendText', 'eventName', 'roundTitle', 'timer'],
   slate: ['eventName', 'roundTitle', 'countdown', 'tables', 'casters', 'seeds', 'schedule', 'format', 'commands', 'sponsors', 'nextEvent', 'champion', 'name', 'country', 'legend', 'record'],
   handfan: ['name', 'country', 'legend', 'legendText', 'hand', 'handCount', 'roundTitle', 'timer', 'turn'],
@@ -69,6 +70,10 @@ const SCENE_FIELDS = {
   standings: ['standings', 'eventName', 'roundTitle'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
   sponsor: [],
+  // The decks round (2026-09-18).
+  matchup: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'champion', 'championText', 'battlefield', 'gameWins', 'roundTitle', 'eventName'],
+  sideboard: ['name', 'country', 'legend', 'deck'],
+  decklists: ['name', 'country', 'legend', 'record', 'deck', 'eventName', 'roundTitle'],
   // The card popup and the card row carry their content in their own
   // Graphic features groups (the search, the four slots), not in Match data;
   // listed so putting them in preview unfolds that card.
@@ -99,6 +104,9 @@ const SCENE_NAMES = {
   standings: 'the standings',
   result: 'the result strip',
   sponsor: 'the sponsor plate',
+  matchup: 'the game intro',
+  sideboard: 'the sideboard fly-in',
+  decklists: 'the side by side decklists',
 };
 
 // Short names for the on-air list, which lives in the narrow column between
@@ -110,6 +118,7 @@ const SCENE_SHORT = {
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', result: 'Result',
   sponsor: 'Sponsor',
+  matchup: 'Game intro', sideboard: 'Sideboard', decklists: 'Decklists 2up',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
@@ -131,6 +140,8 @@ function sceneDraws(scene, field, side, bank) {
     if (!cfg.cardWell && field === 'card') return false;
   }
   if (scene === 'igorows') {
+    if ((cfg.battlefields || 'off') === 'off' && ['battlefield', 'battlefieldPool'].includes(field)) return false;
+    if (cfg.battlefields === 'one' && field === 'battlefieldPool') return false;
     if (!cfg.hand && ['hand', 'handCount'].includes(field)) return false;
     if (cfg.points === false && field === 'score') return false;
     if (cfg.turnCounter === false && cfg.activeTurn === false && field === 'turn') return false;
@@ -148,6 +159,7 @@ function sceneDraws(scene, field, side, bank) {
   }
   // One-player graphics draw only the side they are set to.
   if ((scene === 'profile' || (scene === 'lowerthird' && cfg.mode === 'interview')) && side && cfg.side !== side) return false;
+  if (scene === 'sideboard' && side && cfg.side !== 'both' && cfg.side !== side) return false;
   if (scene === 'lowerthird') {
     if (cfg.mode === 'casters' && !['casters', 'eventName', 'roundTitle'].includes(field)) return false;
     if (cfg.mode === 'coming' && !['name', 'roundTitle', 'eventName'].includes(field)) return false;
@@ -633,6 +645,7 @@ function render(s) {
   renderOnAir(s);
   renderLook(s.theme);
   renderLookBuilder(s);
+  renderDecks(s);
   renderExtras(s);
   revealNewGraphics(s);
 
@@ -774,10 +787,12 @@ $('seriesLength').addEventListener('change', () => {
 
 $('resetMatch').addEventListener('click', () => {
   if (!confirm('Reset match in preview? Scores and game wins go to zero and all graphics switch off. Press TAKE afterward to put the reset on air.')) return;
+  // A new match: no battlefield has been played yet.
+  const unplayed = (side) => (state ? state.preview.match[side].battlefields || [] : []).map((b) => ({ ...b, played: false }));
   post({
     match: {
-      left: { score: 0, gameWins: 0 },
-      right: { score: 0, gameWins: 0 },
+      left: { score: 0, gameWins: 0, battlefields: unplayed('left') },
+      right: { score: 0, gameWins: 0, battlefields: unplayed('right') },
       choseFirst: '', result: { winner: '', note: '' },
     },
     scenes: {
@@ -788,6 +803,7 @@ $('resetMatch').addEventListener('click', () => {
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
       bracket: { visible: false }, standings: { visible: false }, result: { visible: false }, sponsor: { visible: false },
+      matchup: { visible: false }, sideboard: { visible: false }, decklists: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -801,6 +817,7 @@ const SWAP_FIELDS = [
   'champion2', 'score', 'gameWins', 'seed',
   'record', 'country', 'pronouns', 'archetype', 'handCount', 'hand', 'handUnknown',
   'team', 'store', 'seasonRecord', 'bestFinish', 'finishes',
+  'deckList', 'deckName', 'battlefields',
 ];
 $('swapSides').addEventListener('click', () => {
   if (!state) return;
@@ -890,12 +907,12 @@ function clockText(t) {
 function renderClock(t) {
   if (!t) return;
   clockState = t;
-  $('clockOut').textContent = clockText(t);
+  setClock($('clockOut'), clockText(t));
   $('clockStart').textContent = t.running ? 'Pause' : 'Start';
   $('clockStart').classList.toggle('on', t.running);
   if (document.activeElement !== $('clockMinutes')) $('clockMinutes').value = String(Math.round(t.countdown / 60000));
 }
-setInterval(() => { if (clockState.running) $('clockOut').textContent = clockText(clockState); }, 500);
+setInterval(() => { if (clockState.running) setClock($('clockOut'), clockText(clockState)); }, 500);
 $('clockStart').addEventListener('click', () => post({ action: 'timer', op: clockState.running ? 'pause' : 'start' }));
 $('clockReset').addEventListener('click', () => post({ action: 'timer', op: 'reset' }));
 $('clockSet').addEventListener('click', () => {
@@ -1173,7 +1190,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -1367,6 +1384,176 @@ function renderCardrow(s) {
     star.disabled = !c.cardId;
     star.classList.toggle('on', cr.focus === i && Boolean(c.cardId));
   });
+}
+
+// --- decks and battlefields (2026-09-18) ---
+//
+// Each player's own list (the sideboard fly-in and the side by side
+// decklists draw it) and the three battlefields they brought (the rows
+// overlay lists them). A deck comes from the saved library or a paste, and
+// loading one fills the player's battlefields from its Battlefields section,
+// keeping the played mark of any that stay. This game makes a battlefield
+// the one in play; the server marks it played as it does.
+
+const deckSummaries = new Map();
+async function deckSummary(list) {
+  if (!list.trim()) return null;
+  if (deckSummaries.has(list)) return deckSummaries.get(list);
+  try {
+    const res = await fetch('/api/decklist/parse', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ list }),
+    });
+    const deck = res.ok ? await res.json() : null;
+    if (deck) {
+      deckSummaries.set(list, deck);
+      if (deckSummaries.size > 16) deckSummaries.delete(deckSummaries.keys().next().value);
+    }
+    return deck;
+  } catch {
+    return null;
+  }
+}
+
+async function loadSideDeck(side, list, deckName) {
+  const before = state ? (state.preview.match[side].battlefields || []) : [];
+  await post({ match: { [side]: { deckList: list, deckName } } });
+  const deck = await deckSummary(list);
+  if (!deck || !deck.battlefields.length) return;
+  const played = new Map(before.map((b) => [b.name.toLowerCase(), b.played]));
+  post({ match: { [side]: { battlefields: deck.battlefields.slice(0, 3).map((b) => ({
+    name: b.name,
+    cardId: b.cardId || '',
+    played: played.get(b.name.toLowerCase()) || false,
+  })) } } });
+}
+
+// One slot of a player's three: a pick replaces it (or joins the end), a
+// clear takes it off and the rest move up.
+function setPoolEntry(side, i, entry) {
+  if (!state) return;
+  const pool = [...(state.preview.match[side].battlefields || [])];
+  if (entry) {
+    if (i < pool.length) pool[i] = entry;
+    else pool.push(entry);
+  } else if (i < pool.length) {
+    pool.splice(i, 1);
+  }
+  post({ match: { [side]: { battlefields: pool } } });
+}
+
+for (const [p, side] of SIDES) {
+  $(`${p}deckPick`).addEventListener('change', () => {
+    const v = $(`${p}deckPick`).value;
+    if (v === '__paste') return;
+    if (!v) { post({ match: { [side]: { deckList: '', deckName: '' } } }); return; }
+    const deck = (library.decks || []).find((d) => d.name === v);
+    if (deck) loadSideDeck(side, deck.list, deck.name);
+  });
+  const ta = $(`${p}deckList`);
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    loadSideDeck(side, ta.value, '');
+  };
+  ta.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 700); });
+  ta.addEventListener('blur', flush);
+  for (let i = 0; i < 3; i += 1) {
+    wirePicker(`${p}bfp${i}`, `${p}bfp${i}Results`, {
+      search: (q) => battlefieldCatalog.filter((b) => b.cardName.toLowerCase().includes(q)),
+      renderItem: (b) => ({ label: b.cardName, icon: `/cardart/thumb/${b.cardId}.webp` }),
+      onPick: (b) => setPoolEntry(side, i, { name: b.cardName, cardId: b.cardId, played: false }),
+      onClear: () => setPoolEntry(side, i, null),
+      current: () => ((state.preview.match[side].battlefields || [])[i] || {}).name || '',
+    });
+  }
+}
+
+function renderDeckLine(p, list) {
+  const line = $(`${p}deckLine`);
+  if (line.dataset.list === list) return;
+  line.dataset.list = list;
+  line.classList.remove('warn');
+  if (!list.trim()) { line.textContent = 'No deck loaded'; return; }
+  line.textContent = 'Reading the list…';
+  deckSummary(list).then((deck) => {
+    if (line.dataset.list !== list) return;
+    if (!deck) { line.textContent = 'Could not read the list'; line.classList.add('warn'); return; }
+    const bits = [deck.legend ? deck.legend.name : 'No legend', `${deck.counts.main} main`, `${deck.counts.sideboard} sideboard`];
+    if (deck.counts.unresolved) bits.push(`${deck.counts.unresolved} not found`);
+    line.textContent = bits.join(' · ');
+    line.title = line.textContent;
+    line.classList.toggle('warn', deck.counts.unresolved > 0);
+  });
+}
+
+function renderBfChips(p, side, sd) {
+  const box = $(`${p}bfChips`);
+  const pool = sd.battlefields || [];
+  const now = String(sd.battlefield || '').toLowerCase();
+  const key = JSON.stringify([pool, now]);
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  if (!pool.length) {
+    box.replaceChildren(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'Add battlefields above, or load a deck' }));
+    return;
+  }
+  const chips = pool.map((b) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    const isNow = Boolean(now) && b.name.toLowerCase() === now;
+    btn.className = `bf-chip${isNow ? ' now' : ''}${b.played ? ' played' : ''}`;
+    btn.textContent = b.name;
+    btn.title = isNow ? `${b.name}: in play this game` : `Play this game on ${b.name}${b.played ? ' (played earlier this match)' : ''}`;
+    btn.addEventListener('click', () => post({ match: { [side]: {
+      battlefield: b.name,
+      battlefieldCardId: b.cardId || catalogCardId(battlefieldCatalog, b.name) || '',
+    } } }));
+    return btn;
+  });
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'clear-mini';
+  clear.textContent = '↺';
+  clear.title = 'Clear the played marks, for a new match';
+  clear.setAttribute('aria-label', 'Clear the played marks');
+  clear.disabled = !pool.some((b) => b.played);
+  clear.addEventListener('click', () => post({ match: { [side]: { battlefields: pool.map((b) => ({ ...b, played: false })) } } }));
+  box.replaceChildren(...chips, clear);
+}
+
+function renderDecks(s) {
+  const decks = library.decks || [];
+  for (const [p, side] of SIDES) {
+    const sd = s.preview.match[side];
+    const list = sd.deckList || '';
+    const sel = $(`${p}deckPick`);
+    const saved = decks.find((d) => d.name === sd.deckName && d.list === list);
+    const want = !list.trim() ? '' : (saved ? saved.name : '__paste');
+    const key = JSON.stringify([decks.map((d) => d.name), want, sd.deckName]);
+    if (sel.dataset.key !== key) {
+      sel.dataset.key = key;
+      const opts = [new Option('No deck', '')];
+      // A list loaded from a saved deck and then changed says so; one the
+      // library never had is just its name, or a pasted list.
+      const edited = sd.deckName && decks.some((d) => d.name === sd.deckName);
+      if (want === '__paste') opts.push(new Option(edited ? `${sd.deckName} (edited)` : (sd.deckName || 'Pasted list'), '__paste'));
+      for (const d of decks) opts.push(new Option(d.name, d.name));
+      sel.replaceChildren(...opts);
+    }
+    if (document.activeElement !== sel) sel.value = want;
+    setIfIdle(`${p}deckList`, list);
+    renderDeckLine(p, list);
+    for (let i = 0; i < 3; i += 1) {
+      const b = (sd.battlefields || [])[i];
+      setIfIdle(`${p}bfp${i}`, b ? b.name : '');
+      renderPickThumb(`${p}bfp${i}`, cardThumbSrc(b ? (b.cardId || catalogCardId(battlefieldCatalog, b.name)) : ''), Boolean(b));
+    }
+    renderBfChips(p, side, sd);
+  }
 }
 
 // --- theme controls ---
@@ -1828,6 +2015,7 @@ async function loadDeckLibrary() {
     const res = await fetch('/api/decklist/library', { cache: 'no-store' });
     if (res.ok) library = await res.json();
     renderDeckLibrary();
+    if (state) renderDecks(state);
   } catch { /* the next announcement or reconnect retries */ }
 }
 
@@ -1997,15 +2185,17 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
-  cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult' };
+  cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
-  cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir' };
+  cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
-const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'profile', 'bracket', 'standings'];
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'profile', 'bracket', 'standings', 'decklists'];
 function setFullScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
@@ -2077,6 +2267,23 @@ $('toggleShowdown').addEventListener('click', () => {
 });
 $('showdownMode').addEventListener('change', () => post({ scenes: { showdown: { mode: $('showdownMode').value } } }));
 $('showdownHands').addEventListener('change', () => post({ scenes: { showdown: { hands: $('showdownHands').checked } } }));
+
+// --- the decks round (2026-09-18): game intro, sideboard fly-in, side by
+// side decklists, and the rows overlay's battlefields ---
+for (const key of ['matchup', 'sideboard']) {
+  $(EXP_TOGGLES[key]).addEventListener('click', () => {
+    if (!state) return;
+    post({ scenes: { [key]: { visible: !state.preview.scenes[key].visible } } });
+  });
+}
+$(EXP_TOGGLES.decklists).addEventListener('click', () => {
+  if (!state) return;
+  setFullScene('decklists', !state.preview.scenes.decklists.visible);
+});
+$('matchupGame').addEventListener('change', () => post({ scenes: { matchup: { game: Number($('matchupGame').value) } } }));
+$('sideboardSide').addEventListener('change', () => post({ scenes: { sideboard: { side: $('sideboardSide').value } } }));
+$('decklistsSideboards').addEventListener('change', () => post({ scenes: { decklists: { sideboards: $('decklistsSideboards').checked } } }));
+$('igoRowsBattlefields').addEventListener('change', () => post({ scenes: { igorows: { battlefields: $('igoRowsBattlefields').value } } }));
 
 // --- the showdown chain: cues on both banks ---
 //
@@ -2359,12 +2566,12 @@ let cdState = { running: false, startedAt: 0, elapsed: 0, countdown: 0 };
 function renderCountdown(t) {
   if (!t) return;
   cdState = t;
-  $('cdOut').textContent = clockText(t);
+  setClock($('cdOut'), clockText(t));
   $('cdStart').textContent = t.running ? 'Pause' : 'Start';
   $('cdStart').classList.toggle('on', t.running);
   if (document.activeElement !== $('cdMinutes')) $('cdMinutes').value = String(Math.round(t.countdown / 60000));
 }
-setInterval(() => { if (cdState.running) $('cdOut').textContent = clockText(cdState); }, 500);
+setInterval(() => { if (cdState.running) setClock($('cdOut'), clockText(cdState)); }, 500);
 $('cdStart').addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: cdState.running ? 'pause' : 'start' }));
 $('cdReset').addEventListener('click', () => post({ action: 'timer', which: 'countdown', op: 'reset' }));
 $('cdSet').addEventListener('click', () => {
@@ -2646,6 +2853,10 @@ function renderExtras(s) {
   if (document.activeElement !== $('igoRowsMode')) $('igoRowsMode').value = rw.mode;
   if (document.activeElement !== $('igoRowsHand')) $('igoRowsHand').checked = rw.hand;
   if (document.activeElement !== $('igoRowsHandStyle')) $('igoRowsHandStyle').value = rw.handStyle || 'list';
+  if (document.activeElement !== $('igoRowsBattlefields')) $('igoRowsBattlefields').value = rw.battlefields || 'off';
+  if (document.activeElement !== $('matchupGame')) $('matchupGame').value = String(prev.scenes.matchup.game || 0);
+  if (document.activeElement !== $('sideboardSide')) $('sideboardSide').value = prev.scenes.sideboard.side;
+  if (document.activeElement !== $('decklistsSideboards')) $('decklistsSideboards').checked = prev.scenes.decklists.sideboards !== false;
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
   for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock']]) {
@@ -2818,14 +3029,18 @@ function renderThumbs(s) {
     // picker), so it dims but keeps the pointer; an empty decklist does not.
     const empty = (key === 'cardpopup' && !s.preview.scenes.cardpopup.card.cardId)
       || (key === 'cardrow' && !s.preview.scenes.cardrow.cards.some((c) => c.cardId))
-      || (key === 'sponsor' && !s.preview.scenes.sponsor.items.length);
+      || (key === 'sponsor' && !s.preview.scenes.sponsor.items.length)
+      || (key === 'sideboard' && !(s.preview.scenes.sideboard.side === 'both' ? ['left', 'right'] : [s.preview.scenes.sideboard.side])
+        .some((k) => s.preview.match[k].deckList.trim()))
+      || (key === 'decklists' && !s.preview.match.left.deckList.trim() && !s.preview.match.right.deckList.trim());
     const cantShow = key === 'decklist' && !s.preview.scenes.decklist.list.trim();
     thumb.classList.toggle('empty', empty);
     thumb.classList.toggle('disabled', cantShow);
-    const idle = empty ? (key === 'sponsor' ? 'Add a sponsor' : 'Pick a card') : (cantShow ? 'Nothing staged' : 'Click to preview');
+    const deckGraphic = key === 'sideboard' || key === 'decklists';
+    const idle = empty ? (key === 'sponsor' ? 'Add a sponsor' : (deckGraphic ? 'Load a deck' : 'Pick a card')) : (cantShow ? 'Nothing staged' : 'Click to preview');
     thumb.querySelector('.thumb-tag').textContent = onAir ? 'On air' : (inPreview ? 'In preview' : idle);
     thumb.title = inPreview ? `Take ${SCENE_NAMES[key] || key} out of preview`
-      : (empty ? `Pick cards for ${SCENE_NAMES[key] || key} under Graphic features` : `Put ${SCENE_NAMES[key] || key} in preview`);
+      : (empty ? (deckGraphic ? `Load a deck under Match data › Decks and battlefields for ${SCENE_NAMES[key] || key}` : `Pick cards for ${SCENE_NAMES[key] || key} under Graphic features`) : `Put ${SCENE_NAMES[key] || key} in preview`);
   }
   renderFeatures(s);
   renderSections(s);

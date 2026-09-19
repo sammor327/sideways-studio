@@ -48,6 +48,15 @@ function defaultSide(name) {
     // store, the season record, the best finish, and up to three top
     // finishes one per line.
     team: '', store: '', seasonRecord: '', bestFinish: '', finishes: '',
+    // The player's own deck (2026-09-18): the paste itself, as the decklist
+    // graphic keeps it, and the saved deck it came from. The sideboard fly-in
+    // and the side-by-side decklists draw it.
+    deckList: '', deckName: '',
+    // The three battlefields the player brought, in the order typed, each
+    // marked once it has been played this match. The one in play now is
+    // `battlefield` above; making a pool entry the current battlefield marks
+    // it played (applySide). The rows overlay lists the pool.
+    battlefields: [],
     score: 0, gameWins: 0,
   };
 }
@@ -155,7 +164,10 @@ function defaultBank() {
       // and the cards-in-hand list (the Magic grammar). handStyle 'list' or
       // 'lanes', which marks each card's type on its row (neither style sorts
       // the hand); handArt puts each card's art beside its name.
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true },
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true,
+        // Battlefields in each player's block: 'off', 'one' (this game's) or
+        // 'all' (the three brought, the played ones marked).
+        battlefields: 'off' },
       // Arena score bug: the Pokémon wide-shot bug on the 1-to-8 track, for
       // stage and player cameras. Exclusive with the score bug in the panel.
       arenabug: { visible: false, clock: true },
@@ -191,6 +203,17 @@ function defaultBank() {
       // whole time it is on, otherwise the first `duration` seconds of every
       // `every` minutes. label is an optional tag such as "Presented by".
       sponsor: { visible: false, items: [], interval: 10, position: 'auto', label: '', every: 0, duration: 20 },
+      // --- the decks round (2026-09-18) ---
+      // Sideboard fly-in: the players' sideboards flying in over the game
+      // window of whichever in-game overlay is up, player 1's across the top
+      // and player 2's across the bottom ('both'), or one player's alone.
+      sideboard: { visible: false, side: 'both' },
+      // Both players' decklists side by side, full frame.
+      decklists: { visible: false, sideboards: true },
+      // The game intro: both players' legend, champion and battlefield with
+      // the round and the game number, animated into the game window. game
+      // 0 counts from the game wins; 1 to 5 pins it.
+      matchup: { visible: false, game: 0 },
     },
   };
 }
@@ -269,6 +292,7 @@ function mergeBank(bank, raw) {
   bank.match.result = { ...fresh.match.result, ...(bank.match.result || {}) };
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
+    if (!Array.isArray(side.battlefields)) side.battlefields = [];
   }
   for (const key of Object.keys(fresh.scenes)) {
     bank.scenes[key] = { ...fresh.scenes[key], ...bank.scenes[key] };
@@ -468,6 +492,25 @@ function applySide(side, patch) {
   if (patch.card && typeof patch.card === 'object') applyCard(side.card, patch.card);
   if (patch.score !== undefined) side.score = clampInt(patch.score, 0, 8);
   if (patch.gameWins !== undefined) side.gameWins = clampInt(patch.gameWins, 0, 3);
+  if (patch.deckList !== undefined) side.deckList = cleanMultiline(patch.deckList, 6000);
+  if (patch.deckName !== undefined) side.deckName = cleanStr(patch.deckName, 60);
+  if (Array.isArray(patch.battlefields)) side.battlefields = patch.battlefields.map(cleanPoolEntry).filter(Boolean).slice(0, 3);
+  // The battlefield going into play is one of the pool: it has now been
+  // played. Only when the current battlefield itself changes, so a patch
+  // that clears the played marks (Reset match) is not undone here.
+  if (patch.battlefield !== undefined && side.battlefield) {
+    const key = side.battlefield.toLowerCase();
+    for (const entry of side.battlefields) if (entry.name.toLowerCase() === key) entry.played = true;
+  }
+}
+
+// One battlefield a player brought: its name, the card id its art resolves
+// against, and whether it has been played this match.
+function cleanPoolEntry(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const name = cleanStr(raw.name || '', 40);
+  if (!name) return null;
+  return { name, cardId: cleanCardId(raw.cardId || ''), played: Boolean(raw.played) };
 }
 
 // Shared by the card popup and by each side's featured POV card. cardType is
@@ -622,6 +665,7 @@ function applyBankPatch(bank, patch) {
     if (patch.scenes.igorows && typeof patch.scenes.igorows === 'object') {
       const r = patch.scenes.igorows;
       if (r.showdown !== undefined) bank.scenes.igorows.showdown = Boolean(r.showdown);
+      if (['off', 'one', 'all'].includes(r.battlefields)) bank.scenes.igorows.battlefields = r.battlefields;
     }
     if (patch.scenes.handfan && typeof patch.scenes.handfan === 'object') {
       const h = patch.scenes.handfan;
@@ -699,6 +743,22 @@ function applyBankPatch(bank, patch) {
       if (sp.duration !== undefined) cfg.duration = clampInt(sp.duration, 5, 300);
       // A plate with no sponsor has nothing to show, so it can never be on.
       if (!cfg.items.length) cfg.visible = false;
+    }
+    // --- the decks round ---
+    if (patch.scenes.sideboard && typeof patch.scenes.sideboard === 'object') {
+      const sb = patch.scenes.sideboard;
+      if (sb.visible !== undefined) bank.scenes.sideboard.visible = Boolean(sb.visible);
+      if (['both', 'left', 'right'].includes(sb.side)) bank.scenes.sideboard.side = sb.side;
+    }
+    if (patch.scenes.decklists && typeof patch.scenes.decklists === 'object') {
+      const dl = patch.scenes.decklists;
+      if (dl.visible !== undefined) bank.scenes.decklists.visible = Boolean(dl.visible);
+      if (dl.sideboards !== undefined) bank.scenes.decklists.sideboards = Boolean(dl.sideboards);
+    }
+    if (patch.scenes.matchup && typeof patch.scenes.matchup === 'object') {
+      const mu = patch.scenes.matchup;
+      if (mu.visible !== undefined) bank.scenes.matchup.visible = Boolean(mu.visible);
+      if (mu.game !== undefined) bank.scenes.matchup.game = clampInt(mu.game, 0, 5);
     }
   }
 }

@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Sideboard Fly-in</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="sb off" id="root">
+    <!-- Player 1 across the top, flying in from the left; player 2 across
+         the bottom, from the right. Built from the template below. -->
+    <div class="pos from-left" id="lpos"></div>
+    <div class="pos from-right" id="rpos"></div>
+  </div>
+  <template id="plateTpl">
+    <div class="plate">
+      <div class="ground">
+        <div class="g-fill"></div><div class="g-image"></div>
+        <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+        <div class="g-grain"></div><div class="g-dim"></div>
+      </div>
+      <div class="head">
+        <div class="k-thumb face"><img class="art hidden" data-part="face" alt="" draggable="false"></div>
+        <div class="who">
+          <div class="nm"><span class="n" data-part="name"></span><span class="tag">Sideboard</span></div>
+          <div class="sub"><span class="k-chip" data-part="country"></span><span data-part="sub"></span></div>
+        </div>
+      </div>
+      <div class="cards" data-part="cards"></div>
+    </div>
+  </template>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The sideboard fly-in is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

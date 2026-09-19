@@ -1,0 +1,125 @@
+/* Sideboard fly-in (2026-09-18, Sam): the players' sideboards over the game.
+   Both players at once: player 1's plate across the top of the game window,
+   flying in from the left, player 2's across the bottom, flying in from the
+   right, a beat behind. Or one player's plate alone, centred. The game
+   window is the table area of whichever in-game overlay is up
+   (web/shared/gamewindow.js), the whole frame with none. Both plates span
+   the window's width and share one card size (Sam: the same size, filling
+   the screen across), the cards centred on one row.
+
+   Motion: --t runs the fly (in 1.3 s, out 0.5 s). Each plate slides in from
+   off its frame edge by --dx over 55% of --t starting at its --d; its cards
+   then rise in one after another. Every read falls back to settled:
+   var(--t, 1). */
+
+.sb { position: absolute; inset: 0; }
+.sb.off { display: none; }
+.sb, .sb * { box-sizing: border-box; }
+
+.pos {
+  position: absolute;
+  left: calc(var(--gx, 260) * var(--u));
+  top: calc(var(--gy, 300) * var(--u));
+  width: calc(var(--pw, 1400) * var(--u));
+  transform: scale(var(--gs, 1));
+  transform-origin: 0 0;
+  --fly: clamp(0, calc((var(--t, 1) - var(--d, 0)) / 0.55), 1);
+}
+.pos.gone { display: none; }
+.plate {
+  position: relative;
+  overflow: hidden;
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-ink, #0a0d12);
+  box-shadow: 0 calc(24 * var(--u)) calc(70 * var(--u)) rgba(0, 0, 0, 0.6);
+  padding: calc(22 * var(--u)) calc(28 * var(--u)) calc(26 * var(--u));
+  opacity: var(--fly);
+  transform: translateX(calc((1 - var(--fly)) * var(--dx, -1600) * var(--u)));
+}
+/* The accent edge on the side the plate flies in from. */
+.plate::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: calc(6 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  z-index: 1;
+}
+.from-left .plate::before { left: 0; }
+.from-right .plate::before { right: 0; }
+.plate .ground .g-shards, .plate .ground .g-shade, .plate .ground .g-glint { opacity: 0.3; }
+
+.head { position: relative; display: flex; align-items: center; gap: calc(18 * var(--u)); margin-bottom: calc(18 * var(--u)); }
+.from-right .head { flex-direction: row-reverse; text-align: right; }
+.face { width: calc(60 * var(--u)); height: calc(60 * var(--u)); border-radius: 0; }
+.who { min-width: 0; flex: 1 1 auto; }
+.nm { display: flex; align-items: center; gap: calc(14 * var(--u)); }
+.from-right .nm { flex-direction: row-reverse; }
+.nm .n {
+  font: 800 calc(38 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  color: var(--ss-text, #f3f6f9);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.nm .tag {
+  flex: 0 0 auto;
+  font: 800 calc(14 * var(--u))/1 var(--tes-font);
+  letter-spacing: calc(2.4 * var(--u));
+  text-transform: uppercase;
+  padding: calc(7 * var(--u)) calc(12 * var(--u)) calc(6 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  color: var(--ss-plate, #10151d);
+}
+.sub {
+  margin-top: calc(8 * var(--u));
+  display: flex; align-items: center; gap: calc(10 * var(--u));
+  font: 500 calc(16 * var(--u))/1.2 var(--tes-font);
+  letter-spacing: calc(1.4 * var(--u));
+  text-transform: uppercase;
+  color: var(--ss-text-muted, #9aa7b6);
+  white-space: nowrap; overflow: hidden;
+}
+.from-right .sub { flex-direction: row-reverse; }
+
+.cards { position: relative; display: flex; justify-content: center; gap: calc(16 * var(--u)); }
+.from-right .cards { flex-direction: row-reverse; }
+.card {
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--cw, 150) * var(--u));
+  height: calc(var(--cw, 150) / 0.716 * var(--u));
+  border-radius: calc(var(--cw, 150) * 0.05 * var(--u));
+  overflow: hidden;
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  background: var(--ss-plate, #10151d);
+  box-shadow: 0 calc(8 * var(--u)) calc(20 * var(--u)) rgba(0, 0, 0, 0.5);
+  --cp: clamp(0, calc((var(--t, 1) - 0.4 - var(--d, 0) - var(--i, 0) * 0.05) / 0.3), 1);
+  opacity: var(--cp);
+  transform: translateY(calc((1 - var(--cp)) * 40 * var(--u)));
+}
+.card .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.card .art.hidden { display: none; }
+.card .miss {
+  position: absolute; inset: 0; display: grid; place-items: center; padding: 10%;
+  font: 700 calc(var(--cw, 150) * 0.11 * var(--u))/1.2 var(--tes-font);
+  text-align: center; color: var(--ss-text-muted, #9aa7b6);
+}
+/* Card counts in the decklist graphic's own style (Sam, 2026-09-18): a plain
+   white number over the card's top left, 40% of the card's width, in the
+   plate's face (the TES Akzidenz unless the look picks a font) with the
+   decklist's heavy shadow and no badge. */
+.card .qty {
+  position: absolute;
+  left: 9%;
+  top: 10%;
+  font-family: 'Akzidenz-Grotesk Next', var(--tes-font);
+  font-size: calc(var(--cw, 150) * 0.4 * var(--u));
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+  text-shadow:
+    0 calc(4 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.95),
+    0 0 calc(8 * var(--u)) rgba(0, 0, 0, 0.85),
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.9);
+}
+html.theme-font .card .qty { font-family: var(--tes-font); }
