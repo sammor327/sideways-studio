@@ -6,7 +6,7 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
-## Unreleased
+## 0.30.0 (2026-09-19)
 
 - New: Live game, at the top of Match data. Type a RiftAtlas room code (or paste the caster link) and press Connect: the game in that room fills Match data as it is played. Points, game wins, both hands, the battlefield in play, legends, champions, the turn counter and whose turn it is follow the game by themselves, and a best of three is followed from game to game. The fold lists every card played, and a click on one stages it in the card popup.
 - Live values go straight to air, like the clock, while the players on air are the players in preview. Load a new pairing into preview and they wait there until TAKE. Switch "Live values straight to air" off to keep everything in preview.
