@@ -6,7 +6,7 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
-## Unreleased
+## 0.40.0 (2026-09-19)
 
 - Showdowns: the stack now shows the cards themselves. In the rows overlay's column each player's cards are laid out as cards, oldest to newest with the newest on top, each labelled On the chain, Resolved, or what happened to it.
 - Showdowns: the contested battlefield's art is the background of the showdown in the rows overlay's column.
