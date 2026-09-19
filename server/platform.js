@@ -21,7 +21,7 @@ import { listLegends } from './legends.js';
 import { buildDeck } from './decklist.js';
 import {
   parseEventId, decodeFirestore, buildFromFeed, feedExtras, buildFromApi, summarize,
-  standingsPatch, bracketPatch, matchPatch, upNextPatch, legendStatsPatch, pairingsPatch, pairingsRefresh, normName,
+  standingsPatch, bracketPatch, matchPatch, upNextPatch, legendStatsPatch, matrixPatch, pairingsPatch, pairingsRefresh, normName,
 } from './platform-model.js';
 
 const FILE = path.join(DATA_DIR, 'platform.json');
@@ -279,6 +279,8 @@ export async function handlePlatform(req, res, url, { readBody, sendJson }) {
       out = bracketPatch(model, legendOf);
     } else if (b.kind === 'legends') {
       out = legendStatsPatch(model, legendOf, { group: Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0))) });
+    } else if (b.kind === 'matrix') {
+      out = matrixPatch(model, legendOf, { group: Math.max(0, Math.min(16, Math.trunc(Number(b.group) || 0))), bank });
     } else if (b.kind === 'upnext') {
       out = upNextPatch(model, legendOf, { round: b.round, table: b.table, bank });
     } else if (b.kind === 'upnext-clear') {

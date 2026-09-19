@@ -137,6 +137,35 @@ const FIELD_LEGENDS = [
   ['darius-hand-of-noxus', 2, 6, 9],
 ];
 
+// The matchup matrix: the ten most played of those legends against each
+// other, each pair's matches in proportion to how many brought the two,
+// won by the stronger legend's edge plus a fixed wobble per pair, so the
+// grid shows every tier and a few cells too thin to call. The Overall
+// column is each legend's record above, against the whole field.
+const MATRIX_WOBBLE = [7, -4, 2, -9, 5, 0, -6, 11, -2, 4, 8, -3, -7, 3];
+function sampleMatrix(legend) {
+  const top = FIELD_LEGENDS.slice(0, 10);
+  const rate = ([, , w, l]) => w / (w + l);
+  const pairs = [];
+  let k = 0;
+  for (let a = 0; a < top.length; a += 1) {
+    for (let b = a + 1; b < top.length; b += 1) {
+      const n = Math.max(2, Math.round((top[a][1] * top[b][1]) / 20));
+      const p = Math.min(0.8, Math.max(0.2, 0.5 + rate(top[a]) - rate(top[b]) + MATRIX_WOBBLE[k % MATRIX_WOBBLE.length] / 100));
+      k += 1;
+      const wins = Math.round(n * p);
+      pairs.push({ a, b, wins, losses: n - wins, draws: (a + b) % 7 === 0 ? 1 : 0 });
+    }
+  }
+  const matches = pairs.reduce((s, x) => s + x.wins + x.losses, 0);
+  return {
+    legends: top.map(([slug, players, wins, losses]) => ({ ...legend(slug), players, wins, losses, draws: 0 })),
+    pairs,
+    label: 'after Round 8',
+    note: `Win rate across the row: ${matches} matches between different legends; mirror matches, draws and byes left out.`,
+  };
+}
+
 let cached = null;
 let cachedFrom = null;
 
@@ -233,6 +262,7 @@ function build(cards) {
         label: 'after Round 8',
         note: 'Win rate: 464 matches between different legends; mirror matches, draws and byes left out.',
       },
+      matrix: sampleMatrix(legend),
       standings: {
         cut: 8,
         rows: [...PLAYERS, ...FIELD].map((p) => {

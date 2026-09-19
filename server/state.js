@@ -20,6 +20,10 @@ import {
   ROLL_OPS, ROLL_SPEEDS, ROLL_SPEED_DEFAULT, ROLL_STATES, SLICE_MODES, SLICES_DEFAULT, TOP_DEFAULT, TOP_MAX, TOP_MIN, rollElapsed,
 } from '../web/shared/legendstats.js';
 import { FOCUS_MAX, nextFocus, pairingsPageOf, playerKey, standingsPlaceOf } from '../web/shared/focus.js';
+import {
+  MIN_MATCHES_DEFAULT, MIN_MATCHES_MAX, SIZE_DEFAULT, SIZE_MAX, SIZE_MIN,
+  cleanFocus as cleanMatrixFocus, cleanKey as cleanMatrixKey, cleanMatrix, cleanPick as cleanMatrixPick,
+} from '../web/shared/matrix.js';
 import { HOLD_DEFAULT, HOLD_MAX, HOLD_MIN, TICKER_PER_MAX, TICKER_SHOWS } from '../web/shared/ticker.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
@@ -126,6 +130,13 @@ function defaultBank() {
       // the platform can bring in fresh results on its own (followPairings);
       // typed tables have none.
       pairings: { rows: [], label: '', byes: [], src: '' },
+      // The matchup matrix (2026-09-19): the legends and each pair's record
+      // against each other (web/shared/matrix.js). title names the event
+      // the numbers are from when it is not this one (a Rift Registry
+      // event); label and note are the graphic's sub line and foot line;
+      // source credits whose numbers they are ("Rift Registry",
+      // "TopDeck.gg"), empty for typed ones.
+      matrix: { legends: [], pairs: [], title: '', label: '', note: '', source: '' },
     },
     match: {
       seriesLength: 3,
@@ -326,6 +337,14 @@ function defaultBank() {
       // the round and the game number, animated into the game window. game
       // 0 counts from the game wins; 1 to 5 pins it.
       matchup: { visible: false, game: 0 },
+      // The matchup matrix (2026-09-19, Sam: "a legend matchup matrix
+      // scene"): the `size` most played legends across and down, or the ones
+      // picked by hand (pick, legend keys), a cell with fewer than
+      // minMatches matches left blank, the Overall column and each cell's
+      // record switchable. focus: a legend's row, its column, or the cell
+      // where they cross; a cue like the other highlights (both banks, on
+      // air at once).
+      matrix: { visible: false, size: SIZE_DEFAULT, pick: [], minMatches: MIN_MATCHES_DEFAULT, overall: true, records: true, focus: { row: '', col: '' } },
       // --- the odds and trash round (2026-09-19) ---
       // Odds to draw: the cards a player's deck can still give them, the
       // likeliest first (web/shared/odds.js), on their side of the game
@@ -418,6 +437,7 @@ function mergeBank(bank, raw) {
   bank.event.pairings = { ...fresh.event.pairings, ...(bank.event.pairings || {}) };
   if (!Array.isArray(bank.event.pairings.rows)) bank.event.pairings.rows = [];
   if (!Array.isArray(bank.event.pairings.byes)) bank.event.pairings.byes = [];
+  bank.event.matrix = { ...fresh.event.matrix, ...(bank.event.matrix || {}), ...cleanMatrix(bank.event.matrix) };
   bank.match.result = { ...fresh.match.result, ...(bank.match.result || {}) };
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
@@ -448,6 +468,12 @@ function mergeBank(bank, raw) {
   if (!SLICE_MODES.includes(ls.slices)) ls.slices = SLICES_DEFAULT;
   if (!Object.hasOwn(ROLL_SPEEDS, ls.speed)) ls.speed = ROLL_SPEED_DEFAULT;
   for (const flag of ['autoRoll', 'loop']) if (typeof ls[flag] !== 'boolean') ls[flag] = true;
+  const mx = bank.scenes.matrix;
+  mx.focus = cleanMatrixFocus(mx.focus);
+  mx.pick = cleanMatrixPick(mx.pick);
+  mx.size = clampInt(mx.size, SIZE_MIN, SIZE_MAX);
+  mx.minMatches = clampInt(mx.minMatches, 1, MIN_MATCHES_MAX);
+  for (const flag of ['overall', 'records']) if (typeof mx[flag] !== 'boolean') mx[flag] = true;
   const tk = bank.scenes.ticker;
   if (!TICKER_SHOWS.includes(tk.show)) tk.show = 'all';
   tk.per = clampInt(tk.per, 0, TICKER_PER_MAX);
@@ -1023,6 +1049,29 @@ function applyBankPatch(bank, patch) {
       if (pr.src !== undefined) bank.event.pairings.src = cleanStr(pr.src ?? '', 120);
       else if (Array.isArray(pr.rows)) bank.event.pairings.src = '';
     }
+    if (patch.event.matrix && typeof patch.event.matrix === 'object') {
+      const mx = patch.event.matrix;
+      const cur = bank.event.matrix;
+      // Legends and pairs travel together (a pair points into the legends
+      // it came with). New legends without a source are typed ones: the
+      // credit goes, and so do the label and the note when they came
+      // with a loaded lot (they describe its numbers, not these); a label
+      // typed for typed matchups stays. Without a title, the other event's
+      // name goes too.
+      if (Array.isArray(mx.legends)) {
+        const loaded = Boolean(cur.source);
+        Object.assign(cur, cleanMatrix({ legends: mx.legends, pairs: Array.isArray(mx.pairs) ? mx.pairs : [] }));
+        if (mx.title === undefined) cur.title = '';
+        if (mx.source === undefined) {
+          cur.source = '';
+          if (loaded) { cur.label = ''; cur.note = ''; }
+        }
+      }
+      if (mx.title !== undefined) cur.title = cleanStr(mx.title ?? '', 80);
+      if (mx.label !== undefined) cur.label = cleanStr(mx.label ?? '', 60);
+      if (mx.note !== undefined) cur.note = cleanStr(mx.note ?? '', 200);
+      if (mx.source !== undefined) cur.source = cleanStr(mx.source ?? '', 60);
+    }
   }
 
   const winsBefore = { left: bank.match.left.gameWins, right: bank.match.right.gameWins };
@@ -1276,6 +1325,19 @@ function applyBankPatch(bank, patch) {
       const mu = patch.scenes.matchup;
       if (mu.visible !== undefined) bank.scenes.matchup.visible = Boolean(mu.visible);
       if (mu.game !== undefined) bank.scenes.matchup.game = clampInt(mu.game, 0, 5);
+    }
+    if (patch.scenes.matrix && typeof patch.scenes.matrix === 'object') {
+      const m = patch.scenes.matrix;
+      const sc = bank.scenes.matrix;
+      if (m.visible !== undefined) sc.visible = Boolean(m.visible);
+      if (m.size !== undefined) sc.size = clampInt(m.size, SIZE_MIN, SIZE_MAX);
+      if (m.minMatches !== undefined) sc.minMatches = clampInt(m.minMatches, 1, MIN_MATCHES_MAX);
+      if (m.overall !== undefined) sc.overall = Boolean(m.overall);
+      if (m.records !== undefined) sc.records = Boolean(m.records);
+      if (m.pick !== undefined) sc.pick = cleanMatrixPick(m.pick);
+      // The highlight travels with the bank on TAKE; the panel changes it
+      // with the focus cue.
+      if (m.focus !== undefined) sc.focus = cleanMatrixFocus(m.focus);
     }
     // --- the odds and trash round ---
     if (patch.scenes.odds && typeof patch.scenes.odds === 'object') {
@@ -1537,6 +1599,17 @@ export function applyUpdate(patch) {
       // only one (only), or every highlight cleared (clear).
       const now = Date.now();
       for (const bank of [state.preview, state.program]) focusSheet(bank, patch, now);
+    } else if (patch.scene === 'matrix') {
+      // The matchup matrix (2026-09-19): a legend's row, its column, or the
+      // cell where they cross (row and col, each a legend key or '' for
+      // none); clear takes the highlight off.
+      for (const bank of [state.preview, state.program]) {
+        const sc = bank.scenes.matrix;
+        const next = patch.clear ? { row: '', col: '' } : { ...sc.focus };
+        if (!patch.clear && patch.row !== undefined) next.row = cleanMatrixKey(patch.row);
+        if (!patch.clear && patch.col !== undefined) next.col = cleanMatrixKey(patch.col);
+        sc.focus = next;
+      }
     } else {
       return { ok: false, error: 'unknown scene' };
     }

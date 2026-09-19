@@ -16,6 +16,10 @@ import {
   ROLL_SPEEDS, legendSlices, legendsFromStandings, legendsToText, parseLegendLines, resolveLegend, rollAt, rollElapsed, sliceKey, splitLegend, tableOverflow,
 } from '../shared/legendstats.js';
 import { standingsStep, standingsView } from '../shared/standings.js';
+import {
+  LEGENDS_MAX as MATRIX_LEGENDS_MAX, SIZE_MAX as MATRIX_SIZE_MAX, TIER_COLORS as MATRIX_TIER_COLORS,
+  focusAt as matrixFocusAt, legendKey as matrixLegendKey, matrixToText, matrixView, parseMatchupLines, pctRound,
+} from '../shared/matrix.js';
 import { playerKey } from '../shared/focus.js';
 import { cardKey, drawChance, drawPool, formatChance, poolLine } from '../shared/odds.js';
 import { flowText } from '../shared/trash.js';
@@ -82,6 +86,7 @@ const SCENE_FIELDS = {
   bracket: ['bracket', 'eventName'],
   standings: ['standings', 'eventName', 'roundTitle'],
   legendstats: ['legendStats', 'eventName'],
+  matrix: ['matrix', 'eventName'],
   pairings: ['pairings', 'eventName', 'roundTitle'],
   ongoing: ['pairings', 'eventName', 'roundTitle'],
   ticker: ['pairings', 'roundTitle'],
@@ -128,6 +133,7 @@ const SCENE_NAMES = {
   bracket: 'the bracket',
   standings: 'the standings',
   legendstats: 'the legend distribution',
+  matrix: 'the matchup matrix',
   pairings: 'the pairings',
   ongoing: 'the ongoing matches',
   ticker: 'the results ticker',
@@ -150,7 +156,7 @@ const SCENE_SHORT = {
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', ongoing: 'Ongoing', result: 'Result',
-  legendstats: 'Legends', sponsor: 'Sponsor', ticker: 'Ticker',
+  legendstats: 'Legends', matrix: 'Matchups', sponsor: 'Sponsor', ticker: 'Ticker',
   matchup: 'Game intro', sideboard: 'Sideboard', sidespot: 'Sideboard spot', decklists: 'Decklists 2up', vscard: 'VS card',
   odds: 'Odds', trash: 'Trash',
 };
@@ -844,7 +850,7 @@ $('resetMatch').addEventListener('click', () => {
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
-      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, ticker: { visible: false }, result: { visible: false }, sponsor: { visible: false },
+      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, matrix: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, ticker: { visible: false }, result: { visible: false }, sponsor: { visible: false },
       matchup: { visible: false }, sideboard: { visible: false }, sidespot: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
       odds: { visible: false }, trash: { visible: false },
     },
@@ -1233,7 +1239,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'ticker', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing', 'ticker', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2360,17 +2366,17 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker'];
-const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'matrix', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker'];
+const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', matrix: 'toggleMatrix', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
   matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', odds: 'toggleOdds', trash: 'toggleTrash', sidespot: 'toggleSidespot', ticker: 'toggleTicker' };
-const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
+const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', matrix: 'matrixOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
   matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', odds: 'oddsOnAir', trash: 'trashOnAir', sidespot: 'sidespotOnAir', ticker: 'tickerOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
-const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing', 'decklists'];
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing', 'decklists'];
 function setFullScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
@@ -2389,7 +2395,7 @@ $('toggleSlate').addEventListener('click', () => {
   if (!state) return;
   setFullScene('slate', !state.preview.scenes.slate.visible);
 });
-for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'pairings', 'ongoing']) {
+for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing']) {
   $(EXP_TOGGLES[key]).addEventListener('click', () => {
     if (!state) return;
     setFullScene(key, !state.preview.scenes[key].visible);
@@ -3800,6 +3806,263 @@ function renderLegendControls(s) {
   }));
 }
 
+// --- the matchup matrix (2026-09-19) ---
+//
+// Sam: "a legend matchup matrix scene. Pull reference from rift registry".
+// Three ways in, each into preview like any edit: the paste (one matchup a
+// line, read by web/shared/matrix.js), a Rift Registry event (its export
+// tallied by server/rrmatrix.js), or the Tournament platform tab's TopDeck
+// event. Graphic features picks the legends on the grid and highlights a
+// row, a column or a cell on a small copy of the grid drawn from the same
+// arithmetic as the graphic, so what the operator clicks is what airs.
+let matrixProblem = '';
+let matrixPosted = '';
+let matrixKeepText = false;
+const matrixSig = (mx) => JSON.stringify([(mx.legends || []).map((l) => matrixLegendKey(l)), mx.pairs || []]);
+function matrixSummary(mx) {
+  const v = matrixView(mx, { size: MATRIX_SIZE_MAX });
+  if (!v.legends) return '';
+  return `${plural(v.legends, 'legend')}, ${v.matches.toLocaleString('en-US')} decided match${v.matches === 1 ? '' : 'es'} between them${mx.source ? `, from ${mx.source}` : ''}.`;
+}
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    const out = parseMatchupLines($('matrixText').value, resolveTyped);
+    matrixProblem = out.bad.length ? `Could not read: ${out.bad[0]}. One matchup a line, e.g. Kai'Sa vs Jinx | 12-8.`
+      : out.unknown.length ? `No legend called ${out.unknown.slice(0, 3).join(', ')}${out.unknown.length > 3 ? ` and ${out.unknown.length - 3} more` : ''}: shown as typed, with no picture.`
+        : out.over ? `More than ${MATRIX_LEGENDS_MAX} legends: the first ${MATRIX_LEGENDS_MAX} typed are kept.` : '';
+    if (matrixProblem) $('matrixHint').textContent = matrixProblem;
+    matrixPosted = matrixSig(out);
+    matrixKeepText = out.bad.length > 0;
+    // Typed matchups keep the event name typed beside them; the credit to
+    // Rift Registry or TopDeck goes (server/state.js), since these are no
+    // longer only their numbers.
+    post({ event: { matrix: { legends: out.legends, pairs: out.pairs, title: $('matrixTitle').value } } });
+  };
+  $('matrixText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 600); });
+  // Leaving the box shows what the lines became: full legend names, one
+  // line per pair.
+  $('matrixText').addEventListener('blur', () => {
+    if (timer !== null) flush();
+    else if (state && !matrixKeepText) $('matrixText').value = matrixToText(state.preview.event.matrix || {});
+  });
+}
+for (const [id, field] of [['matrixTitle', 'title'], ['matrixLabel', 'label'], ['matrixNote', 'note'], ['matrixSource', 'source']]) {
+  const input = $(id);
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ event: { matrix: { [field]: input.value } } }); };
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  input.addEventListener('blur', flush);
+}
+
+// Rift Registry's events: asked for when the fold is first opened (the app
+// works offline at a venue, so nothing is fetched before), and again with
+// the refresh button.
+let rrEvents = null;
+async function loadRrEvents(refresh = false) {
+  const sel = $('matrixRrEvent');
+  const keep = sel.value;
+  $('matrixRrHint').textContent = 'Asking Rift Registry for its events…';
+  try {
+    const res = await (await fetch(`/api/rr/events${refresh ? '?refresh=1' : ''}`, { cache: 'no-store' })).json();
+    if (!res.ok) throw new Error(res.error || 'Rift Registry did not answer.');
+    rrEvents = res.events;
+    sel.replaceChildren(new Option('Pick an event', ''), ...rrEvents.map((e) => new Option(`${e.name}${e.date ? ` (${e.date})` : ''}`, e.id)));
+    if (keep && rrEvents.some((e) => e.id === keep)) sel.value = keep;
+    $('matrixRrHint').textContent = `${plural(rrEvents.length, 'event')} on Rift Registry. Pick one and press Load: its matchups replace these in preview.`;
+  } catch (err) {
+    $('matrixRrHint').textContent = `${err.message} The paste and the Tournament platform tab still work.`;
+  }
+}
+document.querySelector('details[data-sec="matrix"]').addEventListener('toggle', (e) => {
+  if (e.currentTarget.open && !rrEvents) loadRrEvents();
+});
+$('matrixRrRefresh').addEventListener('click', () => loadRrEvents(true));
+$('matrixRrLoad').addEventListener('click', async () => {
+  const id = $('matrixRrEvent').value;
+  if (!id) { $('matrixRrHint').textContent = 'Pick a Rift Registry event first.'; return; }
+  const btn = $('matrixRrLoad');
+  btn.disabled = true;
+  $('matrixRrHint').textContent = 'Loading from Rift Registry (a Regional Qualifier takes a few seconds)…';
+  try {
+    const res = await (await fetch('/api/rr/matrix', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ event: id }) })).json();
+    $('matrixRrHint').textContent = res.ok
+      ? `${res.name} is in preview: ${res.matches.toLocaleString('en-US')} matches between different legends`
+        + `${res.dropped ? `, the ${res.legends} most played of ${res.legends + res.dropped} legends kept` : `, ${res.legends} legends`}`
+        + `${res.unknown ? ` (${res.unknown} players with no legend on Rift Registry left out)` : ''}. TAKE to air.`
+      : res.error || 'That did not load.';
+  } catch {
+    $('matrixRrHint').textContent = 'The app did not answer: is it still running?';
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// The graphic's settings.
+$('matrixSize').addEventListener('change', () => post({ scenes: { matrix: { size: Number($('matrixSize').value) } } }));
+$('matrixMin').addEventListener('change', () => post({ scenes: { matrix: { minMatches: Number($('matrixMin').value) } } }));
+$('matrixOverall').addEventListener('change', () => post({ scenes: { matrix: { overall: $('matrixOverall').checked } } }));
+$('matrixRecords').addEventListener('change', () => post({ scenes: { matrix: { records: $('matrixRecords').checked } } }));
+
+// The legends on the grid: a chip per legend in the data, most played
+// first, lit while it is on the grid. A click takes one off or puts one on,
+// starting from the grid as it stands, so the first click never jumps to a
+// different grid; Most played goes back to the top few.
+const matrixViewOf = (bank) => {
+  const sc = bank.scenes.matrix;
+  return matrixView(bank.event.matrix || {}, { size: sc.size, pick: sc.pick, minMatches: sc.minMatches });
+};
+$('matrixPickChips').addEventListener('click', (e) => {
+  const chip = e.target.closest('button[data-key]');
+  if (!chip || !state) return;
+  const keys = matrixViewOf(state.preview).axis.map((l) => l.key);
+  const at = keys.indexOf(chip.dataset.key);
+  if (at >= 0) {
+    if (keys.length <= 2) { $('matrixPickNote').textContent = 'A grid needs two legends at least.'; return; }
+    keys.splice(at, 1);
+  } else {
+    if (keys.length >= MATRIX_SIZE_MAX) { $('matrixPickNote').textContent = `${MATRIX_SIZE_MAX} legends at most: take one off first.`; return; }
+    keys.push(chip.dataset.key);
+  }
+  post({ scenes: { matrix: { pick: keys } } });
+});
+$('matrixPickClear').addEventListener('click', () => post({ scenes: { matrix: { pick: [] } } }));
+
+// The highlight, on the small grid: a legend's name at the start of a row
+// lights its row, one at the top of a column its column, a cell lifts that
+// matchup and the diagonal lights the legend's row and column. The same
+// click again takes it off. A cue like the others: on air at once.
+$('matrixMini').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-row], button[data-col]');
+  if (!btn || !state) return;
+  const cur = state.preview.scenes.matrix.focus || { row: '', col: '' };
+  const next = { row: btn.dataset.row || '', col: btn.dataset.col || '' };
+  if (next.row === cur.row && next.col === cur.col) post({ action: 'focus', scene: 'matrix', clear: true });
+  else post({ action: 'focus', scene: 'matrix', ...next });
+});
+$('matrixFocusClear').addEventListener('click', () => post({ action: 'focus', scene: 'matrix', clear: true }));
+
+const legendFace = (l) => {
+  if (!l.legendSlug) return Object.assign(document.createElement('span'), { className: 'lt', textContent: splitLegend(l.legend).champion.slice(0, 1).toUpperCase() });
+  const img = Object.assign(document.createElement('img'), { alt: '', src: `/legendart/icon/${l.legendSlug}.webp` });
+  img.onerror = () => img.classList.add('hidden');
+  return img;
+};
+
+function renderMatrixMini(view, focus) {
+  const box = $('matrixMini');
+  const { r, c } = matrixFocusAt(view, focus);
+  const sig = JSON.stringify([view.axis.map((l) => l.key), view.cells.map((row) => row.map((x) => [x.shown, x.tier, x.pct === null ? null : pctRound(x.pct), x.total])), r, c]);
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  const n = view.axis.length;
+  if (n < 2) { box.replaceChildren(); return; }
+  const cross = r >= 0 && c >= 0 && r !== c;
+  const any = r >= 0 || c >= 0;
+  const litRow = (i) => (!cross && (i === r || (r === c && i === c)));
+  const litCol = (j) => (!cross && (j === c || (r === c && j === r)));
+  box.style.gridTemplateColumns = `minmax(92px, max-content) repeat(${n}, 32px)`;
+  const out = [Object.assign(document.createElement('span'), { className: 'corner', textContent: 'vs' })];
+  view.axis.forEach((l, j) => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: `chd${j === c && r < 0 ? ' lit' : ''}`, title: `${l.legend}: light its column` });
+    b.dataset.col = l.key;
+    b.append(legendFace(l));
+    out.push(b);
+  });
+  view.axis.forEach((l, i) => {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: `rh${i === r && c < 0 ? ' lit' : ''}`, title: `${l.legend}: light its row` });
+    b.dataset.row = l.key;
+    b.append(legendFace(l), Object.assign(document.createElement('span'), { textContent: splitLegend(l.legend).champion }));
+    out.push(b);
+    view.cells[i].forEach((x, j) => {
+      const here = cross ? i === r && j === c : litRow(i) || litCol(j);
+      const cell = Object.assign(document.createElement('button'), { type: 'button', className: `c${x.self ? ' self' : x.shown ? '' : ' thin'}${here ? ' lit' : any && !here ? ' dim' : ''}` });
+      cell.dataset.row = l.key;
+      cell.dataset.col = view.axis[j].key;
+      if (x.shown) {
+        cell.style.background = MATRIX_TIER_COLORS[x.tier];
+        cell.textContent = String(pctRound(x.pct));
+      } else if (!x.self) cell.textContent = x.total || x.draws ? '·' : '';
+      const other = view.axis[j].legend;
+      cell.title = x.self ? `${l.legend}: light its row and its column`
+        : x.shown ? `${l.legend} vs ${other}: ${pctRound(x.pct)}%, ${x.wins}-${x.losses}${x.draws ? `-${x.draws}` : ''}`
+          : `${l.legend} vs ${other}: ${x.total ? `${x.wins}-${x.losses}, too few to call` : 'no matches'}`;
+      out.push(cell);
+    });
+  });
+  box.replaceChildren(...out);
+}
+
+function renderMatrix(s) {
+  const prev = s.preview;
+  const mx = prev.event.matrix || { legends: [], pairs: [] };
+  const sc = prev.scenes.matrix;
+  // A problem stays named while the data is the one it was about; data
+  // from anywhere else (Rift Registry, the platform) clears it.
+  if (matrixSig(mx) !== matrixPosted) {
+    matrixProblem = '';
+    matrixKeepText = false;
+  }
+  if (!matrixKeepText) setIfIdle('matrixText', matrixToText(mx));
+  setIfIdle('matrixTitle', mx.title || '');
+  setIfIdle('matrixLabel', mx.label || '');
+  setIfIdle('matrixNote', mx.note || '');
+  setIfIdle('matrixSource', mx.source || '');
+  if (document.activeElement !== $('matrixText')) $('matrixHint').textContent = matrixProblem || matrixSummary(mx);
+
+  if (document.activeElement !== $('matrixSize')) $('matrixSize').value = String(sc.size || 8);
+  if (document.activeElement !== $('matrixMin')) {
+    const sel = $('matrixMin');
+    const v = String(sc.minMatches || 5);
+    if (![...sel.options].some((o) => o.value === v)) sel.append(new Option(v, v));
+    sel.value = v;
+  }
+  if (document.activeElement !== $('matrixOverall')) $('matrixOverall').checked = sc.overall !== false;
+  if (document.activeElement !== $('matrixRecords')) $('matrixRecords').checked = sc.records !== false;
+
+  const view = matrixViewOf(prev);
+  $('matrixSize').disabled = view.picked;
+  $('matrixPickClear').disabled = !(sc.pick || []).length;
+  $('matrixPickNote').textContent = !view.legends ? ''
+    : view.picked ? `Picked by hand: ${plural(view.axis.length, 'legend')}.${view.missing.length ? ` ${plural(view.missing.length, 'legend')} picked earlier ${view.missing.length === 1 ? 'is' : 'are'} not in this data.` : ''}`
+      : `The ${view.axis.length} most played of ${view.legends}. Click a legend to take it off or put it on.`;
+  const all = matrixView(mx, { size: MATRIX_SIZE_MAX, pick: [] });
+  const everyone = [...all.axis, ...(mx.legends || []).map((l) => ({ ...l, key: matrixLegendKey(l) })).filter((l) => !all.axis.some((a) => a.key === l.key))];
+  const onGrid = new Set(view.axis.map((l) => l.key));
+  const chips = $('matrixPickChips');
+  const chipSig = JSON.stringify([everyone.map((l) => [l.key, l.legend, l.players]), [...onGrid]]);
+  if (chips.dataset.sig !== chipSig) {
+    chips.dataset.sig = chipSig;
+    chips.replaceChildren(...everyone.map((l) => {
+      const on = onGrid.has(l.key);
+      const chip = Object.assign(document.createElement('button'), { type: 'button', className: `focus-chip${on ? ' on' : ''}` });
+      chip.dataset.key = l.key;
+      chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      chip.title = on ? `${l.legend}: take it off the grid` : `Put ${l.legend} on the grid`;
+      const decided = (l.wins || 0) + (l.losses || 0);
+      chip.append(
+        legendFace(l),
+        Object.assign(document.createElement('span'), { className: 'nm', textContent: splitLegend(l.legend).champion }),
+        Object.assign(document.createElement('span'), { className: 'n', textContent: l.players ? String(l.players) : String(decided) }),
+      );
+      return chip;
+    }));
+  }
+
+  const focus = sc.focus || { row: '', col: '' };
+  const { r, c } = matrixFocusAt(view, focus);
+  $('matrixFocusClear').disabled = !focus.row && !focus.col;
+  const name = (i) => splitLegend(view.axis[i].legend).champion;
+  $('matrixFocusNote').textContent = (focus.row || focus.col) && r < 0 && c < 0 ? 'The highlighted legend is not on the grid now.'
+    : r >= 0 && c >= 0 && r !== c ? `${name(r)} vs ${name(c)} is lifted.`
+      : r >= 0 && r === c ? `${name(r)}'s row and column are lit.`
+        : r >= 0 ? `${name(r)}'s row is lit.` : c >= 0 ? `${name(c)}'s column is lit.` : '';
+  renderMatrixMini(view, focus);
+}
+
 // --- the standings' and the pairings' highlights (2026-09-19) ---
 //
 // Sam: "highlight and feature specific standings on the standings graphic
@@ -4049,6 +4312,7 @@ function renderExtras(s) {
     const lsc = prev.scenes.legendstats;
     if (document.activeElement !== $('legendstatsRate')) $('legendstatsRate').checked = lsc.winRate !== false;
     renderLegendControls(s);
+    renderMatrix(s);
   }
   renderStandingsFocus(s);
   renderPairingsFocus(s);

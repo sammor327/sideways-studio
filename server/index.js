@@ -28,6 +28,7 @@ import { decksFromCsv, fileSlug } from './decklist-csv.js';
 import { initLibrary, getLibrary, applyLibrary, onLibraryChange } from './decklibrary.js';
 import { initPlatform, handlePlatform } from './platform.js';
 import { initRiftAtlas, handleRiftAtlas, shutdownRiftAtlas } from './riftatlas.js';
+import { handleRrMatrix } from './rrmatrix.js';
 import { findBrowser, renderStill, shutdownStills } from './still.js';
 import { legendSlug } from '../web/scenes/decklist/layout.js';
 import { ALL_SOURCES, APP_PAGES, sourceUrls } from '../web/shared/sources.js';
@@ -101,6 +102,8 @@ const server = http.createServer(async (req, res) => {
   if (await handlePlatform(req, res, url, { readBody, sendJson })) return;
   // A RiftAtlas casting studio's live game (server/riftatlas.js).
   if (await handleRiftAtlas(req, res, url, { readBody, sendJson })) return;
+  // The matchup matrix's Rift Registry events (server/rrmatrix.js).
+  if (await handleRrMatrix(req, res, url, { readBody, sendJson })) return;
 
   if (url.pathname === '/api/state' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });

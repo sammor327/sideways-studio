@@ -448,6 +448,30 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   standings** counts Match data › Standings, and the Tournament platform tab
   loads it from TopDeck. The slice colours are a fixed set checked for
   colour-blind viewers against the graphic's panel, so a look leaves them.
+- **Matchup matrix** (`/scenes/matrix/`): every legend's win rate against
+  every other, modelled on Rift Registry's matchup matrix. The most played
+  legends go across the top and down the side (**Legends**, the top 4 to
+  12, or pick them by hand with the legend chips under Graphic features),
+  each cell the row legend's win rate against the column legend with its
+  record under it, coloured in five steps: blue while the row legend is
+  ahead (55 to 59%, 60% or more), orange while it is behind (41 to 45%,
+  40% or less), grey in between. The colours are the data-viz reference's
+  diverging pair, checked for colour-blind viewers against the graphic's
+  panel, so a look leaves them. The diagonal (mirror matches) is hatched,
+  a cell with fewer decided matches than **At least** (5 by default) stays
+  bare with its record, and **Overall column** closes each row with the
+  legend's win rate against every other legend; **Records** switches the
+  records off. The small grid under **Highlight** lights a legend's row or
+  its column, or lifts one matchup, on air at once. Fill it under Match
+  data › Matchup matrix: **Load from Rift Registry** counts any event Rift
+  Registry publishes with its pairings (credited at the graphic's foot,
+  with the event's name in place of yours), or type one matchup a line
+  (`Kai'Sa vs Jinx | 12-8`), with a legend line for a legend's players and
+  overall record (`Kai'Sa | 42 players | 74-63-2 overall`; a loaded event
+  comes back into the box with them); the Tournament platform tab loads a
+  TopDeck event. Win rates are wins over wins and losses between different
+  legends, mirrors, draws and byes left out, as the legend distribution
+  counts them.
 - **Showdown** (`/scenes/showdown/`): the cards played onto a showdown, in
   order, the newest lifted because it resolves first. Open it in Match data
   by picking the battlefield; then click a card in either Cards in hand to

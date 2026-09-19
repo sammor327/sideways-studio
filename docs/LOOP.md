@@ -214,6 +214,54 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19m (out of band: the matchup matrix, 0.39.0)
+
+Sam: "For sideways studio, I want to make a legend matchup matrix scene.
+Pull reference from rift registry." Rift Registry has two: the event
+analysis page's grid (bundle chunk 31 renderMatchupMatrix, the Magnet
+design of Feature #47: portraits on linked axes, the top 8 by popularity,
+five solid tiers, Min matches 5, a scattered pop-in) and the broadcast
+stage scene (39a bcsSceneMatchupMatrix: the 12 most played, win rate and
+sample size, an Overall column). Built as full-frame `matrix` on the
+legend distribution's ground, with web/shared/matrix.js holding every
+number. Taken from Rift Registry: the linked axes, most played first, Min
+matches, the Overall column, records in the cells, the diagonal as the
+mirror. Changed on purpose: win rate is wins over wins and losses (Rift
+Registry counts a draw as half a win), so the Overall column equals the
+legend distribution's win rate for the same event (tested on a fixture and
+on Convergence #2: 35 legends, 511 matches both ways); tiers symmetric
+about 50 on the printed percent, rounded half away from 50 (Rift
+Registry's 48-54 even band put a 53 and its mirrored 47 in different
+tiers); blue and orange instead of green and red, the data-viz diverging
+pair stepped for the #10151d panel (checked with its validator: each arm a
+valid ordinal ramp, every pair of the five at least 8 apart under protan
+and deutan, white text 4.9:1 or better on all). Three sources: Rift
+Registry's open per-event exports (server/rrmatrix.js, 0.8 MB over the
+wire for a Regional Qualifier, tallied in memory and cached per event by
+the index's generated stamp; the loaded event's name replaces this event's
+on the graphic and Rift Registry is credited at the foot, as its llms.txt
+asks), the Tournament platform (load kind `matrix`), and a paste. Panel:
+a Match data fold (Rift Registry event list fetched when the fold opens,
+the paste, title/label/note/credit), Graphic features (size, At least,
+Overall, Records, legend chips to pick the axes, a small clickable grid for
+the highlight), the platform card's button. The highlight is a focus cue
+{row, col}: a row, a column, a crosshair or a lifted cell, with a readout
+line beside the key. Store limit 40 legends (Singapore's 43 lose three
+one-table legends), about 44 KB a bank. An independent review found the
+paste could not carry players, so editing one line of a loaded event
+zeroed every legend's players and re-ranked the grid by matches: the paste
+now has legend lines (`Legend | N players | W-L-D overall`) and the editor
+writes loaded data back with them (lossless, tested). Also fixed from
+stills: the sub line's match count disagreed with the note's (it now names
+the legends shown, the note keeps the event's count), a readout that ran
+into the key (one flex strip), a highlight clicked mid turn-over (applied
+when the turn lands). Verified: 28 new tests (on 0.38.0), stills from a
+scratch server (4810) of Singapore and Barcelona
+from Rift Registry at 4, 6, 8, 10 and 12 legends, Convergence #2 from
+TopDeck, a cell and a row highlight, the entrance wave mid-move, bare
+cells at 50, the empty state and the look builder tile, and the panel's
+Rift Registry load and mini-grid clicks driven in headless Chrome.
+
 ### 2026-09-19l (out of band: the results ticker, 0.38.0)
 
 Sam: "an ongoing ticker that fits at the bottom of the screen, shows the

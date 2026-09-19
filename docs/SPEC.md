@@ -285,6 +285,30 @@ this set; the PSDs stay the visual reference.
     the frame above y 844), in the host's look unless the ticker's own look
     is on; the lower third rises above tickerBox (anchor.js). Airs only
     with at least one table.
+31. **Matchup matrix** (`matrix`, 2026-09-19) — event.matrix {legends[40]
+    {legend, legendSlug, legendCardId, players, wins, losses, draws},
+    pairs[] {a < b, legend indexes, wins, losses, draws from a's side},
+    title, label, note, source}: a legend's own record is against every
+    other legend (the Overall column), a pair one legend's against another.
+    scenes.matrix {visible, size 4-12, pick[12] (legend keys: the axes once
+    two are in the data), minMatches 1-50, overall, records, focus {row,
+    col}}. Rift Registry's grid: one list of the most played (players, then
+    decided matches) across and down, a cell the row legend's wins over
+    wins and losses (draws print in the record and count for neither), five
+    tiers on the printed whole percent (rounded half away from 50, so a cell
+    and its mirror add up to 100) in the data-viz diverging pair, the
+    diagonal hatched, a cell under minMatches decided matches bare with its
+    record. New legends without `source` drop the credit, and with it a
+    loaded lot's label and note; without `title`, the other event's name.
+    Sources: the paste (one matchup a line; a legend line `Legend | N
+    players | W-L-D overall` carries what matchups cannot, and
+    matrixToText writes loaded data back with them, so an edit keeps the
+    players), server/rrmatrix.js (Rift
+    Registry's /data/events/_index.json and /data/events/<id>.json: the
+    results rows' legends and the pairings, tallied by rrmatrix-model.js;
+    GET /api/rr/events, POST /api/rr/matrix {event}) and the Tournament
+    platform (load kind `matrix`, platform-model.js matrixPatch). The
+    arithmetic is web/shared/matrix.js. A full-frame graphic.
 Per-side fields (2026-09-19): trash[60] (hand-card fields less played, plus
 flow {energy, power, domain} or null), drawn[] ({cardId, cardName, n}: the
 copies seen to leave the main deck, by name) and deckLeft[] (a live feed's
@@ -308,6 +332,10 @@ to its group and page. The legend table's roll: `{action:'roll',
 scene:'legendstats', op}` with op start (from the top when stopped, from
 where it is when paused or held), pause, stop (back to the top) or
 restart, and optionally `speed`, `loop`, `autoRoll`, on both banks.
+The matchup matrix's highlight: `{action:'focus', scene:'matrix', row,
+col}` sets its row legend, its column legend or both (each a legend key,
+'' for none; both is the cell where they cross, the same legend twice its
+row and column), and `clear: true` takes it off; both banks at once.
 The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume

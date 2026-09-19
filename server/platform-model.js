@@ -16,6 +16,7 @@
 //    Undocumented, so everything here reads it defensively.
 
 import { BRACKET_FORMATS } from '../web/shared/bracket.js';
+import { tallyMatrix } from '../web/shared/matrix.js';
 
 const n = (v) => Number(v) || 0;
 // Both sources keep decklist line breaks as a literal backslash + n.
@@ -607,6 +608,67 @@ export function legendStatsPatch(ev, legendOf, { group = 0 } = {}) {
     patch: { event: { legendStats: { rows, total: 0, label, note } } },
     players: s.players, legends: s.rows.length, matches: s.matches, unknown: s.unknown,
     lead: s.rows[0] ? s.rows[0].legend : '',
+  };
+}
+
+// --- the matchup matrix (2026-09-19) ---
+
+// Every legend's record against every other legend, from the finished
+// tables: the legend distribution's reading (a mirror says nothing about one
+// legend against another, a draw is neither a win nor a loss, a bye is not a
+// match) kept pair by pair (web/shared/matrix.js). The whole event counts
+// every Swiss and bracket match; a group counts its own Swiss.
+export function matrixStats(ev, legendOf, { group = 0 } = {}) {
+  const inGroup = (ent) => !group || ent.group === group;
+  const idOf = (ent) => (ent && ent.leader ? legendOf(ent.leader) : null);
+  const players = [];
+  let unknown = 0;
+  for (const ent of ev.entrants.values()) {
+    if (ent.released || !inGroup(ent)) continue;
+    const id = idOf(ent);
+    if (id && (id.legendSlug || id.legend)) players.push(id);
+    else unknown += 1;
+  }
+  const games = [];
+  let through = 0;
+  let cut = false;
+  for (const stage of group ? ['swiss'] : ['swiss', 'bracket']) {
+    for (const r of Object.values((ev[stage] && ev[stage].rounds) || {})) {
+      for (const tb of r.tables) {
+        if (!tb.done || tb.es.length !== 2) continue;
+        const a = ev.entrants.get(tb.es[0]);
+        const b = ev.entrants.get(tb.es[1]);
+        if (!a || !b || !inGroup(a)) continue;
+        const res = tableResult(tb);
+        if (!res) continue;
+        if (stage === 'swiss') through = Math.max(through, r.r); else cut = true;
+        games.push({ a: idOf(a), b: idOf(b), result: res });
+      }
+    }
+  }
+  return { ...tallyMatrix({ players, games }), players: players.length, unknown, through, cut };
+}
+
+// Like the pairings, an event with no name yet takes TopDeck's, so the
+// graphic's sub line says whose matchups these are.
+export function matrixPatch(ev, legendOf, { group = 0, bank = null } = {}) {
+  const s = matrixStats(ev, legendOf, { group });
+  if (!s.players) {
+    return { error: s.unknown
+      ? `TopDeck lists no legends for ${group ? `group ${group}` : 'this event'} yet: it shows them once the event ends or the organizer allows it.`
+      : 'There are no players to count yet.' };
+  }
+  if (!s.pairs.length) return { error: `No finished match between two different legends ${group ? `in group ${group} ` : ''}yet.` };
+  const label = [
+    group ? `Group ${group}` : '',
+    s.through ? `after Round ${s.through}` : '',
+    s.cut ? 'top cut included' : '',
+  ].filter(Boolean).join(' · ');
+  const note = `Win rate across the row: ${s.matches} match${s.matches === 1 ? '' : 'es'} between different legends; mirror matches, draws and byes left out.`;
+  const patch = { event: { matrix: { legends: s.legends, pairs: s.pairs, title: '', label, note, source: 'TopDeck.gg' } } };
+  if (bank && !bank.event.name && ev.name) patch.event.name = ev.name.slice(0, 80);
+  return {
+    patch, legends: s.legends.length, matches: s.matches, players: s.players, unknown: s.unknown, dropped: s.dropped,
   };
 }
 

@@ -1,0 +1,143 @@
+/* The matchup matrix (2026-09-19, Sam: "a legend matchup matrix scene. Pull
+   reference from rift registry"). Full frame on the legend distribution's
+   ground: the title and sub line over one panel holding the grid, a key
+   under it, and the foot line with how the numbers were counted and whose
+   they are.
+
+   The grid is Rift Registry's (web/shared/matrix.js says where it departs):
+   the same legends across the top and down the side, most played first, a
+   cell the row legend's win rate against the column legend with its record
+   under it, the diagonal hatched (a mirror says nothing), a cell with too
+   few matches left bare with its record in the corner of the eye, and an
+   Overall column. Its size follows the number of legends (4 to 12): scene.js
+   works the metrics out in design pixels and hands them over as custom
+   properties; every element is absolutely placed at --x/--y.
+
+   Colour: the five tiers are data colours checked against this panel
+   (matrix.js), so a look that changes the panel keeps them, like the legend
+   distribution's slices. Text on them is the look's text colour, which
+   clears 4.9:1 on every tier with the designed white.
+
+   Motion: --t fades the frame and brings the heading across (every read is
+   var(--t, 1)). The heads and cells come in on --r, a wave from the top
+   left corner down to the bottom right (each element's --pos, 0 to 1), and
+   leave on --o the same way, so new numbers (another group, a switch
+   flipped) turn the grid over. --r reads 1 when unset, --o reads 0: the
+   settled frame.
+
+   The highlight (the focus cue): a legend's row, its column, or the cell
+   where they cross. All on one clock, --fk (web/stage/focusblend.js): each
+   element blends --h (lit) and --d (dimmed) from ...0 to ...1, and the
+   crossing cell --z (lifted and grown). */
+
+.matrix { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); --rw: 0.34; --ow: 0.55; }
+.matrix.off { display: none; }
+.matrix, .matrix * { box-sizing: border-box; }
+
+.head { position: absolute; left: calc(80 * var(--u)); top: calc(54 * var(--u)); right: calc(80 * var(--u)); display: flex; align-items: flex-end; transform: translateX(calc((1 - var(--t, 1)) * -48 * var(--u))); text-shadow: 0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.75); }
+.head .lead { display: flex; align-items: flex-end; min-width: 0; }
+.head .title { flex: 0 0 auto; font: 800 calc(64 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; }
+.head .sub { font: 700 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); margin-left: calc(26 * var(--u)); white-space: nowrap; overflow: hidden; }
+
+.panel { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1760 * var(--u)); height: calc(850 * var(--u)); background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+.panel.hidden { display: none; }
+
+.grid { position: absolute; left: calc(var(--gx, 0) * var(--u)); top: calc(var(--gy, 0) * var(--u)); width: calc(var(--gw, 0) * var(--u)); height: calc(var(--gh, 0) * var(--u)); }
+
+/* Every piece of the grid: placed at --x/--y, in on --r at its --pos, out
+   on --o the same way, dimmed and lit by the highlight. */
+.grid > * {
+  --rp: clamp(0, calc((var(--r, 1) - var(--pos, 0) * (0.998 - var(--rw))) / var(--rw)), 1);
+  --rq: clamp(0, calc((var(--o, 0) - var(--pos, 0) * (0.998 - var(--ow))) / var(--ow)), 1);
+  --h: calc(var(--h0, 0) + (var(--h1, 0) - var(--h0, 0)) * var(--fk, 1));
+  --d: calc(var(--d0, 0) + (var(--d1, 0) - var(--d0, 0)) * var(--fk, 1));
+  position: absolute; left: calc(var(--x) * var(--u)); top: calc(var(--y) * var(--u));
+  width: calc(var(--w) * var(--u)); height: calc(var(--hh) * var(--u));
+  opacity: calc(var(--rp) * (1 - var(--rq)) * (1 - 0.62 * var(--d)));
+}
+
+/* --- the heads --- */
+/* A legend's face: the round icon cutout, then the holder art, then its
+   card's painting; with none known, the champion's initial. */
+.face { position: relative; flex: 0 0 auto; width: calc(var(--fs) * var(--u)); height: calc(var(--fs) * var(--u)); border-radius: 50%; border: calc(2 * var(--u)) solid var(--ss-frame, #26303c); background: var(--ss-ink, #0a0d12); overflow: hidden; display: grid; place-items: center; font: 800 calc(var(--fs) * 0.36 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); }
+.face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; }
+.face img.hidden { display: none; }
+.face img.tier-card { object-position: center 18%; transform: scale(1.5); transform-origin: center 30%; }
+.face .lt { position: relative; }
+
+.colhead {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: calc(8 * var(--u)); padding-bottom: calc(10 * var(--u));
+  transform: translateY(calc(((1 - var(--rp)) + var(--rq)) * -28 * var(--u)));
+}
+.colhead .nm { max-width: 100%; font: 800 calc(var(--cf) * var(--u))/1.05 var(--tes-font); text-transform: uppercase; letter-spacing: calc(0.6 * var(--u)); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-align: center; }
+.rowhead {
+  display: flex; align-items: center; gap: calc(14 * var(--u)); padding-right: calc(18 * var(--u));
+  transform: translateX(calc(((1 - var(--rp)) + var(--rq)) * -48 * var(--u)));
+}
+.rowhead .name { min-width: 0; flex: 1 1 auto; }
+.rowhead .ch { font: 800 calc(var(--rf) * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; }
+.rowhead .tt { font: 500 calc(var(--tf) * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); margin-top: calc(5 * var(--u)); white-space: nowrap; overflow: hidden; }
+.rowhead .tt:empty { display: none; }
+/* A lit head: the face ringed in the accent, a bar of it at the edge. */
+.colhead::after, .rowhead::after { content: ''; position: absolute; background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); pointer-events: none; }
+.colhead::after { left: 18%; right: 18%; bottom: 0; height: calc(4 * var(--u)); transform: scaleX(var(--h)); }
+.rowhead::after { top: 14%; bottom: 14%; right: calc(4 * var(--u)); width: calc(4 * var(--u)); transform: scaleY(var(--h)); }
+.colhead .face, .rowhead .face { box-shadow: 0 0 0 calc(3 * var(--h) * var(--u)) var(--ss-accent-a, #11b6fb); }
+.ohead { display: flex; align-items: flex-end; justify-content: center; padding-bottom: calc(12 * var(--u)); font: 800 calc(15 * var(--u))/1 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); transform: translateY(calc(((1 - var(--rp)) + var(--rq)) * -28 * var(--u))); }
+
+/* --- the cells --- */
+.cell, .ocell {
+  --z: calc(var(--z0, 0) + (var(--z1, 0) - var(--z0, 0)) * var(--fk, 1));
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--gap2, 4) * var(--u));
+  border-radius: calc(4 * var(--u)); background: var(--c, transparent); color: var(--ss-text, #f3f6f9);
+  transform: scale(calc((0.72 + 0.28 * var(--rp)) * (1 - 0.1 * var(--rq)) * (1 + 0.16 * var(--z))));
+  /* Lit: a ring in the text colour; the crossing cell also lifts off the
+     grid on the card row's shadow. */
+  box-shadow: 0 0 0 calc(2 * var(--h) * var(--u)) rgba(243, 246, 249, calc(0.85 * var(--h))), 0 calc(var(--z) * 12 * var(--u)) calc(var(--z) * 26 * var(--u)) rgba(0, 0, 0, calc(var(--z) * 0.65));
+}
+.cell.lift { z-index: 2; }
+.cell .v, .ocell .v { font: 800 calc(var(--pf) * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cell .v small, .ocell .v small { font-size: 0.55em; font-weight: 700; margin-left: calc(1 * var(--u)); }
+.cell .s, .ocell .s { font: 600 calc(var(--sf) * var(--u))/1 var(--tes-font); letter-spacing: calc(0.6 * var(--u)); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.grid.no-records .cell .s, .grid.no-records .ocell .s { display: none; }
+.t-dn2 { --c: #b53e02; }
+.t-dn1 { --c: #8a2e02; }
+.t-even { --c: #2c2c2a; }
+.t-up1 { --c: #184f95; }
+.t-up2 { --c: #256abf; }
+/* Too few matches to call: bare, with the record there is. */
+.cell.thin { background: transparent; border: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.08); color: var(--ss-text-muted, #9aa7b6); }
+.cell.thin .v { font-size: calc(var(--sf) * 1.15 * var(--u)); font-weight: 600; }
+/* The diagonal: the mirror match. */
+.cell.self { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0 calc(2 * var(--u)), transparent calc(2 * var(--u)) calc(10 * var(--u))); border: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.05); }
+/* The Overall column sits apart from the grid, behind a hairline. */
+.orule { background: var(--ss-frame, #26303c); }
+
+/* --- under the grid --- */
+/* One strip along the panel's foot: the highlighted legend or matchup in
+   words on the left, taking whatever room the key leaves it (a long one
+   shrinks to fit, web/stage/fitnames.js), the key on the right. */
+.strip { position: absolute; left: calc(40 * var(--u)); right: calc(40 * var(--u)); bottom: calc(24 * var(--u)); display: flex; align-items: center; gap: calc(28 * var(--u)); }
+.readout {
+  --h: calc(var(--h0, 0) + (var(--h1, 0) - var(--h0, 0)) * var(--fk, 1));
+  flex: 1 1 auto; min-width: 0;
+  font: 800 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden;
+  opacity: calc(var(--h) * (1 - var(--o, 0))); transform: translateY(calc((1 - var(--h)) * 10 * var(--u)));
+}
+.readout .m { color: var(--ss-text-muted, #9aa7b6); font-weight: 600; margin-left: calc(12 * var(--u)); }
+/* The key, bottom right: the five tiers, the mirror, the bare cell. */
+.key { flex: none; margin-left: auto; display: flex; align-items: center; gap: calc(16 * var(--u)); font: 600 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; opacity: calc(var(--r, 1) * (1 - var(--o, 0))); }
+.key .cap { color: var(--ss-text, #fff); font-weight: 700; margin-right: calc(4 * var(--u)); }
+.key .tiers { display: flex; gap: calc(12 * var(--u)); }
+.key .sw { display: inline-flex; align-items: center; gap: calc(7 * var(--u)); }
+.key .sw i { display: inline-block; width: calc(22 * var(--u)); height: calc(16 * var(--u)); border-radius: calc(3 * var(--u)); background: var(--c, transparent); }
+.key .sw.mirror i { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0 calc(2 * var(--u)), transparent calc(2 * var(--u)) calc(6 * var(--u))); border: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.12); }
+.key .sw.thin i { border: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.2); }
+.key .sw.thin b { font-weight: 600; }
+.key .sw.hidden { display: none; }
+.key.hidden { display: none; }
+
+/* The empty-state line comes in on the grid's clock, so it arrives the way
+   the grid would (fully there when the clock is unset or settled). */
+.empty { position: absolute; left: calc(80 * var(--u)); top: calc(220 * var(--u)); width: calc(1760 * var(--u)); padding: calc(40 * var(--u)); text-align: center; font: 500 calc(20 * var(--u))/1.4 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); background: var(--ss-plate, #10151d); opacity: var(--r, 1); }
+.empty.hidden { display: none; }

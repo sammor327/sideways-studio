@@ -336,6 +336,15 @@ $('pfLegends').addEventListener('click', () => {
   loadExtra({ kind: 'legends', group },
     (res) => `The legend distribution${group ? ` for group ${group}` : ''} is in preview: ${res.players} players on ${res.legends} legends, ${res.lead} the most played${res.unknown ? ` (${res.unknown} with no legend on TopDeck left out)` : ''}. TAKE to air.`);
 });
+// The matchup matrix (2026-09-19): the same group choice as the legend
+// distribution, since the two tell one story.
+$('pfMatrix').addEventListener('click', () => {
+  const group = Number($('pfLegendGroup').value) || 0;
+  loadExtra({ kind: 'matrix', group },
+    (res) => `The matchup matrix${group ? ` for group ${group}` : ''} is in preview: ${res.matches} matches between different legends`
+      + `${res.dropped ? `, the ${res.legends} most played of ${res.legends + res.dropped} legends kept` : `, ${res.legends} legends`}`
+      + `${res.unknown ? ` (${res.unknown} players with no legend on TopDeck left out)` : ''}. TAKE to air.`);
+});
 $('pfPairings').addEventListener('click', () => {
   const r = currentRound();
   if (!r) return;
@@ -401,7 +410,7 @@ async function poll() {
 const PF_TILES = [
   { label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
   { label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
-  { label: 'Event graphics', keys: ['standings', 'pairings', 'ongoing', 'ticker', 'legendstats', 'bracket', 'slate'] },
+  { label: 'Event graphics', keys: ['standings', 'pairings', 'ongoing', 'ticker', 'legendstats', 'matrix', 'bracket', 'slate'] },
 ];
 
 const PREFS_KEY = 'sidewaysStudio.platform';

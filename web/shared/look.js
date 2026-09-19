@@ -20,7 +20,7 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'sponsor',
-  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker'];
+  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'matrix', 'odds', 'trash', 'sidespot', 'ticker'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -58,6 +58,7 @@ export const SCENE_LABELS = {
   vscard: 'Head to head, VS',
   pairings: 'Pairings',
   ongoing: 'Ongoing matches',
+  matrix: 'Matchup matrix',
   odds: 'Odds to draw',
   trash: 'Trash',
   sidespot: 'Sideboard card spotted',
@@ -239,6 +240,14 @@ export const DESIGNED = {
   ongoing: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 25 },
+  },
+  // The matchup matrix (2026-09-19) stands on the legend distribution's
+  // ground, its sister graphic: the grid sits on one panel the arrows
+  // frame. Its tier colours are its own (web/shared/matrix.js), checked
+  // against this panel colour; a look that changes the panel keeps them.
+  matrix: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 30 },
   },
   // The results ticker (2026-09-19) is the slate's feature-tables strip on
   // its own: a plate only, in the slate's panel colours. Fitted to an

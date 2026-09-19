@@ -1,6 +1,6 @@
 {
   "name": "sideways-studio",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "private": true,
   "type": "module",
   "description": "Locally hosted broadcast graphics for Riftbound streams. Built by Sam Morris / Turn'em Sideways.",

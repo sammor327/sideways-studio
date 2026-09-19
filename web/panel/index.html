@@ -738,6 +738,32 @@
       </div>
     </details>
 
+    <details class="field-section fold" data-sec="matrix">
+      <summary><h4 class="section-label">Matchup matrix</h4></summary>
+
+      <div class="field-row" data-field="matrix">
+        <span class="row-label" title="One matchup per line: the row legend, the column legend, then the row legend's record against it. Kai'Sa vs Jinx | 12-8, or Kai'Sa | Jinx | 12-8-1 with a draw count. Tabs work too, for a spreadsheet paste. A second line for the same two legends adds to the first, either way round. A legend line gives a legend's players and its record against every other legend: Kai'Sa | 42 players | 74-63-2 overall. A loaded event comes back into this box with those lines, so correcting a matchup keeps every legend's players.">Matchups</span>
+        <div class="cell span2 legends-cell">
+          <div class="legends-tools rr-tools">
+            <select id="matrixRrEvent" aria-label="Rift Registry event" title="Every event Rift Registry publishes with its round by round pairings"><option value="">Rift Registry events load when this opens</option></select>
+            <button type="button" id="matrixRrLoad" title="Count this Rift Registry event's matches into the matrix in preview. It replaces the matchups below.">Load from Rift Registry</button>
+            <button type="button" id="matrixRrRefresh" class="clear-mini" title="Ask Rift Registry for its list of events again">&#8635;</button>
+          </div>
+          <p class="hint" id="matrixRrHint"></p>
+          <textarea id="matrixText" rows="6" spellcheck="false" placeholder="Kai'Sa vs Jinx | 12-8&#10;Kai'Sa vs Viktor | 7-9&#10;Jinx | Viktor | 10-10-1"></textarea>
+          <div class="legends-lines">
+            <input id="matrixTitle" maxlength="80" autocomplete="off" placeholder="From another event? Its name" aria-label="The event these numbers are from, when it is not this one" title="Printed in place of this event's name when the numbers come from another event. Loading a Rift Registry event fills it.">
+            <input id="matrixLabel" maxlength="60" autocomplete="off" placeholder="Label, e.g. after Round 6" aria-label="Matchup matrix label">
+          </div>
+          <div class="legends-lines">
+            <input id="matrixNote" maxlength="200" autocomplete="off" placeholder="How the win rates were counted" aria-label="How the win rates were counted">
+            <input id="matrixSource" maxlength="60" autocomplete="off" placeholder="Credit, e.g. Rift Registry" aria-label="Whose numbers these are" title="Printed at the foot as Data: … Loading from Rift Registry or TopDeck fills it; typed matchups clear it.">
+          </div>
+          <p class="hint" id="matrixHint"></p>
+        </div>
+      </div>
+    </details>
+
     <details class="field-section fold" data-sec="pairings">
       <summary><h4 class="section-label">Pairings</h4></summary>
 
@@ -936,6 +962,11 @@
           <div class="scene-name">Legend distribution <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="legendstatsOnAir">ON AIR</button></div>
           <button id="toggleLegendstats" class="scene-toggle">OFF</button>
           <p class="scene-note">The most played legends: a pie beside a table of each legend's share and win rate. Fill it under Match data &rsaquo; Legend distribution, or load it from the Tournament platform tab.</p>
+        </div>
+        <div class="scene-row" data-scene="matrix">
+          <div class="scene-name">Matchup matrix <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="matrixOnAir">ON AIR</button></div>
+          <button id="toggleMatrix" class="scene-toggle">OFF</button>
+          <p class="scene-note">Every legend's win rate against every other: the most played legends across and down, each cell coloured by who is ahead. Paste matchups or load a Rift Registry event under Match data &rsaquo; Matchup matrix, or load the event from the Tournament platform tab.</p>
         </div>
         <div class="scene-row" data-scene="pairings">
           <div class="scene-name">Pairings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="pairingsOnAir">ON AIR</button></div>
@@ -1432,6 +1463,58 @@
       <div class="focus-chips" id="lsFocusChips" role="group" aria-label="Highlight a legend"></div>
       <p class="hint">A table longer than nine rows rolls; the roll and the highlight act on air at once, no TAKE needed. A highlighted legend's slice comes out of the pie and grows, its row lights up, and a rolling table holds with that row in view until the highlight comes off.</p>
     </div>
+    <div class="feature-group hidden" data-scene="matrix">
+      <h3>Matchup matrix</h3>
+      <div class="scene-options">
+        <label class="inline" title="How many legends go across and down: the most played first">Legends
+          <select id="matrixSize" aria-label="How many legends on the grid">
+            <option value="12">The top 12</option>
+            <option value="11">The top 11</option>
+            <option value="10">The top 10</option>
+            <option value="9">The top 9</option>
+            <option value="8">The top 8</option>
+            <option value="7">The top 7</option>
+            <option value="6">The top 6</option>
+            <option value="5">The top 5</option>
+            <option value="4">The top 4</option>
+          </select>
+        </label>
+        <label class="inline" title="A cell with fewer decided matches than this stays bare, with its record, so a 2-0 never airs as 100%">At least
+          <select id="matrixMin" aria-label="Fewest matches a cell needs">
+            <option value="1">1 match</option>
+            <option value="2">2 matches</option>
+            <option value="3">3 matches</option>
+            <option value="4">4 matches</option>
+            <option value="5">5 matches</option>
+            <option value="6">6 matches</option>
+            <option value="8">8 matches</option>
+            <option value="10">10 matches</option>
+            <option value="12">12 matches</option>
+            <option value="15">15 matches</option>
+            <option value="20">20 matches</option>
+            <option value="25">25 matches</option>
+            <option value="30">30 matches</option>
+            <option value="40">40 matches</option>
+            <option value="50">50 matches</option>
+          </select>
+        </label>
+        <label class="inline" title="Each row legend's win rate against every other legend, closing the row"><input type="checkbox" id="matrixOverall" checked> Overall column</label>
+        <label class="inline" title="The record (wins, losses, draws) under each win rate"><input type="checkbox" id="matrixRecords" checked> Records</label>
+      </div>
+      <div class="scene-options focus-row">
+        <span class="opt-label">On the grid</span>
+        <button type="button" class="clear-mini" id="matrixPickClear" title="Back to the most played legends">Most played</button>
+        <span class="hint" id="matrixPickNote"></span>
+      </div>
+      <div class="focus-chips" id="matrixPickChips" role="group" aria-label="The legends on the grid"></div>
+      <div class="scene-options focus-row">
+        <span class="opt-label">Highlight</span>
+        <button type="button" class="clear-mini" id="matrixFocusClear" title="Take the highlight off">Clear</button>
+        <span class="hint" id="matrixFocusNote"></span>
+      </div>
+      <div class="mx-mini" id="matrixMini" role="group" aria-label="Highlight a row, a column or a matchup"></div>
+      <p class="hint">Click a legend at the start of a row to light its row, one at the top to light its column, or a cell to lift that matchup (the diagonal lights a legend's row and column). The highlight acts on air at once, no TAKE needed; the legends and the settings above wait for TAKE.</p>
+    </div>
     <div class="feature-group hidden" data-scene="result">
       <h3>Result</h3>
       <div class="scene-options"><span class="hint">The winner and the "advances to" line are under Match data › Match card and result. Unset, the strip names whoever holds the series.</span></div>
@@ -1792,6 +1875,10 @@
       <div class="url-line"><input class="url-input" id="legendstatsUrl" readonly><button data-copy="legendstatsUrl">Copy</button></div>
     </div>
     <div class="url-row">
+      <span class="url-label">Matchup matrix source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="matrixUrl" readonly><button data-copy="matrixUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
       <span class="url-label">Pairings source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="pairingsUrl" readonly><button data-copy="pairingsUrl">Copy</button></div>
     </div>
@@ -1914,7 +2001,7 @@
     </section>
 
     <section class="card pf-event">
-      <h2>Standings, pairings, legends and bracket</h2>
+      <h2>Standings, pairings, legends, matchups and bracket</h2>
       <div class="row">
         <select id="pfStandGroup" aria-label="Standings for" title="Every group loads each group's standings at once; the Studio switches between them beside the standings' page arrows"></select>
         <select id="pfCut" aria-label="Cut line">
@@ -1935,6 +2022,7 @@
       <div class="row">
         <select id="pfLegendGroup" aria-label="Legend distribution for"></select>
         <button type="button" id="pfLegends" title="How many played each legend and each legend's win rate against the others, from TopDeck">Legend distribution to preview</button>
+        <button type="button" id="pfMatrix" title="Every legend's win rate against every other legend, from TopDeck's finished matches (the group picked beside it, or the whole event)">Matchup matrix to preview</button>
       </div>
       <div class="row">
         <button type="button" id="pfBracket">Bracket to preview</button>

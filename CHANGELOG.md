@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.39.0 (2026-09-19)
+
+- New graphic, Matchup matrix (Between games): every legend's win rate against every other, modelled on Rift Registry's matchup matrix. The most played legends go across and down (the top 4 to 12), each cell the row legend's win rate against the column legend with its record under it, coloured by who is ahead: blue while the row legend is ahead, orange while it is behind, grey for even, in five steps from 40% or less to 60% or more. The diagonal (mirror matches) is hatched, a cell with fewer matches than you set (5 by default) stays bare with its record, and an Overall column closes each row. A key under the grid explains the colours; the foot says how the win rates were counted and whose numbers they are.
+- Load it from Rift Registry: Match data › Matchup matrix lists every event Rift Registry publishes with its round by round pairings (the Regional Qualifiers and Showdowns). Pick one and press Load from Rift Registry: its matches are counted into preview in a few seconds, with the event's name, date and set on the graphic and Rift Registry credited at its foot.
+- Or from TopDeck: Tournament platform › Matchup matrix to preview counts the connected event (the whole event, or the group picked beside it) once TopDeck shows its legends. Its Overall column agrees with the legend distribution's win rates for the same event.
+- Or type it: one matchup a line, Kai'Sa vs Jinx | 12-8 (a draw count may follow). A spreadsheet paste with tabs works too. A legend line gives a legend's players and its overall record, Kai'Sa | 42 players | 74-63-2 overall; a loaded event comes back into the box with them, so correcting one matchup keeps every legend's players and the grid's most played order.
+- Under Graphic features: how many legends, the fewest matches a cell needs, the Overall column and the records on or off, and the legends on the grid by hand (click a legend to take it off or put it on; Most played goes back). The small grid there highlights a legend's row, its column or one matchup: the rest dims, a matchup lifts off the grid, and the line under the grid says it in words. The highlight acts on air at once, no TAKE needed.
+- Win rates are wins over wins and losses between different legends: mirror matches, draws and byes are left out, the way the legend distribution counts them.
+
 ## 0.38.0 (2026-09-19)
 
 - New graphic, Results ticker (Between games, an overlay): the round's tables along the bottom of the screen, like the slate's feature tables. Each table shows its number, both players' legend icons and names, and the result: the games with the winner's in the accent colour and FINAL under them, DRAW, the games so far with LIVE, or VS before any are in. The player who lost dims and their icon greys. Every few seconds the tables roll over to the next ones like a cube turning, one after another from the left, and round again after the last.
