@@ -53,6 +53,7 @@ export const TILES = [
   { key: 'profile-deck', scene: 'profile', group: 'full', variant: 'With decklist', vary: { decklist: true } },
   { key: 'bracket', scene: 'bracket', group: 'full' },
   { key: 'standings', scene: 'standings', group: 'full' },
+  { key: 'legendstats', scene: 'legendstats', group: 'full' },
   { key: 'decklist', scene: 'decklist', group: 'full' },
   { key: 'decklists', scene: 'decklists', group: 'full' },
 ];

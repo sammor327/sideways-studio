@@ -10,6 +10,7 @@ import { refreshFontSheet } from '../shared/fontsheet.js';
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
 import { SCENE_SOURCES } from '../shared/sources.js';
+import { legendsFromStandings, legendsToText, parseLegendLines, resolveLegend } from '../shared/legendstats.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -71,6 +72,7 @@ const SCENE_FIELDS = {
   profile: ['name', 'country', 'legend', 'legendText', 'seed', 'record', 'pronouns', 'playerTeam', 'seasonRecord', 'archetype', 'store', 'finishes', 'eventName', 'roundTitle', 'deck'],
   bracket: ['bracket', 'eventName'],
   standings: ['standings', 'eventName', 'roundTitle'],
+  legendstats: ['legendStats', 'eventName'],
   result: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'score', 'gameWins', 'result', 'roundTitle', 'eventName'],
   sponsor: [],
   // The decks round (2026-09-18).
@@ -107,6 +109,7 @@ const SCENE_NAMES = {
   profile: 'the player profile',
   bracket: 'the bracket',
   standings: 'the standings',
+  legendstats: 'the legend distribution',
   result: 'the result strip',
   sponsor: 'the sponsor plate',
   matchup: 'the game intro',
@@ -123,7 +126,7 @@ const SCENE_SHORT = {
   igoportrait: 'Portrait pillars', igorows: 'Rows', arenabug: 'Arena bug', slate: 'Slate',
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', result: 'Result',
-  sponsor: 'Sponsor',
+  legendstats: 'Legends', sponsor: 'Sponsor',
   matchup: 'Game intro', sideboard: 'Sideboard', decklists: 'Decklists 2up', vscard: 'VS card',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
@@ -811,7 +814,7 @@ $('resetMatch').addEventListener('click', () => {
       igoportrait: { visible: false }, igorows: { visible: false }, arenabug: { visible: false }, slate: { visible: false },
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
-      bracket: { visible: false }, standings: { visible: false }, result: { visible: false }, sponsor: { visible: false },
+      bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, result: { visible: false }, sponsor: { visible: false },
       matchup: { visible: false }, sideboard: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
     },
   });
@@ -1199,7 +1202,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'matchup', 'sideboard', 'decklists']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2292,17 +2295,17 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
-const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'decklists'];
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'decklists'];
 function setFullScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
@@ -2321,7 +2324,7 @@ $('toggleSlate').addEventListener('click', () => {
   if (!state) return;
   setFullScene('slate', !state.preview.scenes.slate.visible);
 });
-for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings']) {
+for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats']) {
   $(EXP_TOGGLES[key]).addEventListener('click', () => {
     if (!state) return;
     setFullScene(key, !state.preview.scenes[key].visible);
@@ -2944,6 +2947,94 @@ $('standingsCut').addEventListener('change', () => post({ event: { standings: { 
 $('standingsPrev').addEventListener('click', () => { if (state) post({ scenes: { standings: { page: Math.max(1, (state.preview.scenes.standings.page || 1) - 1) } } }); });
 $('standingsNext').addEventListener('click', () => { if (state) post({ scenes: { standings: { page: Math.min(4, (state.preview.scenes.standings.page || 1) + 1) } } }); });
 
+// --- the legend distribution editor (2026-09-19) ---
+//
+// One legend per line, read by web/shared/legendstats.js: the legend, how
+// many played it, its win rate or record. Legends resolve against the
+// catalog so the graphic gets their faces, and the text is written back in
+// the same shape once it lands, so what resolved is plain to see. The line
+// under the box names what could not be read or matched until the text
+// reads clean, and otherwise sums the list up. While a line cannot be read
+// the box keeps the operator's own text, so the line is there to fix.
+let legendProblem = '';
+let legendPosted = '';
+let legendKeepText = false;
+const legendKey = (rows) => rows.map((r) => `${r.legend}:${r.players || 0}`).join('|');
+const resolveTyped = (text) => resolveLegend(legendCatalog, text);
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+function legendSummary(ls) {
+  const rows = ls.rows || [];
+  if (!rows.length) return '';
+  const players = rows.reduce((n, r) => n + (r.players || 0), 0);
+  return `${plural(rows.length, 'legend')}${players ? `, ${plural(players, 'player')}` : ''}${ls.total > players ? ` of ${ls.total}` : ''}.`;
+}
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    const { rows, bad, unknown } = parseLegendLines($('legendText').value, resolveTyped);
+    legendProblem = bad.length ? `Could not read: ${bad[0]}.`
+      : unknown.length ? `No legend called ${unknown.slice(0, 3).join(', ')}${unknown.length > 3 ? ` and ${unknown.length - 3} more` : ''}: shown as typed, with no picture.`
+        : rows.length > 64 ? `${rows.length} legends: the first 64 by count are kept.` : '';
+    if (legendProblem) $('legendHint').textContent = legendProblem;
+    const kept = [...rows].sort((a, b) => (b.players || 0) - (a.players || 0) || (b.share || 0) - (a.share || 0)).slice(0, 64);
+    legendPosted = legendKey(kept);
+    legendKeepText = bad.length > 0;
+    post({ event: { legendStats: { rows: kept } } });
+  };
+  $('legendText').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 600); });
+  // Leaving the box shows what the lines became (full names, repeats
+  // merged), whether or not there is still an edit to send.
+  $('legendText').addEventListener('blur', () => {
+    if (timer !== null) flush();
+    else if (state && !legendKeepText) $('legendText').value = legendsToText(state.preview.event.legendStats.rows || []);
+  });
+}
+{
+  let timer = null;
+  const flush = () => {
+    if (timer === null) return;
+    clearTimeout(timer);
+    timer = null;
+    post({ event: { legendStats: { total: Math.max(0, Math.trunc(Number($('legendTotal').value) || 0)) } } });
+  };
+  $('legendTotal').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 400); });
+  $('legendTotal').addEventListener('blur', flush);
+}
+for (const [id, field] of [['legendLabel', 'label'], ['legendNote', 'note']]) {
+  const el = $(id);
+  let timer = null;
+  const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ event: { legendStats: { [field]: el.value } } }); };
+  el.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 300); });
+  el.addEventListener('blur', flush);
+}
+// Standings rows already carry their legend and record, so a small event
+// typed into Match data needs no second list. Their records hold every
+// match, mirrors included, and the note says so.
+$('legendFromStandings').addEventListener('click', () => {
+  if (!state) return;
+  const st = state.preview.event.standings || { rows: [] };
+  const { rows, skipped } = legendsFromStandings(st.rows || []);
+  if (!rows.length) {
+    legendProblem = (st.rows || []).length ? 'None of the standings rows names a legend.' : 'Match data › Standings is empty.';
+    $('legendHint').textContent = legendProblem;
+    return;
+  }
+  // Players with no legend are worth a line that stays while these rows do.
+  legendPosted = legendKey(rows);
+  legendKeepText = false;
+  legendProblem = skipped ? `Counted ${plural(rows.reduce((n, r) => n + r.players, 0), 'player')} from the standings; ${skipped} with no legend left out.` : '';
+  post({ event: { legendStats: {
+    rows, total: 0, label: st.label || '',
+    note: 'Win rate: the players\' records in the standings, mirror matches included.',
+  } } });
+  if (legendProblem) $('legendHint').textContent = legendProblem;
+});
+$('legendstatsRate').addEventListener('change', () => post({ scenes: { legendstats: { winRate: $('legendstatsRate').checked } } }));
+$('legendstatsTop').addEventListener('change', () => post({ scenes: { legendstats: { top: Number($('legendstatsTop').value) } } }));
+
 function renderExtras(s) {
   const prev = s.preview;
   const prog = s.program;
@@ -3009,6 +3100,25 @@ function renderExtras(s) {
   $('standingsPage').textContent = String(prev.scenes.standings.page || 1);
   if (document.activeElement !== $('standingsCut')) $('standingsCut').value = String(prev.event.standings ? prev.event.standings.cut : 8);
   setIfIdle('standingsText', standingsToText(prev.event.standings ? prev.event.standings.rows || [] : []));
+  {
+    const ls = prev.event.legendStats || { rows: [], total: 0, label: '', note: '' };
+    // A problem stays named while the rows are the ones it was about; rows
+    // from anywhere else (the platform, Count from standings) clear it.
+    if (legendKey(ls.rows || []) !== legendPosted) {
+      legendProblem = '';
+      legendKeepText = false;
+    }
+    if (!legendKeepText) setIfIdle('legendText', legendsToText(ls.rows || []));
+    setIfIdle('legendTotal', ls.total ? String(ls.total) : '');
+    const counted = (ls.rows || []).reduce((n, r) => n + (r.players || 0), 0);
+    $('legendTotal').placeholder = counted ? `auto (${counted})` : 'auto';
+    setIfIdle('legendLabel', ls.label || '');
+    setIfIdle('legendNote', ls.note || '');
+    if (document.activeElement !== $('legendText')) $('legendHint').textContent = legendProblem || legendSummary(ls);
+    const lsc = prev.scenes.legendstats;
+    if (document.activeElement !== $('legendstatsRate')) $('legendstatsRate').checked = lsc.winRate !== false;
+    if (document.activeElement !== $('legendstatsTop')) $('legendstatsTop').value = String(lsc.top || 8);
+  }
   renderBracketEditor(s);
   if (document.activeElement !== $('choseFirst')) $('choseFirst').value = prev.match.choseFirst || '';
   if (document.activeElement !== $('resultWinner')) $('resultWinner').value = (prev.match.result && prev.match.result.winner) || '';

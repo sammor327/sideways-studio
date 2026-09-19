@@ -167,6 +167,18 @@ this set; the PSDs stay the visual reference.
     look's ground (designed: the new `arrows` background kind, that PSD's
     smoke plate and glowing arrows, baked by scripts/bake-showdown.py).
     State `scenes.vscard {visible}`; a full-frame graphic.
+24. **Legend distribution** (`legendstats`, 2026-09-19) — event.legendStats
+    {rows[64] {legend, legendSlug, legendCardId, players, share, wins,
+    losses, winRate}, total, label, note} as a pie (SVG, clockwise from
+    twelve in share order, legend faces on the slices with room) beside a
+    table (the face ringed in its slice colour, champion and title, share
+    over the player count, win rate over the record). scenes.legendstats
+    {visible, winRate, top 3-8}: the win rate column and the note switch
+    together; legends past `top` fold into Other, with any players past the
+    rows when `total` is larger. Shares, Other, slice colours, the paste and
+    the standings count live in web/shared/legendstats.js; the Tournament
+    platform fills it from TopDeck (legendStats in server/platform-model.js).
+    A full-frame graphic.
 The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume

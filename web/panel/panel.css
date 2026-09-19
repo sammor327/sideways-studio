@@ -1012,6 +1012,14 @@ details.field-section > .field-row { margin-top: 7px; }
 .result-cell input, .next-cell input { flex: 1 1 120px; min-width: 0; }
 .bracket-cell, .standings-cell { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
 .bracket-cell textarea, .standings-cell textarea { width: 100%; }
+/* The legend distribution editor (2026-09-19): players and Count from
+   standings over the paste, the label and the win rate note under it. */
+.legends-cell { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+.legends-cell textarea { width: 100%; }
+.legends-tools, .legends-lines { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.legends-tools input { width: 84px; }
+.legends-tools button { margin-left: auto; }
+.legends-lines input { flex: 1 1 160px; min-width: 0; }
 .br-matches { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; padding-right: 4px; }
 .br-matches:empty { display: none; }
 .br-round { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #8b98a5; margin-top: 6px; }

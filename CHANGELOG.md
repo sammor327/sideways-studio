@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.28.0 (2026-09-19)
+
+- New graphic: Legend distribution, under Between games. The most played legends as a pie on the left and a table on the right: each legend's face, its name, its share of the field and its win rate. The pie sweeps round with each face landing on its slice, and the rows follow one after another.
+- Win rate switches on and off under Graphic features, and the note under the graphic saying how the win rates were counted goes with it. Legends shown sets how many legends get a slice and a row of their own (eight at most); the rest fold into a grey Other.
+- Fill it under Match data › Legend distribution: one legend per line with how many played it and its win rate or record (Kai'Sa | 42 | 55.1, or Jinx | 30 | 45-37). A share with a % sign works for a list of percentages, a column with one legend per player counts itself, and Players sets the field size when the lines list only some legends. Count from standings counts the standings you already have.
+- Tournament platform: Legend distribution to preview counts a TopDeck event or one group: how many played each legend and each legend's win rate against the others, with mirror matches, draws and byes left out. TopDeck shows legends once the event ends or the organizer allows it; until then the button says so.
+
 ## 0.27.0 (2026-09-19)
 
 - New graphic: Head to head, VS, the Sideways Showdown head to head. Both players' legend cards stand tilted either side of a big VS, the names in the design's silver, the round and the event name underneath, and your logo from Look between the cards. It builds in (the cards fly in, the VS lands, the names slide across) and plays backwards on the way out. It is under Between games, beside the Match card, which stays as it was.

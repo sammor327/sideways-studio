@@ -115,6 +115,28 @@ const FIELD = [
   { name: 'Zoe Mercer', country: 'NZ', record: '3-4-1', legend: 'garen-might-of-demacia' },
 ];
 
+// The field's legends for the legend distribution: 128 players across
+// sixteen legends, each legend's record against the others (mirrors left
+// out, so the wins and the losses balance, as a real event's do).
+const FIELD_LEGENDS = [
+  ['kaisa-daughter-of-the-void', 21, 74, 63],
+  ['jinx-loose-cannon', 17, 58, 57],
+  ['viktor-herald-of-the-arcane', 15, 60, 44],
+  ['draven-glorious-executioner', 13, 47, 50],
+  ['diana-scorn-of-the-moon', 11, 45, 37],
+  ['leona-radiant-dawn', 9, 33, 36],
+  ['ahri-nine-tailed-fox', 8, 30, 31],
+  ['sett-the-boss', 7, 24, 30],
+  ['yasuo-unforgiven', 6, 22, 24],
+  ['teemo-swift-scout', 5, 19, 18],
+  ['lee-sin-blind-monk', 4, 13, 17],
+  ['volibear-relentless-storm', 3, 11, 12],
+  ['garen-might-of-demacia', 3, 9, 14],
+  ['lux-lady-of-luminosity', 2, 8, 7],
+  ['miss-fortune-bounty-hunter', 2, 5, 15],
+  ['darius-hand-of-noxus', 2, 6, 9],
+];
+
 let cached = null;
 let cachedFrom = null;
 
@@ -204,6 +226,11 @@ function build(cards) {
           W4: { top: 2, bottom: 1, winner: 'top' },
           W6: { top: 0, bottom: 2, winner: 'bottom' },
         },
+      },
+      legendStats: {
+        rows: FIELD_LEGENDS.map(([slug, players, wins, losses]) => ({ ...legend(slug), players, wins, losses })),
+        label: 'after Round 8',
+        note: 'Win rate: 464 matches between different legends; mirror matches, draws and byes left out.',
       },
       standings: {
         cut: 8,

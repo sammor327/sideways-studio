@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Legend distribution</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="legendstats off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="k-shard s1"></div><div class="k-shard s2"></div>
+    <div class="head"><div class="lead"><div class="title">Legend distribution</div><div class="sub" id="sub"></div></div></div>
+    <div class="panel" id="panel">
+      <div class="chart">
+        <svg class="pie" id="pie" viewBox="0 0 680 680" aria-hidden="true"></svg>
+        <div class="marks" id="marks"></div>
+      </div>
+      <div class="rule"></div>
+      <div class="table" id="table">
+        <div class="thead"><span>Legend</span><span class="n">Share</span><span class="n rate">Win rate</span></div>
+        <div class="rows" id="rows"></div>
+      </div>
+    </div>
+    <div class="empty hidden" id="empty">No legend data yet. Paste it under Match data › Legend distribution in the control panel, or load it from the Tournament platform tab.</div>
+    <div class="k-foot"><span class="note" id="foot"></span></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server…</div>
+  <div class="stage-diag" id="hiddenHint">The legend distribution is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

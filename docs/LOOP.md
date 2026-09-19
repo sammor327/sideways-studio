@@ -214,6 +214,71 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19b (out of band: the legend distribution, 0.28.0)
+
+Sam: "a legend distribution graphic to showcase the most played legends ...
+a pie chart on the left and a table on the right breaking down legend icon,
+legend name, % of that legend out of the total amount of legends, and
+finally their win rate ... make the win rate option able to be toggled."
+New full-frame scene `legendstats` on the standings' ground (arrows, dim
+30). State: event.legendStats {rows[64] {legend, legendSlug, legendCardId,
+players, share, wins, losses, winRate}, total, label, note} and
+scenes.legendstats {visible, winRate, top 3-8}. Every number comes from one
+pure module, web/shared/legendstats.js, shared by the scene, the panel, the
+platform and the tests: shares (players over the field; typed shares for a
+list of percentages, scaled when they pass 100), the order, the fold into
+Other (legends past top, plus players past the rows when total is larger;
+Other's record is the folded records added up unless one of them only has
+a typed %), slice angles and colours, SVG paths, the paste parser, catalog
+resolution (exact, else a unique champion, else a unique part: "Master Yi"
+alone matches nothing), merging repeats, and counting standings rows.
+
+Colours were run through the data-viz skill's palette validator, not
+eyeballed: its eight dark categorical steps against the panel (#10151d) and
+ground (#0a0d12) pass every adjacent check (worst CVD 8.4, normal 19.3) and
+3:1. A pie also closes on itself: with seven slices and no Other, slot 7
+violet meets slot 1 blue (CVD 1.9, normal 9.8, a fail), so the seventh slice
+takes slot 8 red instead (red/green 8.6, red/blue 19.2). Other is #646c77.
+Text never wears a slice colour; a legend is matched across by colour, face
+and order. Eight is the ceiling: a ninth legend folds, never a new hue.
+
+Scene: the pie is SVG in a 680 box, slices stroked 4 units in the panel
+colour (the surface gap, no outlines), a legend's face on its slice when the
+chord leaves 40 to 104 units at 62% out (the whole disc for a single
+legend). Table rows: the face ringed in the slice colour (icon cutout, then
+hero, then the legend card's thumb, else the initial), champion over title
+(fitnames shrinks long ones), share over the player count, win rate over the
+record, an en dash when unknown. Motion: --t the frame, --p a conic-mask
+sweep with each face landing as the sweep passes its middle, --r / --o the
+rows with the standings' arithmetic, travelling on the left inside a
+clipped table (they first slid in from the right, past the panel edge). A
+data change on air (another group, the win rate switched) turns the panel
+over: rows out and the pie fades, repaint, sweep and rows in, token-guarded
+like the standings' page turn.
+
+Win rates from TopDeck (legendStats in server/platform-model.js): shares
+count every player with a leader, dropped players too; players without one
+are counted apart and named only in the panel's status line. Records count
+finished matches between two different legends, Swiss and bracket for the
+whole event, a group's own Swiss for a group; mirrors, draws, byes and
+double no-shows stay out. The patch sends total 0 (its rows are the whole
+field), which also clears a field size typed for an earlier list. Checked
+against riftatlas-convergence-2 through the public page: 231 players on 35
+legends (26 with no leader in the page data), 511 matches, wins = losses =
+511, Kennen 27 players 73-45. Convergence #3 still hides legends until it
+ends or the organizer allows them.
+
+Panel: a Match data fold (Players, Count from standings, the paste, a label,
+a win rate note); the line under the paste names an unreadable or unmatched
+line and the box keeps the operator's text while a line cannot be read, then
+shows what the lines became on blur. A Graphics row under Between games,
+Graphic features (Win rate, Legends shown), a Setup link, and the platform
+card is now "Standings, legends and bracket" with its own group select
+(whole event first). Tests: test/legendstats.test.js (22). Verification
+gotcha: the in-app browser pane was in the background, so focus() and
+blur() did nothing there; a synthetic FocusEvent('blur') drives the flush
+handlers, and headless Chrome over CDP took the stills.
+
 ### 2026-09-19 (out of band: the Sideways Showdown round, 0.27.0)
 
 Sam, on Convergence #3 morning, four asks. (1) The standings animate in

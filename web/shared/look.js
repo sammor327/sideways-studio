@@ -19,7 +19,7 @@
 
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
-  'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'sponsor',
+  'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'sponsor',
   'matchup', 'sideboard', 'decklists', 'vscard'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
@@ -49,6 +49,7 @@ export const SCENE_LABELS = {
   profile: 'Player profile',
   bracket: 'Bracket',
   standings: 'Standings',
+  legendstats: 'Legend distribution',
   result: 'Result',
   sponsor: 'Sponsor plate',
   matchup: 'Game intro',
@@ -214,6 +215,14 @@ export const DESIGNED = {
   standings: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 25 },
+  },
+  // The legend distribution (2026-09-19) stands on the standings' ground:
+  // its pie and table sit on one panel, so the arrows frame them. The slice
+  // colours are its own (web/shared/legendstats.js), checked against this
+  // panel colour; a look that changes the panel keeps them.
+  legendstats: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 30 },
   },
   // The decks round (2026-09-18). The game intro's two pages and the side
   // by side decklists share the full screens' gradient ground; the sideboard

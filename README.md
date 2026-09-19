@@ -325,6 +325,21 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   between the cards. Arial Black and Arial as designed, unless a font is
   picked under Look. A player with no legend card shows a dark card naming
   the legend. It sits beside the match card, which is unchanged.
+- **Legend distribution** (`/scenes/legendstats/`, 0.28.0): the most played
+  legends as a pie on the left and a table on the right, each legend's face,
+  name, share of the field and win rate. The pie runs clockwise from twelve
+  o'clock in the table's order with the faces on the slices that have room
+  for them, and legends past **Legends shown** (Graphic features, eight at
+  most) fold into a grey Other. **Win rate** switches the column off, and
+  the note under the graphic saying how the win rates were counted with it.
+  Fill it under Match data › Legend distribution: one legend per line with
+  how many played it and its win rate or record (`Kai'Sa | 42 | 55.1`,
+  `Jinx | 30 | 45-37`), a share with a % sign for a list of percentages, or
+  one legend per player and the lines count themselves; **Players** sets
+  the field size when the lines list only some legends. **Count from
+  standings** counts Match data › Standings, and the Tournament platform tab
+  loads it from TopDeck. The slice colours are a fixed set checked for
+  colour-blind viewers against the graphic's panel, so a look leaves them.
 - **Showdown** (`/scenes/showdown/`): the cards played onto a showdown, in
   order, the newest lifted because it resolves first. Open it in Match data
   by picking the battlefield; then click a card in either Cards in hand to
@@ -398,9 +413,14 @@ score. **Swap sides** reloads it with the players the other way round, and
 
 **Standings to preview** writes a group's standings (TopDeck's own points
 and tiebreaks, labelled "Group 2 · after Round 3"), and **Bracket to
-preview** writes the Top 8 or Top 16 as TopDeck ran it. Everything lands in
-preview; TAKE airs it. The right side shows every graphic that draws this
-data, from the preview bank, so a click shows at once what it filled.
+preview** writes the Top 8 or Top 16 as TopDeck ran it. **Legend
+distribution to preview** counts the whole event or one group: how many
+players TopDeck lists for each legend, and each legend's win rate against the
+others, with mirror matches, draws and byes left out. TopDeck shows legends
+once the event ends or the organizer allows it; until then the button says
+so. Everything lands in preview; TAKE airs it. The right side shows every
+graphic that draws this data, from the preview bank, so a click shows at
+once what it filled.
 
 The event, the key and the refresh switch live in `data/platform.json`. The
 key never goes into the state the graphics receive, and the panel only

@@ -647,6 +647,28 @@
         </div>
       </div>
     </details>
+
+    <details class="field-section fold" data-sec="legendstats">
+      <summary><h4 class="section-label">Legend distribution</h4></summary>
+
+      <div class="field-row" data-field="legendStats">
+        <span class="row-label" title="One legend per line: the legend, how many played it, then its win rate or its record against other legends. Kai'Sa | 42 | 55.1 or Jinx | 30 | 45-37. A share with a % sign works for a list that only has percentages. A legend alone on a line counts as one player, so a column with one legend per player counts itself. Tabs separate the fields too, for a spreadsheet paste.">Legends</span>
+        <div class="cell span2 legends-cell">
+          <div class="legends-tools">
+            <label class="inline" title="How many played in all. Leave it empty when the lines count everyone; set it when they list only some legends, and the rest shows as Other.">Players
+              <input id="legendTotal" type="number" min="0" max="99999" inputmode="numeric" placeholder="auto" aria-label="Players in the event">
+            </label>
+            <button type="button" id="legendFromStandings" title="One player per row of Match data &rsaquo; Standings, counted by legend, with their records as the win rates">Count from standings</button>
+          </div>
+          <textarea id="legendText" rows="6" spellcheck="false" placeholder="Kai'Sa, Daughter of the Void | 42 | 55.1&#10;Jinx, Loose Cannon | 30 | 45-37&#10;Viktor | 25"></textarea>
+          <div class="legends-lines">
+            <input id="legendLabel" maxlength="60" autocomplete="off" placeholder="Label, e.g. Day one · all groups" aria-label="Legend distribution label">
+            <input id="legendNote" maxlength="160" autocomplete="off" placeholder="Win rate note, e.g. Mirror matches left out" aria-label="How the win rates were counted">
+          </div>
+          <p class="hint" id="legendHint"></p>
+        </div>
+      </div>
+    </details>
   </div>
 </aside>
 
@@ -814,6 +836,11 @@
         <div class="scene-row" data-scene="standings">
           <div class="scene-name">Standings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="standingsOnAir">ON AIR</button></div>
           <button id="toggleStandings" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="legendstats">
+          <div class="scene-name">Legend distribution <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="legendstatsOnAir">ON AIR</button></div>
+          <button id="toggleLegendstats" class="scene-toggle">OFF</button>
+          <p class="scene-note">The most played legends: a pie beside a table of each legend's share and win rate. Fill it under Match data &rsaquo; Legend distribution, or load it from the Tournament platform tab.</p>
         </div>
         <div class="scene-row" data-scene="result">
           <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
@@ -1151,6 +1178,23 @@
         <span class="hint">Twenty rows a page. Rows and the cut are under Match data › Standings.</span>
       </div>
     </div>
+    <div class="feature-group hidden" data-scene="legendstats">
+      <h3>Legend distribution</h3>
+      <div class="scene-options">
+        <label class="inline" title="The win rate column, and the note under the graphic saying how the win rates were counted"><input type="checkbox" id="legendstatsRate" checked> Win rate</label>
+        <label class="inline" title="How many legends get a slice and a row of their own; the rest fold into Other">Legends shown
+          <select id="legendstatsTop" aria-label="Legends shown">
+            <option value="8">8</option>
+            <option value="7">7</option>
+            <option value="6">6</option>
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+          </select>
+        </label>
+        <span class="hint">Legends past the number shown fold into Other. The legends, the player count, the label and the win rate note are under Match data › Legend distribution.</span>
+      </div>
+    </div>
     <div class="feature-group hidden" data-scene="result">
       <h3>Result</h3>
       <div class="scene-options"><span class="hint">The winner and the "advances to" line are under Match data › Match card and result. Unset, the strip names whoever holds the series.</span></div>
@@ -1457,6 +1501,10 @@
       <div class="url-line"><input class="url-input" id="standingsUrl" readonly><button data-copy="standingsUrl">Copy</button></div>
     </div>
     <div class="url-row">
+      <span class="url-label">Legend distribution source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="legendstatsUrl" readonly><button data-copy="legendstatsUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
       <span class="url-label">Result source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="resultUrl" readonly><button data-copy="resultUrl">Copy</button></div>
     </div>
@@ -1555,7 +1603,7 @@
     </section>
 
     <section class="card pf-event">
-      <h2>Standings and bracket</h2>
+      <h2>Standings, legends and bracket</h2>
       <div class="row">
         <select id="pfStandGroup" aria-label="Standings for"></select>
         <select id="pfCut" aria-label="Cut line">
@@ -1565,6 +1613,10 @@
           <option value="0">No cut line</option>
         </select>
         <button type="button" id="pfStandings">Standings to preview</button>
+      </div>
+      <div class="row">
+        <select id="pfLegendGroup" aria-label="Legend distribution for"></select>
+        <button type="button" id="pfLegends" title="How many played each legend and each legend's win rate against the others, from TopDeck">Legend distribution to preview</button>
       </div>
       <div class="row">
         <button type="button" id="pfBracket">Bracket to preview</button>

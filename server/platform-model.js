@@ -442,3 +442,99 @@ export function upNextPatch(ev, legendOf, { round, table, bank }) {
   if (tables.length >= 4) return { error: 'Up next already lists four tables. Clear it first.' };
   return { patch: { event: { tables: [...tables, entry] } }, count: tables.length + 1 };
 }
+
+// --- the legend distribution (2026-09-19) ---
+
+// Who won a finished table: 'a' or 'b' (its first or second player), 'd'
+// for a draw, null for a table that counts for nobody (a double no-show).
+// The same reading the standings above make.
+function tableResult(tb) {
+  if (tb.winnerE) return tb.winnerE === tb.es[0] ? 'a' : 'b';
+  if (tb.wins[0] > tb.wins[1]) return 'a';
+  if (tb.wins[1] > tb.wins[0]) return 'b';
+  return (tb.draws || tb.wins[0]) ? 'd' : null;
+}
+
+// How many players brought each legend, and how each legend did against the
+// others. Shares count every player TopDeck lists a legend for, dropped
+// players included (they brought the deck); a player with no legend yet is
+// left out and counted in `unknown`. A legend's record counts finished
+// matches against a different legend: a mirror says nothing about a legend
+// against the field, a draw is neither a win nor a loss, and a bye is not a
+// match. The whole event counts every Swiss and bracket match; a group
+// counts its own Swiss.
+export function legendStats(ev, legendOf, { group = 0 } = {}) {
+  const inGroup = (ent) => !group || ent.group === group;
+  const keyOf = (ent) => {
+    const L = legendOf(ent.leader);
+    return { key: L.legendSlug || normName(L.legend), L };
+  };
+  const rows = new Map();
+  let players = 0;
+  let unknown = 0;
+  for (const ent of ev.entrants.values()) {
+    if (ent.released || !inGroup(ent)) continue;
+    const { key, L } = ent.leader ? keyOf(ent) : { key: '' };
+    if (!key) { unknown += 1; continue; }
+    if (!rows.has(key)) rows.set(key, { legend: L.legend, legendSlug: L.legendSlug, legendCardId: L.legendCardId, players: 0, wins: 0, losses: 0 });
+    rows.get(key).players += 1;
+    players += 1;
+  }
+  let matches = 0;
+  let mirrors = 0;
+  let draws = 0;
+  let through = 0;
+  let cut = false;
+  for (const stage of group ? ['swiss'] : ['swiss', 'bracket']) {
+    for (const r of Object.values((ev[stage] && ev[stage].rounds) || {})) {
+      for (const tb of r.tables) {
+        if (!tb.done || tb.es.length !== 2) continue;
+        const a = ev.entrants.get(tb.es[0]);
+        const b = ev.entrants.get(tb.es[1]);
+        if (!a || !b || !inGroup(a)) continue;
+        const res = tableResult(tb);
+        if (!res) continue;
+        if (stage === 'swiss') through = Math.max(through, r.r); else cut = true;
+        if (!a.leader || !b.leader) continue;
+        const ka = keyOf(a).key;
+        const kb = keyOf(b).key;
+        if (!rows.has(ka) || !rows.has(kb)) continue;
+        if (res === 'd') { draws += 1; continue; }
+        if (ka === kb) { mirrors += 1; continue; }
+        matches += 1;
+        rows.get(res === 'a' ? ka : kb).wins += 1;
+        rows.get(res === 'a' ? kb : ka).losses += 1;
+      }
+    }
+  }
+  const sorted = [...rows.values()].sort((x, y) => y.players - x.players || x.legend.localeCompare(y.legend));
+  return { rows: sorted, players, unknown, matches, mirrors, draws, through, cut };
+}
+
+export function legendStatsPatch(ev, legendOf, { group = 0 } = {}) {
+  const s = legendStats(ev, legendOf, { group });
+  if (!s.players) {
+    return { error: s.unknown
+      ? `TopDeck lists no legends for ${group ? `group ${group}` : 'this event'} yet: it shows them once the event ends or the organizer allows it.`
+      : 'There are no players to count yet.' };
+  }
+  const label = [
+    group ? `Group ${group}` : '',
+    s.through ? `after Round ${s.through}` : 'before Round 1',
+    s.cut ? 'top cut included' : '',
+  ].filter(Boolean).join(' · ');
+  // The graphic prints the note under the win rates, so it says how they
+  // were counted. Players with no legend only reach the operator's status
+  // line: the graphic already names how many players it counts.
+  const note = s.matches
+    ? `Win rate: ${s.matches} match${s.matches === 1 ? '' : 'es'} between different legends; mirror matches, draws and byes left out.`
+    : '';
+  const rows = s.rows.slice(0, 64).map((r) => ({ ...r, share: null, winRate: null }));
+  // The rows count every player with a legend, so the field is what they add
+  // up to: total 0 also clears a field size typed for an earlier list.
+  return {
+    patch: { event: { legendStats: { rows, total: 0, label, note } } },
+    players: s.players, legends: s.rows.length, matches: s.matches, unknown: s.unknown,
+    lead: s.rows[0] ? s.rows[0].legend : '',
+  };
+}

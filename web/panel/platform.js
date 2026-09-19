@@ -71,7 +71,7 @@ function paintConnection() {
   src.textContent = status.source === 'api' ? 'TopDeck API' : status.source === 'page' ? 'Public page' : '';
   src.title = status.source === 'page' ? 'No API key (or the API failed): reading the event\'s public page on topdeck.gg' : '';
   $('pfRefresh').disabled = !config.event;
-  for (const id of ['pfStandings', 'pfBracket', 'pfUpNextClear']) $(id).disabled = !summary;
+  for (const id of ['pfStandings', 'pfLegends', 'pfBracket', 'pfUpNextClear']) $(id).disabled = !summary;
   $('pfBracket').disabled = !summary || !summary.bracketReady;
   $('pfBracket').title = summary && !summary.bracketReady ? 'The bracket has not started on TopDeck yet' : '';
 }
@@ -161,6 +161,15 @@ function paintRounds() {
     sg.replaceChildren(...[...all.map((g) => [g, `Group ${g}`]), [0, all.length ? 'Every player' : 'All players']]
       .map(([v, t]) => Object.assign(el('option', '', t), { value: String(v) })));
     if ([...sg.options].some((o) => o.value === keep)) sg.value = keep;
+  }
+  // The legend distribution defaults to the whole event, the standings to a group.
+  const lg = $('pfLegendGroup');
+  if (lg.dataset.sig !== ssig) {
+    const keep = lg.value;
+    lg.dataset.sig = ssig;
+    lg.replaceChildren(...[[0, all.length ? 'Whole event' : 'All players'], ...all.map((g) => [g, `Group ${g}`])]
+      .map(([v, t]) => Object.assign(el('option', '', t), { value: String(v) })));
+    if ([...lg.options].some((o) => o.value === keep)) lg.value = keep;
   }
 }
 
@@ -285,6 +294,11 @@ $('pfStandings').addEventListener('click', () => {
   loadExtra({ kind: 'standings', group, cut: Number($('pfCut').value) },
     (res) => `${group ? `Group ${group} standings` : 'Standings'} after round ${res.round} are in preview (${res.count} players, ${res.leader} on top). TAKE to air.`);
 });
+$('pfLegends').addEventListener('click', () => {
+  const group = Number($('pfLegendGroup').value) || 0;
+  loadExtra({ kind: 'legends', group },
+    (res) => `The legend distribution${group ? ` for group ${group}` : ''} is in preview: ${res.players} players on ${res.legends} legends, ${res.lead} the most played${res.unknown ? ` (${res.unknown} with no legend on TopDeck left out)` : ''}. TAKE to air.`);
+});
 $('pfBracket').addEventListener('click', () => loadExtra({ kind: 'bracket' },
   (res) => `The ${res.format === 'se16' ? 'Top 16' : 'Top 8'} is in preview with ${res.results} result${res.results === 1 ? '' : 's'}. TAKE to air.`));
 $('pfUpNextClear').addEventListener('click', () => loadExtra({ kind: 'upnext-clear' }, 'Up next is empty in preview.'));
@@ -341,7 +355,7 @@ async function poll() {
 const PF_TILES = [
   { label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
   { label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
-  { label: 'Event graphics', keys: ['standings', 'bracket', 'slate'] },
+  { label: 'Event graphics', keys: ['standings', 'legendstats', 'bracket', 'slate'] },
 ];
 
 const PREFS_KEY = 'sidewaysStudio.platform';

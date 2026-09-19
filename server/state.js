@@ -14,6 +14,7 @@ import { LOOK_SCENES, cleanLookPatch, emptyLook, emptySceneLook, mergeLook } fro
 import { kindOf } from './carddb.js';
 import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
 import { SPONSOR_MAX, SPONSOR_POSITIONS } from '../web/shared/sponsor.js';
+import { TOP_DEFAULT, TOP_MAX, TOP_MIN } from '../web/shared/legendstats.js';
 
 const SAVE_FILE = path.join(DATA_DIR, 'event.json');
 
@@ -91,6 +92,12 @@ function defaultBank() {
       // label: the standings' own line ("Group 2 · after Round 3"), set by the
       // Tournament platform; empty falls back to "after <round title>".
       standings: { rows: [], cut: 8, label: '' },
+      // The legend distribution (2026-09-19): one row per legend with how
+      // many played it and its record (web/shared/legendstats.js). total is
+      // the field size when the rows do not list everyone (0 = what they add
+      // up to); label and note are the graphic's sub line and foot line, set
+      // by whichever source filled the rows.
+      legendStats: { rows: [], total: 0, label: '', note: '' },
     },
     match: {
       seriesLength: 3,
@@ -202,6 +209,11 @@ function defaultBank() {
       // Bracket and standings draw event.bracket and event.standings.
       bracket: { visible: false },
       standings: { visible: false, page: 1 },
+      // The legend distribution: a pie of the legends played and a table of
+      // their shares, the win rate column switchable (Sam: "make the win rate
+      // option able to be toggled"). top is how many legends get a slice of
+      // their own; the rest fold into Other.
+      legendstats: { visible: false, winRate: true, top: TOP_DEFAULT },
       // Result strip: the match winner and where they go next.
       result: { visible: false },
       // Sponsor plate: a 3:1 plate rotating through items every `interval`
@@ -298,6 +310,8 @@ function mergeBank(bank, raw) {
   if (!bank.event.bracket.results || typeof bank.event.bracket.results !== 'object') bank.event.bracket.results = {};
   bank.event.standings = { ...fresh.event.standings, ...(bank.event.standings || {}) };
   if (!Array.isArray(bank.event.standings.rows)) bank.event.standings.rows = [];
+  bank.event.legendStats = { ...fresh.event.legendStats, ...(bank.event.legendStats || {}) };
+  if (!Array.isArray(bank.event.legendStats.rows)) bank.event.legendStats.rows = [];
   bank.match.result = { ...fresh.match.result, ...(bank.match.result || {}) };
   for (const side of [bank.match.left, bank.match.right]) {
     if (!Array.isArray(side.hand)) side.hand = [];
@@ -458,6 +472,26 @@ function cleanStandingsRow(raw) {
   return { ...side, points: clampInt(raw.points, 0, 999), omw: num1(raw.omw), gw: num1(raw.gw), ogw: num1(raw.ogw) };
 }
 
+// A legend distribution row: the legend (resolved like a table side's), how
+// many players brought it or, for a list that only has percentages, its
+// share, and its record or typed win rate where known. A row with neither a
+// count nor a share has nothing to draw, so it drops.
+const pctOrNull = (v) => (v === null || v === undefined || v === '' ? null : num1(v));
+function cleanLegendRow(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const legend = cleanStr(raw.legend || '', 60);
+  const slug = cleanStr(raw.legendSlug || '', 60);
+  const legendSlug = /^[a-z0-9-]*$/.test(slug) ? slug : '';
+  if (!legend && !legendSlug) return null;
+  const players = clampInt(raw.players, 0, 99999);
+  const share = pctOrNull(raw.share) || null;
+  if (!players && !share) return null;
+  return {
+    legend, legendSlug, legendCardId: cleanCardId(raw.legendCardId || ''), players, share,
+    wins: clampInt(raw.wins, 0, 99999), losses: clampInt(raw.losses, 0, 99999), winRate: pctOrNull(raw.winRate),
+  };
+}
+
 function applySide(side, patch) {
   if (patch.name !== undefined) side.name = cleanStr(patch.name, 40);
   if (patch.record !== undefined) side.record = cleanStr(patch.record, 12);
@@ -573,6 +607,14 @@ function applyBankPatch(bank, patch) {
       // last one, so "Group 2" never sits over rows typed for something else.
       if (st.label !== undefined) bank.event.standings.label = cleanStr(st.label, 60);
       else if (Array.isArray(st.rows)) bank.event.standings.label = '';
+    }
+    if (patch.event.legendStats && typeof patch.event.legendStats === 'object') {
+      const ls = patch.event.legendStats;
+      const cur = bank.event.legendStats;
+      if (Array.isArray(ls.rows)) cur.rows = ls.rows.slice(0, 64).map(cleanLegendRow).filter(Boolean);
+      if (ls.total !== undefined) cur.total = clampInt(ls.total, 0, 99999);
+      if (ls.label !== undefined) cur.label = cleanStr(ls.label, 60);
+      if (ls.note !== undefined) cur.note = cleanStr(ls.note, 160);
     }
   }
 
@@ -745,6 +787,12 @@ function applyBankPatch(bank, patch) {
       const st = patch.scenes.standings;
       if (st.visible !== undefined) bank.scenes.standings.visible = Boolean(st.visible);
       if (st.page !== undefined) bank.scenes.standings.page = clampInt(st.page, 1, 4);
+    }
+    if (patch.scenes.legendstats && typeof patch.scenes.legendstats === 'object') {
+      const ls = patch.scenes.legendstats;
+      if (ls.visible !== undefined) bank.scenes.legendstats.visible = Boolean(ls.visible);
+      if (ls.winRate !== undefined) bank.scenes.legendstats.winRate = Boolean(ls.winRate);
+      if (ls.top !== undefined) bank.scenes.legendstats.top = clampInt(ls.top, TOP_MIN, TOP_MAX);
     }
     if (patch.scenes.sponsor && typeof patch.scenes.sponsor === 'object') {
       const sp = patch.scenes.sponsor;
