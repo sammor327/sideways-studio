@@ -192,6 +192,9 @@ function defaultBank() {
       lowerthird: { visible: false, mode: 'casters', side: 'left', credential: '' },
       // Match card (the spec's head-to-head): both sides with a centre column.
       headtohead: { visible: false, status: '' },
+      // Head to head, VS (2026-09-19): the Sideways Showdown head-to-head,
+      // both legend cards tilted either side of a VS, names, round, event.
+      vscard: { visible: false },
       // Player profile: one side, legend art backdrop, stat tiles.
       // camera: the transparent window bottom right for the player's feed.
       // decklist: the player's own list (side.deckList) down the left.
@@ -733,7 +736,7 @@ function applyBankPatch(bank, patch) {
       if (p.camera !== undefined) bank.scenes.profile.camera = Boolean(p.camera);
       if (p.decklist !== undefined) bank.scenes.profile.decklist = Boolean(p.decklist);
     }
-    for (const key of ['bracket', 'result']) {
+    for (const key of ['bracket', 'result', 'vscard']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object' && patch.scenes[key].visible !== undefined) {
         bank.scenes[key].visible = Boolean(patch.scenes[key].visible);
       }

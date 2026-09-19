@@ -146,7 +146,9 @@ profile.
 ## Panel layout
 
 Graphics are listed in three folds: 1v1, 2v2 and Other (the bugs, the card
-popup, the card row and the full screens). They start closed; a fold's heading says how
+popup, the card row and the full screens). The star beside a graphic's name
+keeps it in Favorites at the top; the chain beside the star copies that
+graphic's browser-source link for OBS or vMix (the same link Setup lists). They start closed; a fold's heading says how
 many of its graphics are in preview or on air, and putting a graphic in
 preview opens its fold. Each row still carries an Overlay or Full frame
 tag. The Studio's control band is three columns: Graphics, Graphic
@@ -200,8 +202,11 @@ you go back to the Studio.
 The look controls recolour every graphic: pick a preset
 (Turn'em Sideways, Regional gold, Ember, Arctic, Mono) or set the accents,
 ground, panels, frame, text and trim colours and a background (the arrow
-shards, a solid, a gradient, an uploaded image, the TES plate photo, or
-transparent) with grain and darkening. "All graphics" sets the look every
+shards, a solid, a gradient, an uploaded image, the TES plate photo, the
+glowing arrows of the Sideways Showdown head to head, or transparent) with
+grain and darkening. The slate, the bracket, the standings and the VS head to
+head stand on the glowing arrows by design, the first three darkened so
+small type over an arrow still reads. "All graphics" sets the look every
 graphic inherits; pick one graphic and switch on "Own look" to give it its
 own. Cleared colours fall back to each graphic's designed look. Changes air
 at once, like the logo.
@@ -307,9 +312,19 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   status line), a **player profile** (switches for its live camera window
   and for the player's decklist down the left), a **bracket** in four formats (top 8
   and top 16, single and double elimination, edited match by match under
-  Match data), **standings** as a full-width table with the cut line, and a
+  Match data), **standings** as a full-width table with the cut line (its
+  rows come in one after another from the top, and a page change slides the
+  old page out and the next one in from the side you paged toward), and a
   **result strip**. The slate's Starting soon, Be right back and Thanks
   modes carry the day's schedule, a camera window and the champion.
+- **Head to head, VS** (`/scenes/vscard/`, 0.27.0): the Sideways Showdown
+  head to head, laid out from its PSD. Each player's legend card stands
+  tilted either side of a big VS on the glowing-arrows ground, the upper
+  name (player 2) over the right card and the lower name (player 1) across
+  the left one, the round and the event name underneath, and the theme logo
+  between the cards. Arial Black and Arial as designed, unless a font is
+  picked under Look. A player with no legend card shows a dark card naming
+  the legend. It sits beside the match card, which is unchanged.
 - **Showdown** (`/scenes/showdown/`): the cards played onto a showdown, in
   order, the newest lifted because it resolves first. Open it in Match data
   by picking the battlefield; then click a card in either Cards in hand to

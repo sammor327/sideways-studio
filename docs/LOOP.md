@@ -214,6 +214,56 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19 (out of band: the Sideways Showdown round, 0.27.0)
+
+Sam, on Convergence #3 morning, four asks. (1) The standings animate in
+and between pages: two more seek clocks on the root, --r (rows in, 1 s on
+entry, 0.72 s on a turn) and --o (rows out, 0.38 s). Each row's slice of a
+clock starts at its place down the page (--pos, 0 to 1, set per row) and
+ends by 0.998 of the clock, so the settled page is fully opaque; --o reads
+var(--o, 0) because its settled state is "not leaving". The table went to
+separate borders so each rule and the cut line travel with their row
+(collapsed borders belong to the table and stayed put while the rows were
+still empty), and clip-path: inset(0) keeps travelling rows inside the
+plate. A turn swaps in whatever the state wants when the old rows have
+left (want / shownPage), so a refresh or a second click mid-turn is never
+lost; coming on air cancels a turn (token) and cascades the wanted page.
+(2) Decklists from TopDeck for Convergence #3: nothing to build. The
+platform tab already loads a player's list, champion and battlefields the
+moment TopDeck serves them, and TopDeck's API docs say decklists are
+returned "only when the tournament has ended or the organizer enabled
+them". At 09:40 CDT the event (Not Started, 258 players) had no decklist
+and no leader on any player in the API or the public page data, and the
+key's account organizes nothing (/v2/me/tournaments empty). The organizer
+has to switch decklists on. (3) The background from HEAD2HEAD-PREPPED.psd
+(BG, ARROWLEFT, ARROWRIGHT and the 4% "Layer 4 copy" wash, without the VS
+and the event logo; a PREPPED file, glows baked into the pixel layers, so
+psd-tools composites it within 0.6/255 of the designer's BG.jpg) is the
+look model's new `arrows` kind (BG_IMAGES maps plate and arrows to their
+files), baked at WebP q95 (q88 smoothed the grain away) to
+web/assets/backgrounds/showdown.webp by scripts/bake-showdown.py. Designed
+ground of the new VS card (dim 0) and of the slate and bracket (dim 40)
+and standings (dim 25), grain 20 since the plate carries its own; the
+profile keeps its gradient (its accent-green legend line vanishes over the
+green arrows). The new `vscard` scene reproduces the PSD's FULLGFX export:
+legend cards 566 x 790 at -6.4 / +6.4 degrees around (442, 479) and
+(1461, 479), measured with a min-area rectangle off LEGENDS.jpg (the PSD's
+right card is the left one mirrored; the live card is not). VS glyph baked
+from its layer. Type from the PSD's engine data: Arial Black names at
+48.5 px on centres 1110 / 775 and baselines 296.4 / 611.4 (the upper name
+is player 2, the lower player 1, as on the Convergence #2 VS card), round
+Arial Black 89.4 px and event Arial 38.8 px centred on 960 at baselines
+961.3 and 1008.6. Letter spacing solved from the PSD's ink widths with a
+canvas measure (-0.09 em names, -0.095 em round and event: the PSD says
+tracking -125) and bottoms set so the zero-height probe reads the PSD
+baselines to 0.01 px. Names are the design's grained silver turning white
+where they cross their card. (4) A chain button after each graphic's star
+copies its browser-source link (SCENE_SOURCES paths), async clipboard then
+the execCommand fallback, then a prompt with the link; the icon turns into
+a green tick for 1.6 s. Verified on a scratch server (port 4741) with CDP
+frame captures and a real mouse click that read the link back off the
+clipboard. Tests: test/showdown-look.test.js.
+
 ### 2026-09-18k (out of band: docked sponsor corners; the rows divider)
 
 Sam: keep the sponsor plate's auto dock but give it corner choices. New

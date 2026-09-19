@@ -340,7 +340,7 @@ async function poll() {
 
 const PF_TILES = [
   { label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
-  { label: 'Match graphics', keys: ['matchup', 'headtohead', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
+  { label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
   { label: 'Event graphics', keys: ['standings', 'bracket', 'slate'] },
 ];
 

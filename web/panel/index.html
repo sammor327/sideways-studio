@@ -678,7 +678,7 @@
 <main class="controls">
   <section class="card graphics-card" data-size="graphics">
     <h2>Graphics</h2>
-    <p class="hint">Each picture shows the preview data as it stands. Click one to put that graphic in preview, click it again to take it out. Its options appear under Graphic features. The star beside a name keeps that graphic in Favorites.</p>
+    <p class="hint">Each picture shows the preview data as it stands. Click one to put that graphic in preview, click it again to take it out. Its options appear under Graphic features. The star beside a name keeps that graphic in Favorites; the chain copies that graphic's browser-source link for OBS or vMix.</p>
 
     <details class="scene-section favorites-section" data-group="favorites">
       <summary><h4 class="section-label group-label">Favorites <span class="muted">the graphics you starred</span></h4><span class="sec-count"></span><span class="sec-pill prev hidden"></span><span class="sec-pill air hidden"></span></summary>
@@ -797,6 +797,11 @@
         <div class="scene-row" data-scene="headtohead">
           <div class="scene-name">Match card <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="headtoheadOnAir">ON AIR</button></div>
           <button id="toggleHeadtohead" class="scene-toggle">OFF</button>
+        </div>
+        <div class="scene-row" data-scene="vscard">
+          <div class="scene-name">Head to head, VS <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="vscardOnAir">ON AIR</button></div>
+          <button id="toggleVscard" class="scene-toggle">OFF</button>
+          <p class="scene-note">The Sideways Showdown head to head: both players' legend cards tilted either side of a VS on the glowing-arrows ground, their names, the round and the event, with your logo from Look between the cards.</p>
         </div>
         <div class="scene-row" data-scene="profile">
           <div class="scene-name">Player profile <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="profileOnAir">ON AIR</button></div>
@@ -1116,6 +1121,10 @@
         <span class="hint">Who chose first, season records and team tags live under Match data › Match card and result and Player details.</span>
       </div>
     </div>
+    <div class="feature-group hidden" data-scene="vscard">
+      <h3>Head to head, VS</h3>
+      <div class="scene-options"><span class="hint">Player names, legends, the round and the event name come from Match data; each card is that player's legend card. The logo between the cards is the one uploaded under Look and setup › Font and logo; its ground is the glowing arrows, changeable under Look.</span></div>
+    </div>
     <div class="feature-group hidden" data-scene="profile">
       <h3>Player profile</h3>
       <div class="scene-options">
@@ -1268,6 +1277,7 @@
           <option value="gradient">Gradient</option>
           <option value="image">Image</option>
           <option value="plate">TES plate photo</option>
+          <option value="arrows">Glowing arrows (Sideways Showdown)</option>
           <option value="transparent">Transparent</option>
         </select>
       </label>
@@ -1429,6 +1439,10 @@
     <div class="url-row">
       <span class="url-label">Match card source, 1920 &times; 1080, 60 fps</span>
       <div class="url-line"><input class="url-input" id="headtoheadUrl" readonly><button data-copy="headtoheadUrl">Copy</button></div>
+    </div>
+    <div class="url-row">
+      <span class="url-label">Head to head, VS source, 1920 &times; 1080, 60 fps</span>
+      <div class="url-line"><input class="url-input" id="vscardUrl" readonly><button data-copy="vscardUrl">Copy</button></div>
     </div>
     <div class="url-row">
       <span class="url-label">Player profile source, 1920 &times; 1080, 60 fps</span>

@@ -48,6 +48,7 @@ export const TILES = [
   { key: 'slate-brb', scene: 'slate', group: 'full', variant: 'Be right back', vary: { mode: 'brb' } },
   { key: 'slate-thanks', scene: 'slate', group: 'full', variant: 'Thanks for watching', vary: { mode: 'thanks' } },
   { key: 'headtohead', scene: 'headtohead', group: 'full' },
+  { key: 'vscard', scene: 'vscard', group: 'full' },
   { key: 'profile', scene: 'profile', group: 'full' },
   { key: 'profile-deck', scene: 'profile', group: 'full', variant: 'With decklist', vary: { decklist: true } },
   { key: 'bracket', scene: 'bracket', group: 'full' },

@@ -97,7 +97,7 @@
 html[data-bg="gradient"] .name-plate {
   background: linear-gradient(var(--ss-bg-angle, 160deg), var(--ss-bg-color), var(--ss-bg-color2));
 }
-html[data-bg="image"] .name-plate, html[data-bg="plate"] .name-plate {
+html[data-bg="image"] .name-plate, html[data-bg="plate"] .name-plate, html[data-bg="arrows"] .name-plate {
   background: var(--ss-bg-image) center / cover no-repeat, var(--ss-bg-color);
 }
 html[data-bg="transparent"] .name-plate { background: transparent; }

@@ -9,6 +9,7 @@ import { refreshFontSheet } from '../shared/fontsheet.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
+import { SCENE_SOURCES } from '../shared/sources.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -76,6 +77,8 @@ const SCENE_FIELDS = {
   matchup: ['seriesLength', 'name', 'country', 'legend', 'legendText', 'champion', 'championText', 'battlefield', 'gameWins', 'roundTitle', 'eventName'],
   sideboard: ['name', 'country', 'legend', 'deck'],
   decklists: ['name', 'country', 'legend', 'record', 'deck'],
+  // The VS head to head (2026-09-19).
+  vscard: ['name', 'legend', 'legendText', 'roundTitle', 'eventName'],
   // The card popup and the card row carry their content in their own
   // Graphic features groups (the search, the four slots), not in Match data;
   // listed so putting them in preview unfolds that card.
@@ -109,6 +112,7 @@ const SCENE_NAMES = {
   matchup: 'the game intro',
   sideboard: 'the sideboard fly-in',
   decklists: 'the side by side decklists',
+  vscard: 'the VS head to head',
 };
 
 // Short names for the on-air list, which lives in the narrow column between
@@ -120,7 +124,7 @@ const SCENE_SHORT = {
   handfan: 'Hand fan', showdown: 'Showdown',
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', result: 'Result',
   sponsor: 'Sponsor',
-  matchup: 'Game intro', sideboard: 'Sideboard', decklists: 'Decklists 2up',
+  matchup: 'Game intro', sideboard: 'Sideboard', decklists: 'Decklists 2up', vscard: 'VS card',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
 // side. Webcam holders are windows for camera sources, so they draw no legend
@@ -808,7 +812,7 @@ $('resetMatch').addEventListener('click', () => {
       handfan: { visible: false }, showdown: { visible: false },
       cornertag: { visible: false }, lowerthird: { visible: false }, headtohead: { visible: false }, profile: { visible: false },
       bracket: { visible: false }, standings: { visible: false }, result: { visible: false }, sponsor: { visible: false },
-      matchup: { visible: false }, sideboard: { visible: false }, decklists: { visible: false },
+      matchup: { visible: false }, sideboard: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -1195,7 +1199,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2288,17 +2292,17 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
-const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'profile', 'bracket', 'standings', 'decklists'];
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'decklists'];
 function setFullScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
@@ -2317,7 +2321,7 @@ $('toggleSlate').addEventListener('click', () => {
   if (!state) return;
   setFullScene('slate', !state.preview.scenes.slate.visible);
 });
-for (const key of ['headtohead', 'profile', 'bracket', 'standings']) {
+for (const key of ['headtohead', 'vscard', 'profile', 'bracket', 'standings']) {
   $(EXP_TOGGLES[key]).addEventListener('click', () => {
     if (!state) return;
     setFullScene(key, !state.preview.scenes[key].visible);
@@ -3094,6 +3098,54 @@ function toggleScene(key) {
   post({ scenes: { [key]: { visible: true } } });
 }
 
+// --- the chain beside the star: copy one graphic's browser-source link ---
+//
+// The same URL Setup lists for that graphic (web/shared/sources.js is the one
+// list), so adding a single graphic to OBS or vMix never means a trip to
+// Setup (Sam, 2026-09-19).
+const CHAIN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+const CHECK_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+const SOURCE_PATH = new Map(SCENE_SOURCES.map((s) => [s.key, s.path]));
+const sourceLink = (key) => `${location.origin}${SOURCE_PATH.get(key) || `/scenes/${key}/?transparent=1`}`;
+
+function paintLinkButton(btn, key, copied) {
+  const name = SCENE_LABELS[key] || key;
+  btn.classList.toggle('copied', copied);
+  btn.innerHTML = copied ? CHECK_ICON : CHAIN_ICON;
+  btn.title = copied ? `Copied: ${sourceLink(key)}` : `Copy the browser-source link for ${name} (1920 x 1080)`;
+  btn.setAttribute('aria-label', copied ? `${name} link copied` : `Copy the browser-source link for ${name}`);
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // The async clipboard can be refused (an unfocused page, some embeds);
+    // the old copy command still works in most of those.
+    const ta = Object.assign(document.createElement('textarea'), { value: text, readOnly: true });
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.append(ta);
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+async function copySourceLink(btn, key) {
+  const url = sourceLink(key);
+  if (!(await copyText(url))) {
+    // Nothing reached the clipboard: hand the operator the link to copy.
+    window.prompt('Copy this browser-source link (Ctrl+C):', url);
+    return;
+  }
+  paintLinkButton(btn, key, true);
+  clearTimeout(btn.copiedTimer);
+  btn.copiedTimer = setTimeout(() => paintLinkButton(btn, key, false), 1600);
+}
+
 for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
   const key = row.dataset.scene;
   const thumb = document.createElement('div');
@@ -3120,6 +3172,12 @@ for (const row of document.querySelectorAll('.scene-row[data-scene]')) {
   star.className = 'fav-star';
   star.addEventListener('click', () => toggleFavorite(key));
   row.querySelector('.scene-name').prepend(star);
+  const link = document.createElement('button');
+  link.type = 'button';
+  link.className = 'link-copy';
+  link.addEventListener('click', () => copySourceLink(link, key));
+  star.after(link);
+  paintLinkButton(link, key, false);
 }
 
 function renderThumbs(s) {

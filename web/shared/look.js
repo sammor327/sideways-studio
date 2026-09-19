@@ -20,7 +20,7 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'sponsor',
-  'matchup', 'sideboard', 'decklists'];
+  'matchup', 'sideboard', 'decklists', 'vscard'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -54,13 +54,19 @@ export const SCENE_LABELS = {
   matchup: 'Game intro',
   sideboard: 'Sideboard fly-in',
   decklists: 'Decklists side by side',
+  vscard: 'Head to head, VS',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
 // the decklist backdrop). 'shards' is the TES arrow art recoloured by the
-// accents; 'plate' is the full-frame TES backdrop photo; 'image' is an
-// upload; 'transparent' paints nothing so the feed shows through.
-export const BG_KINDS = ['shards', 'solid', 'gradient', 'image', 'plate', 'transparent'];
+// accents; 'plate' is the full-frame TES backdrop photo; 'arrows' is the
+// Sideways Showdown head-to-head's ground (smoke plate and two clusters of
+// glowing arrows, baked from HEAD2HEAD-PREPPED.psd by
+// scripts/bake-showdown.py; its arrows keep their own BlueGreen, like the
+// plate photo keeps its colours); 'image' is an upload; 'transparent' paints
+// nothing so the feed shows through.
+export const BG_KINDS = ['shards', 'solid', 'gradient', 'image', 'plate', 'arrows', 'transparent'];
+export const BG_IMAGES = { plate: '/assets/decklist/background.jpg', arrows: '/assets/backgrounds/showdown.webp' };
 
 export const COLOR_KEYS = ['ink', 'plate', 'frame', 'text', 'textMuted', 'trim'];
 export const COLOR_LABELS = {
@@ -157,9 +163,13 @@ export const DESIGNED = {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
+  // The slate, the bracket and the standings stand on the Sideways Showdown
+  // glowing arrows since 2026-09-19 (Sam: "use this on more graphics"),
+  // darkened so small type over an arrow still reads; that plate carries its
+  // own grain, so the procedural grain drops to a touch.
   slate: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
-    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 40 },
   },
   handfan: {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
@@ -175,8 +185,8 @@ export const DESIGNED = {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
-  // The starter kit: the overlays paint plates only; the full screens share
-  // the slate's gradient ground.
+  // The starter kit: the overlays paint plates only; the match card and the
+  // profile keep a gradient or solid ground of their own.
   cornertag: {
     colors: { ink: '#0a0d12', plate: '#0a0d12', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'solid', color: '#0a0d12', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
@@ -199,11 +209,11 @@ export const DESIGNED = {
   },
   bracket: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
-    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 40 },
   },
   standings: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
-    background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 25 },
   },
   // The decks round (2026-09-18). The game intro's two pages and the side
   // by side decklists share the full screens' gradient ground; the sideboard
@@ -219,6 +229,12 @@ export const DESIGNED = {
   decklists: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'gradient', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 45, dim: 0 },
+  },
+  // The VS head to head (2026-09-19) stands on the Sideways Showdown ground
+  // it was designed on; that plate carries its own grain.
+  vscard: {
+    colors: { ink: '#1c1c1c', plate: '#10151d', frame: '#26303c', text: '#ffffff', textMuted: '#c9d2da', trim: '' },
+    background: { kind: 'arrows', color: '#1c1c1c', color2: '#000000', angle: 180, image: '', grain: 0, dim: 0 },
   },
 };
 
@@ -367,7 +383,7 @@ export function lookVars(look) {
   const c = look.colors;
   const b = look.background;
   const trimGrad = c.trim ? c.trim : `linear-gradient(135deg, ${look.accentA}, ${look.accentB})`;
-  const image = b.kind === 'plate' ? 'url(/assets/decklist/background.jpg)'
+  const image = BG_IMAGES[b.kind] ? `url(${BG_IMAGES[b.kind]})`
     : (b.kind === 'image' && b.image ? `url("${b.image}")` : 'none');
   return {
     '--tes-blue': look.accentA,

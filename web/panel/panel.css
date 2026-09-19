@@ -777,6 +777,26 @@ details.scene-section > .scene-group { margin-top: 10px; }
 .fav-star:hover { color: #ffd34d; background: none; }
 .fav-star.on { color: #ffd34d; }
 .fav-star:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 2px; }
+/* The chain beside the star: copies that graphic's browser-source link, and
+   turns into a green tick for a moment once the link is on the clipboard. */
+.link-copy {
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0 0 0 -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #5b6874;
+  cursor: pointer;
+}
+.link-copy svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.link-copy:hover { color: var(--tes-blue); background: none; }
+.link-copy.copied { color: var(--tes-green); }
+.link-copy:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 2px; }
 .favorites-section .group-label { color: #ffd34d; }
 .fav-empty.hidden { display: none; }
 .sec-pill {

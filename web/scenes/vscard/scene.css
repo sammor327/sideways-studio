@@ -1,0 +1,185 @@
+/* Head to head, VS (2026-09-19, Sam: "recreate this version of a head to
+   head in addition to the existing head to head"): the Sideways Showdown
+   CN vs World head-to-head, HEAD2HEAD-PREPPED.psd, laid out from its layers
+   and the designer's FULLGFX.jpg export.
+
+   The ground is the look's background, designed as 'arrows' (that PSD's
+   smoke plate and glowing arrows, web/assets/backgrounds/showdown.webp),
+   so an organizer can put it on any other ground from the Look tab. Each
+   player's legend card stands tilted on its own side, 566 x 790 at -6.4 and
+   +6.4 degrees around (442, 479) and (1461, 479) (measured off the export;
+   the PSD's sample card on the right is a mirror image, the live one is the
+   real card, unmirrored). The baked VS glyph (web/scenes/vscard/vs.webp,
+   841 x 690 at 539, 91) sits between them. Names follow the PSD's rule the
+   Convergence #2 VS card follows too: the upper name, over the right card,
+   is player 2; the lower name, across the left card, is player 1. Type is
+   the PSD's: Arial Black names at 48.5 px centred on x 1110 (baseline 296)
+   and x 775 (baseline 611), the round in Arial Black at 89.4 px and the
+   event name in Arial at 38.8 px, both centred on 960 (baselines 961 and
+   1009). A font picked under Look replaces them. The event logo slot
+   (the theme logo, 300 x 170 centred on 954, 754) stays empty with none
+   uploaded.
+
+   Text boxes anchor by their bottom edge so a name the fit shrinks keeps
+   its baseline within a pixel or two (bottom = 1080 - baseline - the
+   face's depth below the baseline at line-height 1, measured in Chrome:
+   0.113 em for Arial Black, 0.175 em for Arial). Letter spacing -0.09 and
+   -0.095 em reproduce the PSD's ink widths (its tracking is -125).
+
+   Motion: --t (1.4 s) fades the ground up, flies the cards in from the
+   sides turning onto their tilt, lands the VS, slides the names in from
+   their own sides, then raises the logo, the round and the event name; each
+   a slice of --t, the travel eased out. Leaving plays it backwards. Every
+   read falls back to settled: var(--t, 1). */
+
+.vsc {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  --g: clamp(0, calc(var(--t, 1) / 0.3), 1);
+  --c0: clamp(0, calc((var(--t, 1) - 0.06) / 0.5), 1);
+  --c: calc(var(--c0) * (2 - var(--c0)));
+  --v0: clamp(0, calc((var(--t, 1) - 0.36) / 0.3), 1);
+  --v: calc(var(--v0) * (2 - var(--v0)));
+  --n0: clamp(0, calc((var(--t, 1) - 0.5) / 0.3), 1);
+  --n: calc(var(--n0) * (2 - var(--n0)));
+  --lo: clamp(0, calc((var(--t, 1) - 0.6) / 0.25), 1);
+  --x0: clamp(0, calc((var(--t, 1) - 0.66) / 0.34), 1);
+  --x: calc(var(--x0) * (2 - var(--x0)));
+  opacity: var(--g);
+}
+.vsc.off { display: none; }
+.vsc, .vsc * { box-sizing: border-box; }
+
+/* --- the two legend cards --- */
+.card {
+  position: absolute;
+  top: calc(84 * var(--u));
+  width: calc(566 * var(--u));
+  height: calc(790 * var(--u));
+  border-radius: calc(19 * var(--u));
+  box-shadow: 0 calc(22 * var(--u)) calc(48 * var(--u)) rgba(0, 0, 0, 0.55);
+  opacity: clamp(0, calc(var(--c0) * 3), 1);
+}
+.card.l {
+  left: calc(159 * var(--u));
+  transform: translateX(calc((1 - var(--c)) * -560 * var(--u))) rotate(calc(-6.4deg - (1 - var(--c)) * 16deg));
+}
+.card.r {
+  left: calc(1178 * var(--u));
+  transform: translateX(calc((1 - var(--c)) * 560 * var(--u))) rotate(calc(6.4deg + (1 - var(--c)) * 16deg));
+}
+.card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.card img.hidden { display: none; }
+/* No legend card: a dark card in the accent's edge, the legend's name on it
+   when one is typed, never a hole in the frame. */
+.card .blank {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: calc(3 * var(--u)) solid var(--ss-accent-a, #11b6fb);
+  background: linear-gradient(160deg, #1d2530, #0a0d12);
+  display: grid;
+  place-items: center;
+  padding: calc(40 * var(--u));
+  font: 800 calc(40 * var(--u))/1.1 var(--tes-font);
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ss-text, #fff);
+}
+.card .blank.hidden { display: none; }
+
+/* --- the names: the PSD's grained silver, turning white where each name
+   crosses its player's card (the right end of the upper name, the left end
+   of the lower one) --- */
+.name {
+  position: absolute;
+  width: calc(720 * var(--u));
+  padding: 0 calc(12 * var(--u));
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: center;
+  font: 900 calc(48.5 * var(--u))/1 'Arial Black', 'Arial Bold', Arial, sans-serif;
+  letter-spacing: -0.09em;
+  text-transform: uppercase;
+  opacity: var(--n0);
+}
+.name.r {
+  left: calc(750 * var(--u));
+  bottom: calc(778.14 * var(--u));
+  transform: translateX(calc((1 - var(--n)) * 110 * var(--u)));
+}
+.name.l {
+  left: calc(415 * var(--u));
+  bottom: calc(463.14 * var(--u));
+  transform: translateX(calc((1 - var(--n)) * -110 * var(--u)));
+}
+.name .n {
+  --to: 90deg;
+  background-image: linear-gradient(var(--to), rgba(255, 255, 255, 0) 42%, #ffffff 80%),
+    url(/assets/textures/grain-dark.png),
+    linear-gradient(var(--to), #c3c7cb 0%, #d9dcdf 60%, #eef0f2 100%);
+  background-size: 100% 100%, calc(256 * var(--u)) calc(256 * var(--u)), 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 calc(3 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, 0.6));
+}
+.name.l .n { --to: 270deg; }
+
+.glyph {
+  position: absolute;
+  left: calc(539 * var(--u));
+  top: calc(91 * var(--u));
+  width: calc(841 * var(--u));
+  height: calc(690 * var(--u));
+  transform: scale(calc(1.5 - 0.5 * var(--v)));
+  opacity: var(--v0);
+}
+
+.logo {
+  position: absolute;
+  left: calc(804 * var(--u));
+  top: calc(669 * var(--u));
+  width: calc(300 * var(--u));
+  height: calc(170 * var(--u));
+  display: grid;
+  place-items: center;
+  transform: scale(calc(0.85 + 0.15 * var(--lo)));
+  opacity: var(--lo);
+}
+.logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo img.hidden { display: none; }
+
+.round, .event {
+  position: absolute;
+  white-space: nowrap;
+  overflow: hidden;
+  text-align: center;
+  text-transform: uppercase;
+  color: #f4f8fa;
+  transform: translateY(calc((1 - var(--x)) * 34 * var(--u)));
+  opacity: var(--x0);
+}
+.round {
+  left: calc(160 * var(--u));
+  width: calc(1600 * var(--u));
+  bottom: calc(108.31 * var(--u));
+  font: 900 calc(89.4 * var(--u))/1 'Arial Black', 'Arial Bold', Arial, sans-serif;
+  letter-spacing: -0.095em;
+  text-shadow: 0 calc(4 * var(--u)) calc(16 * var(--u)) rgba(0, 0, 0, 0.55);
+}
+.event {
+  left: calc(360 * var(--u));
+  width: calc(1200 * var(--u));
+  bottom: calc(64.58 * var(--u));
+  font: 400 calc(38.8 * var(--u))/1 Arial, sans-serif;
+  letter-spacing: -0.095em;
+  color: #ffffff;
+  text-shadow: 0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0, 0, 0, 0.55);
+}
+.event:empty { display: none; }
+
+/* An organizer's font replaces the PSD's Arial throughout. */
+html.theme-font .name, html.theme-font .round { font-family: var(--tes-font); font-weight: 800; letter-spacing: 0; }
+html.theme-font .event { font-family: var(--tes-font); letter-spacing: 0; }

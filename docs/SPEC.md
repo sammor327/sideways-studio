@@ -159,6 +159,14 @@ this set; the PSDs stay the visual reference.
     whoever holds the series) with legend art, round and game chips, the
     "advances to" note and a transparent camera well; the series score as a
     bug top right.
+23. **Head to head, VS** (`vscard`, 2026-09-19) — the Sideways Showdown
+    head-to-head (HEAD2HEAD-PREPPED.psd): both legend cards (the side's
+    legendCardId) tilted -6.4 / +6.4 degrees either side of the baked VS
+    glyph, the upper name player 2 and the lower name player 1, the round
+    title and the event name, the theme logo between the cards, on the
+    look's ground (designed: the new `arrows` background kind, that PSD's
+    smoke plate and glowing arrows, baked by scripts/bake-showdown.py).
+    State `scenes.vscard {visible}`; a full-frame graphic.
 The slate's starting mode became the hold (clock, event.schedule with
 event.scheduleNow lit, event.format panel, first feature table, sponsors,
 tables ticker); brb leaves a transparent camera window with the resume

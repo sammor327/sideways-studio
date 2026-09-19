@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.27.0 (2026-09-19)
+
+- New graphic: Head to head, VS, the Sideways Showdown head to head. Both players' legend cards stand tilted either side of a big VS, the names in the design's silver, the round and the event name underneath, and your logo from Look between the cards. It builds in (the cards fly in, the VS lands, the names slide across) and plays backwards on the way out. It is under Between games, beside the Match card, which stays as it was.
+- New background: Glowing arrows (Sideways Showdown), the smoke and glowing arrows from the same design. Pick it under Look for all graphics or for any one graphic. The slate, the bracket and the standings now stand on it by default, darkened a little so small type stays readable; Look puts any of them back.
+- Standings animate: the rows come in one after another from the top when the standings come on, and a page change slides the old page out and the new page in (the next page from the right, the previous page from the left).
+- The chain beside each graphic's star copies that graphic's browser-source link, ready to paste into OBS or vMix, and turns into a green tick once it is copied.
+
 ## 0.26.0 (2026-09-19)
 
 - New tab: Tournament platform. Connect a TopDeck.gg event by pasting its link (an API key is optional) and the app reads it again every 30 seconds.

@@ -5,19 +5,38 @@
    as an accent rule under the last qualifying row with a small Cut tag;
    rows below the cut dim slightly so the bubble stays visible.
 
-   Motion: --t fades the frame; every read is var(--t, 1). */
+   Motion: --t fades the frame and brings the heading across; every read is
+   var(--t, 1). The rows (2026-09-19) move on their own two clocks: --r
+   brings a page's rows in one after another from the top (1 s coming on,
+   0.72 s on a page turn) and --o takes them out the same way (0.38 s). Each
+   row's slice of a clock starts at its place down the page (--pos, 0 to 1,
+   set by scene.js) and every row lands exactly at the clock's end, so the
+   settled page is fully opaque and in place. --in-dx and --out-dx are the
+   travel in design pixels: the next page comes in from the right as the old
+   one leaves to the left, the previous page the other way. --o reads
+   var(--o, 0) because its settled state is "not leaving". */
 
-.standings { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); }
+.standings { position: absolute; inset: 0; overflow: hidden; opacity: var(--t, 1); --rw: 0.42; --ow: 0.55; }
 .standings.off { display: none; }
 .standings, .standings * { box-sizing: border-box; }
 
-.head { position: absolute; left: calc(80 * var(--u)); top: calc(54 * var(--u)); right: calc(80 * var(--u)); display: flex; align-items: flex-end; justify-content: space-between; }
+.head { position: absolute; left: calc(80 * var(--u)); top: calc(54 * var(--u)); right: calc(80 * var(--u)); display: flex; align-items: flex-end; justify-content: space-between; transform: translateX(calc((1 - var(--t, 1)) * -48 * var(--u))); }
 .head .lead { display: flex; align-items: flex-end; min-width: 0; }
 .head .title { font: 800 calc(64 * var(--u))/0.9 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); }
 .head .sub { font: 700 calc(20 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); margin-left: calc(26 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .head .pg { font: 700 calc(22 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); padding-bottom: calc(7 * var(--u)); white-space: nowrap; }
 
-table { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1760 * var(--u)); border-collapse: collapse; background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); }
+table { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1760 * var(--u)); border-collapse: separate; border-spacing: 0; background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); clip-path: inset(0); }
+/* Separate borders (not collapsed) so each row's rule, and the cut line,
+   is painted by the row and travels and fades with it. */
+/* A row's progress in (--p) and out (--q). The 0.998 makes the last row land
+   a hair before its clock ends, so rounding never leaves it part-faded. */
+tbody tr {
+  --p: clamp(0, calc((var(--r, 1) - var(--pos, 0) * (0.998 - var(--rw))) / var(--rw)), 1);
+  --q: clamp(0, calc((var(--o, 0) - var(--pos, 0) * (0.998 - var(--ow))) / var(--ow)), 1);
+  opacity: calc(var(--p) * (1 - var(--q)));
+  transform: translateX(calc(((1 - var(--p)) * var(--in-dx, -72) + var(--q) * var(--out-dx, -72)) * var(--u)));
+}
 th { font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); text-align: left; padding: calc(10 * var(--u)) calc(14 * var(--u)); border-bottom: calc(1 * var(--u)) solid var(--ss-frame, #26303c); background: rgba(255, 255, 255, 0.03); }
 th.n, th.tb { text-align: right; }
 td { padding: 0 calc(14 * var(--u)); height: calc(39 * var(--u)); border-bottom: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.06); font: 400 calc(18 * var(--u))/1 var(--tes-font); color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
