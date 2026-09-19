@@ -189,7 +189,7 @@ Studio) is where looks are made: the look controls run down the left the way
 Match data does in the Studio, with Setup (the card database, browser source
 links and updates) under them, and every graphic is laid out on the right as a
 live tile, 30 in all (each graphic once, plus the variants worth judging a
-look on: the slate's four screens, the lower third's three, the showdown's
+look on: the slate's four screens, the lower third's four, the showdown's
 strip and takeover, the dual columns with cards in hand). Tiles draw a
 built-in sample match by default, so no graphic is judged empty; "Your
 preview" switches them to the preview bank. Behind sets what shows through
@@ -336,6 +336,16 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   old page out and the next one in from the side you paged toward), and a
   **result strip**. The slate's Starting soon, Be right back and Thanks
   modes carry the day's schedule, a camera window and the champion.
+- **Anchored corner tag and lower third** (0.36.0): with an in-game overlay up, the
+  corner tag sits in the top right corner of the game area that overlay
+  leaves and the lower third along the bottom of it, centred and made
+  smaller where the room is narrow, clear of the overlay's panels and of the
+  sponsor plate, and both slide in from under the overlay's chrome. Each has
+  an **Anchor to the in-game overlay** switch (on by default). Both take
+  custom text (the lower third's **Custom text** mode, a line and a second
+  line under it; a second line on the tag's own custom text), the **Up
+  next** label box switches off or takes another word, and the tag's break
+  clock switches off.
 - **Standings legends** (0.29.0): each player's legend portrait (the
   legend's face) sits before their name and the legend's name has its own
   column to the right. The **Legends** switch in the standings' Graphic

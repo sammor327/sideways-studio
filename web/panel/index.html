@@ -1171,32 +1171,47 @@
     </div>
     <div class="feature-group hidden" data-scene="cornertag">
       <h3>Corner tag</h3>
+      <p class="scene-note" id="cornertagAnchor"></p>
       <div class="scene-options">
         <label class="inline">Shows
           <select id="cornertagMode">
-            <option value="match">Up next: the two players</option>
-            <option value="round">Up next: the round</option>
-            <option value="custom">Custom line</option>
+            <option value="match">The two players</option>
+            <option value="round">The round</option>
+            <option value="custom">Custom text</option>
           </select>
         </label>
-        <input id="cornertagText" class="slate-text hidden" maxlength="60" autocomplete="off" placeholder="Custom line" aria-label="Corner tag line">
-        <span class="hint">Reads the break clock. Top right, over anything; leave it on through interviews.</span>
+        <span class="label-pair"><label class="inline" title="The label box at the tag's left. Off, the tag starts with its text"><input type="checkbox" id="cornertagShowLabel" checked> Label</label><input id="cornertagLabel" class="label-mini" maxlength="24" autocomplete="off" placeholder="Up next" aria-label="The corner tag's label" title="The label box's word. Blank says Up next"></span>
+        <label class="inline" title="The break clock at the tag's right end, once the break clock has been set"><input type="checkbox" id="cornertagClock" checked> Clock</label>
+        <label class="inline" title="On: with an in-game overlay up, the tag sits in the top right corner of the game area that overlay leaves, clear of its panels and bars (and under the sponsor plate when that is there). Off: the top right of the frame, whatever is up"><input type="checkbox" id="cornertagDock" checked> Anchor to the in-game overlay</label>
       </div>
+      <div class="scene-options" id="cornertagCustom">
+        <input id="cornertagText" class="slate-text" maxlength="60" autocomplete="off" placeholder="Custom text" aria-label="The corner tag's custom text">
+        <input id="cornertagSub" class="slate-text" maxlength="60" autocomplete="off" placeholder="Second line under it (optional)" aria-label="The corner tag's second line">
+      </div>
+      <p class="hint">Reads the break clock. Leave it on through interviews: it moves with whichever in-game overlay is up.</p>
     </div>
     <div class="feature-group hidden" data-scene="lowerthird">
       <h3>Lower third</h3>
+      <p class="scene-note" id="lowerthirdAnchor"></p>
       <div class="scene-options">
         <label class="inline">Shows
           <select id="lowerthirdMode">
             <option value="casters">Casters (the first two)</option>
             <option value="interview">Interview: one player</option>
             <option value="coming">Coming up: the match</option>
+            <option value="custom">Custom text</option>
           </select>
         </label>
         <label class="inline">Player
           <select id="lowerthirdSide"><option value="left">Player 1</option><option value="right">Player 2</option></select>
         </label>
+        <span class="label-pair" id="lowerthirdLabelPair"><label class="inline" title="The label box at the bar's left. Off, the bar is its text alone"><input type="checkbox" id="lowerthirdShowLabel" checked> Label</label><input id="lowerthirdLabel" class="label-mini" maxlength="24" autocomplete="off" placeholder="Coming up" aria-label="The lower third's label"></span>
+        <label class="inline" title="On: with an in-game overlay up, the bar sits along the bottom of the game area that overlay leaves, centred on it and made smaller when the room there is narrower than the bar. Off: the bottom of the frame, whatever is up"><input type="checkbox" id="lowerthirdDock" checked> Anchor to the in-game overlay</label>
         <input id="lowerthirdCred" class="slate-text" maxlength="120" autocomplete="off" placeholder="Credential line (blank = seed, record, legend, best finish)" aria-label="Interview credential">
+      </div>
+      <div class="scene-options" id="lowerthirdCustom">
+        <input id="lowerthirdText" class="slate-text" maxlength="60" autocomplete="off" placeholder="Custom text" aria-label="The lower third's custom text">
+        <input id="lowerthirdSub" class="slate-text" maxlength="120" autocomplete="off" placeholder="Second line under it (optional)" aria-label="The lower third's second line">
       </div>
     </div>
     <div class="feature-group hidden" data-scene="headtohead">

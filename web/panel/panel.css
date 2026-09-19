@@ -830,6 +830,13 @@ details.scene-section > .scene-group { margin-top: 10px; }
 .sec-pill.air { background: #e33; color: #fff; }
 .slate-text { flex: 1 1 160px; padding: 4px 8px; font-size: 13px; }
 .slate-text.hidden { display: none; }
+/* The corner tag's and the lower third's label word, and their custom
+   text rows, shown only in the modes that draw them. */
+.scene-options .label-pair { display: inline-flex; align-items: center; gap: 8px; }
+.scene-options .label-pair.hidden { display: none; }
+.scene-options input.label-mini { width: 120px; flex: none; padding: 4px 8px; font-size: 13px; }
+.scene-options input.label-mini:disabled { opacity: 0.45; }
+.scene-options.hidden { display: none; }
 
 /* --- match data: rows for the scouted graphics --- */
 .hand-cell { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }

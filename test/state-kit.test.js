@@ -82,8 +82,8 @@ describe('starter kit fields', () => {
       slate: { schedule: false, ticker: false, camera: false },
     } });
     const sc = getState().preview.scenes;
-    assert.deepEqual(sc.cornertag, { visible: true, mode: 'custom', text: 'Back in five' });
-    assert.deepEqual(sc.lowerthird, { visible: true, mode: 'interview', side: 'right', credential: '2019 champion' });
+    assert.deepEqual(sc.cornertag, { visible: true, mode: 'custom', text: 'Back in five', sub: '', label: '', showLabel: true, clock: true, dock: true });
+    assert.deepEqual(sc.lowerthird, { visible: true, mode: 'interview', side: 'right', credential: '2019 champion', text: '', sub: '', label: '', showLabel: true, dock: true });
     assert.deepEqual(sc.headtohead, { visible: true, status: 'Shuffling' });
     assert.deepEqual(sc.profile, { visible: true, side: 'right', camera: true, decklist: false });
     assert.deepEqual(sc.bracket, { visible: true });
@@ -95,6 +95,36 @@ describe('starter kit fields', () => {
     assert.equal(getState().preview.scenes.cornertag.mode, 'custom');
     assert.equal(getState().preview.scenes.lowerthird.mode, 'interview');
     assert.equal(getState().preview.scenes.lowerthird.side, 'right');
+  });
+
+  it('takes custom text, the label box, the clock and the anchor switch on the corner tag and the lower third', () => {
+    applyUpdate({ scenes: {
+      cornertag: { text: '  Top 8 at 4 PM ', sub: 'Stay tuned', label: ' Next ', showLabel: false, clock: 0, dock: false },
+      lowerthird: { mode: 'custom', text: 'Sam Morris', sub: 'Tournament organizer', label: 'Host', showLabel: 0, dock: '' },
+    } });
+    let sc = getState().preview.scenes;
+    assert.deepEqual(
+      { text: sc.cornertag.text, sub: sc.cornertag.sub, label: sc.cornertag.label, showLabel: sc.cornertag.showLabel, clock: sc.cornertag.clock, dock: sc.cornertag.dock },
+      { text: 'Top 8 at 4 PM', sub: 'Stay tuned', label: 'Next', showLabel: false, clock: false, dock: false },
+    );
+    assert.deepEqual(
+      { mode: sc.lowerthird.mode, text: sc.lowerthird.text, sub: sc.lowerthird.sub, label: sc.lowerthird.label, showLabel: sc.lowerthird.showLabel, dock: sc.lowerthird.dock },
+      { mode: 'custom', text: 'Sam Morris', sub: 'Tournament organizer', label: 'Host', showLabel: false, dock: false },
+    );
+    // Lengths are capped: a label is a word or two, a main line one line.
+    applyUpdate({ scenes: { cornertag: { label: 'x'.repeat(40), sub: 'y'.repeat(90) }, lowerthird: { text: 'z'.repeat(80), sub: 'w'.repeat(200) } } });
+    sc = getState().preview.scenes;
+    assert.equal(sc.cornertag.label.length, 24);
+    assert.equal(sc.cornertag.sub.length, 60);
+    assert.equal(sc.lowerthird.text.length, 60);
+    assert.equal(sc.lowerthird.sub.length, 120);
+    // Leaving a field out of a patch leaves it alone; switches come back on.
+    applyUpdate({ scenes: { cornertag: { showLabel: true, clock: true, dock: true }, lowerthird: { showLabel: true, dock: true, mode: 'interview' } } });
+    sc = getState().preview.scenes;
+    assert.equal(sc.cornertag.showLabel && sc.cornertag.clock && sc.cornertag.dock, true);
+    assert.equal(sc.cornertag.text, 'Top 8 at 4 PM');
+    assert.equal(sc.lowerthird.showLabel && sc.lowerthird.dock, true);
+    assert.equal(sc.lowerthird.label, 'Host');
   });
 
   it('carries the new fields through TAKE and leaves them alone on CLEAR', () => {

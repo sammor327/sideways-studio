@@ -1,9 +1,19 @@
-/* Lower third (starter kit, 2026-09-15): one bar shape, three modes.
+/* Lower third (starter kit, 2026-09-15): one bar shape, four modes.
    casters: two name plates with role and handle flanking the event lockup
    (Flesh and Blood's paired plates). interview: a legend thumbnail, the
    name with its country chip and a credential line, why this person is on
    camera (Pokémon's and Konami's floor tags). coming: "Coming up" over the
-   round and the two names (Magic's bar over b-roll).
+   round and the two names (Magic's bar over b-roll). custom (2026-09-19):
+   the operator's own line with a second under it, beside the same label
+   box ("Up next" unless another word is typed). The label box of coming
+   and custom can be switched off.
+
+   Place (2026-09-19): each bar is as wide as its content, and scene.js sets
+   --lx (the design x of a centred bar's middle, or of the interview bar's
+   left edge), --lb (its bottom edge) and --lk (its scale) from
+   web/shared/anchor.js: 96px up from the frame's bottom, or anchored along
+   the bottom of the game area an in-game overlay leaves, centred on it and
+   scaled down when the bar is wider than the room.
 
    Motion: --t lifts the bar from below the safe edge; every read is var(--t, 1). */
 
@@ -14,13 +24,19 @@
 .lt.mode-casters .casters { display: flex; }
 .lt.mode-interview .interview { display: flex; }
 .lt.mode-coming .coming { display: flex; }
+.lt.mode-custom .custom { display: flex; }
+
+/* --- the centred bars' place --- */
+.casters, .coming, .custom {
+  position: absolute; left: calc(var(--lx, 960) * var(--u)); bottom: calc((1080 - var(--lb, 984)) * var(--u));
+  width: max-content;
+  opacity: var(--t, 1);
+  transform-origin: 50% 100%;
+  transform: translateX(-50%) translateY(calc((1 - var(--t, 1)) * 140 * var(--u))) scale(var(--lk, 1));
+}
 
 /* --- casters --- */
-.casters {
-  position: absolute; left: 0; right: 0; bottom: calc(96 * var(--u));
-  justify-content: center; align-items: flex-end;
-  opacity: var(--t, 1); transform: translateY(calc((1 - var(--t, 1)) * 140 * var(--u)));
-}
+.casters { align-items: flex-end; }
 .casters .plate { background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); padding: calc(16 * var(--u)) calc(28 * var(--u)) calc(14 * var(--u)); min-width: calc(420 * var(--u)); max-width: calc(620 * var(--u)); }
 .casters .plate.l { text-align: right; border-right: 0; }
 .casters .plate.r { border-left: 0; }
@@ -37,9 +53,11 @@
 
 /* --- interview --- */
 .interview {
-  position: absolute; left: calc(80 * var(--u)); bottom: calc(96 * var(--u));
+  position: absolute; left: calc(var(--lx, 80) * var(--u)); bottom: calc((1080 - var(--lb, 984)) * var(--u));
   align-items: stretch; max-width: calc(1100 * var(--u));
-  opacity: var(--t, 1); transform: translateX(calc((1 - var(--t, 1)) * -600 * var(--u)));
+  opacity: var(--t, 1);
+  transform-origin: 0 100%;
+  transform: translateX(calc((1 - var(--t, 1)) * -600 * var(--u))) scale(var(--lk, 1));
 }
 .interview .strip { width: calc(8 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); }
 .interview .leg { width: calc(110 * var(--u)); position: relative; background: var(--ss-ink, #10151d); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); border-right: 0; overflow: hidden; }
@@ -53,15 +71,16 @@
 .interview .cred b { color: var(--ss-accent-b, #1bef19); font-weight: 800; letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; font-size: calc(12 * var(--u)); margin-right: calc(8 * var(--u)); }
 .interview .cred b:empty { display: none; }
 
-/* --- coming up --- */
-.coming {
-  position: absolute; left: 0; right: 0; bottom: calc(96 * var(--u));
-  justify-content: center; align-items: stretch;
-  opacity: var(--t, 1); transform: translateY(calc((1 - var(--t, 1)) * 140 * var(--u)));
-}
-.coming .k { padding: calc(14 * var(--u)) calc(20 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); font: 800 calc(15 * var(--u))/1 var(--tes-font); letter-spacing: calc(2.2 * var(--u)); text-transform: uppercase; display: grid; place-items: center; white-space: nowrap; }
+/* --- coming up and custom: the label box beside a plate --- */
+.coming, .custom { align-items: stretch; }
+.coming .k, .custom .k { padding: calc(14 * var(--u)) calc(20 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); color: var(--ss-plate, #0a0d12); font: 800 calc(15 * var(--u))/1 var(--tes-font); letter-spacing: calc(2.2 * var(--u)); text-transform: uppercase; display: grid; place-items: center; white-space: nowrap; }
+.coming .k.hidden, .custom .k.hidden { display: none; }
 .coming .body { background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); padding: calc(12 * var(--u)) calc(30 * var(--u)); min-width: calc(560 * var(--u)); max-width: calc(1100 * var(--u)); }
 .coming .round { font: 500 calc(13 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .coming .round:empty { display: none; }
 .coming .vs { font: 800 calc(38 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); margin-top: calc(6 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .coming .vs .x { color: var(--ss-text-muted, #9aa7b6); font-size: calc(24 * var(--u)); margin: 0 calc(14 * var(--u)); }
+.custom .body { background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c); padding: calc(14 * var(--u)) calc(30 * var(--u)) calc(13 * var(--u)); min-width: calc(420 * var(--u)); max-width: calc(1100 * var(--u)); display: grid; align-content: center; }
+.custom .main { font: 800 calc(38 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom .sub { font: 500 calc(15 * var(--u))/1.3 var(--tes-font); letter-spacing: calc(0.6 * var(--u)); color: var(--ss-text-muted, #9aa7b6); margin-top: calc(7 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.custom .sub:empty { display: none; }

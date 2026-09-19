@@ -138,11 +138,21 @@ this set; the PSDs stay the visual reference.
 
 16. **Corner tag** (`cornertag`) — "UP NEXT · match or round or a custom
     line · break clock", top right, over anything. Reads event.countdown.
-17. **Lower third** (`lowerthird`) — one bar, three modes: casters (the
+    Custom mode takes two lines (text, sub); the label box takes its own
+    word (label, '' = Up next) and switches off (showLabel), the clock
+    switches off (clock). Anchored (dock, default on, 2026-09-19): with an
+    in-game overlay up it sits in the top right corner of the game area
+    that overlay leaves (web/shared/anchor.js TAG_ANCHORS), below the
+    sponsor plate when that shares the corner.
+17. **Lower third** (`lowerthird`) — one bar, four modes: casters (the
     first two of event.casters with role and handle, the event lockup
     between them), interview (a side's legend thumbnail, name, country and a
     credential line, typed or built from seed, record, legend and best
-    finish), coming (the round over "A vs B").
+    finish), coming (the round over "A vs B"), custom (the operator's line
+    over a second line, 2026-09-19). Coming and custom share the label box
+    (label, showLabel). Anchored (dock): along the bottom of the overlay's
+    game area (LT_ANCHORS), centred (the interview bar from its left),
+    scaled down to fit, above a sponsor plate in a bottom corner.
 18. **Match card** (`headtohead`, spec output 3) — legend art fills each
     side, the legend card and the featured card float above the name with
     domain runes, seed, Swiss and season records, best finish, pronouns and

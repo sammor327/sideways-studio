@@ -4,6 +4,13 @@
    tag never resets the time. Pokémon keeps a tag like it on through floor
    interviews; that is the intended use.
 
+   Place (2026-09-19): --tr is the design x of the tag's right edge and --tt
+   its top, set by scene.js from web/shared/anchor.js: 60px in from the
+   frame's top right, or anchored in the top right corner of the game area
+   an in-game overlay leaves, and below the sponsor plate when that is up
+   there. The label box ("Up next", or the operator's own word) can be
+   switched off, and so can the clock.
+
    Motion: --t slides the tag in from the right edge; every read is var(--t, 1). */
 
 .cornertag { position: absolute; inset: 0; }
@@ -11,7 +18,7 @@
 .cornertag, .cornertag * { box-sizing: border-box; }
 
 .tag {
-  position: absolute; right: calc(60 * var(--u)); top: calc(48 * var(--u));
+  position: absolute; right: calc((1920 - var(--tr, 1860)) * var(--u)); top: calc(var(--tt, 48) * var(--u));
   display: flex; align-items: stretch;
   background: var(--ss-plate, #0a0d12); border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
   max-width: calc(760 * var(--u));
@@ -24,6 +31,7 @@
   font: 800 calc(14 * var(--u))/1 var(--tes-font); letter-spacing: calc(2 * var(--u)); text-transform: uppercase;
   display: grid; place-items: center; white-space: nowrap;
 }
+.tag .k.hidden { display: none; }
 .tag .v { min-width: 0; padding: calc(10 * var(--u)) calc(18 * var(--u)); display: grid; align-content: center; }
 .tag .v .main { font: 700 calc(24 * var(--u))/1.1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tag .v small { display: block; font: 500 calc(12 * var(--u))/1.2 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); margin-top: calc(3 * var(--u)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

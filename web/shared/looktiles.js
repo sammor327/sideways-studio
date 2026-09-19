@@ -39,6 +39,7 @@ export const TILES = [
   { key: 'lowerthird', scene: 'lowerthird', group: 'parts', variant: 'Casters', vary: { mode: 'casters' } },
   { key: 'lowerthird-interview', scene: 'lowerthird', group: 'parts', variant: 'Interview', vary: { mode: 'interview' } },
   { key: 'lowerthird-coming', scene: 'lowerthird', group: 'parts', variant: 'Coming up', vary: { mode: 'coming' } },
+  { key: 'lowerthird-custom', scene: 'lowerthird', group: 'parts', variant: 'Custom text', vary: { mode: 'custom' } },
   { key: 'result', scene: 'result', group: 'parts' },
   { key: 'matchup', scene: 'matchup', group: 'parts' },
   { key: 'sideboard', scene: 'sideboard', group: 'parts' },

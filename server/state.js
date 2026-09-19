@@ -218,10 +218,18 @@ function defaultBank() {
       showdown: { visible: false, mode: 'strip', hands: true },
       // --- the out-of-game starter kit (2026-09-15) ---
       // Corner tag: "UP NEXT · match · clock" top right, over anything.
-      cornertag: { visible: false, mode: 'match', text: '' },
+      // text and sub: the custom mode's two lines. label: the label box's
+      // word ('' = "Up next"), showLabel switches the box off; clock switches
+      // the break clock off. dock (2026-09-19, Sam: "anchored for the in game
+      // overlays"): with an in-game overlay up, sit in the top right corner
+      // of the game area it leaves (web/shared/anchor.js), not the frame's.
+      cornertag: { visible: false, mode: 'match', text: '', sub: '', label: '', showLabel: true, clock: true, dock: true },
       // Lower third: the caster pair, an interview name with a credential
-      // line, or the coming-up bar.
-      lowerthird: { visible: false, mode: 'casters', side: 'left', credential: '' },
+      // line, the coming-up bar, or custom: the operator's own text (a line
+      // and a second under it). label/showLabel: the coming-up and custom
+      // bars' label box ('' = its own word, "Coming up" or "Up next"). dock:
+      // with an in-game overlay up, sit along the bottom of its game area.
+      lowerthird: { visible: false, mode: 'casters', side: 'left', credential: '', text: '', sub: '', label: '', showLabel: true, dock: true },
       // Match card (the spec's head-to-head): both sides with a centre column.
       headtohead: { visible: false, status: '' },
       // Head to head, VS (2026-09-19): the Sideways Showdown head-to-head,
@@ -1017,13 +1025,24 @@ function applyBankPatch(bank, patch) {
       if (c.visible !== undefined) bank.scenes.cornertag.visible = Boolean(c.visible);
       if (['match', 'round', 'custom'].includes(c.mode)) bank.scenes.cornertag.mode = c.mode;
       if (c.text !== undefined) bank.scenes.cornertag.text = cleanStr(c.text, 60);
+      if (c.sub !== undefined) bank.scenes.cornertag.sub = cleanStr(c.sub, 60);
+      if (c.label !== undefined) bank.scenes.cornertag.label = cleanStr(c.label, 24);
+      for (const flag of ['showLabel', 'clock', 'dock']) {
+        if (c[flag] !== undefined) bank.scenes.cornertag[flag] = Boolean(c[flag]);
+      }
     }
     if (patch.scenes.lowerthird && typeof patch.scenes.lowerthird === 'object') {
       const l = patch.scenes.lowerthird;
       if (l.visible !== undefined) bank.scenes.lowerthird.visible = Boolean(l.visible);
-      if (['casters', 'interview', 'coming'].includes(l.mode)) bank.scenes.lowerthird.mode = l.mode;
+      if (['casters', 'interview', 'coming', 'custom'].includes(l.mode)) bank.scenes.lowerthird.mode = l.mode;
       if (['left', 'right'].includes(l.side)) bank.scenes.lowerthird.side = l.side;
       if (l.credential !== undefined) bank.scenes.lowerthird.credential = cleanStr(l.credential, 120);
+      if (l.text !== undefined) bank.scenes.lowerthird.text = cleanStr(l.text, 60);
+      if (l.sub !== undefined) bank.scenes.lowerthird.sub = cleanStr(l.sub, 120);
+      if (l.label !== undefined) bank.scenes.lowerthird.label = cleanStr(l.label, 24);
+      for (const flag of ['showLabel', 'dock']) {
+        if (l[flag] !== undefined) bank.scenes.lowerthird[flag] = Boolean(l[flag]);
+      }
     }
     if (patch.scenes.headtohead && typeof patch.scenes.headtohead === 'object') {
       const h = patch.scenes.headtohead;

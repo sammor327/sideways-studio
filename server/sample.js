@@ -307,7 +307,7 @@ function build(cards) {
       decklist: { list: DECKLIST, deckName: 'Diana' },
       sponsor: { items: [{ name: 'Your sponsor' }, { name: 'Card Haven' }], label: 'Presented by' },
       slate: { text: 'Back after the break' },
-      lowerthird: { side: 'left', credential: 'Regional Qualifier top 8, the only undefeated Diana' },
+      lowerthird: { side: 'left', credential: 'Regional Qualifier top 8, the only undefeated Diana', text: 'Top 8 player interviews', sub: 'Right after the semifinals, here on the main stream' },
       headtohead: { status: 'Semifinal: best of three' },
       profile: { side: 'left' },
       handfan: { side: 'left', opponent: true },

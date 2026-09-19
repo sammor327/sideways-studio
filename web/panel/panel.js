@@ -10,6 +10,7 @@ import { refreshFontSheet } from '../shared/fontsheet.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
+import { TAG_ANCHORS, TAG_FRAME, anchorHost, anchorLabel, tagPlace } from '../shared/anchor.js';
 import { SCENE_SOURCES } from '../shared/sources.js';
 import {
   ROLL_SPEEDS, legendSlices, legendsFromStandings, legendsToText, parseLegendLines, resolveLegend, rollAt, rollElapsed, sliceKey, splitLegend, tableOverflow,
@@ -185,6 +186,7 @@ function sceneDraws(scene, field, side, bank) {
   if (scene === 'profile' && !cfg.decklist && field === 'deck') return false;
   if (scene === 'profile' && cfg.decklist && field === 'finishes') return false;
   if (scene === 'lowerthird') {
+    if (cfg.mode === 'custom') return false;
     if (cfg.mode === 'casters' && !['casters', 'eventName', 'roundTitle'].includes(field)) return false;
     if (cfg.mode === 'coming' && !['name', 'roundTitle', 'eventName'].includes(field)) return false;
     if (cfg.mode === 'interview' && field === 'casters') return false;
@@ -193,6 +195,7 @@ function sceneDraws(scene, field, side, bank) {
     if (cfg.mode === 'match' && field === 'eventName') return false;
     if (cfg.mode === 'round' && field === 'name') return false;
     if (cfg.mode === 'custom' && ['name', 'roundTitle', 'eventName'].includes(field)) return false;
+    if (cfg.clock === false && field === 'countdown') return false;
   }
   return true;
 }
@@ -2391,11 +2394,23 @@ for (const [id, flag] of [['slateSchedule', 'schedule'], ['slateTicker', 'ticker
 $('cornertagMode').addEventListener('change', () => post({ scenes: { cornertag: { mode: $('cornertagMode').value } } }));
 $('lowerthirdMode').addEventListener('change', () => post({ scenes: { lowerthird: { mode: $('lowerthirdMode').value } } }));
 $('lowerthirdSide').addEventListener('change', () => post({ scenes: { lowerthird: { side: $('lowerthirdSide').value } } }));
+// The label box, the tag's clock and anchoring into the in-game overlay
+// (2026-09-19).
+for (const [id, scene, flag] of [
+  ['cornertagShowLabel', 'cornertag', 'showLabel'], ['cornertagClock', 'cornertag', 'clock'], ['cornertagDock', 'cornertag', 'dock'],
+  ['lowerthirdShowLabel', 'lowerthird', 'showLabel'], ['lowerthirdDock', 'lowerthird', 'dock'],
+]) {
+  $(id).addEventListener('change', () => post({ scenes: { [scene]: { [flag]: $(id).checked } } }));
+}
 $('profileSide').addEventListener('change', () => post({ scenes: { profile: { side: $('profileSide').value } } }));
 for (const [id, flag] of [['profileCamera', 'camera'], ['profileDecklist', 'decklist']]) {
   $(id).addEventListener('change', () => post({ scenes: { profile: { [flag]: $(id).checked } } }));
 }
-for (const [id, scene, field] of [['cornertagText', 'cornertag', 'text'], ['lowerthirdCred', 'lowerthird', 'credential'], ['h2hStatus', 'headtohead', 'status']]) {
+for (const [id, scene, field] of [
+  ['cornertagText', 'cornertag', 'text'], ['cornertagSub', 'cornertag', 'sub'], ['cornertagLabel', 'cornertag', 'label'],
+  ['lowerthirdCred', 'lowerthird', 'credential'], ['lowerthirdText', 'lowerthird', 'text'], ['lowerthirdSub', 'lowerthird', 'sub'], ['lowerthirdLabel', 'lowerthird', 'label'],
+  ['h2hStatus', 'headtohead', 'status'],
+]) {
   const el = $(id);
   let timer = null;
   const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ scenes: { [scene]: { [field]: el.value } } }); };
@@ -3642,13 +3657,33 @@ function renderExtras(s) {
   const ct = prev.scenes.cornertag;
   if (document.activeElement !== $('cornertagMode')) $('cornertagMode').value = ct.mode || 'match';
   setIfIdle('cornertagText', ct.text || '');
-  $('cornertagText').classList.toggle('hidden', ct.mode !== 'custom');
+  setIfIdle('cornertagSub', ct.sub || '');
+  setIfIdle('cornertagLabel', ct.label || '');
+  $('cornertagCustom').classList.toggle('hidden', ct.mode !== 'custom');
+  for (const [id, flag] of [['cornertagShowLabel', 'showLabel'], ['cornertagClock', 'clock'], ['cornertagDock', 'dock']]) {
+    if (document.activeElement !== $(id)) $(id).checked = ct[flag] !== false;
+  }
+  $('cornertagLabel').disabled = ct.showLabel === false;
   const lt = prev.scenes.lowerthird;
   if (document.activeElement !== $('lowerthirdMode')) $('lowerthirdMode').value = lt.mode || 'casters';
   if (document.activeElement !== $('lowerthirdSide')) $('lowerthirdSide').value = lt.side || 'left';
   setIfIdle('lowerthirdCred', lt.credential || '');
+  setIfIdle('lowerthirdText', lt.text || '');
+  setIfIdle('lowerthirdSub', lt.sub || '');
+  setIfIdle('lowerthirdLabel', lt.label || '');
   $('lowerthirdSide').parentElement.classList.toggle('hidden', lt.mode !== 'interview');
   $('lowerthirdCred').classList.toggle('hidden', lt.mode !== 'interview');
+  // The label box belongs to the coming-up and custom bars.
+  const ltLabelled = lt.mode === 'coming' || lt.mode === 'custom';
+  $('lowerthirdLabelPair').classList.toggle('hidden', !ltLabelled);
+  $('lowerthirdLabel').placeholder = lt.mode === 'custom' ? 'Up next' : 'Coming up';
+  $('lowerthirdLabel').title = `The label box's word. Blank says ${lt.mode === 'custom' ? 'Up next' : 'Coming up'}`;
+  $('lowerthirdLabel').disabled = lt.showLabel === false;
+  $('lowerthirdCustom').classList.toggle('hidden', lt.mode !== 'custom');
+  for (const [id, flag] of [['lowerthirdShowLabel', 'showLabel'], ['lowerthirdDock', 'dock']]) {
+    if (document.activeElement !== $(id)) $(id).checked = lt[flag] !== false;
+  }
+  renderAnchorNotes(prev);
   setIfIdle('h2hStatus', prev.scenes.headtohead.status || '');
   if (document.activeElement !== $('profileSide')) $('profileSide').value = prev.scenes.profile.side || 'left';
   if (document.activeElement !== $('profileCamera')) $('profileCamera').checked = prev.scenes.profile.camera !== false;
@@ -4327,6 +4362,23 @@ $('sponsorAdd').addEventListener('click', async () => {
     $('sponsorAdd').disabled = false;
   }
 });
+
+// Where the corner tag and the lower third sit in preview, a line under
+// their names in Graphic features (web/shared/anchor.js places them).
+function renderAnchorNotes(bank) {
+  const host = anchorHost(bank);
+  const note = (cfg, frame, anchored, extra = '') => {
+    const where = cfg.dock === false
+      ? `Anchoring off: ${frame} of the frame, whatever is up`
+      : host ? `Anchored into ${anchorLabel(host)}: ${anchored}` : `No in-game overlay in preview: ${frame} of the frame`;
+    return `${where}${extra}.`;
+  };
+  const ct = bank.scenes.cornertag;
+  const home = host && ct.dock !== false ? TAG_ANCHORS[host].top : TAG_FRAME.top;
+  const under = tagPlace(bank).top !== home ? ', under the sponsor plate' : '';
+  $('cornertagAnchor').textContent = note(ct, 'top right', 'the top right corner of its game area', under);
+  $('lowerthirdAnchor').textContent = note(bank.scenes.lowerthird, 'bottom', 'centred along the bottom of its game area, made smaller where that is narrower than the bar');
+}
 
 function renderSponsor(s) {
   const cfg = s.preview.scenes.sponsor;

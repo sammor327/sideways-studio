@@ -6,6 +6,16 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.36.0 (2026-09-19)
+
+- The corner tag and the lower third anchor to the in-game overlay that is up. The tag moves into the top right corner of the game area the overlay leaves: under the rows overlay's top bar, between the dual columns, inside the portrait camera, left of the 1v1 and 2v2 sidebars, under the 2v2 bars' player cluster. The lower third centres along the bottom of that game area, above the bottom bar, the bars' cluster or the arena bug, and gets smaller where the game area is narrower than the bar (between the portrait pillars). Both slide in from under the overlay's panels instead of across them. With no in-game overlay up they sit where they always have.
+- Anchor to the in-game overlay: a switch for each under Graphic features, on by default. Off keeps the graphic at its place on the frame whatever is up. A line under each graphic's name says where it sits in preview.
+- Neither lands on the sponsor plate: the tag drops below a plate docked in its corner, and the lower third rises above a plate in a bottom corner.
+- Custom text on both. The lower third has a new Custom text mode, your own line with a second line under it, and the corner tag's Custom text takes a second line too.
+- The Up next label can be switched off or reworded. Label under the corner tag, and under the lower third's Coming up and Custom text, switches the label box off; the box beside it takes your own word (blank says Up next, or Coming up on the coming-up bar).
+- Clock under the corner tag switches its break clock off, so a clock left from an earlier break never rides along.
+- Look and setup has a tile for the lower third's Custom text.
+
 ## 0.35.0 (2026-09-19)
 
 - New graphic: Sideboard card spotted (1v1 graphics, after the sideboard fly-in). When a player draws a card they sided in, it flies in over the game from their side, lit up, with "Sideboard Card for" and their name under it, stays up for eight seconds and flies out. TAKE it once and it waits on air for cards.

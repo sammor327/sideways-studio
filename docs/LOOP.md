@@ -214,6 +214,49 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-19j (out of band: the corner tag and the lower third anchor to the in-game overlays; custom text; the label switch; 0.36.0)
+
+Sam: "Can we make the Lower Thirds and corner tags anchored for the in game
+overlays? Additionally can we make both lower third and corner tag have
+custom text and ability to toggle the up next".
+
+Before: the tag sat at a fixed 60/48 from the frame's top right and the
+lower third was centred on the frame 96px up, so over an in-game overlay
+the tag landed on the rows' top bar, the dual and portrait columns, the
+1v1/2v2 sidebars and the bars' cluster, and the lower third crossed the
+rows column, the pillars, the bars' bottom cluster and the arena bug.
+
+web/shared/anchor.js (pure, like sponsor.js) holds per-overlay spots found
+from transparent renders of each overlay with the sample match (variants
+unioned, alpha > 24, chrome grown 16px): TAG_ANCHORS = the spot nearest
+the top right corner for a 760 x 66 tag (its max-width, so any shorter tag
+fits), LT_ANCHORS = the lowest band 110 tall (bottom at most 984) with a
+clear run through the middle of the overlay's game window. Host order is
+the sponsor plate's (SPONSOR_HOSTS, arena bug last). tagPlace / 
+lowerThirdPlace take the graphic's measured size: the scenes read
+offsetWidth/Height (transforms don't count) and place on every state, on
+font loads and on a slow tick, falling back to the widest tag while off. A
+centred bar that is wider than its run scales around its bottom centre
+(floor 0.5); the interview bar hangs from the run's left, never nearer the
+frame edge than 80. The sponsor plate (on = visible with a sponsor; its
+every-M-minutes window ignored so nothing jumps) is avoided with its tag
+strip counted: the tag drops below it, the bar rises above it. While
+anchored, the stage root is clipped to the overlay's game window
+(ANCHOR_WINDOWS = GAME_WINDOWS + the arena bug's area above y 860), so the
+entrance slides come out from under the chrome whatever the OBS layer
+order; not clipped when the graphic sits outside the window (the tag in the
+POV overlay's free corner).
+
+State: cornertag {text, sub, label, showLabel, clock, dock}; lowerthird
+mode 'custom' + {text, sub, label, showLabel, dock}; label '' = the mode's
+word (Up next; Coming up on the coming bar). Panel: Label switch + word
+(kept together in a .label-pair), Clock, Anchor to the in-game overlay,
+custom rows shown only in custom mode, a line under each name saying where
+it sits in preview (renderAnchorNotes). Look builder: lowerthird-custom
+tile; the sample carries custom text. Tests: test/anchor.test.js + the kit
+whitelist. Verified on a scratch server (port 4780) with composites over
+every overlay, the sponsor corners, and mid-entrance stills.
+
 ### 2026-09-19i (out of band: sideboard card spotted, battlefield results, 0.35.0)
 
 Sam's two asks. (1) "As part of the riftatlas integration, a 'sideboard
