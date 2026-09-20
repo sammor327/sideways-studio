@@ -6,6 +6,14 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.45.0 (2026-09-20)
+
+- Fix: the player profile's camera window now lets your camera through on air. The window was see-through, but the background and the legend art were drawn behind it, so OBS showed those instead of the camera. Be right back had the same fault and was fixed in 0.44.0.
+- Fix: the result strip's camera window now lets your camera through on air, the same fault.
+- Fix: in the portrait pillars' Webcam mode, the hand cam window now lets your camera through, and switching the hand cam on no longer cuts a transparent notch out of the top left of the left pillar.
+- Every other camera window was checked the same way, each on its own broadcast URL: Be right back, the 1v1 and 2v2 sidebars, the dual columns, the 2v2 bars, the portrait pillars' player cameras and the rows column were all already letting the camera through.
+- Note: the two player boxes on the showdown takeover are legend portraits, not camera windows. Nothing behind them shows through, and that graphic has no Webcam mode yet.
+
 ## 0.44.0 (2026-09-19)
 
 - The slate is one layout on every screen: the screen's title with the event and the round across the top (the way the standings and pairings are headed), the screen's own content on the left, a rail on the right with the break clock, a side panel and the sponsors, and the feature tables along the bottom. Switching screens no longer moves the clock, the panels or the sponsors around.

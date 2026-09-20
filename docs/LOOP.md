@@ -214,6 +214,50 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20a (out of band: every camera window cuts a real hole)
+
+Sam, after 0.44.0's Be right back fix: the same fault on the player
+profile, and "audit every other scene with a camera window or live-cam
+well". The fault is one shape: the window is transparent in itself, but the
+scene's own full-frame ground paints underneath it, so on ?transparent=1
+the OBS camera source behind the browser source never shows.
+
+Audited by screenshotting each graphic on ?transparent=1 in headless Edge
+with Emulation.setDefaultBackgroundColorOverride alpha 0 and reading the
+PNG's alpha at nine points inside each window plus one on the frame beside
+it: 0 inside and 255 on the frame is a real hole. Webcam-mode scenes hide
+their wells, so those windows were probed at their designed rects with the
+preview bank driven over /api/update. Be right back (fixed in 0.44.0) was
+the control.
+
+Broken and fixed: (1) the player profile, alpha 255 at the well's centre.
+Cutting the ground alone was not enough, because .art, the 1100px legend
+column, reaches over the well with its own gradient; ground and art now sit
+in one .backdrop box that carries the even-odd hole, gated on
+:not(.no-camera) so the switch fills it back in. (2) The result strip: the
+band's plate moved off .strip into its own .strip-bg box, which carries the
+hole; the plate rides the strip's entrance so the frame never slides off
+it, and the window's studio-preview fill stays outside the clipped box so a
+non-transparent view still reads as an empty frame. .strip .body needed
+position: relative to keep painting over the plate. (3) The portrait
+pillars in Webcam mode with the hand cam on, two faults the probe found and
+the report did not name: .handcam .well.handcam (3 classes) outranked
+.mode-webcam .well (2), so the hand cam well kept painting over its own
+hole; and the two-window clip polygon left its connector and its closing
+line un-retraced, which flipped the even-odd parity and cut a transparent
+wedge out of the pillar along x = 28y/590 (measured 12px at y 257, 18px at
+y 380). A polygon is one path: seams have to be walked back.
+
+Already right, verified: the 1v1 and 2v2 punched plate masks, the dual
+columns, the 2v2 bars, the portrait pillars' player cameras, the rows
+column. The POV card slot, see-through by design with no card staged, also
+reads 0. The showdown takeover's .side .cam boxes read 255, but they carry
+the legend portrait and always have; a comment there claiming they are cut
+out of the band was wrong and has been corrected. Giving that graphic a
+webcam mode is a design call, not this fix.
+
+441 tests pass. Released as 0.45.0.
+
 ### 2026-09-19q (out of band: the slate rework, one layout, switches that work)
 
 Sam: "for sideways studio, let's review the slate. Can we make it look
