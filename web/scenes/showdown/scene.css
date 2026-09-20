@@ -98,13 +98,16 @@ i.dot, .kick i, .ribbon i, .pill i, .prio-pill i { width: calc(8 * var(--u)); he
 .side { position: absolute; bottom: calc(60 * var(--u)); display: flex; flex-direction: column; gap: calc(10 * var(--u)); width: calc(300 * var(--u)); }
 .side.l { left: calc(60 * var(--u)); }
 .side.r { right: calc(60 * var(--u)); align-items: flex-end; text-align: right; }
+/* The boxes at the ends are the players' legend portraits, not windows: the
+   band is solid behind them and each carries its own art, so no camera
+   source can show there. The takeover has no webcam mode to cut them out
+   with, the way the in-game overlays do (audited 2026-09-19). */
 .side .cam { position: relative; width: calc(300 * var(--u)); height: calc(168 * var(--u)); border-radius: calc(6 * var(--u)); overflow: hidden; border: calc(2 * var(--u)) solid var(--ss-frame, #26303c); background: linear-gradient(170deg, var(--ss-ink, #10151d), var(--ss-plate, #0a0d12)); }
 .side.l .cam { border-color: var(--ss-accent-a, #11b6fb); }
 .side.r .cam { border-color: var(--ss-accent-b, #1bef19); }
 .side .cam .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .side .cam .art.hidden { display: none; }
 .side .cam .art.icon-tier { object-fit: contain; padding: calc(20 * var(--u)); }
-/* Webcam sources show through the camera boxes: they are cut out of the band. */
 .no-hands .side .hand, .no-hands .side .label { display: none; }
 .side .name { display: flex; align-items: center; gap: calc(10 * var(--u)); font: 800 calc(32 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #fff); max-width: 100%; }
 .side.r .name { flex-direction: row-reverse; }

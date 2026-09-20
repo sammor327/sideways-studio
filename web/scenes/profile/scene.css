@@ -12,6 +12,23 @@
 .profile.off { display: none; }
 .profile, .profile * { box-sizing: border-box; }
 
+/* The ground and the legend art live in one box, and with the camera on it
+   cuts a real hole where the window is, so the OBS camera source under this
+   browser source shows through on air (even-odd: the frame, then the
+   window's inside, 1422..1838 x 692..988, square under the well's 2px accent
+   border). Before 2026-09-19 the window was only transparent itself, over an
+   opaque ground and the art column, so the camera never showed. */
+.backdrop { position: absolute; inset: 0; }
+.profile:not(.no-camera) .backdrop {
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    calc(1422 * var(--u)) calc(692 * var(--u)),
+    calc(1422 * var(--u)) calc(988 * var(--u)),
+    calc(1838 * var(--u)) calc(988 * var(--u)),
+    calc(1838 * var(--u)) calc(692 * var(--u)),
+    calc(1422 * var(--u)) calc(692 * var(--u)));
+}
+
 .art { position: absolute; right: 0; top: 0; bottom: 0; width: calc(1100 * var(--u)); overflow: hidden; }
 .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
 .art img.hidden { display: none; }

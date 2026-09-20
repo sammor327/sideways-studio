@@ -60,13 +60,19 @@
     calc(28 * var(--u)) calc(120 * var(--u)), calc(28 * var(--u)) calc(395 * var(--u)),
     calc(517 * var(--u)) calc(395 * var(--u)), calc(517 * var(--u)) calc(120 * var(--u)), calc(28 * var(--u)) calc(120 * var(--u)));
 }
+/* Two windows need the seams retraced (2026-09-19): a polygon is one path,
+   so the line that runs from the first window down to the second, and the
+   line that closes the path back to 0 0, are edges like any other. Left
+   once, they flipped the even-odd parity and cut a wedge out of the top
+   left of the pillar. Walked back up the same way, they cancel. */
 .mode-webcam.handcam .pillar.l .pillar-bg {
   clip-path: polygon(evenodd,
     0 0, 100% 0, 100% 100%, 0 100%, 0 0,
     calc(28 * var(--u)) calc(120 * var(--u)), calc(28 * var(--u)) calc(395 * var(--u)),
     calc(517 * var(--u)) calc(395 * var(--u)), calc(517 * var(--u)) calc(120 * var(--u)), calc(28 * var(--u)) calc(120 * var(--u)),
     calc(28 * var(--u)) calc(590 * var(--u)), calc(28 * var(--u)) calc(865 * var(--u)),
-    calc(517 * var(--u)) calc(865 * var(--u)), calc(517 * var(--u)) calc(590 * var(--u)), calc(28 * var(--u)) calc(590 * var(--u)));
+    calc(517 * var(--u)) calc(865 * var(--u)), calc(517 * var(--u)) calc(590 * var(--u)), calc(28 * var(--u)) calc(590 * var(--u)),
+    calc(28 * var(--u)) calc(120 * var(--u)), 0 0);
 }
 .mode-webcam .pillar.r .pillar-bg {
   clip-path: polygon(evenodd,
@@ -133,7 +139,10 @@
 .well.cam { top: calc(120 * var(--u)); }
 .well.handcam { top: calc(590 * var(--u)); display: none; }
 .handcam .well.handcam { display: block; }
-.mode-webcam .well { display: none; }
+/* The hand cam's own rule above outranks a plain `.mode-webcam .well`, so
+   it is named here too: in webcam mode neither well paints, or it would
+   fill the hole cut for it. */
+.mode-webcam .well, .mode-webcam.handcam .well.handcam { display: none; }
 .well-fill { position: absolute; inset: 0; background: linear-gradient(170deg, var(--ss-ink, #10151d), var(--ss-plate, #0a0d12)); }
 .well .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .well .art.hidden { display: none; }

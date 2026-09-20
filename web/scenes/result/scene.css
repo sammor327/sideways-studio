@@ -21,16 +21,36 @@
 
 .strip {
   position: absolute; left: 0; right: 0; bottom: 0; height: calc(300 * var(--u));
-  background: var(--ss-plate, #0a0d12); border-top: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  border-top: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
   display: grid; grid-template-columns: calc(420 * var(--u)) 1fr calc(520 * var(--u));
   opacity: var(--t, 1); transform: translateY(calc((1 - var(--t, 1)) * 320 * var(--u)));
+}
+/* The band's plate, in its own box so it can cut a real hole where the camera
+   window is: on the transparent broadcast URL the OBS camera source under
+   this browser source then shows through, which is the whole point of the
+   well (the strip holds while the players shake hands). Even-odd: the band,
+   then the window's inside, which is the well inset 26px into the last
+   520px column (its 24px inset plus the 2px accent border). Before
+   2026-09-19 the window was only transparent itself, over an opaque band,
+   so the camera never showed. The plate rides the strip's own entrance, so
+   the frame never slides off the hole. */
+.strip-bg {
+  position: absolute; inset: 0;
+  background: var(--ss-plate, #0a0d12);
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    calc(1426 * var(--u)) calc(26 * var(--u)),
+    calc(1426 * var(--u)) calc(100% - 26 * var(--u)),
+    calc(100% - 26 * var(--u)) calc(100% - 26 * var(--u)),
+    calc(100% - 26 * var(--u)) calc(26 * var(--u)),
+    calc(1426 * var(--u)) calc(26 * var(--u)));
 }
 .strip .art { position: relative; overflow: hidden; background: var(--ss-ink, #10151d); }
 .strip .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; }
 .strip .art img.hidden { display: none; }
 .strip .art img.icon-tier { object-fit: contain; padding: 18%; opacity: 0.6; }
 .strip .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, var(--ss-plate, #0a0d12)); }
-.strip .body { padding: calc(34 * var(--u)) calc(40 * var(--u)); display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.strip .body { position: relative; padding: calc(34 * var(--u)) calc(40 * var(--u)); display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .strip .stack { display: flex; gap: calc(12 * var(--u)); align-items: center; }
 .strip .stack .k-chip { font-size: calc(13 * var(--u)); }
 .strip .w { font: 800 calc(34 * var(--u))/1 var(--tes-font); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); margin-top: calc(16 * var(--u)); letter-spacing: calc(2 * var(--u)); }

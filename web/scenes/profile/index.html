@@ -14,12 +14,16 @@
 <body>
 <div class="stage">
   <div class="profile off" id="root">
-    <div class="ground">
-      <div class="g-fill"></div><div class="g-image"></div>
-      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
-      <div class="g-grain"></div><div class="g-dim"></div>
+    <!-- The ground and the legend art in one box, so the camera window cuts
+         one hole through both (scene.css .backdrop). -->
+    <div class="backdrop">
+      <div class="ground">
+        <div class="g-fill"></div><div class="g-image"></div>
+        <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+        <div class="g-grain"></div><div class="g-dim"></div>
+      </div>
+      <div class="art"><img class="hero hidden" id="hero" alt="" draggable="false"></div>
     </div>
-    <div class="art"><img class="hero hidden" id="hero" alt="" draggable="false"></div>
     <div class="card">
       <div class="k-lockup"><img class="logo hidden" id="logo" alt="" draggable="false"><span class="t"><span id="eventName">Sideways Studio</span><small id="roundTitle"></small></span></div>
       <div class="nm" id="name"></div>
