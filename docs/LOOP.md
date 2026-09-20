@@ -214,6 +214,34 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20b (out of band: every graphic's description, in one place)
+
+Sam, with a screenshot of the Graphics list and a box drawn where a
+description should sit: "standardize the descriptions for the graphics to be
+directly underneath and to the left of the on/off button".
+
+Two things were out of line. The .scene-note rule spanned grid-column 2 / -1,
+so a description ran underneath the OFF switch and each one ended wherever its
+text happened to wrap; it is grid-column 2 now, the name's own column, so every
+line starts and ends in the same place down the list. Measured in the panel at
+1500px: all 35 notes start at x 663 and end at 889, ten pixels clear of every
+switch at 899. The cost is width, the switch column plus its gap, about 74px,
+so the longest descriptions gain a line or two.
+
+The other thing was that only 16 of the 35 graphics had a description at all.
+The other 19 were written from the README, the scene markup and a look at each
+graphic on its ?tile= URL with the sample match: the four 1v1 overlays, the POV
+overlay, the hand fan, both 2v2 overlays, the score bug and the arena bug, the
+decklist, the slate, the corner tag, the lower third, the match card, the player
+profile, the bracket, the standings and the result strip.
+
+test/graphics-list.test.js is new and guards both, so a graphic added later
+cannot land in the list without its line: every row carries one note, after its
+switch in the markup, long enough to say something, ending in a full stop and
+with no em dash, and the CSS rule stays in column 2.
+
+444 tests pass. Released as 0.46.0.
+
 ### 2026-09-20a (out of band: every camera window cuts a real hole)
 
 Sam, after 0.44.0's Be right back fix: the same fault on the player

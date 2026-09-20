@@ -6,6 +6,11 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.46.0 (2026-09-20)
+
+- Every graphic in the Graphics list now says what it is. The 19 that had no line (the in-game overlays, the POV overlay, the hand fan, the score bug and the arena bug, the decklist, the slate, the corner tag, the lower third, the match card, the player profile, the bracket, the standings and the result strip) have one, written the way the other graphics' lines already were: what the graphic shows, then where its data comes from or which switch changes it.
+- Those lines all sit in the same place now, under the graphic's name and stopping at its ON/OFF switch. They used to run underneath the switch, so each one ended wherever its text happened to wrap.
+
 ## 0.45.0 (2026-09-20)
 
 - Fix: the player profile's camera window now lets your camera through on air. The window was see-through, but the background and the legend art were drawn behind it, so OBS showed those instead of the camera. Be right back had the same fault and was fixed in 0.44.0.
