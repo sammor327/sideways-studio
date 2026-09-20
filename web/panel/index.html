@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="./panel.css">
 <link rel="stylesheet" href="./lookbuilder.css">
 <link rel="stylesheet" href="./platform.css">
+<link rel="stylesheet" href="./deckeditor.css">
 <link rel="stylesheet" href="./riftatlas.css">
 </head>
 <body>
@@ -22,6 +23,7 @@
     <button type="button" class="view-tab on" role="tab" id="tabStudio" data-view="studio" aria-selected="true">Studio</button>
     <button type="button" class="view-tab" role="tab" id="tabLook" data-view="look" aria-selected="false" tabindex="-1">Look and setup</button>
     <button type="button" class="view-tab" role="tab" id="tabPlatform" data-view="platform" aria-selected="false" tabindex="-1">Tournament platform</button>
+    <button type="button" class="view-tab" role="tab" id="tabDecks" data-view="decks" aria-selected="false" tabindex="-1">Deck editor</button>
   </nav>
   <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">connecting…</span></div>
 </header>
@@ -290,7 +292,7 @@
       <summary><h4 class="section-label">Decks and battlefields</h4></summary>
 
       <div class="field-row" data-field="deck">
-        <span class="row-label" title="One of your saved decks (the deck editor saves them), or paste a list under it. Loading a deck fills that player's three battlefields. With Live game connected, an empty list fills from the RiftAtlas game and keeps up with it (Fill empty decklists).">Deck</span>
+        <span class="row-label" title="One of your saved decks (the Deck editor tab saves them), or paste a list under it. Loading a deck fills that player's three battlefields. With Live game connected, an empty list fills from the RiftAtlas game and keeps up with it (Fill empty decklists).">Deck</span>
         <div class="cell deck-cell" data-side="left"><select id="ldeckPick" aria-label="Player 1 deck"></select><span class="deck-line" id="ldeckLine"></span></div>
         <div class="cell deck-cell" data-side="right"><select id="rdeckPick" aria-label="Player 2 deck"></select><span class="deck-line" id="rdeckLine"></span></div>
       </div>
@@ -1667,7 +1669,7 @@
   <section class="card deck-card foldable" id="deckCard" data-fold="deck" data-size="deck">
     <div class="deck-head fold-head">
       <h2><button type="button" class="fold-btn" aria-expanded="true" aria-controls="deckCard">Decklist</button></h2>
-      <a class="link-btn" href="/decklist/" target="_blank" rel="noopener" title="Paste, check and save decklists, export PNGs, import a deck sheet">Open deck editor</a>
+      <a class="link-btn" href="#decks" title="The Deck editor tab: paste, check and save decklists, export PNGs, import a deck sheet">Open deck editor</a>
     </div>
     <div class="deck-now">
       <span class="deck-now-label preview">Preview</span><strong id="deckPrevName">Nothing loaded</strong>
@@ -1678,7 +1680,7 @@
       <input id="deckFilter" class="hidden" placeholder="Filter…" autocomplete="off">
     </div>
     <div class="deck-chips" id="deckChips"></div>
-    <p class="hint" id="deckLibHint">No saved decks yet. Paste, check and save them in the deck editor, then click one here to load it into preview.</p>
+    <p class="hint" id="deckLibHint">No saved decks yet. Paste, check and save them on the Deck editor tab, then click one here to load it into preview.</p>
     <div class="deck-opts">
       <label class="inline"><input type="checkbox" id="deckBackground" checked> Plate background</label>
       <label class="inline"><input type="checkbox" id="deckSideboard" checked> Sideboard rack</label>
@@ -2103,6 +2105,79 @@
     </div>
     <div class="look-tiles pf-tiles" id="pfTiles"></div>
   </section>
+</div>
+
+
+<!-- The Deck editor (2026-09-20, Sam: "a separate tab at the top, like Look
+     and setup"): the editor that was a page of its own at /decklist/ until
+     then. Prep work rather than a live surface: paste a list, fix the names
+     the card database does not know, save it, and it is a chip here and in
+     the Studio's Decklist card (deckeditor.js). -->
+<div class="deck-view" id="deckView">
+
+<section class="card lib-bar">
+  <div class="lib-top">
+    <h2>Saved decks <span class="muted" id="libCount"></span></h2>
+    <input id="libFilter" placeholder="Filter by deck or player&hellip;" autocomplete="off">
+    <div class="lib-actions">
+      <label class="file-btn" title="A co-stream control panel's Deck List Database sheet, saved as CSV: one deck per column">Import deck sheet (CSV)<input type="file" id="csvFile" accept=".csv,text/csv" hidden></label>
+      <button id="exportAll" title="Renders every saved deck (or every deck the filter shows) to PNG, using each deck's own settings">Export all as PNG</button>
+      <button id="exportCancel" class="hidden">Stop export</button>
+    </div>
+  </div>
+  <div class="lib-chips" id="libChips"></div>
+  <p class="hint" id="libHint">Nothing saved yet. Paste a list below and press SAVE, or import a deck sheet.</p>
+  <p class="hint" id="libStatus"></p>
+  <div class="report hidden" id="report">
+    <div class="report-head">
+      <strong id="reportTitle">Import report</strong>
+      <button id="reportClose" class="clear-mini">Close</button>
+    </div>
+    <ul id="reportList"></ul>
+  </div>
+</section>
+
+<div class="editor-main">
+  <section class="card input-col">
+    <div class="col-head">
+      <h2>Decklist</h2>
+      <div class="row">
+        <button id="loadExample" class="clear-mini">Load example</button>
+        <button id="newDeck" class="clear-mini">New</button>
+      </div>
+    </div>
+    <textarea id="text" spellcheck="false" placeholder="Legend: Diana, Scorn of the Moon&#10;Champion: Diana, Lunari&#10;&#10;Battlefields:&#10;Rockfall Path&#10;&#10;Runes:&#10;7 Chaos&#10;5 Mind&#10;&#10;Main:&#10;3 Stupefy&#10;&hellip;&#10;&#10;Sideboard:&#10;2 Abandon"></textarea>
+    <p class="resolve-status" id="resolveStatus">Waiting for a list.</p>
+    <div class="structured hidden" id="structured"></div>
+    <ul class="warnings" id="warnings"></ul>
+  </section>
+
+  <section class="card preview-col">
+    <div class="col-head">
+      <h2>Preview <span class="muted">1920 &times; 1080, the plate exactly as it airs</span></h2>
+      <div class="row">
+        <label class="inline"><input type="checkbox" id="transparent"> Transparent background</label>
+        <label class="inline"><input type="checkbox" id="hideSideboard"> Hide sideboard</label>
+        <button id="playIntro" class="clear-mini" title="Plays the build-in the plate does when it goes on air">Play build-in</button>
+      </div>
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <div class="preview-frame" id="previewFrame">
+        <iframe id="preview" title="Decklist preview" allowtransparency="true"></iframe>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="generate" class="go">GENERATE PNG</button>
+      <button id="toPreview" class="send">SEND TO PREVIEW</button>
+      <input id="saveName" maxlength="60" placeholder="Save as&hellip;" autocomplete="off">
+      <button id="save">SAVE</button>
+      <button id="copyUrl">COPY STREAM URL</button>
+    </div>
+    <p class="hint" id="actionStatus"></p>
+    <p class="hint one-line" title="PNGs are drawn by the same scene the stream uses, in a hidden copy of Edge or Chrome, and saved in the app's data/decklist folder as well as downloaded.">SEND TO PREVIEW loads this list into preview; TAKE on the Studio tab airs it. COPY STREAM URL gives a browser source that always shows this one deck. PNGs save to <code>data/decklist</code> and download.</p>
+  </section>
+</div>
+
 </div>
 
 <footer>

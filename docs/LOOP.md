@@ -214,6 +214,51 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20c (out of band: the deck editor becomes a tab, 0.47.0)
+
+Sam: "can we make the decklist page a separate tab at the top of the page
+similar to look and setup and tournament platform?" It was a page of its
+own from the start, deliberately: prep work kept off a live surface. That
+reason holds inside one window as well as it did across two, so the editor
+moved onto a fourth tab rather than into the Studio's cards, and the
+argument for it is now the tab itself.
+
+Merged rather than framed. The editor's markup moved into panel/index.html
+under .deck-view, editor.css became panel/deckeditor.css (its body rules
+now the same view switch the other tabs use, its own breakpoint kept) and
+editor.js became panel/deckeditor.js. Only two ids collided across the two
+pages, statusDot and statusText, and both were the header status the panel
+already draws: the module's socket, its status light and its offline
+curtain went with them, because panel.js has all three. What it needs
+instead arrives from panel.js: renderDeckEditor(s) with every state render,
+so a chip can say what is in preview and what is on air, and deckLibrary()
+whenever loadDeckLibrary() refetches, so a save, an import or a delete on
+either surface repaints both. The editor no longer refetches the library
+after its own delete; the server's announcement already comes back through
+that path.
+
+An iframe would have been less work and would have kept /decklist/ alive,
+but it would have left a second socket, a second copy of the library and a
+page that only looked like a tab. /decklist/, /decklist and
+/decklist/index.html now 302 to /panel/#decks, APP_PAGES points the app
+window's Deck editor button at the same place, and the console banner
+prints it, so nothing an operator wrote down in an older release breaks.
+
+The one thing the tab must not do is cost a show anything while it is shut:
+the preview is the decklist scene in an iframe, so its src is set the first
+time the tab is opened, along with the name check and the PNG-export probe.
+Opening it also measures the preview, which cannot be sized while the view
+is display:none.
+
+Verified at 1920x1080 in the pane: all four tabs and the arrow keys wrap
+through them, the example list resolves and draws, SAVE puts a chip on both
+surfaces, SEND TO PREVIEW lands in the preview bank, TAKE lights the chip's
+on-air mark, a library write from outside the tab repaints both chip rows
+with no reload, #decks survives a reload, /decklist/ redirects onto the
+tab, and the small-window fallback (1280x720) still stacks the columns and
+scrolls the page. No element outside .deck-view carries any of the editor's
+class names, so nothing leaked into the other tabs. 449 tests pass.
+
 ### 2026-09-20b (out of band: every graphic's description, in one place)
 
 Sam, with a screenshot of the Graphics list and a box drawn where a

@@ -511,8 +511,8 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
 ## Players' decks, battlefields and the game intro
 
 Match data › **Decks and battlefields** holds each player's own deck and the
-three battlefields they brought. Pick a saved deck (the deck editor saves
-them) or paste a list; loading a deck fills that player's three battlefields
+three battlefields they brought. Pick a saved deck (the Deck editor tab
+saves them) or paste a list; loading a deck fills that player's three battlefields
 from its Battlefields section, or pick them by hand. **Populate from
 decklist** fills that player's legend, champion and three battlefields from
 their list in one press, as if each were picked by hand (the champion is
@@ -759,11 +759,15 @@ app cannot follow. 1v1 rooms only for now.
 
 ## Decklists
 
-The deck editor at http://localhost:4700/decklist/ is where decklists are
-prepared: paste a list, fix any name the card database does not know (it
-offers the closest matches), save it, and it appears as a one-click chip in
-the control panel's Decklist card. Clicking a chip loads that deck into
-preview; TAKE airs it, and the plate builds in on every swap.
+The **Deck editor** tab at the top of the control panel (beside Tournament
+platform) is where decklists are prepared: paste a list, fix any name the
+card database does not know (it offers the closest matches), save it, and it
+appears as a one-click chip there and in the Studio's Decklist card. Clicking
+a chip loads that deck into preview; TAKE airs it, and the plate builds in on
+every swap. Saved decks, the list, the preview and the actions all sit on the
+one tab, and nothing there airs by itself: it is prep work, so the Studio
+stays the live surface. It was a page of its own until 0.47.0; the old
+address still opens the tab.
 
 - **PNG export**: GENERATE PNG in the editor, with or without the plate's
   background (the transparent version has true alpha). Drawn by the same
@@ -791,9 +795,10 @@ npm run decklist:batch -- --csv=... --strict --resume
   reconnect + resync), occlusion-proof seek-clock animation, 1920x1080 stage
   geometry.
 - `web/scenes/<name>/` — one folder per broadcast graphic.
-- `web/panel/` — the operator control panel.
-- `web/decklist/` — the deck editor. `web/shared/` — code the server and the
-  browser both run (the decklist text format).
+- `web/panel/` — the operator control panel, one file per tab (the Studio,
+  the Look and setup builder, the Tournament platform, the Deck editor).
+- `web/shared/` — code the server and the browser both run (the decklist
+  text format).
 - `test/` — unit tests (`npm test`).
 - `docs/SPEC.md` — locked product spec. `docs/LOOP.md` — build protocol and
   roadmap. `docs/PROMPT.md` — session prompt for the next build loop.

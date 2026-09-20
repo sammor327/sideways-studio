@@ -1,12 +1,12 @@
-// Offline curtain for the operator pages (control panel, deck editor).
+// Offline curtain for the control panel, every tab of it.
 //
-// The pages talk to the local app over a WebSocket. When the app is closed
+// The panel talks to the local app over a WebSocket. When the app is closed
 // the socket drops and nothing on the page can work any more: every click
 // would post into the void. So the page says so, in one line, over the whole
 // surface, instead of letting the operator edit a panel that is not
-// connected to anything. Each page's reconnect loop clears the curtain the
-// moment the app is back, so the operator relaunches the exe and carries on
-// with the same tab.
+// connected to anything. The reconnect loop clears the curtain the moment
+// the app is back, so the operator relaunches the exe and carries on with
+// the same browser tab.
 //
 // An update restart is the one planned outage: the app closes and reopens on
 // its own within seconds, so that case waits with a softer line and only

@@ -1,5 +1,7 @@
-// Deck editor: paste, check, fix, save, export. Prep work for an event, kept
-// off the control panel so the panel stays a live surface.
+// The Deck editor tab (2026-09-20, Sam: "a separate tab at the top, like Look
+// and setup"): paste, check, fix, save, export. Prep work for an event, a tab
+// away from the Studio rather than a page of its own, so the Studio stays a
+// live surface and both are one window.
 //
 // The textarea is the single source of truth. The structured view is a lens
 // on the parse of that text, and its edits (quantity steppers, did-you-mean
@@ -7,10 +9,13 @@
 // the two can never disagree and an undo is always "fix the text". Name
 // resolution comes from the server, cached here by the name as typed, so a
 // quantity change never refetches.
+//
+// The page's socket, its status light and its saved decks are panel.js's now:
+// one connection for the window, and the library it already holds arrives
+// through deckLibrary() below rather than being fetched a second time.
 import {
   checkLegality, deckNames, parseDecklist, serializeDecklist, RUNE_DOMAINS,
-} from '/shared/decklist-format.js';
-import { setOffline } from '/shared/offline.js';
+} from '../shared/decklist-format.js';
 
 const $ = (id) => document.getElementById(id);
 const DRAFT_KEY = 'sidewaysStudio.deckEditor.v1';
@@ -263,7 +268,7 @@ function renderStatus() {
   else if (!names.length) message = 'Waiting for a list.';
   else if (unresolved.length) {
     message = `${plural(unresolved.length, 'name')} not in the card database: pick a fix below to unlock GENERATE PNG. `
-      + 'Brand-new cards need "Check for new sets" under Setup on the control panel\'s Look and setup tab.';
+      + 'Brand-new cards need "Check for new sets" under Setup on the Look and setup tab.';
     tone = 'bad';
   } else if (pending.length || resolving) message = `Checking ${plural(pending.length || names.length, 'name')}…`;
   else { message = `All ${plural(names.length, 'name')} found.`; tone = 'good'; }
@@ -455,7 +460,8 @@ window.addEventListener('message', (e) => {
   pushPreview();
 });
 frame.addEventListener('load', () => { frameReady = true; pushPreview(); });
-frame.src = '/scenes/decklist/?embed=1&transparent=1';
+// Its src is set when the tab is first opened (start(), at the foot of this
+// file), not with the panel.
 
 function applyDisplayToggles() {
   $('transparent').checked = !background;
@@ -518,7 +524,7 @@ async function sendToPreview(deck) {
       list: deck.list, background: deck.background, showSideboard: deck.showSideboard, deckName: deck.name,
     } } });
     if (!res.ok) throw new Error(`the server answered ${res.status}`);
-    setStatusLine('actionStatus', `"${deck.name || 'This list'}" is in the control panel's preview. Switch the Decklist graphic on there and press TAKE to air it.`, 'good');
+    setStatusLine('actionStatus', `"${deck.name || 'This list'}" is in preview. Switch the Decklist graphic on the Studio tab and press TAKE to air it.`, 'good');
   } catch (err) {
     setStatusLine('actionStatus', `Could not load it into preview: ${err.message}.`, 'bad');
   }
@@ -540,7 +546,7 @@ $('save').addEventListener('click', async () => {
     saveDraft();
     library = data.library;
     renderEditor();
-    setStatusLine('actionStatus', `Saved as "${name}". It is one click away in the control panel's Decklist card.`, 'good');
+    setStatusLine('actionStatus', `Saved as "${name}". It is one click away in the Studio's Decklist card.`, 'good');
   } catch (err) {
     setStatusLine('actionStatus', `Could not save: ${err.message}.`, 'bad');
   }
@@ -599,14 +605,6 @@ $('newDeck').addEventListener('click', () => {
 
 // --- saved decks -------------------------------------------------------------
 
-async function loadLibrary() {
-  try {
-    const res = await fetch('/api/decklist/library', { cache: 'no-store' });
-    if (res.ok) library = await res.json();
-  } catch { /* retried on the next announcement or reconnect */ }
-  renderEditor();
-}
-
 function filteredLibrary() {
   const f = $('libFilter').value.trim().toLowerCase();
   return library.decks.filter((d) => !f || d.name.toLowerCase().includes(f)
@@ -643,7 +641,7 @@ function renderLibrary() {
     const send = document.createElement('button');
     send.className = 'chip-send';
     send.textContent = '▶';
-    send.title = 'Load into the control panel\'s preview';
+    send.title = 'Load into preview';
     send.addEventListener('click', () => sendToPreview(d));
     const del = document.createElement('button');
     del.className = 'chip-del';
@@ -651,8 +649,9 @@ function renderLibrary() {
     del.title = `Delete "${d.name}"`;
     del.addEventListener('click', async () => {
       if (!confirm(`Delete the saved deck "${d.name}"?`)) return;
+      // The server announces the change and panel.js hands the new list back
+      // through deckLibrary(), which repaints these chips and the Studio's.
       await post('/api/decklist/library', { remove: d.name }).catch(() => {});
-      loadLibrary();
     });
     chip.append(name, send, del);
     return chip;
@@ -777,29 +776,21 @@ $('exportAll').addEventListener('click', async () => {
 });
 $('exportCancel').addEventListener('click', () => { if (exportRun) exportRun.cancelled = true; });
 
-// --- connection: status, library announcements, and the banks for chip marks -
+// --- what panel.js hands over -----------------------------------------------
+//
+// The state, so a chip can say which deck is in preview and which is on air,
+// and the saved decks, which panel.js fetches for the Studio's Decklist card
+// and refetches whenever the server announces a change. Both arrive whether
+// the tab is open or not, so switching to it shows the truth at once.
 
-function setConnected(ok) {
-  $('statusDot').classList.toggle('ok', ok);
-  $('statusText').textContent = ok ? 'connected' : 'disconnected';
-  // The app is closed: saves, checks and exports all go through it, so the
-  // page says so until the reconnect loop gets through.
-  setOffline(!ok);
+export function renderDeckEditor(s) {
+  studio = s;
+  renderLibrary();
 }
 
-function connect() {
-  let ws;
-  try { ws = new WebSocket(`ws://${location.host}/ws`); } catch { setTimeout(connect, 2000); return; }
-  ws.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'state') { studio = msg.state; renderLibrary(); }
-      else if (msg.type === 'library' && msg.version !== library.version) loadLibrary();
-    } catch { /* ignore malformed frames */ }
-  };
-  ws.onopen = () => { setConnected(true); loadLibrary(); };
-  ws.onclose = () => { setConnected(false); setTimeout(connect, 1500); };
-  ws.onerror = () => ws.close();
+export function deckLibrary(lib) {
+  library = lib;
+  renderEditor();
 }
 
 async function checkExport() {
@@ -813,10 +804,32 @@ async function checkExport() {
   renderButtons();
 }
 
+// --- the tab ----------------------------------------------------------------
+//
+// The draft is drawn straight away, so the tab is never blank for a frame,
+// but the work that costs something waits for the tab to be opened: the
+// preview is the decklist scene itself, a page of its own, and a panel that
+// spends the show on the Studio should not be running it. Opening the tab
+// also measures the preview, which cannot be sized while it is display:none.
+
+let started = false;
+function start() {
+  if (started) return;
+  started = true;
+  frame.src = '/scenes/decklist/?embed=1&transparent=1';
+  scheduleResolve();
+  checkExport();
+}
+
+function onView(next) {
+  if (next !== 'decks') return;
+  start();
+  fitPreview();
+}
+
 loadDraft();
 $('text').value = text;
 applyDisplayToggles();
 renderEditor();
-scheduleResolve();
-connect();
-checkExport();
+window.addEventListener('sideways:view', (e) => onView(e.detail));
+onView(document.body.dataset.view || 'studio');

@@ -1,0 +1,172 @@
+/* The Deck editor tab (2026-09-20, web/panel/deckeditor.js; it was a page of
+   its own until then, /decklist/). Like the Studio it fills the window and
+   never scrolls as a page at 1920x1080: the saved-deck bar and the action row
+   stay in sight, the list and its card rows scroll inside the left card, and
+   the preview takes whatever height is left (sized by deckeditor.js, since a
+   16:9 box has to yield to height here, not width). Loaded after panel.css,
+   whose cards, controls and colours it uses. Small windows fall back to a
+   scrolling page below.
+
+   Every rule is scoped to .deck-view: these class names (.actions, .report,
+   .step, .col-head) share a page with the whole panel now, the way platform
+   .css prefixes its own with pf-. */
+
+/* One view at a time, the way the other tabs do it. */
+body[data-view="decks"] .workspace { display: none; }
+body:not([data-view="decks"]) .deck-view { display: none; }
+
+.deck-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.deck-view .card { overflow: hidden; }
+
+/* --- saved decks --- */
+.deck-view .lib-bar { flex: 0 0 auto; overflow: visible; margin: 12px 20px 0; }
+.deck-view .lib-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.deck-view .lib-top h2 { margin-right: 4px; }
+.deck-view .lib-top #libFilter { width: 240px; padding: 5px 9px; font-size: 13px; }
+.deck-view .lib-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+/* Two rows of chips, then the bar scrolls inside itself rather than pushing
+   the editor below the window. */
+.deck-view .lib-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 68px; overflow-y: auto; }
+.deck-view .lib-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #2a323b;
+  border-radius: 999px;
+  background: #1a2027;
+}
+.deck-view .lib-chip button {
+  border: none;
+  background: none;
+  padding: 5px 7px;
+  font-size: 13px;
+}
+.deck-view .lib-chip .chip-name { padding-left: 12px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deck-view .lib-chip .chip-send { color: var(--tes-green); font-weight: 800; }
+.deck-view .lib-chip .chip-del { color: #8b98a5; padding-right: 11px; }
+.deck-view .lib-chip .chip-del:hover { color: #e08b8b; }
+.deck-view .lib-chip.editing { border-color: var(--tes-blue); }
+.deck-view .lib-chip.in-preview { box-shadow: inset 0 0 0 1px var(--tes-green); }
+.deck-view .lib-chip.on-air { border-color: #e33; }
+
+.deck-view .report { border: 1px solid #2a323b; background: #0c0f12; padding: 8px 12px; }
+.deck-view .report-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.deck-view .report ul { list-style: none; margin: 0; padding: 0; max-height: 150px; overflow-y: auto; font-size: 12px; }
+.deck-view .report li { padding: 4px 0; border-bottom: 1px solid #1a2027; }
+.deck-view .report li .ok { color: var(--tes-green); }
+.deck-view .report li .bad { color: #ff6b6b; }
+.deck-view .report li .warn { color: #f0b429; }
+
+/* --- editor columns --- */
+.deck-view .editor-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 480px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 20px 14px;
+}
+.deck-view .input-col, .deck-view .preview-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.deck-view .col-head { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.deck-view .col-head h2 .muted { text-transform: none; letter-spacing: 0; font-weight: 400; margin-left: 6px; }
+.deck-view .col-head input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--tes-blue); }
+/* The list shares the column with its card rows: it gives way to them down
+   to a floor, and each scrolls on its own. */
+.deck-view #text { width: 100%; flex: 1 1 260px; min-height: 160px; resize: none; }
+.deck-view .resolve-status { font-size: 12px; margin: 0; color: #8b98a5; }
+.deck-view .resolve-status.bad { color: #ff6b6b; }
+.deck-view .resolve-status.good { color: var(--tes-green); }
+
+.deck-view .structured {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #1e242b;
+  background: #0c0f12;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.deck-view .structured.hidden { display: none; }
+.deck-view .warnings { flex: 0 0 auto; max-height: 64px; overflow-y: auto; }
+.deck-view .s-section { margin-top: 8px; }
+.deck-view .s-section:first-child { margin-top: 0; }
+.deck-view .s-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8b98a5; text-transform: uppercase; }
+.deck-view .s-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.deck-view .s-row .tag { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #8b98a5; width: 78px; flex: none; }
+.deck-view .s-name.pending { color: #8b98a5; }
+.deck-view .s-name.bad { color: #ff6b6b; }
+.deck-view .s-name.renamed { color: #e8edf1; }
+.deck-view .s-name .as-typed { color: #8b98a5; font-size: 11px; margin-left: 6px; }
+.deck-view .step { display: flex; align-items: center; gap: 3px; flex: none; }
+.deck-view .step button { width: 22px; height: 22px; padding: 0; font-size: 13px; line-height: 1; }
+.deck-view .step output { width: 20px; text-align: center; font-weight: 700; }
+.deck-view .fixes { display: flex; flex-wrap: wrap; gap: 5px; padding: 2px 0 4px 30px; }
+.deck-view .fixes button {
+  border-radius: 999px;
+  border-color: var(--tes-blue);
+  color: var(--tes-blue);
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.deck-view .fixes .none { font-size: 12px; color: #8b98a5; }
+.deck-view .runes-line { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.deck-view .runes-line .bad { color: #ff6b6b; }
+.deck-view .warnings { list-style: none; margin: 0; padding: 0; font-size: 12px; color: #f0b429; }
+.deck-view .warnings li { padding: 2px 0; }
+.deck-view .warnings li::before { content: '\26A0\00a0'; }
+
+.deck-view .preview-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.deck-view .preview-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-width: 100%;
+  border: 1px solid #2a323b;
+  overflow: hidden;
+  background: #000;
+}
+/* The alpha grid shows wherever the plate is transparent. */
+.deck-view .preview-frame.alpha {
+  background: repeating-conic-gradient(#2a2a28 0% 25%, #1c1c1b 0% 50%) 0 0 / 24px 24px;
+}
+.deck-view .preview-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.deck-view .actions { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.deck-view .hint.one-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deck-view .actions button { font-weight: 800; letter-spacing: 1.5px; padding: 10px 16px; }
+.deck-view .actions button.go { background: var(--tes-grad); color: #06110a; border: none; }
+.deck-view .actions button.send { border-color: var(--tes-green); color: var(--tes-green); }
+.deck-view .actions #saveName { width: 200px; }
+.deck-view #actionStatus { min-height: 1.4em; }
+.deck-view #actionStatus.bad { color: #ff6b6b; }
+.deck-view #actionStatus.good { color: var(--tes-green); }
+
+/* Small windows: a scrolling page beats crushed columns. deckeditor.js stops
+   fitting the preview to height here and it falls back to full width. The
+   page scrolls on this tab even in a short wide window, where the Studio's
+   own breakpoint (1500px) has not let it. */
+@media (max-width: 1200px), (max-height: 760px) {
+  body[data-view="decks"] { overflow: auto; }
+  .deck-view { flex: none; }
+  .deck-view .editor-main { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .deck-view .input-col, .deck-view .preview-col { min-height: auto; }
+  .deck-view .preview-wrap { display: block; }
+  .deck-view #text { min-height: 300px; height: 38vh; resize: vertical; }
+  .deck-view .structured { overflow: visible; }
+}

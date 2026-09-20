@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.47.0 (2026-09-20)
+
+- The deck editor is a tab at the top of the control panel, beside Studio, Look and setup and Tournament platform (Sam). No second window and no second address: saved decks, the list, the plate preview and GENERATE PNG are all on the Deck editor tab, one click from the Studio and back.
+- Open deck editor on the Studio's Decklist card turns to that tab instead of opening a page. The app window's Deck editor button, and the old http://localhost:4700/decklist/ address, both land on it too, so a bookmark or a link from an older release still works.
+- A deck saved, imported or deleted on either surface shows on the other at once, and a chip on the tab says which deck is in preview and which is on air, the way the Studio's chips do.
+- The tab does its share of the work only once it is opened: a panel that spends the show on the Studio never loads the editor's preview.
+
 ## 0.46.0 (2026-09-20)
 
 - Every graphic in the Graphics list now says what it is. The 19 that had no line (the in-game overlays, the POV overlay, the hand fan, the score bug and the arena bug, the decklist, the slate, the corner tag, the lower third, the match card, the player profile, the bracket, the standings and the result strip) have one, written the way the other graphics' lines already were: what the graphic shows, then where its data comes from or which switch changes it.

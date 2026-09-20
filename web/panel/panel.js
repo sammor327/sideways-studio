@@ -3,6 +3,7 @@ import {
 } from '../shared/look.js';
 import { renderLookBuilder } from './lookbuilder.js';
 import { renderPlatform } from './platform.js';
+import { deckLibrary, renderDeckEditor } from './deckeditor.js';
 import { renderRiftAtlas } from './riftatlas.js';
 import { setClock } from '../shared/clockcells.js';
 import { setOffline } from '../shared/offline.js';
@@ -689,6 +690,7 @@ function render(s) {
   renderLook(s.theme);
   renderLookBuilder(s);
   renderPlatform(s);
+  renderDeckEditor(s);
   renderRiftAtlas(s);
   renderDecks(s);
   renderSidespot(s);
@@ -2185,7 +2187,7 @@ $('deckFocusNext').addEventListener('click', () => stepDeckFocus(1));
 
 // --- saved decks ---
 //
-// The library is prepared in the deck editor; here each saved deck is one
+// The library is prepared on the Deck editor tab; here each saved deck is one
 // click away from preview. Loading never touches program: TAKE airs it, and
 // the plate builds in on the swap. The library is not part of the bussed
 // state, so it is fetched on its own and refetched when the server announces
@@ -2198,6 +2200,9 @@ async function loadDeckLibrary() {
     const res = await fetch('/api/decklist/library', { cache: 'no-store' });
     if (res.ok) library = await res.json();
     renderDeckLibrary();
+    // The Deck editor tab draws the same list, and saves, imports and
+    // deletes on either surface come back through here.
+    deckLibrary(library);
     if (state) renderDecks(state);
   } catch { /* the next announcement or reconnect retries */ }
 }

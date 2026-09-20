@@ -599,6 +599,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // The deck editor was a page of its own (/decklist/) until 0.47.0, when it
+  // became the panel's Deck editor tab. A bookmark, a link in an older
+  // release's console banner or a second window an operator keeps open lands
+  // on the tab rather than on nothing.
+  if (url.pathname === '/decklist' || url.pathname === '/decklist/' || url.pathname === '/decklist/index.html') {
+    res.writeHead(302, { location: '/panel/#decks' });
+    res.end();
+    return;
+  }
+
   // Static files. The packaged build serves them from the assets embedded in
   // the exe; from source they come off disk, traversal-guarded. Directories
   // resolve to index.html.
@@ -706,7 +716,7 @@ const banner = (base) => {
   console.log('  Built by Sam Morris / Turn\'em Sideways');
   console.log('');
   console.log(`  Control panel:    ${base}/panel/`);
-  console.log(`  Deck editor:      ${base}/decklist/`);
+  console.log(`  Deck editor:      ${base}/panel/#decks`);
 };
 
 // The console-only listing. The app window shows the same list as a rail of

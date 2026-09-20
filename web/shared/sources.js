@@ -41,5 +41,5 @@ export const sourceUrls = (base) => ALL_SOURCES.map((s) => ({ ...s, url: `${base
 // the Open button on the decklist source would quietly open the editor.
 export const APP_PAGES = [
   { key: 'panel', label: 'Control panel', path: '/panel/' },
-  { key: 'deckeditor', label: 'Deck editor', path: '/decklist/' },
+  { key: 'deckeditor', label: 'Deck editor', path: '/panel/#decks' },
 ];
