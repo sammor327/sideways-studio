@@ -214,7 +214,26 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
-### 2026-09-20e (out of band: one button for the event's data, folds on the tile stages, 0.49.0)
+### 2026-09-20f (out of band: 0.49.0 shipped cardless, republished as 0.50.0)
+
+My error, caught by the build's own warning a moment too late. The release
+was built in the worktree ss-paneltidy, and packs/ is gitignored, so it lives
+only in the main checkout: [3/7] printed "packs/cards-bundle.pack is not
+there, so this build ships with NO cards" and the release published anyway,
+105.9 MB against the usual 127.6 MB. An installed copy upgrading to it would
+have lost card search, the pickers, the decklist and every graphic that draws
+a card, on any machine that cannot reach Rift Registry.
+
+Republished as 0.50.0 rather than deleting the tag, so latest points at a good
+build at once and nothing outward-facing had to be destroyed. 0.49.0's section
+says it is withdrawn.
+
+Rule for every release built in a worktree: .carddb-key AND packs/ are both
+gitignored and both live only in repos/sammor327/sideways-studio. Copy both in
+before npm run release, and read [3/7] and the card-art line before letting it
+publish. The key was copied this time; the packs were not.
+
+### 2026-09-20e (out of band: one button for the event's data, folds on the tile stages, 0.49.0, republished as 0.50.0)
 
 Sam, three asks in one message: the Tournament platform's "Standings,
 pairings, legends, matchups and bracket" card "has started to have scope

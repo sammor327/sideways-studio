@@ -6,8 +6,9 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
-## 0.49.0 (2026-09-20)
+## 0.50.0 (2026-09-20)
 
+- Everything 0.49.0 was meant to be. **Do not run 0.49.0**: it was built without its card database, so card search, the pickers, the decklist and every graphic that draws a card came up empty on a machine that could not reach Rift Registry. It was withdrawn within minutes of publishing; this is the same release with the cards in it.
 - The Tournament platform's bottom card is now **Event data**, with one button over it: **Push all event data to preview** fills the standings, the pairings (and with them the Ongoing matches graphic and the Results ticker), the legend distribution, the matchup matrix and the bracket, one after the other, from the event as it stands (Sam). The card used to be five rows of buttons under the heading "Standings, pairings, legends, matchups and bracket".
 - Under the button, one line per thing it loads, each naming the graphics it fills and saying what it would load right now: "265 players across 4 groups", "Grand final · 1 table". The one button is never a leap of faith.
 - Each line keeps its own settings (the standings' group and cut line, the group the legend distribution and matchup matrix count) and its own button, for the one graphic you want to refresh mid-show without disturbing the rest.
@@ -16,6 +17,10 @@ here. Write the section before running `npm run release`.
 - The graphics on the right of the **Look and setup** tab and the **Tournament platform** tab are now in folds: In-game overlays, Bugs cards and plates and Full screen on one, In-game overlays, Match graphics and Event graphics on the other. Click a heading to fold that group away, and the browser remembers which are folded. A folded group's graphics cost nothing: they are not drawn until you open it.
 - Both of those pages now open with **Favorites** at the top: the graphics you starred in the Studio's Graphics list, gathered where they are easy to reach. Starring a graphic anywhere moves it on every tab at once, and unstarring it puts it back where it was listed. A graphic with more than one picture (the four lower thirds, the two showdowns) brings all of them; the Tournament platform holds only the graphics that draw the event's data, so a star on any other one does not show there.
 - The Look and setup tab's Jump to buttons now open the group they jump to, Favorites among them, and picking a graphic to edit opens the fold it sits in.
+
+## 0.49.0 (2026-09-20)
+
+- Withdrawn: built without its card database. Use 0.50.0, which is this release with the cards in it.
 
 ## 0.48.0 (2026-09-20)
 
