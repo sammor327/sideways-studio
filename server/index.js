@@ -22,6 +22,8 @@ import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState
 import { LOOK_SCENES } from '../web/shared/look.js';
 import { initCardDb, cardDbStatus, cardDbBusy, syncCardDb, autoRefreshCardDb, fillFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readFullArt, readIconArt } from './legends.js';
+import { canSaveFrames, legendFrames, saveFrames } from './legendframes.js';
+import { PLACEMENTS } from '../web/shared/legendframe.js';
 import { buildDeck } from './decklist.js';
 import { sampleBank } from './sample.js';
 import { decksFromCsv, fileSlug } from './decklist-csv.js';
@@ -544,6 +546,24 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Legend framing: where each legend's full cutout sits in the large
+  // placements. GET feeds the framer; POST is its Lock in, which rewrites the
+  // baked table in web/shared/legendframe.js (source builds only).
+  if (url.pathname === '/api/legendframes' && req.method === 'GET') {
+    sendJson(res, 200, { frames: legendFrames(), canSave: canSaveFrames(), placements: PLACEMENTS });
+    return;
+  }
+  if (url.pathname === '/api/legendframes' && req.method === 'POST') {
+    try {
+      const { frames } = JSON.parse((await readBody(req, 512 * 1024)).toString('utf8'));
+      const result = await saveFrames(frames);
+      sendJson(res, result.ok ? 200 : 409, result);
+    } catch (err) {
+      sendJson(res, 400, { ok: false, saved: false, error: err.message });
+    }
+    return;
+  }
+
   if (url.pathname === '/api/battlefields' && req.method === 'GET') {
     res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
     res.end(JSON.stringify({ battlefields: listBattlefields() }));
@@ -717,6 +737,7 @@ const banner = (base) => {
   console.log('');
   console.log(`  Control panel:    ${base}/panel/`);
   console.log(`  Deck editor:      ${base}/panel/#decks`);
+  console.log(`  Legend framer:    ${base}/legendframe/`);
 };
 
 // The console-only listing. The app window shows the same list as a rail of

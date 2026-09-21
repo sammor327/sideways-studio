@@ -1,6 +1,6 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
-import { chainLoad, clearArt, cardSteps, fullSteps, markTier } from '../../stage/art.js';
+import { chainLoad, clearArt, cardSteps, fullSteps, fullTierFramer } from '../../stage/art.js';
 import { renderRunes, loadLegendDomains, legendDomains, applyVisibility } from '../../stage/exp.js';
 
 const $ = (id) => document.getElementById(id);
@@ -19,7 +19,7 @@ function loadHero(p, side) {
   const steps = fullSteps(side);
   delete img.parentElement.dataset.tier;
   if (!steps.length) { clearArt(img); return; }
-  chainLoad(img, steps, markTier);
+  chainLoad(img, steps, fullTierFramer(key, 'headtohead'));
 }
 
 // The two key cards: the legend card and the champion's card, from the side's

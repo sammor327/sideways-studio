@@ -42,4 +42,5 @@ export const sourceUrls = (base) => ALL_SOURCES.map((s) => ({ ...s, url: `${base
 export const APP_PAGES = [
   { key: 'panel', label: 'Control panel', path: '/panel/' },
   { key: 'deckeditor', label: 'Deck editor', path: '/panel/#decks' },
+  { key: 'legendframer', label: 'Legend framer', path: '/legendframe/' },
 ];

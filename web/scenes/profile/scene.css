@@ -33,8 +33,17 @@
 .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 15%; }
 .art img.hidden { display: none; }
 .art img.icon-tier { object-fit: contain; padding: 22%; opacity: 0.5; }
-/* The full tier is the whole figure, transparent, over the look's ground. */
-.art img.full-tier { top: calc(48 * var(--u)); height: calc(100% - 48 * var(--u)); object-position: center top; }
+/* The full tier is the whole figure, transparent, over the look's ground.
+   Each legend's cutout is trimmed to its own figure, so its place in this
+   1100px column comes from that legend's frame (web/shared/legendframe.js,
+   tuned in /legendframe/): CONTAINed, stood on the bottom edge, then scaled
+   and nudged about its feet. */
+.art img.full-tier {
+  object-fit: contain;
+  object-position: center bottom;
+  transform-origin: center bottom;
+  transform: translate(calc(var(--lf-x, 0) * 1%), calc(var(--lf-y, 0) * 1%)) scale(var(--lf-scale, 1));
+}
 .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, var(--ss-ink, #0a0d12) 0%, rgba(10, 13, 18, 0.55) 40%, rgba(10, 13, 18, 0.15) 100%), linear-gradient(180deg, transparent 60%, var(--ss-ink, #0a0d12)); }
 
 .card { position: absolute; left: calc(80 * var(--u)); top: calc(90 * var(--u)); width: calc(820 * var(--u)); transform: translateX(calc((1 - var(--t, 1)) * -300 * var(--u))); }

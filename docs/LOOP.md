@@ -214,6 +214,82 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20d (out of band: the legend framer, 0.48.0)
+
+Sam: "we need to place the legends full arts to be correctly positioned. Can
+we create an interface that allows me to adjust the legend art for all
+dimensions and placements quickly and seamlessly then lock that in?" Scoped
+with him to the full tier: the two placements that draw a legend about a
+thousand pixels across, the match card's sides (760x1080) and the player
+profile's art column (1100x1080), with the values shipped in the repo rather
+than kept per install.
+
+The problem measured first, because it decides whether a tool is even the
+answer. bake-legend-full.py trims each cutout to its figure, so the 49 files
+share nothing but their subject: they run from 0.432 wide-to-tall (Annie,
+639x1480) to 1.266 (Darius, 1367x1080), a threefold spread against two fixed
+slots. Both slots were framing all 49 through one rule, `object-fit: cover`
+with `object-position: center top` and 48px of headroom. No rule survives that
+spread, so the answer had to be per legend.
+
+The model is three numbers in the slot's own coordinates: the figure is
+CONTAINed, stood on the slot's bottom edge, then transformed about its feet,
+`translate(x%, y%) scale(scale)`. Percentages are of the SLOT, so a nudge
+means the same thing whatever the legend's shape, and the origin at the feet
+means scale grows a figure the way a person gets taller rather than swelling
+from its middle. The match card's two sides mirror through a `--lf-flip`
+custom property, so framing a legend on the left frames it on the right: an
+offset that pushes a figure away from the centre fade does it on both sides.
+
+Untuned is not a flat default. `autoScale()` stands a legend full height in
+whichever slot it lands in, worked out from its own art (1 for a figure
+taller than the slot, which CONTAIN already fits by height, else the ratio
+between the two shapes). That alone fixes the worst of what was airing before
+anything is framed by hand, which matters because the table ships empty.
+
+The framer is /legendframe/. Both placements are drawn at their real design
+size with `--u: 1px` inside a wrapper scaled by `--k`, so every number in that
+page is the scene's own number and nothing is converted; the scrims are copied
+verbatim from the two scene stylesheets, and the names, cards and the camera
+hole (602..1018 x 692..988 of the profile column) are outlined, because a
+legend framed with its face behind the name plate is framed wrong. Drag to
+move, wheel to size, double-click for auto, arrows to nudge, Ctrl and arrows
+to walk the rail without leaving the art. The two placements are linked by
+default: one adjustment frames both, which is what makes 49 legends tractable.
+
+Lock in POSTs to /api/legendframes, which rewrites only the span between
+FRAMES-START and FRAMES-END in web/shared/legendframe.js. A source file, not a
+data file, and deliberately: the scenes import the table statically, so a
+match card can never air one framing and jump to another once a fetch landed.
+The cost is that Lock in needs a source build, and a packaged one says so
+instead of pretending to save. Work in progress sits in localStorage so a
+framing session survives a reload.
+
+Three bugs found by running it rather than reading it. A drag begun before the
+cutout's load event had been seen seeded the frame from scale 1 instead of the
+autoscale, silently mis-framing the legend with nothing afterwards to say so;
+`naturalOf()` now asks the elements as well as the map, and a drag is refused
+until the size is known. The load handler recorded dimensions against whatever
+legend was selected when it fired, so walking the rail quickly could hand one
+legend's measurements to another; it now keys off the image's own src.
+`fitStages()` had no floor, so a window too narrow to measure produced a
+NEGATIVE scale (-0.0075 at 800px), which the drag maths divides by; every term
+is floored now.
+
+Verified at 1920x1080 with no scrollbars, with ?transparent=1 and ?anim=0, and
+through the reconnect path (server killed with the profile on air, restarted:
+the scene kept its art and its framing and never blanked). getComputedStyle
+throughout: the profile reads `matrix(1.3, 0, 0, 1.3, -293.7, -309.96)` with
+its origin at 550px 1080px for a saved -26.7/-28.7, and the match card's two
+sides read -91.2px and +152px for a left -12 and a right -20, which is the
+mirror. 459 tests, 10 of them new.
+
+Not done, and worth a later loop: the hero tier (the ~10 holder and camera
+windows) and the legend card crop (`crop-legend`, a flat `center 18%` in about
+a dozen places) are still one rule each. The model and the framer both take a
+third placement by adding one entry to PLACEMENTS, so the work is the tuning,
+not the plumbing.
+
 ### 2026-09-20c (out of band: the deck editor becomes a tab, 0.47.0)
 
 Sam: "can we make the decklist page a separate tab at the top of the page

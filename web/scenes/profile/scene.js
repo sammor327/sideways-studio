@@ -1,6 +1,6 @@
 import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock } from '../../stage/seekclock.js';
-import { chainLoad, clearArt, fullSteps, markTier } from '../../stage/art.js';
+import { chainLoad, clearArt, fullSteps, fullTierFramer } from '../../stage/art.js';
 import { renderRunes, loadLegendDomains, legendDomains, applyVisibility, runeSrc } from '../../stage/exp.js';
 import { artSteps, parseDeck } from '../../stage/decks.js';
 
@@ -19,7 +19,7 @@ function loadHero(side) {
   const steps = fullSteps(side);
   delete img.parentElement.dataset.tier;
   if (!steps.length) { clearArt(img); return; }
-  chainLoad(img, steps, markTier);
+  chainLoad(img, steps, fullTierFramer(key, 'profile'));
 }
 
 // "Event · Result" per line; a line with no separator prints as the event.

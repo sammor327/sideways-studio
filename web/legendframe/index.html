@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sideways Studio: Legend framer</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/panel/panel.css">
+<link rel="stylesheet" href="./framer.css">
+</head>
+<body class="framer">
+<header>
+  <div class="brand">
+    <h1>SIDEWAYS <span>STUDIO</span></h1>
+    <p>Legend framer: place each legend's full art in the match card and the player profile, then lock it in</p>
+  </div>
+  <div class="head-right">
+    <a class="link-btn" href="/panel/">Control panel</a>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
+  </div>
+</header>
+
+<main class="framer-body">
+  <section class="card rail" aria-label="Legends">
+    <div class="rail-top">
+      <input id="filter" placeholder="Filter legends&hellip;" autocomplete="off" aria-label="Filter legends">
+      <p class="rail-count" id="railCount"></p>
+    </div>
+    <ul class="legend-list" id="legendList" role="listbox" aria-label="Legends"></ul>
+    <p class="hint rail-hint">Ctrl + &uarr; &darr; moves down the list. A dot means that legend has been framed.</p>
+  </section>
+
+  <section class="card stages" aria-label="Placements">
+    <div class="stages-head">
+      <h2 id="nowName">&nbsp;</h2>
+      <div class="stages-tools">
+        <label class="inline" title="Thirds and a centre line over both placements"><input type="checkbox" id="guides"> Guides</label>
+        <label class="inline" title="Draw the text, cards and camera window that sit over the art, so a face is never framed behind them"><input type="checkbox" id="furniture" checked> Furniture</label>
+        <label class="inline" title="Which side of the match card to frame against. The other side mirrors, so framing one frames both."><input type="checkbox" id="flip"> Right side</label>
+      </div>
+    </div>
+
+    <div class="stage-row">
+      <figure class="stage" data-placement="headtohead">
+        <figcaption>Match card side <span>760 &times; 1080</span></figcaption>
+        <div class="fit" id="fitH2h">
+          <div class="frame h2h" id="frameH2h">
+            <div class="art" id="artH2h"><img id="imgH2h" alt=""></div>
+            <div class="scrim h2h-scrim"></div>
+            <div class="edge h2h-edge"></div>
+            <div class="ghosts h2h-ghosts">
+              <div class="g-cards"><i></i><i></i></div>
+              <div class="g-id"><b></b><s></s></div>
+            </div>
+            <div class="guide-lines"></div>
+          </div>
+        </div>
+      </figure>
+
+      <figure class="stage" data-placement="profile">
+        <figcaption>Profile art column <span>1100 &times; 1080</span></figcaption>
+        <div class="fit" id="fitProfile">
+          <div class="frame profile" id="frameProfile">
+            <div class="art" id="artProfile"><img id="imgProfile" alt=""></div>
+            <div class="scrim profile-scrim"></div>
+            <div class="ghosts profile-ghosts">
+              <div class="g-card"></div>
+              <div class="g-cam"></div>
+            </div>
+            <div class="guide-lines"></div>
+          </div>
+        </div>
+      </figure>
+    </div>
+
+    <p class="hint stage-hint">Drag the art to move it, scroll to resize it, double-click to send it back to auto. With a placement focused: arrows nudge (shift for a bigger step), <kbd>[</kbd> <kbd>]</kbd> resize, <kbd>0</kbd> auto.</p>
+  </section>
+
+  <section class="card controls" aria-label="Frame">
+    <h2>Frame</h2>
+    <p class="muted" id="frameSource"></p>
+
+    <label class="inline linkrow" title="One frame for both placements. Unlink to give the match card and the profile their own numbers."><input type="checkbox" id="link" checked> Both placements share one frame</label>
+
+    <div class="frame-sets" id="frameSets"></div>
+
+    <div class="controls-foot">
+      <button type="button" class="btn" id="autoBtn" title="Back to the scale that stands this legend full height, with no offset">Auto</button>
+      <button type="button" class="btn" id="copyBtn" title="Use the legend above this one's frame">Copy previous</button>
+    </div>
+
+    <div class="lockin">
+      <p class="muted" id="saveNote"></p>
+      <button type="button" class="btn primary" id="saveBtn">Lock in</button>
+    </div>
+  </section>
+</main>
+
+<script type="module" src="./framer.js"></script>
+</body>
+</html>

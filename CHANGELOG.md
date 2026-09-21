@@ -6,6 +6,13 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.48.0 (2026-09-20)
+
+- Every legend's full art can now be placed by hand, in a new Legend framer (the button on Setup, or http://localhost:4700/legendframe/). Pick a legend, drag its art where you want it in the match card and in the player profile, scroll to size it, then Lock in.
+- The two placements are linked to start with, so one adjustment frames both; unlink when a legend wants a different place in each. Ctrl and the arrow keys walk the legend list without leaving the art, and a dot beside each name says which legends have been framed.
+- What you frame against is what airs: both placements are drawn at their real size with the same fades over them, and with the names, the cards and the camera window outlined so a face is never framed behind them.
+- Legends nobody has framed no longer take whatever a single rule gave them. Each one now stands full height in whichever placement it lands in, worked out from that legend's own art, so a wide legend like Darius is not cropped to his shoulders and a tall one like Annie is not left floating.
+
 ## 0.47.0 (2026-09-20)
 
 - The deck editor is a tab at the top of the control panel, beside Studio, Look and setup and Tournament platform (Sam). No second window and no second address: saved decks, the list, the plate preview and GENERATE PNG are all on the Deck editor tab, one click from the Studio and back.

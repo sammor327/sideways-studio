@@ -1,6 +1,7 @@
 // Image loading shared by the overlays: fallback chains and art crops.
 // (broadcast-line-handoff §3.7: every image slot gets a fallback chain and
 // never shows a broken img glyph on program output.)
+import { DEFAULT_FRAME, FRAMES, PLACEMENTS, applyFrame, autoScale, frameFor } from '../shared/legendframe.js';
 
 // Try each step's src in order; on the first that loads, show the image with
 // that step's class. Running out hides the image, leaving whatever the slot
@@ -26,12 +27,14 @@ export function chainLoad(img, steps, onShow) {
   next();
 }
 
-// Clear a slot: no handlers left to fire late, no src, hidden.
+// Clear a slot: no handlers left to fire late, no src, hidden, and no framing
+// left over to move the next legend that lands here.
 export function clearArt(img) {
   img.onerror = null;
   img.onload = null;
   img.className = 'art hidden';
   img.removeAttribute('src');
+  applyFrame(img, null);
 }
 
 // The featured card: full art, then the prefetched thumb.
@@ -92,6 +95,25 @@ export function fullSteps(side) {
 export function markTier(img) {
   const tier = img.classList.contains('full-tier') ? 'full' : (img.classList.contains('icon-tier') ? 'icon' : 'hero');
   if (img.parentElement) img.parentElement.dataset.tier = tier;
+}
+
+// The onShow for a large legend placement: mark the tier, and when the full
+// cutout is what loaded, put that legend's framing on it (web/shared/
+// legendframe.js). A legend nobody has framed yet gets the scale that stands
+// it full height in the slot, so it reads as a decision rather than as art
+// that missed. The other tiers carry no framing: the hero crop and the icon
+// are already sized for their slot by the scene's own CSS.
+export function fullTierFramer(slug, placement) {
+  return (img) => {
+    markTier(img);
+    if (!img.classList.contains('full-tier')) { applyFrame(img, null); return; }
+    const slot = PLACEMENTS[placement];
+    const tuned = frameFor(FRAMES, slug, placement);
+    applyFrame(img, tuned || {
+      ...DEFAULT_FRAME,
+      scale: autoScale(img.naturalWidth, img.naturalHeight, slot.w, slot.h),
+    });
+  };
 }
 
 // A battlefield strip: full art, then the thumb. Battlefield art is stored

@@ -112,7 +112,8 @@ player profile draw from `SIDEWAYS_LEGEND_FULL_DIR`. The full figures are
 baked from FlipDeck's high-resolution legend PNGs with
 `py scripts/bake-legend-full.py` (about 8 MB for 49 legends); rerun it when a
 new legend's art arrives, and add an alias there if its filename does not
-reduce to the champion's name.
+reduce to the champion's name. A new legend then wants framing: see
+[Legend framer](#legend-framer) below.
 
 The exe is not code-signed. Locally built it runs without complaint, but a
 copy sent over the internet will trip SmartScreen ("Windows protected your
@@ -183,6 +184,40 @@ picker shows each card's art, ‹ › step through the list, and Highlight
 on/off flicks it away and back with the card kept), and since 2026-09-19
 the standings, the pairings and the legend distribution (below). All are
 cues like the clock: they act on air at once, no TAKE needed.
+
+## Legend framer
+
+The full-figure cutouts are trimmed to the figure, so no two are the same
+shape: the 49 of them run from 0.432 wide-to-tall (Annie, 639x1480) to 1.266
+(Darius, 1367x1080). The two placements that draw a legend about a thousand
+pixels across are fixed shapes by comparison, the match card's sides at
+760x1080 and the player profile's art column at 1100x1080, so no single rule
+frames all of them.
+
+Each legend therefore carries its own framing, and the **Legend framer**
+(`/legendframe/`, or the button on the control panel's Setup card) is where it
+is decided. Pick a legend on the left, and both placements are drawn at their
+real size with the same fades that air over them, plus outlines where the
+names, the cards and the camera window sit. Drag the art to move it, scroll to
+size it, double-click to send it back to auto. With a placement focused the
+arrow keys nudge it (hold shift for a bigger step), `[` and `]` size it and
+`0` is auto; Ctrl with the arrow keys walks the list without leaving the art.
+
+The two placements are linked to begin with, so one adjustment frames both.
+Unlink them for a legend that wants a different place in each. The match
+card's two sides mirror, so framing a legend on the left frames it on the
+right as well: an offset that pushes a figure away from the centre fade pushes
+it away from the centre fade on the other side too.
+
+**Lock in** writes the table into `web/shared/legendframe.js`, which is what
+the scenes import. That is a source file, so Lock in only works when the app
+runs from source; a packaged build says so rather than pretending to save.
+Work in progress is kept in the browser as you go, so a framing session
+survives a reload.
+
+A legend nobody has framed is not left to a flat default: it is scaled to
+stand full height in whichever placement it lands in, worked out from its own
+art. That is the fallback, and it is usually close enough to air.
 
 ## Looks
 

@@ -1,0 +1,237 @@
+/* Legend framer. Three columns that fill the window and never scroll as a
+   page: the legend rail scrolls inside itself, the two placements take the
+   height that is left, and the frame controls sit on the right.
+
+   The placements are drawn at their real design size (760x1080 and 1100x1080
+   with --u: 1px) inside a wrapper that scales them down to fit, so every
+   number in here is the scene's own number and nothing has to be converted.
+   The art, the scrims and the furniture are copied from the scenes'
+   stylesheets: what you frame against is what airs. Keep them in step with
+   web/scenes/headtohead/scene.css and web/scenes/profile/scene.css. */
+
+body.framer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.framer header { flex: 0 0 auto; background: #0c0f12; }
+.head-right { display: flex; align-items: center; gap: 16px; }
+
+.framer-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) 280px;
+  gap: 12px;
+  padding: 10px 20px 14px;
+}
+.framer .card { overflow: hidden; }
+
+/* --- the legend rail --- */
+.rail { gap: 8px; }
+.rail-top { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+.rail-top input { width: 100%; box-sizing: border-box; }
+.rail-count { margin: 0; font-size: 12px; color: #8b98a5; }
+.rail-hint { flex: 0 0 auto; }
+
+.legend-list { list-style: none; margin: 0; padding: 0; flex: 1; min-height: 0; overflow-y: auto; }
+.legend-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  font-size: 13px;
+  color: #c4ced8;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.legend-list li:hover { background: #171c22; }
+.legend-list li.on { background: #1a2129; border-left-color: var(--tes-blue); color: #e8edf1; }
+.legend-list li.noart { color: #6b7681; cursor: default; }
+.legend-list li.noart:hover { background: none; }
+.legend-list .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.legend-list .dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a323b;
+}
+.legend-list li.framed .dot { background: var(--tes-green); }
+.legend-list li.dirty .dot { background: var(--tes-blue); }
+.legend-list li.noart .dot { background: none; border: 1px solid #39424c; }
+
+/* --- the placements --- */
+.stages { gap: 8px; }
+.stages-head { display: flex; align-items: baseline; gap: 16px; flex: 0 0 auto; flex-wrap: wrap; }
+.stages-head h2 { color: #e8edf1; font-size: 15px; letter-spacing: 1px; }
+.stages-tools { margin-left: auto; display: flex; gap: 14px; }
+.stages-tools .inline { flex-direction: row; align-items: center; gap: 5px; font-size: 12px; }
+
+.stage-row { flex: 1; min-height: 0; display: flex; gap: 14px; justify-content: center; align-items: flex-start; }
+.stage { margin: 0; display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.stage figcaption {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: #8b98a5;
+  display: flex;
+  gap: 8px;
+}
+.stage figcaption span { color: #5d6874; }
+.stage-hint { flex: 0 0 auto; }
+.stage-hint kbd {
+  background: #1a2027;
+  border: 1px solid #2a323b;
+  border-radius: 3px;
+  padding: 0 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+/* The scaled wrapper: framer.js sets its size and the frame's --k. */
+.fit { position: relative; overflow: hidden; background: #080b0e; border: 1px solid #1e242b; }
+.fit:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 1px; }
+.frame {
+  --u: 1px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  transform: scale(var(--k, 1));
+  overflow: hidden;
+  cursor: grab;
+  background: #0a0d12;
+}
+.fit.dragging .frame { cursor: grabbing; }
+.frame.h2h { width: 760px; height: 1080px; }
+.frame.profile { width: 1100px; height: 1080px; }
+
+/* The art slot and the full-tier rule, verbatim from the scenes. */
+.frame .art { position: absolute; inset: 0; overflow: hidden; }
+.frame .art img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  transform-origin: center bottom;
+  transform: translate(calc(var(--lf-x, 0) * var(--lf-flip, 1) * 1%), calc(var(--lf-y, 0) * 1%)) scale(var(--lf-scale, 1));
+}
+.frame .art img.hidden { display: none; }
+
+.frame .scrim { position: absolute; inset: 0; pointer-events: none; }
+.h2h-scrim { background: linear-gradient(180deg, rgba(10, 13, 18, 0.15), #0a0d12 78%); }
+.profile-scrim {
+  background:
+    linear-gradient(90deg, #0a0d12 0%, rgba(10, 13, 18, 0.55) 40%, rgba(10, 13, 18, 0.15) 100%),
+    linear-gradient(180deg, transparent 60%, #0a0d12);
+}
+/* The match card's inner edge fades into the centre column; it swaps sides
+   with the Right side switch, the way the scene's .side.l / .side.r do. */
+.h2h-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 220px;
+  right: 0;
+  background: linear-gradient(90deg, transparent, #0a0d12);
+  pointer-events: none;
+}
+.flipped .h2h-edge { right: auto; left: 0; background: linear-gradient(270deg, transparent, #0a0d12); }
+
+/* What sits over the art: outlines only, so the art stays readable while you
+   frame it. Positions are the scenes' own. */
+.ghosts { position: absolute; inset: 0; pointer-events: none; }
+.ghosts.off { display: none; }
+.ghosts i, .ghosts b, .ghosts s, .ghosts > div {
+  position: absolute;
+  border: 1px dashed rgba(17, 182, 251, 0.5);
+  background: rgba(10, 13, 18, 0.25);
+  display: block;
+}
+.h2h-ghosts .g-cards { left: 80px; bottom: 470px; width: 312px; height: 210px; border: none; background: none; }
+.flipped .h2h-ghosts .g-cards { left: auto; right: 80px; }
+.h2h-ghosts .g-cards i { top: 0; width: 150px; height: 210px; }
+.h2h-ghosts .g-cards i:first-child { left: 0; }
+.h2h-ghosts .g-cards i:last-child { left: 162px; }
+.h2h-ghosts .g-id { left: 80px; bottom: 120px; width: 620px; height: 200px; border: none; background: none; }
+.flipped .h2h-ghosts .g-id { left: auto; right: 80px; }
+.h2h-ghosts .g-id b { left: 0; right: 0; bottom: 60px; height: 110px; }
+.h2h-ghosts .g-id s { left: 0; width: 300px; bottom: 0; height: 40px; }
+
+/* The profile's card overlaps the art column's left edge by 80px, and with
+   the camera on the backdrop is cut away at 602..1018 x 692..988 of this
+   column, so nothing of the legend shows there at all. */
+.profile-ghosts .g-card { left: 0; top: 90px; width: 80px; height: 810px; }
+.profile-ghosts .g-cam {
+  left: 602px;
+  top: 692px;
+  width: 416px;
+  height: 296px;
+  border-style: solid;
+  border-color: var(--tes-green);
+  background: rgba(8, 12, 18, 0.72);
+}
+
+.guide-lines { position: absolute; inset: 0; pointer-events: none; display: none; }
+.guides-on .guide-lines { display: block; }
+.guide-lines::before, .guide-lines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+}
+.guide-lines::before {
+  background-image:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px);
+  background-size: 100% 100%;
+  background-position: 33.33% 0, 66.66% 0, 0 33.33%, 0 66.66%;
+}
+.guide-lines::after {
+  background-image: linear-gradient(90deg, rgba(17, 182, 251, 0.55) 1px, transparent 1px);
+  background-size: 100% 100%;
+  background-position: 50% 0;
+}
+
+/* --- the frame controls --- */
+.controls { gap: 10px; }
+.controls .muted { font-size: 12px; margin: 0; }
+.linkrow { flex-direction: row; align-items: center; gap: 6px; font-size: 12px; }
+
+.frame-sets { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.frame-set { display: flex; flex-direction: column; gap: 7px; }
+.frame-set h3 {
+  margin: 0;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: #8b98a5;
+}
+.frame-set.empty { opacity: 0.45; }
+.ctl { display: grid; grid-template-columns: 22px minmax(0, 1fr) 56px; align-items: center; gap: 7px; }
+.ctl label { font-size: 11px; color: #8b98a5; text-transform: uppercase; }
+.ctl input[type="range"] { width: 100%; min-width: 0; accent-color: var(--tes-blue); }
+.ctl input[type="number"] { width: 100%; box-sizing: border-box; padding: 4px 5px; font-size: 12px; }
+
+.controls-foot { display: flex; gap: 8px; flex: 0 0 auto; }
+.controls-foot .btn { flex: 1; font-size: 12px; padding: 6px 4px; }
+
+.lockin { flex: 0 0 auto; display: flex; flex-direction: column; gap: 7px; border-top: 1px solid #1e242b; padding-top: 10px; }
+.lockin .btn { width: 100%; }
+.btn.primary { background: var(--tes-grad); color: #06110a; border: none; font-weight: 700; }
+.btn.primary:disabled { background: #1a2027; color: #8b98a5; }
+
+@media (max-width: 1500px) {
+  .framer-body { grid-template-columns: 200px minmax(0, 1fr) 250px; }
+}
+@media (max-width: 1200px) {
+  body.framer { overflow: auto; height: auto; min-height: 100%; }
+  .framer-body { grid-template-columns: 1fr; }
+  .stage-row { flex-wrap: wrap; }
+}
