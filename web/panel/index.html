@@ -80,6 +80,28 @@
       <label class="inline" title="From game 2 on: a card a player sided in (their game 1 deck, or the list in Match data, holds fewer copies of it) that turns up in their hand after turn 1 is spotted, and the Sideboard card spotted graphic flies it in while that graphic is on air."><input type="checkbox" id="raSpot"> Spot sideboard cards</label>
       <label class="inline" title="The reader runs out of sight. Switch this on to watch the casting studio it is reading, in its own window."><input type="checkbox" id="raShow"> Show the RiftAtlas window</label>
     </div>
+    <!-- The between-games run (2026-09-20, moved here 2026-09-20): a game
+         ending is what starts it, and this fold is where a game is watched,
+         so the button sits with the game rather than with TAKE. It needs no
+         RiftAtlas connection: it drives the graphics either way. -->
+    <h5 class="ra-sub">Between games</h5>
+    <div class="run-box" id="runBox">
+      <div class="run-head"><span class="run-now" id="runNow">Off</span><span class="run-hint-inline" id="runHint">Move the game wins, then press Run.</span></div>
+      <div class="run-steps" id="runSteps">
+        <span data-step="gamewin">Game victory</span>
+        <span data-step="sideboard">Sideboards</span>
+        <span data-step="intro">Game intro</span>
+      </div>
+      <div class="run-btns">
+        <button id="runStart" class="run-go" title="Move the game wins first, then press this: the game victory goes up naming whoever went ahead, the sideboards follow, and the game intro closes the sequence once both battlefields for the next game are typed.">Run</button>
+        <button id="runNext" title="Skip to the next step now. Use it when a player keeps the same battlefield, which the run cannot tell from nobody having chosen yet.">Next</button>
+        <button id="runStop" title="Stop the run and take its graphics down. Nothing else on air is touched.">Stop</button>
+      </div>
+      <div class="run-holds">
+        <label class="inline" title="Seconds the game victory holds before the sideboards come in.">Victory <input type="number" id="runWinHold" min="0" max="60" step="1"></label>
+        <label class="inline" title="Seconds the game intro holds before it goes out.">Intro <input type="number" id="runIntroHold" min="0" max="60" step="1"></label>
+      </div>
+    </div>
     <h5 class="ra-sub">Cards played</h5>
     <div class="ra-cards" id="raCards"></div>
   </details>
@@ -809,28 +831,7 @@
   <div class="transition-col">
     <button id="takeBtn" class="take" title="TAKE puts preview on air. CLEAR PROGRAM hides every graphic on air, scores stay. CLEAR PREVIEW takes every graphic out of preview.">TAKE</button>
     <button id="clearBtn" class="clear" title="Hides every graphic on air, scores stay. Preview is untouched, so TAKE puts it back.">CLEAR PROGRAM</button>
-    <button id="clearPreviewBtn" class="clear clear-preview" title="Takes every graphic out of preview, data kept. Nothing on air changes until TAKE.">CLEAR PREVIEW</button>
-    <!-- The between-games run (2026-09-20): one button as a game ends,
-         and the sequence drives itself from there. -->
-    <div class="run-box" id="runBox">
-      <div class="run-head"><span class="run-label">Between games</span><span class="run-now" id="runNow">Off</span></div>
-      <div class="run-steps" id="runSteps">
-        <span data-step="gamewin">Game victory</span>
-        <span data-step="sideboard">Sideboards</span>
-        <span data-step="intro">Game intro</span>
-      </div>
-      <div class="run-btns">
-        <button id="runStart" class="run-go" title="Move the game wins first, then press this: the game victory goes up naming whoever went ahead, the sideboards follow, and the game intro closes the sequence once both battlefields for the next game are typed.">Run</button>
-        <button id="runNext" title="Skip to the next step now. Use it when a player keeps the same battlefield, which the run cannot tell from nobody having chosen yet.">Next</button>
-        <button id="runStop" title="Stop the run and take its graphics down. Nothing else on air is touched.">Stop</button>
-      </div>
-      <div class="run-holds">
-        <label class="inline" title="Seconds the game victory holds before the sideboards come in.">Victory <input type="number" id="runWinHold" min="0" max="60" step="1"></label>
-        <label class="inline" title="Seconds the game intro holds before it goes out.">Intro <input type="number" id="runIntroHold" min="0" max="60" step="1"></label>
-      </div>
-      <span class="hint" id="runHint">Move the game wins, then press Run.</span>
-    </div>
-    <div class="onair-list preview-list hidden" id="previewList">
+    <button id="clearPreviewBtn" class="clear clear-preview" title="Takes every graphic out of preview, data kept. Nothing on air changes until TAKE.">CLEAR PREVIEW</button>    <div class="onair-list preview-list hidden" id="previewList">
       <span class="onair-list-label">In preview</span>
       <div class="air-rows" id="previewRows"></div>
     </div>

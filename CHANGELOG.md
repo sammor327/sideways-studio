@@ -6,6 +6,10 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.54.0 (2026-09-20)
+
+- The **Between games** block has moved from under the CLEAR buttons to the foot of Match data's **Live game** fold, above Cards played (Sam). A game ending is what starts the run, and that fold is where a game is watched. It still needs no RiftAtlas connection: the run drives the graphics whether or not one is connected, and nothing about how it works has changed.
+
 ## 0.53.0 (2026-09-20)
 
 - **Three new graphics for the end of something.** **Game victory** is a plate across the game window when one game of a series ends: the winner's legend card, the game number, their name and legend, and the series tally with a pip for every game it takes. **Match victory** is the full frame when the series ends: the winner's legend figure across the right, their legend card, name, legend, games, points and best of on a card down the left, who they beat and where they go next. **Tournament champion** is the last graphic of the event: the champion and the runner up side by side with both legends' cards, their names, legends and records, and the final score between them. Turn **Decklists** on under Graphic features and both finalists' main decks open under them.

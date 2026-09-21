@@ -180,9 +180,11 @@ column from the bottom.
 
 ### Between games (the run)
 
-Under the clears is the **Between games** block, which plays the sequence
-a match has between every game so the operator does not (0.53.0). Move the
-game wins as a game ends, press **Run**, and:
+At the foot of Match data's **Live game** fold is the **Between games**
+block, which plays the sequence a match has between every game so the
+operator does not (0.53.0; it sat under the clears until 0.54.0). It needs
+no RiftAtlas connection: it drives the graphics whether or not one is up.
+Move the game wins as a game ends, press **Run**, and:
 
 1. the **game victory** goes up, naming whoever went ahead, and holds for
    **Victory** seconds (6 by default);

@@ -714,10 +714,12 @@ function render(s) {
 
 // --- the between-games run (2026-09-20) ---
 //
-// Show transport, not a graphic's option, so it sits with TAKE: one press
-// as a game ends and the game victory, the sideboards and the game intro
-// follow each other without another click. The panel only asks for it and
-// draws where it has got to; the sequence itself is the server's
+// One press as a game ends and the game victory, the sideboards and the
+// game intro follow each other without another click. It sat with TAKE at
+// first and now sits at the foot of Match data's Live game fold (Sam),
+// which is where a game is watched; it needs no RiftAtlas connection, and
+// drives the graphics whether or not one is up. The panel only asks for the
+// run and draws where it has got to; the sequence itself is the server's
 // (server/state.js, advanceRun), so every panel window and every browser
 // source sees the same step at the same moment.
 const RUN_LABELS = { gamewin: 'Game victory', sideboard: 'Sideboards', intro: 'Game intro' };

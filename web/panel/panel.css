@@ -1305,13 +1305,14 @@ button.focus-chip.gone { opacity: 0.55; font-style: italic; }
 .mx-mini .dim { opacity: 0.4; }
 .focus-chips .focus-chip .lt { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #1a2027; font-size: 11px; flex: none; }
 
-/* The between-games run (2026-09-20): a block under the TAKE buttons,
-   because it is show transport rather than one graphic's option. The three
-   steps light as the run reaches them, so the operator can see where it is
-   without reading the monitors. */
+/* The between-games run (2026-09-20). It sat under the TAKE buttons at
+   first; it now lives at the foot of Match data's Live game fold (Sam),
+   because a game ending is what starts it and that fold is where a game is
+   watched. It needs no RiftAtlas connection: the run drives the graphics
+   either way. The three steps light as the run reaches them, so the
+   operator can see where it is without reading the monitors. */
 .run-box { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #0c0f12; border: 1px solid #1e242b; }
-.run-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.run-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #8b98a5; }
+.run-head { display: flex; align-items: baseline; gap: 8px; }
 .run-now { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #5b6874; }
 .run-box.on .run-now { color: var(--tes-green); }
 .run-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
@@ -1338,4 +1339,4 @@ button.focus-chip.gone { opacity: 0.55; font-style: italic; }
 .run-holds { display: flex; gap: 10px; }
 .run-holds label { font-size: 11px; color: #8b98a5; }
 .run-holds input { width: 46px; padding: 2px 4px; font-size: 12px; }
-#runHint { font-size: 10.5px; }
+.run-hint-inline { flex: 1 1 auto; min-width: 0; font-size: 10.5px; line-height: 1.3; color: #8b98a5; }
