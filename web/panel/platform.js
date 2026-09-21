@@ -375,7 +375,9 @@ $('pfStandings').addEventListener('click', () => {
 $('pfLegends').addEventListener('click', () => {
   const group = Number($('pfLegendGroup').value) || 0;
   loadExtra({ kind: 'legends', group },
-    (res) => `The legend distribution${group ? ` for group ${group}` : ''} is in preview: ${res.players} players on ${res.legends} legends, ${res.lead} the most played${res.unknown ? ` (${res.unknown} with no legend on TopDeck left out)` : ''}. TAKE to air.`);
+    (res) => `The legend distribution${group ? ` for group ${group}` : ''} is in preview: ${res.players} players on ${res.legends} legends, ${res.lead} the most played${res.unknown ? ` (${res.unknown} with no legend on TopDeck left out)` : ''}.`
+      + `${res.cut ? ` Top cut: ${res.cut} players on ${res.cutLegends} legends, ${res.cutLine.toLowerCase()}; switch to it under Graphic features.` : ' No top cut yet: it comes with the bracket, or once a Swiss round has been played.'}`
+      + ' TAKE to air.');
 });
 // The matchup matrix (2026-09-19): the same group choice as the legend
 // distribution, since the two tell one story.

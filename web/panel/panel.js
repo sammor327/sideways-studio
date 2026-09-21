@@ -15,7 +15,7 @@ import { rowsDocks } from '../shared/rowsdock.js';
 import { TAG_ANCHORS, TAG_FRAME, anchorHost, anchorLabel, tagPlace } from '../shared/anchor.js';
 import { SCENE_SOURCES } from '../shared/sources.js';
 import {
-  ROLL_SPEEDS, legendSlices, legendsFromStandings, legendsToText, parseLegendLines, resolveLegend, rollAt, rollElapsed, sliceKey, splitLegend, tableOverflow,
+  CUT_PERCENT, ROLL_SPEEDS, cutTotals, hasCut, legendSlices, legendsFromStandings, legendsToText, parseLegendLines, resolveLegend, rollAt, rollElapsed, sliceKey, splitLegend, tableOverflow,
 } from '../shared/legendstats.js';
 import { standingsStep, standingsView } from '../shared/standings.js';
 import {
@@ -3793,7 +3793,9 @@ function legendSummary(ls) {
   const rows = ls.rows || [];
   if (!rows.length) return '';
   const players = rows.reduce((n, r) => n + (r.players || 0), 0);
-  return `${plural(rows.length, 'legend')}${players ? `, ${plural(players, 'player')}` : ''}${ls.total > players ? ` of ${ls.total}` : ''}.`;
+  const made = cutTotals(ls);
+  const cut = made.cut ? ` Top cut: ${plural(made.cut, 'player')} on ${plural(rows.filter((r) => (r.cut || 0) > 0).length, 'legend')}.` : '';
+  return `${plural(rows.length, 'legend')}${players ? `, ${plural(players, 'player')}` : ''}${ls.total > players ? ` of ${ls.total}` : ''}.${cut}`;
 }
 {
   let timer = null;
@@ -3830,7 +3832,7 @@ function legendSummary(ls) {
   $('legendTotal').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(flush, 400); });
   $('legendTotal').addEventListener('blur', flush);
 }
-for (const [id, field] of [['legendLabel', 'label'], ['legendNote', 'note']]) {
+for (const [id, field] of [['legendLabel', 'label'], ['legendNote', 'note'], ['legendCutLabel', 'cutLabel']]) {
   const el = $(id);
   let timer = null;
   const flush = () => { if (timer === null) return; clearTimeout(timer); timer = null; post({ event: { legendStats: { [field]: el.value } } }); };
@@ -3839,11 +3841,13 @@ for (const [id, field] of [['legendLabel', 'label'], ['legendNote', 'note']]) {
 }
 // Standings rows already carry their legend and record, so a small event
 // typed into Match data needs no second list. Their records hold every
-// match, mirrors included, and the note says so.
+// match, mirrors included, and the note says so. The top tenth of each
+// group comes through as the top cut (2026-09-20), so the graphic's Top cut
+// switch has something to show without a second list either.
 $('legendFromStandings').addEventListener('click', () => {
   if (!state) return;
   const st = state.preview.event.standings || { rows: [] };
-  const { rows, skipped } = legendsFromStandings(st.rows || []);
+  const { rows, skipped, cut } = legendsFromStandings(st.rows || [], { cut: true });
   if (!rows.length) {
     legendProblem = (st.rows || []).length ? 'None of the standings rows names a legend.' : 'Match data › Standings is empty.';
     $('legendHint').textContent = legendProblem;
@@ -3856,10 +3860,15 @@ $('legendFromStandings').addEventListener('click', () => {
   post({ event: { legendStats: {
     rows, total: 0, label: st.label || '',
     note: 'Win rate: the players\' records in the standings, mirror matches included.',
+    cutTotal: 0,
+    cutLabel: cut ? `Top ${CUT_PERCENT}% of the standings` : '',
+    cutNote: cut ? `Top cut win rate: the records of the top ${CUT_PERCENT}% of the standings, mirror matches included.` : '',
   } } });
   if (legendProblem) $('legendHint').textContent = legendProblem;
 });
 $('legendstatsRate').addEventListener('change', () => post({ scenes: { legendstats: { winRate: $('legendstatsRate').checked } } }));
+// Top cut (2026-09-20): the graphic turns to the players who got through.
+$('legendstatsCut').addEventListener('change', () => post({ scenes: { legendstats: { cut: $('legendstatsCut').checked } } }));
 // Which legends get a slice: every legend two or more played (the
 // default), every legend, or the top few, the graphic as it first shipped.
 $('legendstatsSlices').addEventListener('change', () => {
@@ -3877,7 +3886,7 @@ $('legendstatsSlices').addEventListener('change', () => {
 // (web/shared/legendstats.js), so a chip and its slice always agree.
 const legendSlicesOf = (bank) => {
   const ls = bank.scenes.legendstats;
-  return legendSlices(bank.event.legendStats || { rows: [] }, { slices: ls.slices, top: ls.top }).slices;
+  return legendSlices(bank.event.legendStats || { rows: [] }, { slices: ls.slices, top: ls.top, cut: ls.cut }).slices;
 };
 for (const [id, op] of [['rollStart', 'start'], ['rollPause', 'pause'], ['rollStop', 'stop'], ['rollRestart', 'restart']]) {
   $(id).addEventListener('click', () => post({ action: 'roll', scene: 'legendstats', op }));
@@ -3920,6 +3929,15 @@ function rollStatus(bank, rows) {
 function renderLegendControls(s) {
   const lsc = s.preview.scenes.legendstats;
   if (document.activeElement !== $('legendstatsSlices')) $('legendstatsSlices').value = lsc.slices === 'top' ? `top-${lsc.top || 8}` : (lsc.slices || 'multi');
+  // Top cut: what the switch would show, or what it needs to show anything.
+  const stats = s.preview.event.legendStats || { rows: [] };
+  const made = cutTotals(stats);
+  const any = hasCut(stats);
+  if (document.activeElement !== $('legendstatsCut')) $('legendstatsCut').checked = Boolean(lsc.cut);
+  $('legendstatsCut').disabled = !any;
+  $('legendstatsCutHint').textContent = !any
+    ? 'Top cut needs a cut: load Distribution from the Tournament platform tab, press Count from standings, or give each legend a cut count in its line.'
+    : `Top cut: ${stats.cutLabel || 'the players who got through'}, ${plural(made.cut, 'player')}${made.field ? ` of ${made.field}` : ''}${made.conversion === null ? '' : `, ${Math.round(made.conversion)}% conversion`}.`;
   const slices = legendSlicesOf(s.preview);
   const st = rollStatus(s.preview, slices.length);
   $('rollStatus').textContent = st.text;
@@ -4464,7 +4482,7 @@ function renderExtras(s) {
   if (document.activeElement !== $('standingsCut')) $('standingsCut').value = String(prev.event.standings ? prev.event.standings.cut : 8);
   setIfIdle('standingsText', standingsToText(prev.event.standings ? prev.event.standings.rows || [] : []));
   {
-    const ls = prev.event.legendStats || { rows: [], total: 0, label: '', note: '' };
+    const ls = prev.event.legendStats || { rows: [], total: 0, label: '', note: '', cutLabel: '' };
     // A problem stays named while the rows are the ones it was about; rows
     // from anywhere else (the platform, Count from standings) clear it.
     if (legendKey(ls.rows || []) !== legendPosted) {
@@ -4477,6 +4495,7 @@ function renderExtras(s) {
     $('legendTotal').placeholder = counted ? `auto (${counted})` : 'auto';
     setIfIdle('legendLabel', ls.label || '');
     setIfIdle('legendNote', ls.note || '');
+    setIfIdle('legendCutLabel', ls.cutLabel || '');
     if (document.activeElement !== $('legendText')) $('legendHint').textContent = legendProblem || legendSummary(ls);
     const lsc = prev.scenes.legendstats;
     if (document.activeElement !== $('legendstatsRate')) $('legendstatsRate').checked = lsc.winRate !== false;

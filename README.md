@@ -523,14 +523,29 @@ round clock: Next turn, Reset and the clock buttons act on air at once.
   comes out of the pie and grows with its face while the others step back
   and dim, and its row lights up in its colour; a rolling table holds with
   that row in view until the highlight comes off.
+  **Top cut** (2026-09-20) turns the graphic to the players who got
+  through: the pie becomes two rings, the whole field outside and the cut
+  inside it, with how many made the cut and what share of the field that is
+  in the hole between them. Only the legends someone got through with are
+  listed, largest share of the cut first, and the legends nobody got
+  through with are Other's grey on the field's ring. Each row then reads as
+  the cut: its share of the cut over how many of its players made it, a
+  **Conversion** column with what came through over the share of the field
+  it was, and the cut players' own record as the win rate. Every legend in
+  the cut keeps its slice under the "every legend two or more played"
+  setting, since one player through is a real slice of a top cut; Top 3 to
+  Top 8 still trim it. With no cut loaded the switch changes nothing.
   Fill it under Match data › Legend distribution: one legend per line with
   how many played it and its win rate or record (`Kai'Sa | 42 | 55.1`,
   `Jinx | 30 | 45-37`), a share with a % sign for a list of percentages, or
   one legend per player and the lines count themselves; **Players** sets
-  the field size when the lines list only some legends. **Count from
-  standings** counts Match data › Standings, and the Tournament platform tab
-  loads it from TopDeck. The slice colours are a fixed set checked for
-  colour-blind viewers against the graphic's panel, so a look leaves them.
+  the field size when the lines list only some legends. Two more fields
+  give the top cut (`Jinx | 30 | 45-37 | 4 | 9-3` is four of those thirty
+  through, 9-3 between them), and **Top cut label** says what the cut is.
+  **Count from standings** counts Match data › Standings, the top 10% of
+  each group as the cut, and the Tournament platform tab loads both from
+  TopDeck. The slice colours are a fixed set checked for colour-blind
+  viewers against the graphic's panel, so a look leaves them.
 - **Matchup matrix** (`/scenes/matrix/`): every legend's win rate against
   every other, modelled on Rift Registry's matchup matrix. The most played
   legends go across the top and down the side (**Legends**, the top 4 to
@@ -718,6 +733,10 @@ fills:
 - **Legend distribution, Matchup matrix** count the whole event or one
   group: how many players TopDeck lists for each legend, and each legend's
   win rate against the others, with mirror matches, draws and byes left out.
+  Distribution counts the top cut in the same pass (2026-09-20), so the
+  graphic's Top cut switch works from the one load: the players TopDeck has
+  paired in the bracket are the cut, and before there is a bracket it takes
+  the top 10% of the Swiss, group by group in a pooled event.
   TopDeck shows legends once the event ends or the organizer allows it;
   until then the buttons say so.
 - **Bracket** writes the Top 8 or Top 16 as TopDeck ran it.

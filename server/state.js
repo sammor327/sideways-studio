@@ -17,7 +17,7 @@ import { BANISHED_MAX, TRASH_MAX } from '../web/shared/trash.js';
 import { BRACKET_FORMAT_KEYS, cleanBracketResults } from '../web/shared/bracket.js';
 import { SPONSOR_MAX, SPONSOR_POSITIONS } from '../web/shared/sponsor.js';
 import {
-  ROLL_OPS, ROLL_SPEEDS, ROLL_SPEED_DEFAULT, ROLL_STATES, SLICE_MODES, SLICES_DEFAULT, TOP_DEFAULT, TOP_MAX, TOP_MIN, rollElapsed,
+  ROLL_OPS, ROLL_SPEEDS, ROLL_SPEED_DEFAULT, ROLL_STATES, SLICE_MODES, SLICES_DEFAULT, TOP_DEFAULT, TOP_MAX, TOP_MIN, hasCut, rollElapsed,
 } from '../web/shared/legendstats.js';
 import { FOCUS_MAX, nextFocus, pairingsPageOf, playerKey, standingsPlaceOf } from '../web/shared/focus.js';
 import {
@@ -127,7 +127,14 @@ function defaultBank() {
       // the field size when the rows do not list everyone (0 = what they add
       // up to); label and note are the graphic's sub line and foot line, set
       // by whichever source filled the rows.
-      legendStats: { rows: [], total: 0, label: '', note: '' },
+      //
+      // The top cut (2026-09-20): every row also carries how many of that
+      // legend's players got through and their record, so the graphic can
+      // turn to the cut without another load. cutTotal is the cut's size
+      // when the rows do not list all of it, cutLabel says what the cut is
+      // ("Out of the groups", "Top 10% after Round 6") and cutNote how the
+      // cut's win rates were counted.
+      legendStats: { rows: [], total: 0, label: '', note: '', cutTotal: 0, cutLabel: '', cutNote: '' },
       // The round's pairings (2026-09-19, Sam: "a pairing graphic to review
       // all the current matches for the round"): one row a table, each side
       // an up-next table side, with the table's result once it is in. label
@@ -302,6 +309,9 @@ function defaultBank() {
       // option able to be toggled"). slices: which legends get a slice of
       // their own (multi: every legend two or more players brought, the
       // default; all; top: the largest `top`); the rest fold into Other.
+      // cut (2026-09-20): the graphic turns to the players who made the top
+      // cut, the pie becoming the cut inside the field it came out of. It
+      // needs a cut in event.legendStats; with none it changes nothing.
       // focus: the highlighted slices (legendstats.js sliceKey), newest last.
       // roll: the table's roll when it is longer than its box, { state, at,
       // done } (legendstats.js rollAt); autoRoll starts it as the graphic
@@ -309,7 +319,7 @@ function defaultBank() {
       // normal or fast. The highlight and the roll are cues (the focus and
       // roll actions): they land in both banks and act on air at once.
       legendstats: {
-        visible: false, winRate: true, top: TOP_DEFAULT, slices: SLICES_DEFAULT, focus: [],
+        visible: false, winRate: true, top: TOP_DEFAULT, slices: SLICES_DEFAULT, focus: [], cut: false,
         roll: { state: 'stop', at: 0, done: 0 }, autoRoll: true, loop: true, speed: ROLL_SPEED_DEFAULT,
       },
       // Pairings draw event.pairings, 32 tables a page in two columns.
@@ -492,6 +502,7 @@ function mergeBank(bank, raw) {
   if (!SLICE_MODES.includes(ls.slices)) ls.slices = SLICES_DEFAULT;
   if (!Object.hasOwn(ROLL_SPEEDS, ls.speed)) ls.speed = ROLL_SPEED_DEFAULT;
   for (const flag of ['autoRoll', 'loop']) if (typeof ls[flag] !== 'boolean') ls[flag] = true;
+  if (typeof ls.cut !== 'boolean') ls.cut = false;
   const mx = bank.scenes.matrix;
   mx.focus = cleanMatrixFocus(mx.focus);
   mx.pick = cleanMatrixPick(mx.pick);
@@ -870,6 +881,9 @@ function cleanLegendRow(raw) {
   return {
     legend, legendSlug, legendCardId: cleanCardId(raw.legendCardId || ''), players, share,
     wins: clampInt(raw.wins, 0, 99999), losses: clampInt(raw.losses, 0, 99999), winRate: pctOrNull(raw.winRate),
+    // The top cut: no more players through than the legend brought.
+    cut: Math.min(players || 99999, clampInt(raw.cut, 0, 99999)),
+    cutWins: clampInt(raw.cutWins, 0, 99999), cutLosses: clampInt(raw.cutLosses, 0, 99999), cutRate: pctOrNull(raw.cutRate),
   };
 }
 
@@ -1089,6 +1103,13 @@ function applyBankPatch(bank, patch) {
       if (ls.total !== undefined) cur.total = clampInt(ls.total, 0, 99999);
       if (ls.label !== undefined) cur.label = cleanStr(ls.label, 60);
       if (ls.note !== undefined) cur.note = cleanStr(ls.note, 160);
+      if (ls.cutTotal !== undefined) cur.cutTotal = clampInt(ls.cutTotal, 0, 99999);
+      if (ls.cutLabel !== undefined) cur.cutLabel = cleanStr(ls.cutLabel, 60);
+      if (ls.cutNote !== undefined) cur.cutNote = cleanStr(ls.cutNote, 160);
+      // New rows with no cut of their own drop the last cut's lines, the way
+      // the standings' rows drop their label: a cut label left over from
+      // another event must never sit over these numbers.
+      if (Array.isArray(ls.rows) && ls.cutLabel === undefined && !hasCut(cur)) { cur.cutLabel = ''; cur.cutNote = ''; cur.cutTotal = 0; }
     }
     if (patch.event.pairings && typeof patch.event.pairings === 'object') {
       const pr = patch.event.pairings;
@@ -1348,6 +1369,7 @@ function applyBankPatch(bank, patch) {
       const ls = patch.scenes.legendstats;
       if (ls.visible !== undefined) bank.scenes.legendstats.visible = Boolean(ls.visible);
       if (ls.winRate !== undefined) bank.scenes.legendstats.winRate = Boolean(ls.winRate);
+      if (ls.cut !== undefined) bank.scenes.legendstats.cut = Boolean(ls.cut);
       if (ls.top !== undefined) bank.scenes.legendstats.top = clampInt(ls.top, TOP_MIN, TOP_MAX);
       if (ls.slices !== undefined && SLICE_MODES.includes(ls.slices)) bank.scenes.legendstats.slices = ls.slices;
       // The highlight travels with the bank on TAKE; the panel changes it
@@ -1524,7 +1546,7 @@ function applyRoll(ls, patch, now) {
 function rollInputs(bank) {
   const ls = bank.scenes.legendstats;
   const st = bank.event.legendStats;
-  return { on: Boolean(ls.visible), key: JSON.stringify([st.rows, st.total, ls.slices, ls.top]) };
+  return { on: Boolean(ls.visible), key: JSON.stringify([st.rows, st.total, ls.slices, ls.top, ls.cut]) };
 }
 function rollFromTop(ls, now) {
   if (ls.autoRoll === false) ls.roll = { state: 'stop', at: 0, done: 0 };

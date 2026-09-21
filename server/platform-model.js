@@ -17,6 +17,7 @@
 
 import { BRACKET_FORMATS } from '../web/shared/bracket.js';
 import { tallyMatrix } from '../web/shared/matrix.js';
+import { CUT_PERCENT } from '../web/shared/legendstats.js';
 
 const n = (v) => Number(v) || 0;
 // Both sources keep decklist line breaks as a literal backslash + n.
@@ -527,6 +528,50 @@ function tableResult(tb) {
   return (tb.draws || tb.wins[0]) ? 'd' : null;
 }
 
+// --- the top cut (2026-09-20) ---
+//
+// Sam: "the win rate after the groups stage of a tournament. If there is no
+// group stage, show the top 10% of the swiss stage." Who got through is read
+// off the event rather than from a rule wherever it can be: the players
+// TopDeck has paired in the bracket ARE the cut, whether they came out of
+// groups or out of one Swiss. Before the bracket is up there is nothing to
+// read, so the top tenth of the standings stands in, group by group when the
+// event has groups (a pooled event cuts out of each group).
+export function topCut(ev, { group = 0, percent = CUT_PERCENT } = {}) {
+  const inGroup = (e) => {
+    const ent = ev.entrants.get(e);
+    return ent && !ent.released && (!group || ent.group === group);
+  };
+  const grouped = groupsOf(ev).length > 0;
+  const made = new Set();
+  for (const r of Object.values((ev.bracket && ev.bracket.rounds) || {})) {
+    for (const tb of r.tables) for (const e of tb.es) if (inGroup(e)) made.add(e);
+  }
+  if (made.size > 1) return { made, how: 'bracket', through: 0, grouped };
+  // No bracket: the top tenth of the standings, once a round has been played.
+  const groups = group ? [group] : (grouped ? groupsOf(ev) : [0]);
+  let through = 0;
+  for (const g of groups) {
+    const s = standings(ev, { group: g });
+    if (!s.round || s.rows.length < 2) continue;
+    through = Math.max(through, s.round);
+    const n = Math.min(s.rows.length - 1, Math.max(1, Math.round((s.rows.length * percent) / 100)));
+    for (const r of s.rows.slice(0, n)) made.add(r.e);
+  }
+  return made.size ? { made, how: 'percent', through, grouped } : { made: new Set(), how: '', through: 0, grouped };
+}
+
+// What the cut is, in the graphic's words.
+export function cutLabel(cut, { group = 0, percent = CUT_PERCENT } = {}) {
+  if (!cut || !cut.made.size) return '';
+  const where = group ? `group ${group}` : '';
+  if (cut.how === 'bracket') {
+    if (where) return `Out of ${where}`;
+    return cut.grouped ? 'Out of the groups' : 'The top cut';
+  }
+  return [`Top ${percent}% of the Swiss`, cut.through ? `after Round ${cut.through}` : '', where].filter(Boolean).join(' · ');
+}
+
 // How many players brought each legend, and how each legend did against the
 // others. Shares count every player TopDeck lists a legend for, dropped
 // players included (they brought the deck); a player with no legend yet is
@@ -535,28 +580,34 @@ function tableResult(tb) {
 // against the field, a draw is neither a win nor a loss, and a bye is not a
 // match. The whole event counts every Swiss and bracket match; a group
 // counts its own Swiss.
-export function legendStats(ev, legendOf, { group = 0 } = {}) {
+export function legendStats(ev, legendOf, { group = 0, percent = CUT_PERCENT } = {}) {
   const inGroup = (ent) => !group || ent.group === group;
   const keyOf = (ent) => {
     const L = legendOf(ent.leader);
     return { key: L.legendSlug || normName(L.legend), L };
   };
+  // The players who made the top cut: their legends and their records are
+  // counted a second time, so the graphic can turn to the cut on its own.
+  const cutOf = topCut(ev, { group, percent });
   const rows = new Map();
   let players = 0;
   let unknown = 0;
-  for (const ent of ev.entrants.values()) {
+  let cutPlayers = 0;
+  for (const [e, ent] of ev.entrants) {
     if (ent.released || !inGroup(ent)) continue;
     const { key, L } = ent.leader ? keyOf(ent) : { key: '' };
     if (!key) { unknown += 1; continue; }
-    if (!rows.has(key)) rows.set(key, { legend: L.legend, legendSlug: L.legendSlug, legendCardId: L.legendCardId, players: 0, wins: 0, losses: 0 });
+    if (!rows.has(key)) rows.set(key, { legend: L.legend, legendSlug: L.legendSlug, legendCardId: L.legendCardId, players: 0, wins: 0, losses: 0, cut: 0, cutWins: 0, cutLosses: 0 });
     rows.get(key).players += 1;
     players += 1;
+    if (cutOf.made.has(e)) { rows.get(key).cut += 1; cutPlayers += 1; }
   }
   let matches = 0;
   let mirrors = 0;
   let draws = 0;
   let through = 0;
   let cut = false;
+  let cutMatches = 0;
   for (const stage of group ? ['swiss'] : ['swiss', 'bracket']) {
     for (const r of Object.values((ev[stage] && ev[stage].rounds) || {})) {
       for (const tb of r.tables) {
@@ -576,15 +627,30 @@ export function legendStats(ev, legendOf, { group = 0 } = {}) {
         matches += 1;
         rows.get(res === 'a' ? ka : kb).wins += 1;
         rows.get(res === 'a' ? kb : ka).losses += 1;
+        // The cut's win rate is the record of the players who got through,
+        // every match they have played: a cut player's win counts for their
+        // legend, their loss against it, and a match between two of them
+        // counts on both sides. The field's reading holds otherwise, so a
+        // mirror or a draw says nothing here either.
+        for (const [e, key, won] of [[tb.es[0], ka, res === 'a'], [tb.es[1], kb, res === 'b']]) {
+          if (!cutOf.made.has(e)) continue;
+          if (won) rows.get(key).cutWins += 1;
+          else rows.get(key).cutLosses += 1;
+          cutMatches += 1;
+        }
       }
     }
   }
   const sorted = [...rows.values()].sort((x, y) => y.players - x.players || x.legend.localeCompare(y.legend));
-  return { rows: sorted, players, unknown, matches, mirrors, draws, through, cut };
+  return {
+    rows: sorted, players, unknown, matches, mirrors, draws, through, cut,
+    cutPlayers, cutMatches, cutHow: cutOf.how, cutThrough: cutOf.through, cutGrouped: cutOf.grouped,
+    cutLegends: sorted.filter((r) => r.cut > 0).length,
+  };
 }
 
-export function legendStatsPatch(ev, legendOf, { group = 0 } = {}) {
-  const s = legendStats(ev, legendOf, { group });
+export function legendStatsPatch(ev, legendOf, { group = 0, percent = CUT_PERCENT } = {}) {
+  const s = legendStats(ev, legendOf, { group, percent });
   if (!s.players) {
     return { error: s.unknown
       ? `TopDeck lists no legends for ${group ? `group ${group}` : 'this event'} yet: it shows them once the event ends or the organizer allows it.`
@@ -601,13 +667,22 @@ export function legendStatsPatch(ev, legendOf, { group = 0 } = {}) {
   const note = s.matches
     ? `Win rate: ${s.matches} match${s.matches === 1 ? '' : 'es'} between different legends; mirror matches, draws and byes left out.`
     : '';
-  const rows = s.rows.slice(0, 64).map((r) => ({ ...r, share: null, winRate: null }));
+  const rows = s.rows.slice(0, 64).map((r) => ({ ...r, share: null, winRate: null, cutRate: null }));
+  // The top cut's own lines, so the graphic's Top cut switch has what it
+  // needs from this one load: what the cut is, and how its win rates were
+  // counted. A cut of one player is not a cut, so it carries none.
+  const cutOf = s.cutPlayers > 1 ? { how: s.cutHow, through: s.cutThrough, grouped: s.cutGrouped, made: { size: s.cutPlayers } } : null;
+  const cutLine = cutOf ? cutLabel(cutOf, { group, percent }) : '';
+  const cutNote = cutOf && s.cutMatches
+    ? `Top cut win rate: every match the ${s.cutPlayers} players who made the cut have played, against a different legend.`
+    : '';
   // The rows count every player with a legend, so the field is what they add
   // up to: total 0 also clears a field size typed for an earlier list.
   return {
-    patch: { event: { legendStats: { rows, total: 0, label, note } } },
+    patch: { event: { legendStats: { rows, total: 0, label, note, cutTotal: 0, cutLabel: cutLine, cutNote } } },
     players: s.players, legends: s.rows.length, matches: s.matches, unknown: s.unknown,
     lead: s.rows[0] ? s.rows[0].legend : '',
+    cut: cutOf ? s.cutPlayers : 0, cutLegends: cutOf ? s.cutLegends : 0, cutHow: cutOf ? s.cutHow : '', cutLine,
   };
 }
 

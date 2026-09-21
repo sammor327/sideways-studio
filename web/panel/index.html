@@ -741,18 +741,19 @@
       <summary><h4 class="section-label">Legend distribution</h4></summary>
 
       <div class="field-row" data-field="legendStats">
-        <span class="row-label" title="One legend per line: the legend, how many played it, then its win rate or its record against other legends. Kai'Sa | 42 | 55.1 or Jinx | 30 | 45-37. A share with a % sign works for a list that only has percentages. A legend alone on a line counts as one player, so a column with one legend per player counts itself. Tabs separate the fields too, for a spreadsheet paste.">Legends</span>
+        <span class="row-label" title="One legend per line: the legend, how many played it, then its win rate or its record against other legends. Kai'Sa | 42 | 55.1 or Jinx | 30 | 45-37. A share with a % sign works for a list that only has percentages. A legend alone on a line counts as one player, so a column with one legend per player counts itself. Two more fields give the top cut: Jinx | 30 | 45-37 | 4 | 9-3 is four of those thirty through, 9-3 between them. Tabs separate the fields too, for a spreadsheet paste.">Legends</span>
         <div class="cell span2 legends-cell">
           <div class="legends-tools">
             <label class="inline" title="How many played in all. Leave it empty when the lines count everyone; set it when they list only some legends, and the rest shows as Other.">Players
               <input id="legendTotal" type="number" min="0" max="99999" inputmode="numeric" placeholder="auto" aria-label="Players in the event">
             </label>
-            <button type="button" id="legendFromStandings" title="One player per row of Match data &rsaquo; Standings, counted by legend, with their records as the win rates">Count from standings</button>
+            <button type="button" id="legendFromStandings" title="One player per row of Match data &rsaquo; Standings, counted by legend, with their records as the win rates. The top tenth of each group also becomes the top cut, for the graphic's Top cut switch.">Count from standings</button>
           </div>
           <textarea id="legendText" rows="6" spellcheck="false" placeholder="Kai'Sa, Daughter of the Void | 42 | 55.1&#10;Jinx, Loose Cannon | 30 | 45-37&#10;Viktor | 25"></textarea>
           <div class="legends-lines">
             <input id="legendLabel" maxlength="60" autocomplete="off" placeholder="Label, e.g. Day one · all groups" aria-label="Legend distribution label">
             <input id="legendNote" maxlength="160" autocomplete="off" placeholder="Win rate note, e.g. Mirror matches left out" aria-label="How the win rates were counted">
+            <input id="legendCutLabel" maxlength="60" autocomplete="off" placeholder="Top cut label, e.g. Out of the groups" aria-label="What the top cut is">
           </div>
           <p class="hint" id="legendHint"></p>
         </div>
@@ -1000,7 +1001,7 @@
         <div class="scene-row" data-scene="legendstats">
           <div class="scene-name">Legend distribution <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="legendstatsOnAir">ON AIR</button></div>
           <button id="toggleLegendstats" class="scene-toggle">OFF</button>
-          <p class="scene-note">The most played legends: a pie beside a table of each legend's share and win rate. Fill it under Match data &rsaquo; Legend distribution, or load it from the Tournament platform tab.</p>
+          <p class="scene-note">The most played legends: a pie beside a table of each legend's share and win rate. Top cut turns it to the players who got through, the cut drawn inside the field it came out of. Fill it under Match data &rsaquo; Legend distribution, or load it from the Tournament platform tab.</p>
         </div>
         <div class="scene-row" data-scene="matrix">
           <div class="scene-name">Matchup matrix <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="matrixOnAir">ON AIR</button></div>
@@ -1481,6 +1482,7 @@
       <h3>Legend distribution</h3>
       <div class="scene-options">
         <label class="inline" title="The win rate column, and the note under the graphic saying how the win rates were counted"><input type="checkbox" id="legendstatsRate" checked> Win rate</label>
+        <label class="inline" title="Turn the graphic to the players who made the top cut: the pie becomes the cut inside the field it came out of, the headline says how many got through, and each legend gains its conversion. It needs a cut, which the Tournament platform's Distribution load and Count from standings both fill."><input type="checkbox" id="legendstatsCut"> Top cut</label>
         <label class="inline" title="Which legends get a slice and a row of their own; the rest fold into Other. Past the eighth, a slice is grey: eight colours is as many as stay apart.">Slices
           <select id="legendstatsSlices" aria-label="Legends with a slice of their own">
             <option value="multi">Every legend two or more played</option>
@@ -1494,6 +1496,7 @@
           </select>
         </label>
         <span class="hint">The legends, the player count, the label and the win rate note are under Match data › Legend distribution.</span>
+        <span class="hint" id="legendstatsCutHint"></span>
       </div>
       <div class="scene-options roll-row">
         <span class="opt-label">Table roll</span>
@@ -2105,7 +2108,7 @@
           </div>
           <div class="pf-feed-opts"><select id="pfLegendGroup" aria-label="Legend distribution and matchup matrix for"></select></div>
           <div class="pf-feed-go">
-            <button type="button" id="pfLegends" class="pf-one" title="How many played each legend and each legend's win rate against the others, from TopDeck">Distribution</button>
+            <button type="button" id="pfLegends" class="pf-one" title="How many played each legend and each legend's win rate against the others, from TopDeck. It also counts the top cut (the players TopDeck has paired in the bracket, or the top 10% of the Swiss before there is one), so the graphic's Top cut switch works from this one load.">Distribution</button>
             <button type="button" id="pfMatrix" class="pf-one" title="Every legend's win rate against every other legend, from TopDeck's finished matches">Matrix</button>
           </div>
         </li>

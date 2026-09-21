@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.52.0 (2026-09-20)
+
+- Legend distribution: a **Top cut** switch under Graphic features turns the graphic to the players who got through (Sam). The pie becomes two rings, the whole field outside and the cut that came out of it inside, with how many made the cut and what share of the field that is in the hole between them. Only the legends someone got through with are listed, largest share of the cut first; the ones nobody got through with are Other's grey on the field's ring.
+- Each legend then reads as the cut: its share of the cut over how many of its players made it (7 of 42), a **Conversion** column with what came through over the share of the field it was, and a win rate that is the cut players' own record. The heading says Top cut legends, and the foot note says how those win rates were counted.
+- The Tournament platform's **Distribution** load counts the cut in the same pass, so the switch needs no second load: the players TopDeck has paired in the bracket are the cut, and before there is a bracket it takes the top 10% of the Swiss, group by group in a pooled event. The status line says which it used and how many got through.
+- **Count from standings** fills a cut too: the top 10% of each group in Match data › Standings. Typing the numbers works as well, with two more fields on a legend's line: `Jinx | 30 | 45-37 | 4 | 9-3` is four of those thirty through with 9-3 between them. **Top cut label** beside the other lines says what the cut is.
+- Every legend in the cut keeps its slice while Slices is on "Every legend two or more played": one player through is a real slice of a top cut, not the sliver a one-off is in a field of hundreds. Top 3 to Top 8 still trim it.
+- The highlight carries both of a legend's arcs at once, and switching the cut on or off turns the panel over the way new numbers do. With no cut loaded the switch changes nothing, so it can never leave the graphic empty.
+
 ## 0.51.0 (2026-09-20)
 
 - The Trash, the Odds to draw and the Sideboard card spotted can be drawn inside the rows overlay's column, where the cards in hand list, instead of over the game (Sam). Three switches under Graphic features › In-game overlay, rows, all on: **Dock the trash**, **Dock the odds to draw** and **Dock the sideboard card spotted**.

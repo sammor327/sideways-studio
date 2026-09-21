@@ -940,6 +940,16 @@ a move lands (it only watches DOM changes).
 Legend distribution: `slices` multi (default: every legend brought by two
 or more, the one-player legends into Other, which now says "N legends with
 one player each" and wears "+N" on the pie), all, or top 3-8 as shipped.
+Top cut (0.52.0): `cut` swaps every number for the cut's and the pie for
+two rings, the field 336-244 and the cut 230-138 in the 680 box with the
+headline in the hole (both drawn by ringPath; the hole and the ring key sit
+outside the sweep's conic mask, so they fade on --p rather than being wiped
+on). A legend is then two arcs and up to two faces, all moved as one by the
+highlight, which travels 6 units instead of 22 and grows 3% instead of 5%
+so a lifted arc meets the ring beside it rather than crossing it. The
+field's arcs sit at 52% opacity. multi keeps every legend in the cut. The
+cut's table has a fourth column, so the name column drops to 332px and
+Other's line shortens to "N legends missed the cut".
 Slices past the eighth take Other's grey: the data-viz rule is no ninth
 hue (it would be indistinguishable from one of the eight), so identity
 past eight rides on the face on the slice, the table row and the

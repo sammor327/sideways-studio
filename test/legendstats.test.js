@@ -11,11 +11,12 @@ import { fileURLToPath } from 'node:url';
 import {
   SLICE_COLORS, OTHER_COLOR, TOP_DEFAULT, legendSlices, sliceColor, winRateOf, splitLegend, slicePath,
   resolveLegend, parseLegendLines, legendsToText, legendsFromStandings,
+  cutFromStandings, cutTotals, hasCut, otherTitle, ringPath,
 } from '../web/shared/legendstats.js';
 import { DESIGNED, LOOK_SCENES, SCENE_LABELS } from '../web/shared/look.js';
 import { SCENE_SOURCES } from '../web/shared/sources.js';
 import { TILES } from '../web/shared/looktiles.js';
-import { buildFromApi, legendStats, legendStatsPatch } from '../server/platform-model.js';
+import { buildFromApi, cutLabel, legendStats, legendStatsPatch, topCut } from '../server/platform-model.js';
 
 const WEB = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'web');
 const near = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-9, `${msg || ''} ${a} != ${b}`);
@@ -195,9 +196,9 @@ describe('legend distribution: the store', () => {
 
   it('starts empty with the win rate on, every legend but the one-player ones sliced, the table stopped', () => {
     const bank = getState().preview;
-    assert.deepEqual(bank.event.legendStats, { rows: [], total: 0, label: '', note: '' });
+    assert.deepEqual(bank.event.legendStats, { rows: [], total: 0, label: '', note: '', cutTotal: 0, cutLabel: '', cutNote: '' });
     assert.deepEqual(bank.scenes.legendstats, {
-      visible: false, winRate: true, top: 8, slices: 'multi', focus: [],
+      visible: false, winRate: true, top: 8, slices: 'multi', focus: [], cut: false,
       roll: { state: 'stop', at: 0, done: 0 }, autoRoll: true, loop: true, speed: 'normal',
     });
   });
@@ -205,21 +206,21 @@ describe('legend distribution: the store', () => {
   it('keeps clean rows and drops the rest', () => {
     applyUpdate({ event: { legendStats: {
       rows: [
-        { legend: "Kai'Sa, Daughter of the Void", legendSlug: 'kaisa-daughter-of-the-void', legendCardId: 'OGN-247', players: 12, wins: 30, losses: 20, bogus: 1 },
+        { legend: "Kai'Sa, Daughter of the Void", legendSlug: 'kaisa-daughter-of-the-void', legendCardId: 'OGN-247', players: 12, wins: 30, losses: 20, cut: 4, cutWins: 8, cutLosses: 3, bogus: 1 },
         { legend: 'Percent Only', share: '12.345', winRate: '140' },
         { legend: 'Nothing', players: 0 },
         { legend: '', legendSlug: '' , players: 4 },
-        { legend: 'Bad slug', legendSlug: '../../x', legendCardId: '<script>', players: 2, winRate: '' },
+        { legend: 'Bad slug', legendSlug: '../../x', legendCardId: '<script>', players: 2, winRate: '', cut: 9 },
         'junk',
       ],
       total: '200', label: 'Group 2 · after Round 3', note: 'x'.repeat(400),
     } } });
     const ls = getState().preview.event.legendStats;
     assert.deepEqual(ls.rows, [
-      { legend: "Kai'Sa, Daughter of the Void", legendSlug: 'kaisa-daughter-of-the-void', legendCardId: 'OGN-247', players: 12, share: null, wins: 30, losses: 20, winRate: null },
-      { legend: 'Percent Only', legendSlug: '', legendCardId: '', players: 0, share: 12.3, wins: 0, losses: 0, winRate: 100 },
-      { legend: 'Bad slug', legendSlug: '', legendCardId: '', players: 2, share: null, wins: 0, losses: 0, winRate: null },
-    ]);
+      { legend: "Kai'Sa, Daughter of the Void", legendSlug: 'kaisa-daughter-of-the-void', legendCardId: 'OGN-247', players: 12, share: null, wins: 30, losses: 20, winRate: null, cut: 4, cutWins: 8, cutLosses: 3, cutRate: null },
+      { legend: 'Percent Only', legendSlug: '', legendCardId: '', players: 0, share: 12.3, wins: 0, losses: 0, winRate: 100, cut: 0, cutWins: 0, cutLosses: 0, cutRate: null },
+      { legend: 'Bad slug', legendSlug: '', legendCardId: '', players: 2, share: null, wins: 0, losses: 0, winRate: null, cut: 2, cutWins: 0, cutLosses: 0, cutRate: null },
+    ], 'a legend cannot get more players through than it brought');
     assert.equal(ls.total, 200);
     assert.equal(ls.label, 'Group 2 · after Round 3');
     assert.equal(ls.note.length, 160);
@@ -237,6 +238,21 @@ describe('legend distribution: the store', () => {
     assert.equal(getState().program.event.legendStats.rows.length, 3);
     applyUpdate({ action: 'off', scene: 'legendstats' });
     assert.equal(getState().program.scenes.legendstats.visible, false);
+  });
+
+  it('carries the top cut switch and the cut\'s own lines', () => {
+    applyUpdate({ event: { legendStats: { cutTotal: '40', cutLabel: 'Out of the groups', cutNote: 'y'.repeat(400) } } });
+    const ls = getState().preview.event.legendStats;
+    assert.deepEqual([ls.cutTotal, ls.cutLabel, ls.cutNote.length], [40, 'Out of the groups', 160]);
+    applyUpdate({ scenes: { legendstats: { cut: true } } });
+    assert.equal(getState().preview.scenes.legendstats.cut, true);
+    // Rows with no cut of their own clear the last cut's lines, so a label
+    // from another event never sits over these numbers.
+    applyUpdate({ event: { legendStats: { rows: [{ legend: 'Fresh', players: 3 }] } } });
+    const after = getState().preview.event.legendStats;
+    assert.deepEqual([after.cutTotal, after.cutLabel, after.cutNote], [0, '', '']);
+    applyUpdate({ event: { legendStats: { rows: [{ legend: 'Fresh', players: 3, cut: 1 }], cutLabel: 'The top cut' } } });
+    assert.equal(getState().preview.event.legendStats.cutLabel, 'The top cut');
   });
 });
 
@@ -280,6 +296,35 @@ describe('legend distribution: from a TopDeck event', () => {
     assert.equal(s.cut, false);
   });
 
+  it('takes the players in the bracket as the top cut', () => {
+    const ev = buildFromApi(api);
+    const cut = topCut(ev);
+    assert.deepEqual([...cut.made].sort(), ['u1', 'u5'], 'the Top 2 is the cut');
+    assert.equal(cut.how, 'bracket');
+    assert.equal(cutLabel(cut, {}), 'The top cut', 'no groups to come out of');
+    const s = legendStats(ev, legendOf);
+    assert.deepEqual(s.rows.map((r) => [r.legend, r.cut, r.cutWins, r.cutLosses]), [
+      ['Leader A', 1, 2, 0], ['Leader B', 1, 0, 1], ['Leader C', 0, 0, 0],
+    ], 'every match the cut players have played, mirrors left out');
+    assert.equal(s.cutPlayers, 2);
+    assert.equal(s.cutLegends, 2);
+  });
+
+  it('cuts the top tenth of the Swiss before there is a bracket, group by group', () => {
+    const swiss = { ...api, rounds: api.rounds.filter((r) => r.round !== 'Top 2') };
+    const cut = topCut(buildFromApi(swiss));
+    assert.equal(cut.how, 'percent');
+    assert.equal(cut.made.size, 1, 'a tenth of six players, rounded, is one');
+    assert.equal(cut.through, 2, 'round 3 is still being played');
+    assert.equal(cutLabel(cut, {}), 'Top 10% of the Swiss · after Round 2');
+    const groupOf = new Map([['u1', 1], ['u2', 1], ['u3', 1], ['u4', 2], ['u5', 2], ['u6', 2]]);
+    const pooled = topCut(buildFromApi(swiss, { groupOf }));
+    assert.equal(pooled.made.size, 2, 'each group cuts its own');
+    assert.equal(cutLabel(pooled, { group: 2 }), 'Top 10% of the Swiss · after Round 2 · group 2');
+    const fresh = topCut(buildFromApi({ ...api, rounds: [] }));
+    assert.deepEqual([fresh.made.size, fresh.how], [0, ''], 'nothing to cut before a round is played');
+  });
+
   it('becomes a patch the store takes, and says when TopDeck has no legends', () => {
     const out = legendStatsPatch(buildFromApi(api), legendOf);
     assert.equal(out.players, 5);
@@ -291,8 +336,120 @@ describe('legend distribution: from a TopDeck event', () => {
     assert.deepEqual(legendSlices(ls).slices.map((s) => [s.legend, s.share, s.winRate]), [
       ['Leader A', 40, 100], ['Leader B', 40, (1 / 3) * 100], ['Leader C', 20, 0],
     ]);
+    // The same load carries the top cut, so the switch needs no second one.
+    assert.equal(out.cut, 2);
+    assert.equal(out.cutLegends, 2);
+    assert.equal(ls.cutLabel, 'The top cut');
+    assert.match(ls.cutNote, /^Top cut win rate: every match the 2 players who made the cut have played/);
+    const view = legendSlices(ls, { slices: 'all', cut: true });
+    assert.equal(view.cut, true);
+    assert.deepEqual(view.slices.map((s) => [s.legend, s.players, s.share, s.winRate]), [
+      ['Leader A', 1, 50, 100], ['Leader B', 1, 50, 0], ['Other legends', 0, 0, null],
+    ]);
+    assert.equal(view.slices.at(-1).missed, 1, 'Leader C is on the field ring only');
     const hidden = { ...api, standings: api.standings.map(({ leader, ...p }) => p), rounds: [] };
     assert.match(legendStatsPatch(buildFromApi(hidden), legendOf).error, /no legends for this event yet/);
+  });
+});
+
+describe('legend distribution: the top cut', () => {
+  // A field of 100 on four legends, eight of whom made the cut: A took six
+  // of its forty through, B two of thirty, C and D none.
+  const FIELD = {
+    rows: [
+      row('A', 40, { wins: 60, losses: 40, cut: 6, cutWins: 14, cutLosses: 4 }),
+      row('B', 30, { wins: 40, losses: 50, cut: 2, cutWins: 3, cutLosses: 3 }),
+      row('C', 20, { wins: 20, losses: 30 }),
+      row('D', 10, { wins: 5, losses: 20 }),
+    ],
+    total: 100, cutLabel: 'Out of the groups',
+  };
+
+  it('knows when there is a cut to show, and what it adds up to', () => {
+    assert.equal(hasCut(FIELD), true);
+    assert.equal(hasCut({ rows: [row('A', 40)] }), false);
+    assert.deepEqual(cutTotals(FIELD), { cut: 8, field: 100, conversion: 8 });
+  });
+
+  it('lists only the legends that got through, by their share of the cut', () => {
+    const { slices, cut } = legendSlices(FIELD, { slices: 'all', cut: true });
+    assert.equal(cut, true);
+    assert.deepEqual(slices.map((s) => s.legend), ['A', 'B', 'Other legends']);
+    assert.deepEqual(slices.slice(0, 2).map((s) => s.share), [75, 25]);
+    assert.deepEqual(slices.slice(0, 2).map((s) => s.players), [6, 2]);
+    // Each one keeps the field it came out of, and what it converted.
+    assert.deepEqual(slices.slice(0, 2).map((s) => s.fieldShare), [40, 30]);
+    assert.deepEqual(slices.slice(0, 2).map((s) => s.fieldPlayers), [40, 30]);
+    near(slices[0].conversion, 15, 'six of forty');
+    near(slices[1].conversion, (2 / 30) * 100);
+    // The win rates are the cut players' own records, not the field's.
+    assert.deepEqual(slices.slice(0, 2).map((s) => [s.wins, s.losses]), [[14, 4], [3, 3]]);
+    near(slices[0].winRate, (14 / 18) * 100);
+    near(slices[1].winRate, 50);
+  });
+
+  it('closes the field ring on the whole field, the legends that missed in Other', () => {
+    const { slices } = legendSlices(FIELD, { slices: 'all', cut: true });
+    const other = slices.at(-1);
+    assert.equal(other.share, 0, 'none of the cut is left over');
+    assert.equal(other.fieldShare, 30, 'C and D are the rest of the field');
+    assert.equal(other.fieldPlayers, 30);
+    assert.equal(other.missed, 2);
+    assert.equal(otherTitle(other), '2 legends missed the cut', 'short: the cut table has a narrower name column');
+    // Both rings run from twelve o'clock and close on themselves.
+    assert.deepEqual(slices.map((s) => [s.start, s.end]), [[0, 0.75], [0.75, 1], [1, 1]]);
+    assert.deepEqual(slices.map((s) => [s.fieldStart, s.fieldEnd]), [[0, 0.4], [0.4, 0.7], [0.7, 1]]);
+  });
+
+  it('turns back into the whole field with the switch off, and with no cut loaded', () => {
+    const off = legendSlices(FIELD, { slices: 'all' });
+    assert.equal(off.cut, false);
+    assert.deepEqual(off.slices.map((s) => s.legend), ['A', 'B', 'C', 'D']);
+    assert.deepEqual(off.slices.map((s) => [s.share, s.fieldShare]), [[40, 40], [30, 30], [20, 20], [10, 10]], 'one pie: the rings agree');
+    assert.deepEqual(off.slices.map((s) => s.conversion), [null, null, null, null]);
+    const none = legendSlices({ rows: [row('A', 40), row('B', 30)] }, { slices: 'all', cut: true });
+    assert.equal(none.cut, false, 'with no cut the switch shows the field, never nothing');
+    assert.deepEqual(none.slices.map((s) => s.legend), ['A', 'B']);
+  });
+
+  it('keeps a cut of one-player legends whole, and trims to the top few', () => {
+    const eight = { rows: [...'ABCDEFGH'].map((k, i) => row(k, 10 + i, { cut: 1 })), total: 100 };
+    const { slices } = legendSlices(eight, { slices: 'multi', cut: true });
+    assert.equal(slices.filter((s) => !s.other).length, 8, 'every legend in the cut keeps its slice');
+    assert.equal(slices.length, 8, 'and there is nothing left for Other');
+    const trimmed = legendSlices(eight, { slices: 'top', top: 3, cut: true });
+    assert.equal(trimmed.slices.filter((s) => !s.other).length, 3);
+    assert.equal(trimmed.slices.at(-1).legends, 5, 'the rest fold into Other');
+  });
+
+  it('draws a ring arc, and a whole ring with a hole in it', () => {
+    assert.equal(ringPath(340, 340, 336, 244, 0, 0.25), 'M 340 4 A 336 336 0 0 1 676 340 L 584 340 A 244 244 0 0 0 340 96 Z');
+    const whole = ringPath(340, 340, 336, 244, 0, 1);
+    assert.equal(whole.match(/Z/g).length, 2, 'the outside and the hole');
+    assert.match(whole, /A 244 244 0 1 0/, 'the hole is drawn the other way round, so it cuts');
+    assert.match(ringPath(340, 340, 336, 244, 0, 0.75), /A 336 336 0 1 1/, 'a long arc takes the long way');
+  });
+
+  it('reads the cut off a paste and writes it back', () => {
+    const { rows, bad } = parseLegendLines('Jinx | 30 | 45-37 | 4 | 9-3\nViktor | 20 | 50 | 2 | 60\nLux | 10 | 5-9', null);
+    assert.deepEqual(bad, []);
+    assert.deepEqual(rows.map((r) => [r.legend, r.players, r.cut, r.cutWins, r.cutLosses, r.cutRate]), [
+      ['Jinx', 30, 4, 9, 3, null], ['Viktor', 20, 2, 0, 0, 60], ['Lux', 10, 0, 0, 0, null],
+    ]);
+    assert.equal(legendsToText(rows), 'Jinx | 30 | 45-37 | 4 | 9-3\nViktor | 20 | 50 | 2 | 60\nLux | 10 | 5-9 | 0');
+    assert.deepEqual(parseLegendLines('Jinx | 30 | 45-37 | four', null).bad, ['Jinx | 30 | 45-37 | four']);
+    assert.equal(legendsToText([{ legend: 'Jinx', players: 30, wins: 45, losses: 37 }]), 'Jinx | 30 | 45-37', 'no cut, no columns');
+  });
+
+  it('cuts the top tenth of the standings, group by group', () => {
+    const rows = [...Array(20)].map((_, i) => ({
+      legend: i === 0 || i === 10 ? 'A' : 'B', legendSlug: '', record: `${20 - i}-${i}`, group: i < 10 ? 'Group 1' : 'Group 2',
+    }));
+    const out = legendsFromStandings(rows, { cut: true });
+    assert.equal(out.cut, 2, 'one in each ten');
+    assert.deepEqual(out.rows.map((r) => [r.legend, r.players, r.cut]), [['A', 2, 2], ['B', 18, 0]], 'the top of each group came through');
+    assert.deepEqual(cutFromStandings(rows.slice(0, 10), { percent: 100 }).size, 9, 'never the whole field');
+    assert.equal(legendsFromStandings(rows).rows.every((r) => r.cut === 0), true, 'no cut unless it is asked for');
   });
 });
 

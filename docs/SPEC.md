@@ -203,11 +203,12 @@ this set; the PSDs stay the visual reference.
     State `scenes.vscard {visible}`; a full-frame graphic.
 24. **Legend distribution** (`legendstats`, 2026-09-19) — event.legendStats
     {rows[64] {legend, legendSlug, legendCardId, players, share, wins,
-    losses, winRate}, total, label, note} as a pie (SVG, clockwise from
+    losses, winRate, cut, cutWins, cutLosses, cutRate}, total, label, note,
+    cutTotal, cutLabel, cutNote} as a pie (SVG, clockwise from
     twelve in share order, legend faces on the slices with room) beside a
     table (the face ringed in its slice colour, champion and title, share
     over the player count, win rate over the record). scenes.legendstats
-    {visible, winRate, slices multi | all | top, top 3-8, focus[8], roll,
+    {visible, winRate, cut, slices multi | all | top, top 3-8, focus[8], roll,
     autoRoll, loop, speed slow | normal | fast}: the win rate column and the
     note switch together; `slices` multi (the default since 2026-09-19)
     gives every legend two or more players brought a slice and folds the
@@ -224,7 +225,21 @@ this set; the PSDs stay the visual reference.
     the slice comes out 22 units and grows 5%, its face grows, the rest
     step back and dim, its row lights up; while the roll is not playing the
     table brings the newest highlighted row into view, and a highlight on a
-    playing roll holds it (`hold`) until the last highlight clears. Shares,
+    playing roll holds it (`hold`) until the last highlight clears.
+    `cut` (2026-09-20) turns every number to the top cut: only the legends
+    with `cut` > 0 are listed, ordered by their share of the cut, their
+    record is the cut players' (cutWins/cutLosses, or a typed cutRate), and
+    each carries `conversion` (cut over its own players) and the field it
+    came out of (fieldPlayers, fieldShare, fieldStart/fieldEnd). The pie
+    becomes two 92-unit rings (the field 336-244, the cut 230-138) with the
+    cut total and the conversion in the hole; Other is everything else in
+    the field on the outer ring, so both rings close on the same field. In
+    the cut `slices` multi keeps every legend (a cut is small, so a
+    one-player legend is a real slice), and with no cut in the rows the
+    switch shows the field instead of nothing. Who made the cut is read off
+    the event where it can be (platform-model.js topCut: the entrants
+    TopDeck has paired in the bracket), else the top CUT_PERCENT of the
+    standings, group by group. Shares,
     Other, slice colours, the roll, the paste and the standings count live
     in web/shared/legendstats.js; the Tournament platform fills it from
     TopDeck (legendStats in server/platform-model.js). A full-frame graphic.

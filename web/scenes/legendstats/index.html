@@ -20,7 +20,7 @@
       <div class="g-grain"></div><div class="g-dim"></div>
     </div>
     <div class="k-shard s1"></div><div class="k-shard s2"></div>
-    <div class="head"><div class="lead"><div class="title">Legend distribution</div><div class="sub" id="sub"></div></div></div>
+    <div class="head"><div class="lead"><div class="title" id="title">Legend distribution</div><div class="sub" id="sub"></div></div></div>
     <div class="panel" id="panel">
       <div class="chart">
         <div class="sweep">
@@ -29,10 +29,19 @@
             <div class="marks" id="marks"></div>
           </div>
         </div>
+        <div class="hole hidden" id="hole">
+          <div class="hole-n" id="holeN"></div>
+          <div class="hole-what" id="holeWhat"></div>
+          <div class="hole-rate" id="holeRate"></div>
+        </div>
+      </div>
+      <div class="ringkeys hidden" id="ringkeys">
+        <div class="ringkey"><span class="ring outer"></span><span id="keyField"></span></div>
+        <div class="ringkey"><span class="ring inner"></span><span id="keyCut"></span></div>
       </div>
       <div class="rule"></div>
       <div class="table" id="table">
-        <div class="thead"><span>Legend</span><span class="n">Share</span><span class="n rate">Win rate</span></div>
+        <div class="thead"><span>Legend</span><span class="n" id="shareHead">Share</span><span class="n conv">Conversion</span><span class="n rate">Win rate</span></div>
         <div class="view" id="view"><div class="rows" id="rows"></div></div>
       </div>
     </div>

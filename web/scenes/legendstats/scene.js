@@ -4,7 +4,7 @@ import { chainLoad, clearArt } from '../../stage/art.js';
 import { applyVisibility } from '../../stage/exp.js';
 import { FocusBlend } from '../../stage/focusblend.js';
 import {
-  ROLL_SPEEDS, TABLE_ROW_PX, TABLE_VIEW_ROWS, legendSlices, otherTitle, rollAt, rollElapsed, sliceKey, slicePath, splitLegend, tableOverflow,
+  ROLL_SPEEDS, TABLE_ROW_PX, TABLE_VIEW_ROWS, cutTotals, legendSlices, otherTitle, ringPath, rollAt, rollElapsed, sliceKey, slicePath, splitLegend, tableOverflow,
 } from '../../shared/legendstats.js';
 
 const $ = (id) => document.getElementById(id);
@@ -34,6 +34,14 @@ const THIN_AT = 0.8;
 const THIN_SIZE = 84;
 const SVG = 'http://www.w3.org/2000/svg';
 
+// The top cut's two rings (2026-09-20): the field outside, the cut inside
+// it, the headline in the hole. Both bands are 92 units wide with 14
+// between them, and a face rides a band where its arc has room for one.
+const RING_FIELD = [R, R - 92];
+const RING_CUT = [R - 106, R - 198];
+const RING_MARK = 76;
+const bandMid = ([a, b]) => (a + b) / 2;
+
 const pct = (x) => `${(Math.round(x * 10) / 10).toFixed(1)}%`;
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -62,26 +70,76 @@ function portrait(s) {
 // one) and its row. The highlight finds its elements here.
 let drawn = new Map();
 
-function paintPie(slices) {
+// One face on the pie: the circle at `rc` units from the centre along the
+// middle of `from` to `to`, `size` across. It lands as the sweep passes its
+// middle (--a) and travels with its slice under a highlight (--ux, --uy).
+function markAt(s, { from, to, rc, size, thin = false, count = 0 }) {
+  const mid = (from + to) / 2;
+  const ux = Math.sin(mid * 2 * Math.PI);
+  const uy = -Math.cos(mid * 2 * Math.PI);
+  const mark = document.createElement('div');
+  mark.className = `mark${thin ? ' thin' : ''}${s.other ? ' other' : ''}`;
+  mark.style.setProperty('--x', (C + rc * ux - size / 2).toFixed(1));
+  mark.style.setProperty('--y', (C + rc * uy - size / 2).toFixed(1));
+  mark.style.setProperty('--sz', String(size));
+  mark.style.setProperty('--a', mid.toFixed(4));
+  mark.style.setProperty('--ux', ux.toFixed(4));
+  mark.style.setProperty('--uy', uy.toFixed(4));
+  mark.style.setProperty('--rc', rc.toFixed(1));
+  // Other's circle counts the legends folded into it.
+  if (s.other) mark.append(Object.assign(document.createElement('span'), { className: 'lt', textContent: count ? `+${count}` : '?' }));
+  else mark.append(portrait(s));
+  drawn.get(sliceKey(s)).marks.push(mark);
+  return mark;
+}
+
+function paintPie(slices, cut) {
   drawn = new Map();
-  const paths = slices.map((s) => {
-    const path = document.createElementNS(SVG, 'path');
-    path.setAttribute('d', slicePath(C, C, R, s.start, s.end));
-    path.style.fill = s.color;
-    // The unit vector through the slice's middle: the way it comes out.
-    const mid = (s.start + s.end) / 2;
-    path.style.setProperty('--ux', Math.sin(mid * 2 * Math.PI).toFixed(4));
-    path.style.setProperty('--uy', (-Math.cos(mid * 2 * Math.PI)).toFixed(4));
-    drawn.set(sliceKey(s), { path, mark: null, row: null });
-    return path;
-  });
+  const paths = [];
+  for (const s of slices) {
+    drawn.set(sliceKey(s), { paths: [], marks: [], row: null });
+    const arc = (d, from, to, cls) => {
+      const path = document.createElementNS(SVG, 'path');
+      path.setAttribute('d', d);
+      path.style.fill = s.color;
+      if (cls) path.setAttribute('class', cls);
+      // The unit vector through the slice's middle: the way it comes out.
+      const mid = (from + to) / 2;
+      path.style.setProperty('--ux', Math.sin(mid * 2 * Math.PI).toFixed(4));
+      path.style.setProperty('--uy', (-Math.cos(mid * 2 * Math.PI)).toFixed(4));
+      drawn.get(sliceKey(s)).paths.push(path);
+      paths.push(path);
+    };
+    if (!cut) {
+      arc(slicePath(C, C, R, s.start, s.end), s.start, s.end, '');
+      continue;
+    }
+    // The field's ring, then the cut's inside it. A legend can have an arc
+    // on one and not the other: Other holds no cut when everyone in it
+    // missed, and the field's ring always closes.
+    if (s.fieldEnd > s.fieldStart) arc(ringPath(C, C, RING_FIELD[0], RING_FIELD[1], s.fieldStart, s.fieldEnd), s.fieldStart, s.fieldEnd, 'field');
+    if (s.end > s.start) arc(ringPath(C, C, RING_CUT[0], RING_CUT[1], s.start, s.end), s.start, s.end, '');
+  }
   $('pie').replaceChildren(...paths);
   const marks = [];
   for (const s of slices) {
     const art = s.legendSlug || s.legendCardId;
     if (!s.other && !art) continue;
+    if (cut) {
+      // A band's face needs the arc to be at least as long as it is wide.
+      for (const [band, from, to, count] of [
+        [RING_FIELD, s.fieldStart, s.fieldEnd, s.legends + (s.missed || 0)],
+        [RING_CUT, s.start, s.end, s.legends],
+      ]) {
+        const span = to - from;
+        const rc = bandMid(band);
+        if (span <= 0 || 2 * Math.PI * rc * Math.min(span, 0.5) < RING_MARK * 1.15) continue;
+        if (s.other && !count) continue;
+        marks.push(markAt(s, { from, to, rc, size: RING_MARK, count }));
+      }
+      continue;
+    }
     const span = s.end - s.start;
-    const mid = (s.start + s.end) / 2;
     let size;
     let rc;
     let thin = false;
@@ -100,24 +158,24 @@ function paintPie(slices) {
         rc = R * THIN_AT;
       }
     }
-    const ux = Math.sin(mid * 2 * Math.PI);
-    const uy = -Math.cos(mid * 2 * Math.PI);
-    const mark = document.createElement('div');
-    mark.className = `mark${thin ? ' thin' : ''}${s.other ? ' other' : ''}`;
-    mark.style.setProperty('--x', (C + rc * ux - size / 2).toFixed(1));
-    mark.style.setProperty('--y', (C + rc * uy - size / 2).toFixed(1));
-    mark.style.setProperty('--sz', String(size));
-    mark.style.setProperty('--a', mid.toFixed(4));
-    mark.style.setProperty('--ux', ux.toFixed(4));
-    mark.style.setProperty('--uy', uy.toFixed(4));
-    mark.style.setProperty('--rc', rc.toFixed(1));
-    // Other's circle counts the legends folded into it.
-    if (s.other) mark.append(Object.assign(document.createElement('span'), { className: 'lt', textContent: s.legends ? `+${s.legends}` : '?' }));
-    else mark.append(portrait(s));
-    drawn.get(sliceKey(s)).mark = mark;
-    marks.push(mark);
+    marks.push(markAt(s, { from: s.start, to: s.end, rc, size, thin, count: s.legends }));
   }
   $('marks').replaceChildren(...marks);
+}
+
+// The headline in the hole: how many made the cut and what share of the
+// field that is, with a label on each ring saying which is which. Drawn
+// outside the sweep's mask, so it fades in rather than being wiped on.
+function paintHole(stats, cut) {
+  $('hole').classList.toggle('hidden', !cut);
+  $('ringkeys').classList.toggle('hidden', !cut);
+  if (!cut) return;
+  const { cut: made, field, conversion } = cutTotals(stats);
+  setText($('holeN'), String(made));
+  setText($('holeWhat'), 'Made cut');
+  setText($('holeRate'), conversion === null ? '' : `${pct(conversion)} conversion`);
+  setText($('keyField'), field ? `Field · ${plural(field, 'player')}` : 'Field');
+  setText($('keyCut'), made ? `Top cut · ${plural(made, 'player')}` : 'Top cut');
 }
 
 function cell(cls, value, sub, none = false) {
@@ -141,8 +199,10 @@ function stagger(px) {
   rows.forEach((row, i) => row.style.setProperty('--pos', String(Math.min(1, Math.max(0, (i - first) / span)))));
 }
 
-function paintRows(slices, showRate) {
+function paintRows(slices, showRate, cut) {
   $('table').classList.toggle('no-rate', !showRate);
+  $('table').classList.toggle('cut', cut);
+  setText($('shareHead'), cut ? 'Top cut' : 'Share');
   $('view').style.setProperty('--vr', String(Math.max(1, Math.min(TABLE_VIEW_ROWS, slices.length))));
   $('rows').replaceChildren(...slices.map((s) => {
     const row = document.createElement('div');
@@ -150,9 +210,11 @@ function paintRows(slices, showRate) {
     row.style.setProperty('--c', s.color);
     const ic = document.createElement('div');
     ic.className = 'ic';
-    // Other's circle counts the legends folded into it; with none folded it
-    // is players the list does not name.
-    if (s.other) ic.append(Object.assign(document.createElement('span'), { className: 'lt', textContent: s.legends ? `+${s.legends}` : '?' }));
+    // Other's circle counts the legends it holds: the ones folded into it
+    // and, in the cut, the ones nobody got through with. With no legends at
+    // all it is players the list does not name.
+    const held = s.legends + (s.missed || 0);
+    if (s.other) ic.append(Object.assign(document.createElement('span'), { className: 'lt', textContent: held ? `+${held}` : '?' }));
     else ic.append(portrait(s));
     const { champion, title } = s.other ? { champion: s.legend, title: otherTitle(s) } : splitLegend(s.legend);
     const name = document.createElement('div');
@@ -162,10 +224,14 @@ function paintRows(slices, showRate) {
       Object.assign(document.createElement('div'), { className: 'tt', textContent: title }),
     );
     const rate = s.winRate;
+    // In the cut the share is the share of the cut, and the line under it
+    // says how many of the legend's own players that is; the conversion
+    // column carries what came through, over the field share it came from.
     row.append(
       ic,
       name,
-      cell('num', pct(s.share), s.players ? plural(s.players, 'player') : ''),
+      cell('num', pct(s.share), cut ? `${s.players} of ${s.fieldPlayers}` : s.players ? plural(s.players, 'player') : ''),
+      ...(cut ? [cell('num conv', s.conversion === null ? '–' : pct(s.conversion), `${pct(s.fieldShare)} of field`, s.conversion === null)] : []),
       cell('num rate', rate === null ? '–' : pct(rate), s.wins || s.losses ? `${s.wins}-${s.losses}` : '', rate === null),
     );
     const d = drawn.get(sliceKey(s));
@@ -187,36 +253,36 @@ function findFocusRow() {
   focusRow = newest ? keys.indexOf(newest) : -1;
 }
 
+// A legend is one slice of the pie, or one arc on each ring of the top
+// cut: the highlight moves every piece of it together.
+const litAll = (d, on) => {
+  for (const el of [...d.paths, ...d.marks]) el.classList.toggle('lit', on);
+};
+
 function applyFocus(animate) {
   const lit = new Set(focusKeys.filter((k) => drawn.has(k)));
   const any = lit.size > 0;
   const poses = [];
   const keys = [...drawn.keys()];
-  for (const [key, { path, mark, row }] of drawn) {
+  for (const [key, { paths, marks, row }] of drawn) {
     const on = lit.has(key) ? 1 : 0;
     const off = any && !on ? 1 : 0;
-    poses.push([path, { b: on, s: off }]);
-    if (mark) poses.push([mark, { b: on, s: off }]);
+    for (const el of [...paths, ...marks]) poses.push([el, { b: on, s: off }]);
     if (row) poses.push([row, { h: on, d: off }]);
   }
   // The slices in this move are drawn last, over their neighbours, and cast
   // their shadow; the rest keep the pie's order.
-  const was = new Set([...drawn].filter(([, d]) => d.path.classList.contains('lit')).map(([k]) => k));
+  const was = new Set([...drawn].filter(([, d]) => d.paths.some((p) => p.classList.contains('lit'))).map(([k]) => k));
   const top = keys.filter((k) => lit.has(k) || (animate && was.has(k)));
-  for (const [key, d] of drawn) {
-    const on = top.includes(key);
-    d.path.classList.toggle('lit', on);
-    if (d.mark) d.mark.classList.toggle('lit', on);
+  for (const [key, d] of drawn) litAll(d, top.includes(key));
+  if (top.length) {
+    const order = [...keys.filter((k) => !top.includes(k)), ...top];
+    $('pie').append(...order.flatMap((k) => drawn.get(k).paths));
   }
-  if (top.length) $('pie').append(...keys.filter((k) => !top.includes(k)).map((k) => drawn.get(k).path), ...top.map((k) => drawn.get(k).path));
   findFocusRow();
   focus.move(poses, animate).then(() => {
     // Landed: a slice that went back to the pie stops casting its shadow.
-    for (const [key, d] of drawn) {
-      const on = lit.has(key);
-      d.path.classList.toggle('lit', on);
-      if (d.mark) d.mark.classList.toggle('lit', on);
-    }
+    for (const [key, d] of drawn) litAll(d, lit.has(key));
   });
 }
 
@@ -311,8 +377,10 @@ function paint() {
   if (!want || shownKey === want.key) return;
   overflow = tableOverflow(want.slices.length);
   glide = null;
-  paintPie(want.slices);
-  paintRows(want.slices, want.showRate);
+  root.classList.toggle('cut', want.cut);
+  paintPie(want.slices, want.cut);
+  paintHole(want.stats, want.cut);
+  paintRows(want.slices, want.showRate, want.cut);
   applyFocus(false);
   const at = target(Date.now());
   stagger(at);
@@ -367,14 +435,23 @@ const params = initStage({
     const bank = sceneBank(state, params);
     const scene = bank.scenes.legendstats;
     const stats = bank.event.legendStats || { rows: [] };
-    const { slices, total, legends } = legendSlices(stats, { slices: scene.slices, top: scene.top });
+    // The top cut (2026-09-20): with the toggle on and a cut to show, every
+    // number is the cut's and the pie becomes the cut inside the field.
+    // With no cut loaded the toggle changes nothing, so the graphic is never
+    // left blank by it.
+    const { slices, total, legends, cut } = legendSlices(stats, { slices: scene.slices, top: scene.top, cut: scene.cut });
     const showRate = scene.winRate !== false;
-    const key = JSON.stringify([slices.map((s) => [s.legend, s.legendSlug, s.legendCardId, s.share, s.players, s.winRate, s.wins, s.losses, s.color, s.legends || 0, s.ones || false, s.unlisted || false]), showRate]);
-    want = { slices, showRate, key };
+    const made = cut ? cutTotals(stats) : null;
+    const key = JSON.stringify([slices.map((s) => [s.legend, s.legendSlug, s.legendCardId, s.share, s.players, s.winRate, s.wins, s.losses, s.color, s.legends || 0, s.ones || false, s.unlisted || false, s.fieldShare, s.fieldPlayers, s.conversion, s.missed || 0]), showRate, cut, made, cut ? stats.cutLabel : '']);
+    want = { slices, showRate, cut, stats, key };
 
-    setText($('sub'), [bank.event.name, stats.label, total ? plural(total, 'player') : '', legends > 1 ? `${legends} legends` : ''].filter(Boolean).join(' · '));
+    setText($('title'), cut ? 'Top cut legends' : 'Legend distribution');
+    setText($('sub'), (cut
+      ? [bank.event.name, stats.cutLabel || stats.label, legends > 1 ? `${legends} legends through` : '']
+      : [bank.event.name, stats.label, total ? plural(total, 'player') : '', legends > 1 ? `${legends} legends` : '']
+    ).filter(Boolean).join(' · '));
     // The note says how the win rates were counted, so it goes with them.
-    setText($('foot'), showRate ? stats.note || '' : '');
+    setText($('foot'), showRate ? (cut ? stats.cutNote || stats.note || '' : stats.note || '') : '');
 
     const visible = params.force || scene.visible;
     $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
