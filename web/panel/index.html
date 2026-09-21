@@ -864,77 +864,77 @@
         <div class="scene-row" data-scene="igorows">
           <div class="scene-text">
             <div class="scene-name">In-game overlay, rows <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="igoRowsOnAir">ON AIR</button></div>
-            <p class="scene-note">Slim bars along the top and bottom edges, a player each with their name, record, points, legend, champion, archetype and runes, and a column down the left with both camera windows, the series dots and the cards in hand. The middle of that column holds one thing at a time: the event logo, the hands, the card popup's card while the popup is on, or an open showdown split between the players.</p>
+            <p class="scene-note">Slim player bars top and bottom, both cameras and the hands in a left column, which also takes the popup, trash or a showdown.</p>
           </div>
           <button id="toggleIgoRows" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="igodual">
           <div class="scene-text">
             <div class="scene-name">In-game overlay, dual columns <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="igoDualOnAir">ON AIR</button></div>
-            <p class="scene-note">The Regional Qualifier layout: a player column either side of a near-square table camera (crop it to roughly 1214 x 1080 between them), each with the name, seed, legend and champion cards and battlefield, and a mirrored point track across the top. The bottom of each column holds one thing at a time and slides it out before the next comes in: the event block, a player's cards in hand, or the card popup's card while the popup is on.</p>
+            <p class="scene-note">Regional Qualifier layout: a player column either side of a table camera cropped to 1214 x 1080. Each foot takes a hand or a card.</p>
           </div>
           <button id="toggleIgoDual" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="igoportrait">
           <div class="scene-text">
             <div class="scene-name">In-game overlay, portrait pillars <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="igoPortraitOnAir">ON AIR</button></div>
-            <p class="scene-note">A portrait table camera in the middle under a game-state bar (series pips, points, round and clock, with the active side marked), and a pillar each side: record and seed, country and name, a camera well, and the legend tile with its runes, archetype and hand count. The left pillar can open a second window for a hand camera; the right pillar docks the card popup's card at a size where the rules text reads.</p>
+            <p class="scene-note">A portrait table camera under a game-state bar, a pillar each side: name, camera well, legend tile. The left takes a hand cam.</p>
           </div>
           <button id="toggleIgoPortrait" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="pov">
           <div class="scene-text">
             <div class="scene-name">POV overlay <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="povOnAir">ON AIR</button></div>
-            <p class="scene-note">One player's panel down their side of the frame: the featured card large at the top, their points, their name, and their legend, champion and battlefield with each card's art. Left column, right column or both, under Graphic features.</p>
+            <p class="scene-note">A panel down a player's side: the featured card, their points, name, legend, champion and battlefield. Left, right or both.</p>
           </div>
           <button id="togglePov" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="matchup">
           <div class="scene-text">
             <div class="scene-name">Game intro <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="matchupOnAir">ON AIR</button></div>
-            <p class="scene-note">Round and game number over both players' legend, champion and battlefield, built in over the game window of the in-game overlay that is up.</p>
+            <p class="scene-note">Round and game number over both players' legend, champion and battlefield, built into the game window of whichever overlay is up.</p>
           </div>
           <button id="toggleMatchup" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="sideboard">
           <div class="scene-text">
             <div class="scene-name">Sideboard fly-in <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sideboardOnAir">ON AIR</button></div>
-            <p class="scene-note">Both players' sideboards at once, player 1 across the top and player 2 across the bottom, each flying in from their side (or one player alone, under Graphic features).</p>
+            <p class="scene-note">Both players' sideboards at once, player 1 across the top and player 2 across the bottom, each flying in from their side.</p>
           </div>
           <button id="toggleSideboard" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="handfan">
           <div class="scene-text">
             <div class="scene-name">Hand fan <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="handfanOnAir">ON AIR</button></div>
-            <p class="scene-note">One player's cards in hand as real cards fanned along the bottom edge, each badged Reaction, Action, Unit, Champion or Gear, with the other player's known cards small at the top and a dashed slot for each card still unknown. Type the hands under Match data &rsaquo; Hands and showdown; a card marked played greys out and says so.</p>
+            <p class="scene-note">One player's hand as real cards fanned along the bottom edge, each badged by type, with the opponent's known cards on top.</p>
           </div>
           <button id="toggleHandfan" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="showdown">
           <div class="scene-text">
             <div class="scene-name">Showdown <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="showdownOnAir">ON AIR</button></div>
-            <p class="scene-note" id="showdownNote">The cards played onto a showdown, in play order, the newest lifted because it resolves first. Airs only while a showdown is open: Open under Match data &rsaquo; Hands and showdown, which also switches this graphic on in preview.</p>
+            <p class="scene-note" id="showdownNote">The cards played onto a showdown, in play order, the newest lifted because it resolves first. Airs only while a showdown is open.</p>
           </div>
           <button id="toggleShowdown" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="odds">
           <div class="scene-text">
             <div class="scene-name">Odds to draw <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="oddsOnAir">ON AIR</button></div>
-            <p class="scene-note">The cards a player's deck can still give them, the likeliest first, on their side of the game window (or both players'), or in the rows overlay's column when one is up and docks them. From their list under Match data &rsaquo; Decks and battlefields less the cards seen this game, or counted by a RiftAtlas game.</p>
+            <p class="scene-note">The cards a player's deck can still give them, likeliest first, on their side of the game window or docked in the rows column.</p>
           </div>
           <button id="toggleOdds" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="trash">
           <div class="scene-text">
             <div class="scene-name">Trash <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="trashOnAir">ON AIR</button></div>
-            <p class="scene-note">A player's trash (Riftbound's graveyard), the newest first, cards with Flow lit up with their Flow cost, on the game window or in the rows overlay's column when one is up and docks it. Fill it under Match data &rsaquo; Trash and draw odds; a RiftAtlas game fills it on its own.</p>
+            <p class="scene-note">A player's trash, newest first, Flow cards lit up. Fill it under Match data &rsaquo; Trash and draw odds, or let a live game do it.</p>
           </div>
           <button id="toggleTrash" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="sidespot">
           <div class="scene-text">
             <div class="scene-name">Sideboard card spotted <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sidespotOnAir">ON AIR</button></div>
-            <p class="scene-note">A card a player sided in, flown in over the game with "Sideboard Card for" and their name when it turns up in their hand after turn 1, or docked in the middle of the rows overlay's column when one is up. Once it is on air it waits and flies each card in as it is spotted: Live game spots them from RiftAtlas, or spot one by hand under Graphic features.</p>
+            <p class="scene-note">A card a player sided in, flown in over the game when it turns up in their hand after turn 1. It waits on air for each one.</p>
           </div>
           <button id="toggleSidespot" class="scene-toggle">OFF</button>
         </div>
@@ -947,14 +947,14 @@
         <div class="scene-row" data-scene="igo2v2">
           <div class="scene-text">
             <div class="scene-name">In-game overlay 2v2 <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="igo2OnAir">ON AIR</button></div>
-            <p class="scene-note">A sidebar down the right edge with a team at each end: both teammates' legend art (or camera windows) side by side with their names and battlefields, the team name and the series pips on the bar, and your logo on the panel between the teams. Teammates come from Match data &rsaquo; 2v2 teams.</p>
+            <p class="scene-note">A sidebar down the right edge with a team at each end: both teammates' legend art, names and battlefields, and the team name.</p>
           </div>
           <button id="toggleIgo2" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="igobars">
           <div class="scene-text">
             <div class="scene-name">In-game overlay, 2v2 bars <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="igoBarsOnAir">ON AIR</button></div>
-            <p class="scene-note">The Regional Qualifier showmatch layout: team 1 on a bar across the top edge and team 2 across the bottom, each with a legend tile, the team camera with its score badge on the inner edge and the teammate's legend tile hanging off it. The table camera keeps the full width; the bars cover the top and bottom 145 px.</p>
+            <p class="scene-note">The Regional Qualifier showmatch layout: team 1 on a bar across the top, team 2 across the bottom, the table camera full width.</p>
           </div>
           <button id="toggleIgoBars" class="scene-toggle">OFF</button>
         </div>
@@ -967,14 +967,14 @@
         <div class="scene-row" data-scene="standings">
           <div class="scene-text">
             <div class="scene-name">Standings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="standingsOnAir">ON AIR</button></div>
-            <p class="scene-note">The field as a full-width table: rank, legend portrait, player, legend, record, points and the tiebreakers, with the cut line drawn across it. Rows come in one after another; load it from the Tournament platform tab or type it under Match data &rsaquo; Standings, and page it, group it and highlight a player under Graphic features.</p>
+            <p class="scene-note">The field as a full-width table: rank, legend, player, record, points and tiebreakers, with the cut line drawn across it.</p>
           </div>
           <button id="toggleStandings" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="vscard">
           <div class="scene-text">
             <div class="scene-name">Head to head, VS <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="vscardOnAir">ON AIR</button></div>
-            <p class="scene-note">The Sideways Showdown head to head: both players' legend cards tilted either side of a VS on the glowing-arrows ground, their names, the round and the event, with your logo from Look between the cards.</p>
+            <p class="scene-note">Both players' legend cards tilted either side of a VS on the glowing arrows, with their names, the round and the event.</p>
           </div>
           <button id="toggleVscard" class="scene-toggle">OFF</button>
         </div>
@@ -988,14 +988,14 @@
         <div class="scene-row" data-scene="headtohead">
           <div class="scene-text">
             <div class="scene-name">Match card <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="headtoheadOnAir">ON AIR</button></div>
-            <p class="scene-note">Both players in full frame with their legend figures facing each other, their legend and champion cards, and a VS between them over the round, the best of, the points to win and who chose first. Its own fields are under Match data &rsaquo; Match card and result; the seeds, records and finishes come from Extended player details.</p>
+            <p class="scene-note">Both players in full frame with their legend figures facing each other, over the round, the best of and who chose first.</p>
           </div>
           <button id="toggleHeadtohead" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="profile">
           <div class="scene-text">
             <div class="scene-name">Player profile <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="profileOnAir">ON AIR</button></div>
-            <p class="scene-note">One player in full frame: their legend figure beside their name, seed, Swiss and season records, deck, local store and top finishes, from Match data &rsaquo; Extended player details. Switches under Graphic features pick the player, open a camera window bottom right and put their decklist down the left.</p>
+            <p class="scene-note">One player in full frame: their legend figure beside their name, seed, records, deck, store and top finishes.</p>
           </div>
           <button id="toggleProfile" class="scene-toggle">OFF</button>
         </div>
@@ -1008,14 +1008,14 @@
         <div class="scene-row" data-scene="matrix">
           <div class="scene-text">
             <div class="scene-name">Matchup matrix <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="matrixOnAir">ON AIR</button></div>
-            <p class="scene-note">Every legend's win rate against every other: the most played legends across and down, each cell coloured by who is ahead. Paste matchups or load a Rift Registry event under Match data &rsaquo; Matchup matrix, or load the event from the Tournament platform tab.</p>
+            <p class="scene-note">Every legend's win rate against every other, each cell coloured by who is ahead. Paste the matchups or load an event.</p>
           </div>
           <button id="toggleMatrix" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="legendstats">
           <div class="scene-text">
             <div class="scene-name">Legend distribution <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="legendstatsOnAir">ON AIR</button></div>
-            <p class="scene-note">The most played legends: a pie beside a table of each legend's share and win rate. Top cut turns it to the players who got through, the cut drawn inside the field it came out of. Fill it under Match data &rsaquo; Legend distribution, or load it from the Tournament platform tab.</p>
+            <p class="scene-note">The most played legends: a pie beside a table of each one's share and win rate. Top cut turns it to the players who got through.</p>
           </div>
           <button id="toggleLegendstats" class="scene-toggle">OFF</button>
         </div>
@@ -1028,28 +1028,28 @@
         <div class="scene-row" data-scene="gamewin">
           <div class="scene-text">
             <div class="scene-name">Game victory <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="gamewinOnAir">ON AIR</button></div>
-            <p class="scene-note">The end of one game of the series: a plate across the game window of whichever in-game overlay is up, with the winner's legend card, the game number, their name and legend, and the series tally beside them. It names whoever is ahead on games, so move the game wins first; pin a side under Graphic features when a game levels the series.</p>
+            <p class="scene-note">The end of one game: a plate across the game window with the winner's legend card, the game number, their name and the tally.</p>
           </div>
           <button id="toggleGamewin" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="matchwin">
           <div class="scene-text">
             <div class="scene-name">Match victory <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="matchwinOnAir">ON AIR</button></div>
-            <p class="scene-note">The end of a series, full frame: the winner's legend figure across the right, their legend card, name and legend on a card down the left, the games, the points and the best of, who they beat and where they go next. The winner comes from Match data &rsaquo; Match card and result, or from the game wins once a side has enough.</p>
+            <p class="scene-note">The end of a series, full frame: the winner's legend figure, their card, name, the games, the points and where they go next.</p>
           </div>
           <button id="toggleMatchwin" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="champion">
           <div class="scene-text">
             <div class="scene-name">Tournament champion <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="championOnAir">ON AIR</button></div>
-            <p class="scene-note">The event's last graphic: the champion and the runner up side by side with both legends' cards, their names, legends and records, and the final score between them. The two are the final, which is to say the match that is loaded. Decklists under Graphic features opens both players' main decks under them.</p>
+            <p class="scene-note">The event's last graphic: the champion and the runner up side by side with both legends' cards, records and the final score.</p>
           </div>
           <button id="toggleChampion" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="result">
           <div class="scene-text">
             <div class="scene-name">Result <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="resultOnAir">ON AIR</button></div>
-            <p class="scene-note">The end of a match: a band along the bottom with the winner's legend art, the round, the best of and the final points, Match winner over their name and a line for what they advance to. The game score sits in a plate top right and the band's right end is a camera window. Set the winner under Match data &rsaquo; Match card and result.</p>
+            <p class="scene-note">A band along the bottom for the end of a match: the winner's legend art, the round, the final points and where they advance.</p>
           </div>
           <button id="toggleResult" class="scene-toggle">OFF</button>
         </div>
@@ -1062,49 +1062,49 @@
         <div class="scene-row" data-scene="slate">
           <div class="scene-text">
             <div class="scene-name">Slate <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="slateOnAir">ON AIR</button></div>
-            <p class="scene-note">Full-frame hold screens, one layout on all eight: the title and the event across the top, the screen's own content down the left, a rail on the right with the break clock, a side panel that turns through the event's details and the sponsors, and the feature tables along the bottom. Pick the screen (Up next, Starting soon, Be right back, Thanks for watching, Today's schedule, Format, Custom line, Round board) under Graphic features. The round board follows a round through on its own: what is still being played, the results as they land, then the next round's pairings.</p>
+            <p class="scene-note">Full-frame hold screens, one layout on all eight. Pick the screen under Graphic features, from Up next to the round board.</p>
           </div>
           <button id="toggleSlate" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="cornertag">
           <div class="scene-text">
             <div class="scene-name">Corner tag <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cornertagOnAir">ON AIR</button></div>
-            <p class="scene-note">A small tag in the top right: a label, then the two players, the round or your own text, and the break clock. With an in-game overlay up it anchors into the top right corner of the game area that overlay leaves, clear of its panels; the label, the clock and the anchor each switch off under Graphic features.</p>
+            <p class="scene-note">A small tag in the top right: a label, then the two players, the round or your own text, and the break clock.</p>
           </div>
           <button id="toggleCornertag" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="lowerthird">
           <div class="scene-text">
             <div class="scene-name">Lower third <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="lowerthirdOnAir">ON AIR</button></div>
-            <p class="scene-note">A band across the lower third in four modes: the casters, an interview name with a credential line, what is coming up, or custom text with a second line under it. With an in-game overlay up it sits along the bottom of the game area, and it rises above the results ticker when that is running.</p>
+            <p class="scene-note">A band across the lower third in four modes: the casters, an interview name, what is coming up, or your own text.</p>
           </div>
           <button id="toggleLowerthird" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="bracket">
           <div class="scene-text">
             <div class="scene-name">Bracket <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="bracketOnAir">ON AIR</button></div>
-            <p class="scene-note">The top cut round by round in four formats (top 8 and top 16, single and double elimination): each match a pair of rows with the seed, legend portrait, name and game wins, the winner in the accent colour and the loser dimmed. Set the players, the format and the winners under Match data &rsaquo; Bracket.</p>
+            <p class="scene-note">The top cut round by round in four formats, each match a pair of rows with the seed, name and game wins, the winner lit.</p>
           </div>
           <button id="toggleBracket" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="pairings">
           <div class="scene-text">
             <div class="scene-name">Pairings <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="pairingsOnAir">ON AIR</button></div>
-            <p class="scene-note">Every table of the round, 32 a page in two columns, with each finished table's result. Load a round from the Tournament platform tab, or type the tables under Match data &rsaquo; Pairings.</p>
+            <p class="scene-note">Every table of the round, 32 a page in two columns, with each finished table's result.</p>
           </div>
           <button id="togglePairings" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="ongoing">
           <div class="scene-text">
             <div class="scene-name">Ongoing matches <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="ongoingOnAir">ON AIR</button></div>
-            <p class="scene-note">The pairings' tables still being played, bigger the fewer are left. Loaded from the Tournament platform tab, finished tables leave it on their own.</p>
+            <p class="scene-note">The pairings' tables still being played, bigger the fewer are left. Finished tables leave it on their own.</p>
           </div>
           <button id="toggleOngoing" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="ticker">
           <div class="scene-text">
             <div class="scene-name">Results ticker <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="tickerOnAir">ON AIR</button></div>
-            <p class="scene-note">The round's tables along the bottom of the screen, a page at a time: each player's legend icon and name and the result, rolling on to the next tables every few seconds. With an in-game overlay up it fits along the bottom of the game area. Results come in from the Tournament platform tab as tables finish.</p>
+            <p class="scene-note">The round's tables along the bottom of the screen, a page at a time: legend icon, name and result, rolling on every few seconds.</p>
           </div>
           <button id="toggleTicker" class="scene-toggle">OFF</button>
         </div>
@@ -1117,28 +1117,28 @@
         <div class="scene-row" data-scene="sponsor">
           <div class="scene-text">
             <div class="scene-name">Sponsor plate <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sponsorOnAir">ON AIR</button></div>
-            <p class="scene-note">A 3:1 plate that rotates through your sponsors and docks into whichever in-game overlay is up, in that overlay's colours. Add sponsors under Graphic features &rsaquo; Sponsor plate; with none added, a click here opens that list.</p>
+            <p class="scene-note">A 3:1 plate that rotates through your sponsors and docks into whichever in-game overlay is up, in that overlay's colours.</p>
           </div>
           <button id="toggleSponsor" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row popup-row" data-scene="cardpopup">
           <div class="scene-text">
             <div class="scene-name">Card popup <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="cardOnAir">ON AIR</button></div>
-            <p class="scene-note" id="cardpopupNote">One card flies in over the feed, or docks into the rows, dual-column or portrait overlay when one is up. Search it under Graphic features &rsaquo; Card popup; with nothing staged, a click here opens that search.</p>
+            <p class="scene-note" id="cardpopupNote">One card flies in over the feed, or docks into the rows, dual-column or portrait overlay when one is up.</p>
           </div>
           <button id="toggleCard" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="cardrow">
           <div class="scene-text">
             <div class="scene-name">Card row <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="cardrowOnAir">ON AIR</button></div>
-            <p class="scene-note" id="cardrowNote">One to four cards side by side over the look's ground (an overlay with Background off). Pick them under Graphic features &rsaquo; Card row; with nothing picked, a click here opens the slots.</p>
+            <p class="scene-note" id="cardrowNote">One to four cards side by side over the look's ground, or over nothing with Background off.</p>
           </div>
           <button id="toggleCardrow" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="decklist">
           <div class="scene-text">
             <div class="scene-name">Decklist <span class="kind full">Full frame</span> <button type="button" class="onair hidden" id="deckOnAir">ON AIR</button></div>
-            <p class="scene-note">A whole deck as a plate: the legend card large on the left, the main deck as a grid of card pictures with counts, and the battlefields, the champion, the sideboard and the rune counts along the bottom. Load a saved deck from the Decklist card or paste a list straight into preview; Highlight a card there lifts one card out of the plate on air.</p>
+            <p class="scene-note">A whole deck as a plate: the legend card large on the left, the cards in a grid, the battlefields and sideboard along the foot.</p>
           </div>
           <button id="toggleDeck" class="scene-toggle">OFF</button>
         </div>
@@ -1151,21 +1151,21 @@
         <div class="scene-row" data-scene="scorebug">
           <div class="scene-text">
             <div class="scene-name">Score bug <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="scorebugOnAir">ON AIR</button></div>
-            <p class="scene-note">Both players' names and points, with a pip for each game it takes to win the series, on a bar of its own. It is deliberately not built into the in-game overlays, so it can go anywhere in the frame as its own browser source.</p>
+            <p class="scene-note">Both players' names and points, with a pip for each game it takes to win the series, on a bar of its own.</p>
           </div>
           <button id="toggleScorebug" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="arenabug">
           <div class="scene-text">
             <div class="scene-name">Arena score bug <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="arenaOnAir">ON AIR</button></div>
-            <p class="scene-note">The wide-shot bug for stage and player cameras: eight numbered hexes a side lit up to each player's points, a games box, and a name bar with legend thumbnails, country chips, records and the round title, with the event and round clock top left. It replaces the score bug in preview when it is switched on.</p>
+            <p class="scene-note">The wide-shot bug for stage cameras: eight hexes a side lit to each player's points, a games box and a name bar.</p>
           </div>
           <button id="toggleArena" class="scene-toggle">OFF</button>
         </div>
         <div class="scene-row" data-scene="igo1v1">
           <div class="scene-text">
             <div class="scene-name">In-game overlay 1v1 <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="igoOnAir">ON AIR</button></div>
-            <p class="scene-note">A sidebar down the right edge with a player at each end: their legend art (or a camera window) in the holder, their name, their battlefield and the series pips, and your logo on the panel between them. The rest of the frame is left for the table camera. Holders switch between legend art and webcam cutouts under Graphic features.</p>
+            <p class="scene-note">A sidebar down the right edge with a player at each end: their legend art or camera window, name, battlefield and pips.</p>
           </div>
           <button id="toggleIgo" class="scene-toggle">OFF</button>
         </div>

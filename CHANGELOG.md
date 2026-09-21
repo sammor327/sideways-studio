@@ -6,6 +6,11 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## Unreleased
+
+- Every graphic's line in the Graphics list says it in two sentences at most now, and is short enough to sit beside the row's preview picture instead of towering over it. The longest ran to fourteen lines against a picture four lines tall.
+- The lines are held to that height as well, so a narrower panel wraps them no further than the picture beside them.
+
 ## 0.54.0 (2026-09-20)
 
 - The **Between games** block has moved from under the CLEAR buttons to the foot of Match data's **Live game** fold, above Cards played (Sam). A game ending is what starts the run, and that fold is where a game is watched. It still needs no RiftAtlas connection: the run drives the graphics whether or not one is connected, and nothing about how it works has changed.

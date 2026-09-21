@@ -214,6 +214,44 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20i (out of band: the graphics list's lines, two sentences and no taller than the picture)
+
+Sam: "can we shorten the descriptions to a maximum of two sentences and
+make sure they're never longer than the graphic's preview?"
+
+The budget is measurable. The row's picture is 70px and a line of this copy
+is 15.5px, so four lines (62px) is the most a line can run and still sit
+inside its own picture. The narrowest column the panel really gets is 183px,
+at a 1920 window where the control band is three columns, and four lines
+there is about 130 characters. All 38 descriptions were rewritten to that:
+they used to run from 102 to 573 characters, six of them in three sentences.
+
+Copy length alone cannot guarantee the height, because the column narrows
+with the panel, so .graphics-card .scene-note is clamped to four lines with
+overflow hidden. Scoped to the list on purpose: the same class carries the
+live hint lines under Graphic features, which are allowed to run long. The
+warn state still reads inside the clamp (the glyph, the amber, no clipping).
+Measured at 1920: every line four lines or fewer, 62px at most, nothing
+clamped and nothing over the picture. At 1500 nothing is clamped either; at
+1340 the clamp bites on most rows, which is a panel narrower than this list
+is meant for.
+
+test/graphics-list.test.js gained the two sentences, the 130 characters and
+the clamp rule. Both new assertions were mutation-checked.
+
+One test pushed back and was right: test/rift-registry-reach.test.js asserts
+the matrix row mentions pasting, because a venue behind a filter types the
+numbers in by hand. The first shortening dropped that word; the matrix line
+carries it again.
+
+Still open, and not in this change: the ROW is taller than the picture on
+every graphic anyway, because the name plus its kind and ON AIR badges wrap
+to two or three lines in a narrow panel. Only the description was asked for.
+
+522 tests pass. Parked under CHANGELOG's Unreleased heading on Sam's "add
+this to the next release": the parser only reads a heading that is a
+version, so nothing shows these notes until that heading is renamed.
+
 ### 2026-09-20h (out of band: the victory set, the between-games run, the round board, 0.53.0)
 
 Sam, twelve items in one message, with two hours before a show. Every one

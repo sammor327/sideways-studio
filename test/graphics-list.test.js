@@ -43,6 +43,20 @@ describe('the graphics list', () => {
     }
   });
 
+  // The row's picture is 70px tall and a line of this copy is 15.5px, so four
+  // lines (62px) is the budget that keeps the list reading down the pictures
+  // rather than down the text. In the panel's narrowest real column, 183px at
+  // a 1920 window, four lines is about 130 characters. The CSS clamp is what
+  // actually holds the height; this keeps the copy inside it.
+  it('says it in two sentences, short enough to sit beside the picture', async () => {
+    for (const { scene, body } of await rows()) {
+      const text = body.match(TEXT)[3].replace(/&rsaquo;/g, '›').trim();
+      const sentences = text.split(/(?<=[.?!])\s+/).filter(Boolean);
+      assert.ok(sentences.length <= 2, `${scene}'s description runs to ${sentences.length} sentences: ${text}`);
+      assert.ok(text.length <= 130, `${scene}'s description is ${text.length} characters, over the 130 that fit beside the picture`);
+    }
+  });
+
   it('writes them in the house voice, with no em dashes', async () => {
     for (const { scene, body } of await rows()) {
       const text = body.match(TEXT)[3];
@@ -62,6 +76,12 @@ describe('the graphics list', () => {
     const thumb = css.match(/\.scene-thumb \{([\s\S]*?)\}/);
     assert.ok(thumb, 'no .scene-thumb rule');
     assert.doesNotMatch(thumb[1], /grid-row: 1 \/ span 2;/, 'the picture must not span the name and the line');
+    // And the line is clamped to four lines, so it can never grow past the
+    // picture beside it however narrow the panel gets.
+    const clamp = css.match(/\.graphics-card \.scene-note \{([\s\S]*?)\}/);
+    assert.ok(clamp, 'no .graphics-card .scene-note rule');
+    assert.match(clamp[1], /-webkit-line-clamp: 4;/, 'the line must be clamped to four lines');
+    assert.match(clamp[1], /overflow: hidden;/, 'the clamp needs overflow hidden to bite');
   });
 
   it('lists every graphic the look can recolour, each in exactly one section', async () => {

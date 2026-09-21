@@ -772,6 +772,20 @@ footer p { margin: 0; }
   line-height: 1.35;
   color: #8b98a5;
 }
+/* Two sentences at most, and never taller than the row's own picture
+   (2026-09-20, Sam): four lines at 11.5px/1.35 is 62px against the
+   picture's 70, so the list reads down the pictures rather than down the
+   text. The copy is written to that budget and this clamp holds it there
+   in a panel narrow enough to wrap a line more; test/graphics-list.test.js
+   guards the budget. Scoped to the list, because the same class carries
+   the live hint lines under Graphic features, which may run long. */
+.graphics-card .scene-note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
 .scene-note.warn { color: #ffb347; }
 .scene-note.warn::before { content: '\26A0\00a0'; }
 .scene-group { display: flex; flex-direction: column; gap: 10px; }

@@ -161,10 +161,11 @@ beside the star copies that
 graphic's browser-source link for OBS or vMix (the same link Setup lists). They start closed; a fold's heading says how
 many of its graphics are in preview or on air, and putting a graphic in
 preview opens its fold. Each row still carries an Overlay or Full frame
-tag and a line under the name saying what the graphic is and where its
-data comes from; the name and that line share one cell between the picture
-and the switch, so the line always starts directly under the name and stops
-at the switch. The Studio's control band is three columns: Graphics, Graphic
+tag and a line under the name saying what the graphic is, in two sentences
+at most; the name and that line share one cell between the picture and the
+switch, so the line always starts directly under the name and stops at the
+switch. The line is never taller than the row's picture, so the list reads
+down the pictures rather than down the text. The Studio's control band is three columns: Graphics, Graphic
 features and Decklist. Graphic features and Decklist fold from their heading
 too, and every control card can be dragged taller or shorter by the grip
 along its bottom edge (double-click puts it back); the browser remembers
