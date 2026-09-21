@@ -22,7 +22,9 @@ import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState
 import { LOOK_SCENES } from '../web/shared/look.js';
 import { initCardDb, cardDbStatus, cardDbBusy, syncCardDb, autoRefreshCardDb, fillFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readFullArt, readIconArt } from './legends.js';
-import { canSaveFrames, legendFrames, saveFrames } from './legendframes.js';
+import {
+  canBakeFrames, canSaveFrames, initLegendFrames, legendFrameModule, legendFrames, saveFrames,
+} from './legendframes.js';
 import { PLACEMENTS } from '../web/shared/legendframe.js';
 import { buildDeck } from './decklist.js';
 import { sampleBank } from './sample.js';
@@ -550,7 +552,27 @@ const server = http.createServer(async (req, res) => {
   // placements. GET feeds the framer; POST is its Lock in, which rewrites the
   // baked table in web/shared/legendframe.js (source builds only).
   if (url.pathname === '/api/legendframes' && req.method === 'GET') {
-    sendJson(res, 200, { frames: legendFrames(), canSave: canSaveFrames(), placements: PLACEMENTS });
+    sendJson(res, 200, {
+      frames: legendFrames(), canSave: canSaveFrames(), canBake: canBakeFrames(), placements: PLACEMENTS,
+    });
+    return;
+  }
+
+  // The framing module itself, served with this machine's saved table spliced
+  // into it (server/legendframes.js). The scenes IMPORT this rather than
+  // fetching the table, so framing is known by the first painted frame; this
+  // route is what lets Lock in reach them from a packaged build, where the
+  // copy inside the exe cannot be written. Never cached, like the rest of the
+  // scene code.
+  if (url.pathname === '/shared/legendframe.js' && req.method === 'GET') {
+    const mod = await legendFrameModule();
+    if (!mod) {
+      res.writeHead(404, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
+      res.end('no module');
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
+    res.end(mod);
     return;
   }
   if (url.pathname === '/api/legendframes' && req.method === 'POST') {
@@ -863,6 +885,7 @@ async function start() {
   // background, so the graphics are live while it runs.
   if (migrateLegacyArt()) console.log('  Encrypting the card art already on disk in the background.');
   await initLegends();
+  await initLegendFrames();
   await initState();
   await initLibrary();
   await initPlatform();

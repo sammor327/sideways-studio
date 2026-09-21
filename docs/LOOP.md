@@ -453,6 +453,56 @@ produces no frames when it is behind another window, so IntersectionObserver
 delivers nothing; the unmodified 0.45.0 build behaves identically, so this is
 the environment, not the change.
 
+### 2026-09-20e (out of band: the framer saves from the installed app, 0.55.0)
+
+Sam, running 0.48.0's framer in the app he actually uses, hit the disabled
+button and asked what it meant. Three asks followed: rebake on Lock in while
+the exe runs (a restart to apply would be fine), left and right match card
+sides as separate placements, and descriptions of what the boxes and the
+placements are, with as much control as possible, a window per graphic if that
+is what it takes.
+
+The first was a defect, not a limitation to explain. 0.48.0 put the table in
+web/shared/legendframe.js so the scenes could IMPORT it and never wait on a
+fetch, which is right; then it made Lock in rewrite that file, which inside a
+sealed exe cannot work. Optimising for the scene and making the operator's job
+impossible is the wrong trade. The fix keeps the guarantee and drops the
+limitation: the server no longer serves that module off disk, it serves it
+with the saved table spliced in (`legendFrameModule()`), and Lock in writes
+legend-frames.json into the DATA folder, which is writable wherever the app
+runs. Scenes still statically import one module, so framing is known by the
+first painted frame; it takes effect as each browser source reloads, so not
+even the restart Sam offered is needed. From source it also still bakes into
+the module, so framing can be committed and shipped: that is the one
+difference between the two, and the one that should differ.
+
+Second ask took the mirror out. The two sides were one placement with
+`--lf-flip: -1` on `.side.r`, which made x mean "away from the centre" rather
+than a direction, and made the sides impossible to disagree. They are now
+`headtoheadLeft` and `headtoheadRight`, framed apart, and x is screen
+direction everywhere. `cleanEntry` migrates a table written before the split:
+the old single override becomes both sides, the right one negated, so what it
+meant is what it keeps meaning.
+
+Third ask reshaped the framer, and reshaped the model with it. A PLACEMENT now
+knows where it sits in its graphic's 1920x1080 frame, and a GRAPHIC carries
+its own furniture in frame pixels. The framer builds its window entirely from
+that: a tab per graphic, the whole frame drawn at real size, the legend slots
+live inside it, every plate, card and camera window outlined and labelled
+where it really is, and a key that reads each one's note. Which means a window
+for another graphic (the hero tier's holders, the legend card crop) is an
+entry in the model plus a scene calling fullTierFramer, not new markup and new
+stylesheet rules. A Fades switch hides the gradients while placing.
+
+One bug of my own making, found by looking rather than by reading: the key's
+swatch for a legend slot carries the class `slot`, which the draggable slot's
+own rules were matching, so it was being absolutely positioned inside the
+list. Those rules are scoped under `.frame` now. Verified at 1920x1080 with no
+scrollbars, ?transparent=1 and ?anim=0 on both scenes, and end to end in a
+BUILT exe: Lock in there reports canSave true / canBake false, writes the data
+file, the served module carries it, and the match card draws the same legend
+at scale 1.5 on the left and 1.9 on the right. 524 tests, 3 of them new.
+
 ### 2026-09-20d (out of band: the legend framer, 0.48.0)
 
 Sam: "we need to place the legends full arts to be correctly positioned. Can

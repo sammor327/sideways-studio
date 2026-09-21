@@ -14,7 +14,7 @@
 <header>
   <div class="brand">
     <h1>SIDEWAYS <span>STUDIO</span></h1>
-    <p>Legend framer: place each legend's full art in the match card and the player profile, then lock it in</p>
+    <p>Legend framer: place each legend's full art on every graphic that draws it, then lock it in</p>
   </div>
   <div class="head-right">
     <a class="link-btn" href="/panel/">Control panel</a>
@@ -32,63 +32,42 @@
     <p class="hint rail-hint">Ctrl + &uarr; &darr; moves down the list. A dot means that legend has been framed.</p>
   </section>
 
-  <section class="card stages" aria-label="Placements">
+  <section class="card stages" aria-label="Graphics">
     <div class="stages-head">
       <h2 id="nowName">&nbsp;</h2>
+      <nav class="graphic-tabs" id="graphicTabs" role="tablist" aria-label="Graphics"></nav>
       <div class="stages-tools">
-        <label class="inline" title="Thirds and a centre line over both placements"><input type="checkbox" id="guides"> Guides</label>
-        <label class="inline" title="Draw the text, cards and camera window that sit over the art, so a face is never framed behind them"><input type="checkbox" id="furniture" checked> Furniture</label>
-        <label class="inline" title="Which side of the match card to frame against. The other side mirrors, so framing one frames both."><input type="checkbox" id="flip"> Right side</label>
+        <label class="inline" title="Thirds and a centre line over the frame"><input type="checkbox" id="guides"> Guides</label>
+        <label class="inline" title="Outline everything that sits over or beside the legend art: the plates, the cards and the camera window"><input type="checkbox" id="furniture" checked> Furniture</label>
+        <label class="inline" title="Draw the fades that air over the art. Turn them off to see the whole cutout while you place it."><input type="checkbox" id="scrims" checked> Fades</label>
       </div>
     </div>
 
-    <div class="stage-row">
-      <figure class="stage" data-placement="headtohead">
-        <figcaption>Match card side <span>760 &times; 1080</span></figcaption>
-        <div class="fit" id="fitH2h">
-          <div class="frame h2h" id="frameH2h">
-            <div class="art" id="artH2h"><img id="imgH2h" alt=""></div>
-            <div class="scrim h2h-scrim"></div>
-            <div class="edge h2h-edge"></div>
-            <div class="ghosts h2h-ghosts">
-              <div class="g-cards"><i></i><i></i></div>
-              <div class="g-id"><b></b><s></s></div>
-            </div>
-            <div class="guide-lines"></div>
-          </div>
-        </div>
-      </figure>
-
-      <figure class="stage" data-placement="profile">
-        <figcaption>Profile art column <span>1100 &times; 1080</span></figcaption>
-        <div class="fit" id="fitProfile">
-          <div class="frame profile" id="frameProfile">
-            <div class="art" id="artProfile"><img id="imgProfile" alt=""></div>
-            <div class="scrim profile-scrim"></div>
-            <div class="ghosts profile-ghosts">
-              <div class="g-card"></div>
-              <div class="g-cam"></div>
-            </div>
-            <div class="guide-lines"></div>
-          </div>
-        </div>
-      </figure>
-    </div>
-
-    <p class="hint stage-hint">Drag the art to move it, scroll to resize it, double-click to send it back to auto. With a placement focused: arrows nudge (shift for a bigger step), <kbd>[</kbd> <kbd>]</kbd> resize, <kbd>0</kbd> auto.</p>
+    <p class="graphic-note" id="graphicNote"></p>
+    <div class="stage-wrap" id="stageWrap"></div>
+    <p class="hint stage-hint">Drag a legend to move it, scroll to resize it, double-click to send it back to auto. With a slot focused: arrows nudge (shift for a bigger step), <kbd>[</kbd> <kbd>]</kbd> resize, <kbd>0</kbd> auto. Click a slot to edit it on the right.</p>
   </section>
 
   <section class="card controls" aria-label="Frame">
-    <h2>Frame</h2>
+    <div class="ctl-head">
+      <h2>Frame</h2>
+      <select id="slotPick" aria-label="Which slot to edit"></select>
+    </div>
+    <p class="muted" id="slotWhere"></p>
     <p class="muted" id="frameSource"></p>
 
-    <label class="inline linkrow" title="One frame for both placements. Unlink to give the match card and the profile their own numbers."><input type="checkbox" id="link" checked> Both placements share one frame</label>
+    <label class="inline linkrow" title="One frame for every slot on every graphic. Unlink to place this legend differently on each."><input type="checkbox" id="link" checked> All slots share one frame</label>
 
     <div class="frame-sets" id="frameSets"></div>
 
+    <details class="keybox" id="keyBox">
+      <summary>What the boxes mean</summary>
+      <div class="key-list" id="keyList"></div>
+    </details>
+
     <div class="controls-foot">
       <button type="button" class="btn" id="autoBtn" title="Back to the scale that stands this legend full height, with no offset">Auto</button>
-      <button type="button" class="btn" id="copyBtn" title="Use the legend above this one's frame">Copy previous</button>
+      <button type="button" class="btn" id="copyBtn" title="Use the frame of the legend above this one in the list">Copy previous</button>
     </div>
 
     <div class="lockin">

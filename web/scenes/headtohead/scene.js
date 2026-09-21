@@ -19,7 +19,7 @@ function loadHero(p, side) {
   const steps = fullSteps(side);
   delete img.parentElement.dataset.tier;
   if (!steps.length) { clearArt(img); return; }
-  chainLoad(img, steps, fullTierFramer(key, 'headtohead'));
+  chainLoad(img, steps, fullTierFramer(key, p === 'r' ? 'headtoheadRight' : 'headtoheadLeft'));
 }
 
 // The two key cards: the legend card and the champion's card, from the side's

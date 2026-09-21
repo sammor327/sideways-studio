@@ -230,35 +230,45 @@ cues like the clock: they act on air at once, no TAKE needed.
 
 The full-figure cutouts are trimmed to the figure, so no two are the same
 shape: the 49 of them run from 0.432 wide-to-tall (Annie, 639x1480) to 1.266
-(Darius, 1367x1080). The two placements that draw a legend about a thousand
-pixels across are fixed shapes by comparison, the match card's sides at
-760x1080 and the player profile's art column at 1100x1080, so no single rule
-frames all of them.
+(Darius, 1367x1080). The slots that draw them are fixed shapes by comparison,
+the match card's two sides at 760x1080 each and the player profile's art
+column at 1100x1080, so no single rule frames all of them.
 
 Each legend therefore carries its own framing, and the **Legend framer**
 (`/legendframe/`, or the button on the control panel's Setup card) is where it
-is decided. Pick a legend on the left, and both placements are drawn at their
-real size with the same fades that air over them, plus outlines where the
-names, the cards and the camera window sit. Drag the art to move it, scroll to
-size it, double-click to send it back to auto. With a placement focused the
-arrow keys nudge it (hold shift for a bigger step), `[` and `]` size it and
-`0` is auto; Ctrl with the arrow keys walks the list without leaving the art.
+is decided. Pick a legend on the left, then a graphic along the top: the whole
+1920x1080 frame is drawn, with that legend's art live in its slots and
+everything that sits over or beside it outlined in place, so what is framed
+here is what airs. Open "What the boxes mean" under the controls for what each
+outline is and what it does to the art behind it.
 
-The two placements are linked to begin with, so one adjustment frames both.
-Unlink them for a legend that wants a different place in each. The match
-card's two sides mirror, so framing a legend on the left frames it on the
-right as well: an offset that pushes a figure away from the centre fade pushes
-it away from the centre fade on the other side too.
+Drag the art to move it, scroll to size it, double-click to send it back to
+auto. With a slot focused the arrow keys nudge it (hold shift for a bigger
+step), `[` and `]` size it and `0` is auto; Ctrl with the arrow keys walks the
+legend list without leaving the art. Guides draws thirds and a centre line,
+and Fades turns off the gradients that air over the art so the whole cutout
+can be seen while it is placed.
 
-**Lock in** writes the table into `web/shared/legendframe.js`, which is what
-the scenes import. That is a source file, so Lock in only works when the app
-runs from source; a packaged build says so rather than pretending to save.
-Work in progress is kept in the browser as you go, so a framing session
-survives a reload.
+Every slot shares one frame to begin with, so one adjustment frames a legend
+everywhere. Unlink them for a legend that wants a different place on each: the
+match card's left and right sides are separate slots, and nothing about them
+is mirrored, so x is screen direction on both.
+
+**Lock in** saves the framing into the data folder beside the app, and every
+graphic picks it up the next time its browser source loads. That works in the
+installed app and survives updates. Running from source it is also baked into
+`web/shared/legendframe.js`, which is what the scenes import and what ships,
+so framing decided here can be committed and released to everyone else. Work
+in progress is kept in the browser as you go, so a session survives a reload.
 
 A legend nobody has framed is not left to a flat default: it is scaled to
-stand full height in whichever placement it lands in, worked out from its own
-art. That is the fallback, and it is usually close enough to air.
+stand full height in whichever slot it lands in, worked out from its own art.
+That is the fallback, and it is usually close enough to air.
+
+Adding a slot on another graphic is an entry in `web/shared/legendframe.js`
+(its size, where it sits in the 1920x1080 frame, the fades over it and the
+furniture around it) plus that scene calling `fullTierFramer` with its key.
+The framer builds its window from that, so it needs no new markup.
 
 ## Looks
 

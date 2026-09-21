@@ -22,17 +22,16 @@
    ground and the fade below takes its legs. Every legend's cutout is trimmed
    to its own figure, so where it sits comes from that legend's frame
    (web/shared/legendframe.js, tuned in /legendframe/): the figure is CONTAINed
-   and stood on the bottom edge, then scaled and nudged about its feet. The
-   sides mirror, so a frame pushed away from the centre fade on the left is
-   pushed away from it on the right too. */
+   and stood on the bottom edge, then scaled and nudged about its feet. The two
+   sides are separate placements, framed apart, so nothing here mirrors and x
+   is screen direction on both. */
 .side .art[data-tier="full"] { background: transparent; }
 .side .art img.full-tier {
   object-fit: contain;
   object-position: center bottom;
   transform-origin: center bottom;
-  transform: translate(calc(var(--lf-x, 0) * var(--lf-flip, 1) * 1%), calc(var(--lf-y, 0) * 1%)) scale(var(--lf-scale, 1));
+  transform: translate(calc(var(--lf-x, 0) * 1%), calc(var(--lf-y, 0) * 1%)) scale(var(--lf-scale, 1));
 }
-.side.r .art img.full-tier { --lf-flip: -1; }
 .side .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 13, 18, 0.15), var(--ss-ink, #0a0d12) 78%); }
 .side.l::before, .side.r::before { content: ''; position: absolute; top: 0; bottom: 0; width: calc(220 * var(--u)); z-index: 1; }
 .side.l::before { right: 0; background: linear-gradient(90deg, transparent, var(--ss-ink, #0a0d12)); }

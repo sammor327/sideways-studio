@@ -1,57 +1,58 @@
-// Legend framer: place every legend's full-figure cutout in the two large
-// placements, then lock the table into web/shared/legendframe.js.
+// Legend framer: place every legend's full-figure cutout on every graphic that
+// draws it, then lock the table in.
 //
-// The point of the tool is speed: 49 legends, two placements each, and the
-// only way that gets done is if a legend takes seconds. So the placements are
-// direct-manipulation (drag to move, wheel to resize, double-click for auto),
-// the two of them are linked by default so one adjustment frames both, and the
-// rail moves under Ctrl+arrows without leaving the art. Work is kept in this
-// browser as you go; Lock in is what writes the file the scenes read.
+// One window per graphic, drawn at its real 1920x1080 with the legend slots
+// live and everything that sits over or beside them outlined in place, so what
+// is framed here is what airs. Every window is built from
+// web/shared/legendframe.js: a slot on another graphic is an entry there, not
+// markup here.
+//
+// The point of the tool is still speed. 49 legends times three slots only gets
+// done if a legend takes seconds, so the slots share one frame until they are
+// unlinked, direct manipulation does the placing, and Ctrl with the arrow keys
+// walks the rail without leaving the art.
 import {
-  OFFSET_MAX, PLACEMENTS, PLACEMENT_KEYS, SCALE_MAX, SCALE_MIN,
-  applyFrame, autoScale, cleanFrame, cleanFrames, frameFor,
+  GRAPHICS, GRAPHIC_KEYS, OFFSET_MAX, PLACEMENTS, PLACEMENT_KEYS, SCALE_MAX, SCALE_MIN,
+  applyFrame, autoScale, cleanFrame, cleanFrames, frameFor, placementsOf,
 } from '../shared/legendframe.js';
 
 const $ = (id) => document.getElementById(id);
 const DRAFT_KEY = 'sidewaysStudio.legendFrames.draft';
-
-const els = {
-  headtohead: { fit: $('fitH2h'), frame: $('frameH2h'), img: $('imgH2h') },
-  profile: { fit: $('fitProfile'), frame: $('frameProfile'), img: $('imgProfile') },
-};
+const FRAME_W = 1920;
+const FRAME_H = 1080;
 
 let legends = [];       // every legend that has a full cutout
 let frames = {};        // the working table
-let saved = {};         // what the file holds, for the dirty mark
-let canSave = false;
+let saved = {};         // what the server holds, for the dirty mark
+let canBake = false;    // a source build, which can write the table into the repo
 let current = null;     // the selected slug
+let graphic = GRAPHIC_KEYS[0];
+let slot = PLACEMENT_KEYS[0]; // which slot the controls edit
 let linked = true;
-const natural = new Map(); // slug -> { w, h }, filled as each cutout loads
+const natural = new Map();    // slug -> { w, h }
+const slotEls = new Map();    // placement -> { slot, art, img }
 
 const key = (o) => JSON.stringify(o);
 const dirty = () => key(frames) !== key(saved);
 const entryDirty = (slug) => key(frames[slug] || null) !== key(saved[slug] || null);
 
-// --- the frame behind a placement -------------------------------------------
+// --- the frame behind a slot ------------------------------------------------
 
-// The cutout's own size, which is what the untuned scale is worked out from.
-// A decoded image knows it whether or not its load event has been seen yet, so
-// this asks the elements as well as the map: a frame seeded before the event
-// arrived would be seeded from the wrong scale, and nothing afterwards would
-// say so.
+// The cutout's own size, which the untuned scale is worked out from. A decoded
+// image knows it whether or not its load event has been seen yet, so this asks
+// the elements as well as the map: a frame seeded before the event arrived
+// would be seeded from the wrong scale, and nothing afterwards would say so.
 const srcSlug = (img) => {
   if (!img.src) return null;
-  const file = new URL(img.src).pathname.split('/').pop();
-  return decodeURIComponent(file).replace(/\.webp$/, '');
+  return decodeURIComponent(new URL(img.src).pathname.split('/').pop()).replace(/\.webp$/, '');
 };
 
 function naturalOf(slug) {
   const known = natural.get(slug);
   if (known) return known;
-  for (const placement of PLACEMENT_KEYS) {
-    const img = els[placement].img;
-    if (img.naturalWidth && srcSlug(img) === slug) {
-      const size = { w: img.naturalWidth, h: img.naturalHeight };
+  for (const [, els] of slotEls) {
+    if (els.img.naturalWidth && srcSlug(els.img) === slug) {
+      const size = { w: els.img.naturalWidth, h: els.img.naturalHeight };
       natural.set(slug, size);
       return size;
     }
@@ -59,26 +60,25 @@ function naturalOf(slug) {
   return null;
 }
 
-// What a placement is showing: the legend's tuned frame, or the same autoscale
-// the scene would fall back to. With the size still unknown scale 1 stands in,
-// and the stage re-renders once the cutout arrives.
+// What a slot is showing: the legend's tuned frame, or the same autoscale the
+// scene would fall back to.
 function effective(slug, placement) {
   const tuned = frameFor(frames, slug, placement);
   if (tuned) return tuned;
   const nat = naturalOf(slug);
-  const slot = PLACEMENTS[placement];
-  return { scale: nat ? autoScale(nat.w, nat.h, slot.w, slot.h) : 1, x: 0, y: 0 };
+  const p = PLACEMENTS[placement];
+  return { scale: nat ? autoScale(nat.w, nat.h, p.w, p.h) : 1, x: 0, y: 0 };
 }
 
 const isFramed = (slug) => Boolean(frames[slug]);
 
-function ensureEntry(slug, seedPlacement) {
-  if (!frames[slug]) frames[slug] = { base: effective(slug, seedPlacement) };
+function ensureEntry(slug, seed) {
+  if (!frames[slug]) frames[slug] = { base: effective(slug, seed) };
   return frames[slug];
 }
 
-// Move a placement. Linked, the change becomes the frame both placements use;
-// unlinked, only this placement's own override moves.
+// Move a slot. Linked, the change becomes the frame every slot uses; unlinked,
+// only this slot's own override moves.
 function setFrame(slug, placement, patch) {
   const entry = ensureEntry(slug, placement);
   if (linked) {
@@ -92,7 +92,6 @@ function setFrame(slug, placement, patch) {
   render();
 }
 
-// Back to untuned: the scenes' autoscale, and the rail's dot goes out.
 function resetFrame(slug) {
   delete frames[slug];
   saveDraft();
@@ -108,22 +107,25 @@ async function load() {
   ]);
   legends = (legendRes.legends || []).filter((l) => l.fullFile);
   saved = cleanFrames(frameRes.frames);
-  canSave = Boolean(frameRes.canSave);
+  canBake = Boolean(frameRes.canBake);
   frames = readDraft() || structuredClone(saved);
 
-  $('statusDot').classList.toggle('ok', true);
+  $('statusDot').classList.add('ok');
   $('statusText').textContent = `${legends.length} legends with full art`;
-  $('saveNote').textContent = canSave
-    ? 'Lock in writes the table into web/shared/legendframe.js, which the match card and the profile read.'
-    : 'This is a packaged build, where web/ lives inside the exe: framing can only be locked in when the app runs from source.';
-  $('saveBtn').disabled = !canSave;
+  setSaveNote();
 
+  buildTabs();
+  buildStage();
   renderList();
   select(legends.length ? legends[0].slug : null);
 }
 
-// The draft survives a reload, so a framing session is never lost to a stray
-// refresh. It is only ever this browser's copy; the file is what ships.
+function setSaveNote(extra) {
+  $('saveNote').textContent = extra || (canBake
+    ? 'Lock in saves the framing for this copy and bakes it into web/shared/legendframe.js so it can be committed and shipped.'
+    : 'Lock in saves the framing into this app’s data folder and every graphic picks it up the next time its browser source loads. It survives updates.');
+}
+
 function saveDraft() {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(frames));
@@ -176,11 +178,10 @@ function select(slug) {
   current = slug;
   const legend = legends.find((l) => l.slug === slug);
   $('nowName').textContent = legend ? legend.name : 'No legend has full art yet';
-  for (const placement of PLACEMENT_KEYS) {
-    const img = els[placement].img;
-    if (!legend) { img.classList.add('hidden'); img.removeAttribute('src'); continue; }
-    img.classList.remove('hidden');
-    img.src = `/legendart/full/${slug}.webp`;
+  for (const [, els] of slotEls) {
+    if (!legend) { els.img.classList.add('hidden'); els.img.removeAttribute('src'); continue; }
+    els.img.classList.remove('hidden');
+    els.img.src = `/legendart/full/${slug}.webp`;
   }
   renderList();
   render();
@@ -188,106 +189,190 @@ function select(slug) {
   if (row) row.scrollIntoView({ block: 'nearest' });
 }
 
-// --- the placements ---------------------------------------------------------
+// --- the graphic window -----------------------------------------------------
+
+function buildTabs() {
+  $('graphicTabs').replaceChildren(...GRAPHIC_KEYS.map((g) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.textContent = GRAPHICS[g].label;
+    b.classList.toggle('on', g === graphic);
+    b.onclick = () => {
+      graphic = g;
+      if (PLACEMENTS[slot].graphic !== g) slot = placementsOf(g)[0];
+      buildTabs();
+      buildStage();
+      render();
+      fitStage();
+    };
+    return b;
+  }));
+}
+
+// The whole frame, from the model: this graphic's legend slots, the fades over
+// them, and its furniture on top.
+function buildStage() {
+  slotEls.clear();
+  const frame = document.createElement('div');
+  frame.className = 'frame';
+  frame.id = 'frame';
+
+  for (const placement of placementsOf(graphic)) {
+    const p = PLACEMENTS[placement];
+    const el = document.createElement('div');
+    el.className = 'slot';
+    el.dataset.placement = placement;
+    el.tabIndex = 0;
+    Object.assign(el.style, {
+      left: `${p.frameX}px`, top: `${p.frameY}px`, width: `${p.w}px`, height: `${p.h}px`,
+    });
+    const art = document.createElement('div');
+    art.className = 'art';
+    const img = document.createElement('img');
+    img.alt = '';
+    art.append(img);
+    const scrim = document.createElement('div');
+    scrim.className = 'scrim';
+    scrim.style.background = p.scrim;
+    const tag = document.createElement('span');
+    tag.className = 'tag';
+    tag.textContent = p.short;
+    el.append(art, scrim, tag);
+    frame.append(el);
+    slotEls.set(placement, { slot: el, art, img });
+    wireSlot(placement, el);
+    img.addEventListener('load', onArtLoad);
+  }
+
+  for (const f of GRAPHICS[graphic].furniture) {
+    const el = document.createElement('div');
+    el.className = `furn ${f.kind}`;
+    Object.assign(el.style, { left: `${f.x}px`, top: `${f.y}px`, width: `${f.w}px`, height: `${f.h}px` });
+    el.append(Object.assign(document.createElement('span'), { className: 'lab', textContent: f.label }));
+    frame.append(el);
+  }
+
+  frame.append(Object.assign(document.createElement('div'), { className: 'guides' }));
+
+  const fit = document.createElement('div');
+  fit.className = 'fit';
+  fit.id = 'fit';
+  fit.append(frame);
+  $('stageWrap').replaceChildren(fit);
+  $('graphicNote').textContent = GRAPHICS[graphic].note;
+
+  if (current) for (const [, els] of slotEls) els.img.src = `/legendart/full/${current}.webp`;
+  renderKey();
+  renderSlotPick();
+}
+
+// A cutout's size decides the untuned scale, so the window re-renders once it
+// is known. The size is recorded against the legend the file is OF, not
+// whichever is selected when it lands: walking the rail leaves loads in flight,
+// and one finishing late must not hand its measurements to its successor.
+function onArtLoad(e) {
+  const img = e.currentTarget;
+  const slug = srcSlug(img);
+  if (!slug || !img.naturalWidth) return;
+  natural.set(slug, { w: img.naturalWidth, h: img.naturalHeight });
+  if (slug === current) render();
+}
 
 function render() {
-  for (const placement of PLACEMENT_KEYS) {
-    const { frame, img } = els[placement];
-    applyFrame(img, current ? effective(current, placement) : null);
-    frame.classList.toggle('flipped', placement === 'headtohead' && $('flip').checked);
-    frame.style.setProperty('--lf-flip', placement === 'headtohead' && $('flip').checked ? '-1' : '1');
+  for (const [placement, els] of slotEls) {
+    applyFrame(els.img, current ? effective(current, placement) : null);
+    els.slot.classList.toggle('on', placement === slot);
+  }
+  const frame = $('frame');
+  if (frame) {
     frame.classList.toggle('guides-on', $('guides').checked);
-    frame.querySelector('.ghosts').classList.toggle('off', !$('furniture').checked);
+    frame.classList.toggle('no-furniture', !$('furniture').checked);
+    frame.classList.toggle('no-scrims', !$('scrims').checked);
   }
   renderControls();
   renderList();
 }
 
-// Scale each placement to the room it has been given, so both are on screen
-// whole and at their true shape whatever the window is. Every term is floored:
-// the drag maths divides by this scale, so a window too narrow to measure (or
-// a first call before the page has been laid out) must still leave a stage
-// that can be dragged rather than one turned inside out by a negative one.
-const GAP = 14;
-const CAPTION = 22;
-const MIN_K = 0.05;
-
-function fitStages() {
-  const row = document.querySelector('.stage-row');
-  const totalDesignW = PLACEMENT_KEYS.reduce((n, p) => n + PLACEMENTS[p].w, 0);
-  const byHeight = Math.max(160, row.clientHeight - CAPTION) / 1080;
-  const byWidth = Math.max(240, row.clientWidth - GAP) / totalDesignW;
-  const k = Math.max(MIN_K, Math.min(byHeight, byWidth));
-  for (const placement of PLACEMENT_KEYS) {
-    const { fit, frame } = els[placement];
-    const slot = PLACEMENTS[placement];
-    frame.style.setProperty('--k', String(k));
-    fit.style.width = `${Math.round(slot.w * k)}px`;
-    fit.style.height = `${Math.round(slot.h * k)}px`;
-  }
+// Scale the frame to the room it has. Every term is floored: the drag maths
+// divides by this scale, so a window too small to measure (or a first call
+// before the page is laid out) must still leave a frame that can be dragged
+// rather than one turned inside out by a negative one.
+function fitStage() {
+  const wrap = $('stageWrap');
+  const fit = $('fit');
+  if (!wrap || !fit) return;
+  const k = Math.max(0.05, Math.min(
+    Math.max(160, wrap.clientHeight) / FRAME_H,
+    Math.max(320, wrap.clientWidth) / FRAME_W,
+  ));
+  fit.firstElementChild.style.setProperty('--k', String(k));
+  fit.style.width = `${Math.round(FRAME_W * k)}px`;
+  fit.style.height = `${Math.round(FRAME_H * k)}px`;
 }
 
-// Drag, wheel and keys on a placement. The frame is drawn at --k, and the
-// offsets are percentages of the placement, so a pointer move converts once:
-// screen px -> design px -> percent. A flipped match card moves the other way,
-// because that is what the operator is looking at.
-function wireStage(placement) {
-  const { fit, frame } = els[placement];
-  const slot = PLACEMENTS[placement];
-  fit.tabIndex = 0;
+const scaleOf = () => Number($('frame').style.getPropertyValue('--k')) || 1;
 
-  const flipOf = () => (placement === 'headtohead' && $('flip').checked ? -1 : 1);
-  const scaleOf = () => Number(frame.style.getPropertyValue('--k')) || 1;
-
+// Drag, wheel and keys on one slot. The frame is drawn at --k and the offsets
+// are percentages of the SLOT, so a pointer move converts once: screen px ->
+// design px -> percent of that slot.
+function wireSlot(placement, el) {
+  const p = PLACEMENTS[placement];
   let drag = null;
-  fit.addEventListener('pointerdown', (e) => {
+
+  const pick = () => { slot = placement; renderSlotPick(); render(); };
+
+  el.addEventListener('pointerdown', (e) => {
+    pick();
     // Nothing to drag, and nothing to seed a frame from, until the cutout has
     // decoded: its size is what an untuned scale is worked out from.
     if (!current || e.button !== 0 || !naturalOf(current)) return;
-    const start = effective(current, placement);
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, start };
-    fit.setPointerCapture(e.pointerId);
-    fit.classList.add('dragging');
-    fit.focus();
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, start: effective(current, placement) };
+    el.setPointerCapture(e.pointerId);
+    el.classList.add('dragging');
+    el.focus();
     e.preventDefault();
   });
-  fit.addEventListener('pointermove', (e) => {
+  el.addEventListener('pointermove', (e) => {
     if (!drag || e.pointerId !== drag.id) return;
     const k = scaleOf();
-    const dx = ((e.clientX - drag.x) / k / slot.w) * 100 * flipOf();
-    const dy = ((e.clientY - drag.y) / k / slot.h) * 100;
-    setFrame(current, placement, { x: drag.start.x + dx, y: drag.start.y + dy });
+    setFrame(current, placement, {
+      x: drag.start.x + ((e.clientX - drag.x) / k / p.w) * 100,
+      y: drag.start.y + ((e.clientY - drag.y) / k / p.h) * 100,
+    });
   });
   const endDrag = (e) => {
     if (!drag || (e && e.pointerId !== drag.id)) return;
     drag = null;
-    fit.classList.remove('dragging');
+    el.classList.remove('dragging');
   };
-  fit.addEventListener('pointerup', endDrag);
-  fit.addEventListener('pointercancel', endDrag);
+  el.addEventListener('pointerup', endDrag);
+  el.addEventListener('pointercancel', endDrag);
 
-  fit.addEventListener('wheel', (e) => {
+  el.addEventListener('wheel', (e) => {
     if (!current) return;
     e.preventDefault();
-    const cur = effective(current, placement);
-    setFrame(current, placement, { scale: cur.scale * (1 - Math.sign(e.deltaY) * 0.03) });
+    pick();
+    setFrame(current, placement, {
+      scale: effective(current, placement).scale * (1 - Math.sign(e.deltaY) * 0.03),
+    });
   }, { passive: false });
 
-  fit.addEventListener('dblclick', () => { if (current) resetFrame(current); });
+  el.addEventListener('dblclick', () => { if (current) resetFrame(current); });
 
-  fit.addEventListener('keydown', (e) => {
+  el.addEventListener('keydown', (e) => {
     if (!current || e.ctrlKey || e.metaKey) return;
     const cur = effective(current, placement);
-    const stepBy = e.shiftKey ? 2 : 0.5;
+    const by = e.shiftKey ? 2 : 0.5;
     const nudge = {
-      ArrowLeft: { x: cur.x - stepBy * flipOf() },
-      ArrowRight: { x: cur.x + stepBy * flipOf() },
-      ArrowUp: { y: cur.y - stepBy },
-      ArrowDown: { y: cur.y + stepBy },
+      ArrowLeft: { x: cur.x - by },
+      ArrowRight: { x: cur.x + by },
+      ArrowUp: { y: cur.y - by },
+      ArrowDown: { y: cur.y + by },
       '[': { scale: cur.scale - 0.02 },
       ']': { scale: cur.scale + 0.02 },
     }[e.key];
-    if (nudge) { e.preventDefault(); setFrame(current, placement, nudge); return; }
+    if (nudge) { e.preventDefault(); pick(); setFrame(current, placement, nudge); return; }
     if (e.key === '0') { e.preventDefault(); resetFrame(current); }
   });
 }
@@ -300,48 +385,76 @@ const CTLS = [
   { k: 'y', label: 'Y', min: -OFFSET_MAX, max: OFFSET_MAX, step: 0.5 },
 ];
 
+function renderSlotPick() {
+  const sel = $('slotPick');
+  sel.replaceChildren(...PLACEMENT_KEYS.map((p) => Object.assign(document.createElement('option'), {
+    value: p, textContent: PLACEMENTS[p].label, selected: p === slot,
+  })));
+  $('slotWhere').textContent = PLACEMENTS[slot].where;
+}
+
 function renderControls() {
-  const sets = linked
-    ? [{ placement: PLACEMENT_KEYS[0], title: 'Both placements' }]
-    : PLACEMENT_KEYS.map((p) => ({ placement: p, title: PLACEMENTS[p].label }));
-  $('frameSets').replaceChildren(...sets.map(({ placement, title }) => {
-    const box = document.createElement('div');
-    box.className = 'frame-set';
-    box.append(Object.assign(document.createElement('h3'), { textContent: title }));
-    const frame = current ? effective(current, placement) : { scale: 1, x: 0, y: 0 };
-    for (const ctl of CTLS) {
-      const row = document.createElement('div');
-      row.className = 'ctl';
-      const label = Object.assign(document.createElement('label'), { textContent: ctl.label });
-      const range = Object.assign(document.createElement('input'), {
-        type: 'range', min: ctl.min, max: ctl.max, step: ctl.step, value: frame[ctl.k], disabled: !current,
-      });
-      const num = Object.assign(document.createElement('input'), {
-        type: 'number', min: ctl.min, max: ctl.max, step: ctl.step, value: frame[ctl.k], disabled: !current,
-      });
-      label.htmlFor = range.id = `ctl-${placement}-${ctl.k}`;
-      const write = (v) => setFrame(current, placement, { [ctl.k]: Number(v) });
-      range.oninput = () => write(range.value);
-      num.onchange = () => write(num.value);
-      row.append(label, range, num);
-      box.append(row);
-    }
-    return box;
-  }));
+  const box = document.createElement('div');
+  box.className = 'frame-set';
+  const frame = current ? effective(current, slot) : { scale: 1, x: 0, y: 0 };
+  for (const ctl of CTLS) {
+    const row = document.createElement('div');
+    row.className = 'ctl';
+    const label = Object.assign(document.createElement('label'), { textContent: ctl.label });
+    const range = Object.assign(document.createElement('input'), {
+      type: 'range', min: ctl.min, max: ctl.max, step: ctl.step, value: frame[ctl.k], disabled: !current,
+    });
+    const num = Object.assign(document.createElement('input'), {
+      type: 'number', min: ctl.min, max: ctl.max, step: ctl.step, value: frame[ctl.k], disabled: !current,
+    });
+    label.htmlFor = range.id = `ctl-${ctl.k}`;
+    const write = (v) => setFrame(current, slot, { [ctl.k]: Number(v) });
+    range.oninput = () => write(range.value);
+    num.onchange = () => write(num.value);
+    row.append(label, range, num);
+    box.append(row);
+  }
+  $('frameSets').replaceChildren(box);
 
   const framed = current && isFramed(current);
   $('frameSource').textContent = !current ? ''
     : (framed
-      ? 'Framed by hand.'
-      : 'Not framed yet: each placement is standing this legend full height on its own, the scenes’ fallback. The first adjustment sets one frame for both.');
+      ? (linked ? 'Framed by hand, one frame for every slot.' : 'Framed by hand, each slot on its own.')
+      : 'Not framed yet: every slot is standing this legend full height on its own, the scenes’ fallback.');
   $('autoBtn').disabled = !framed;
   $('copyBtn').disabled = !current || !previousFramed();
   $('saveBtn').textContent = dirty() ? 'Lock in' : 'Locked in';
-  $('saveBtn').disabled = !canSave || !dirty();
+  $('saveBtn').disabled = !dirty();
 }
 
-// The legend above this one in the rail that has a frame to copy: framing a
-// run of legends with the same pose is then one click each.
+// What the boxes and the fades on this graphic mean. Built from the model, so
+// a new graphic explains itself.
+function renderKey() {
+  const items = [
+    { kind: 'slot', label: 'Legend slot', note: 'Where this legend’s full art is drawn. Drag inside it to place the figure; the blue rim is the slot being edited.' },
+    ...GRAPHICS[graphic].furniture.map((f) => ({ kind: f.kind, label: f.label, note: f.note })),
+    ...placementsOf(graphic).map((p) => ({
+      kind: 'fade', label: `Fades over ${PLACEMENTS[p].short.toLowerCase()}`, note: PLACEMENTS[p].scrimNote,
+    })),
+  ];
+  $('keyList').replaceChildren(...items.map((it) => {
+    const row = document.createElement('div');
+    row.className = 'key-item';
+    row.append(
+      Object.assign(document.createElement('span'), { className: `key-swatch ${it.kind}` }),
+      Object.assign(document.createElement('span'), { innerHTML: '' }),
+    );
+    const text = row.lastElementChild;
+    text.append(
+      Object.assign(document.createElement('b'), { textContent: it.label }),
+      document.createTextNode(it.note),
+    );
+    return row;
+  }));
+}
+
+// The legend above this one in the rail that has a frame to copy: framing a run
+// of legends with the same pose is then one click each.
 function previousFramed() {
   const list = visibleSlugs();
   for (let i = list.indexOf(current) - 1; i >= 0; i -= 1) {
@@ -362,57 +475,50 @@ async function lockIn() {
     });
     const out = await res.json();
     if (!out.ok) {
-      $('saveNote').textContent = out.reason === 'packaged'
-        ? 'Not locked in: a packaged build cannot write web/shared/legendframe.js. Run the app from source to lock framing in.'
-        : `Not locked in: ${out.reason || out.error || 'the server refused it'}.`;
+      setSaveNote(`Not locked in: ${out.reason || out.error || 'the server refused it'}.`);
       renderControls();
       return;
     }
     saved = cleanFrames(out.frames);
     frames = structuredClone(saved);
     saveDraft();
-    $('saveNote').textContent = `Locked in: ${Object.keys(saved).length} legends written to web/shared/legendframe.js.`;
+    const n = Object.keys(saved).length;
+    setSaveNote(out.baked
+      ? `Locked in: ${n} legends saved and baked into web/shared/legendframe.js, ready to commit.`
+      : `Locked in: ${n} legends saved. Reload each graphic’s browser source to see it, or restart the app.`);
   } catch (err) {
-    $('saveNote').textContent = `Not locked in: ${err.message}.`;
+    setSaveNote(`Not locked in: ${err.message}.`);
   }
   render();
 }
 
 // --- wiring -----------------------------------------------------------------
 
-PLACEMENT_KEYS.forEach(wireStage);
-
-// A cutout's own size decides the untuned scale, so the stages re-render once
-// it is known. The size is recorded against the legend the file is OF, not
-// whichever one is selected when it lands: walking the rail quickly leaves
-// loads in flight, and one of them finishing late must not hand its
-// measurements to the legend that has taken its place.
-for (const placement of PLACEMENT_KEYS) {
-  els[placement].img.addEventListener('load', (e) => {
-    const img = e.currentTarget;
-    const slug = srcSlug(img);
-    if (!slug || !img.naturalWidth) return;
-    natural.set(slug, { w: img.naturalWidth, h: img.naturalHeight });
-    if (slug === current) render();
-  });
-}
-
-$('filter').oninput = () => { renderList(); };
-$('flip').onchange = render;
+$('filter').oninput = renderList;
 $('guides').onchange = render;
 $('furniture').onchange = render;
+$('scrims').onchange = render;
+$('slotPick').onchange = () => { slot = $('slotPick').value; graphicFor(slot); render(); };
 
-// Unlinking hands each placement the frame it is already showing, so nothing
-// moves at the moment the switch flips; relinking keeps the base.
+// Picking a slot on another graphic turns to that graphic, so the controls and
+// the window can never be showing different things.
+function graphicFor(placement) {
+  const g = PLACEMENTS[placement].graphic;
+  if (g === graphic) { renderSlotPick(); return; }
+  graphic = g;
+  buildTabs();
+  buildStage();
+  fitStage();
+}
+
+// Unlinking hands every slot the frame it is already showing, so nothing moves
+// at the moment the switch flips; relinking keeps the base.
 $('link').onchange = () => {
   linked = $('link').checked;
   if (current && frames[current]) {
     const entry = frames[current];
-    if (!linked) {
-      entry.per = Object.fromEntries(PLACEMENT_KEYS.map((p) => [p, effective(current, p)]));
-    } else {
-      delete entry.per;
-    }
+    if (!linked) entry.per = Object.fromEntries(PLACEMENT_KEYS.map((p) => [p, effective(current, p)]));
+    else delete entry.per;
     saveDraft();
   }
   render();
@@ -428,8 +534,6 @@ $('copyBtn').onclick = () => {
 };
 $('saveBtn').onclick = lockIn;
 
-// Ctrl + arrows walk the rail from anywhere, so a framing run never needs the
-// mouse to leave the art.
 window.addEventListener('keydown', (e) => {
   if (!(e.ctrlKey || e.metaKey)) return;
   if (e.key === 'ArrowDown') { e.preventDefault(); step(1); }
@@ -442,8 +546,8 @@ window.addEventListener('beforeunload', (e) => {
   e.returnValue = '';
 });
 
-window.addEventListener('resize', fitStages);
-new ResizeObserver(fitStages).observe(document.querySelector('.stage-row'));
+window.addEventListener('resize', fitStage);
+new ResizeObserver(fitStage).observe($('stageWrap'));
 
 await load();
-fitStages();
+fitStage();

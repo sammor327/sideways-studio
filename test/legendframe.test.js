@@ -6,8 +6,8 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
-  DEFAULT_FRAME, OFFSET_MAX, PLACEMENTS, SCALE_MAX, SCALE_MIN,
-  autoScale, cleanEntry, cleanFrame, cleanFrames, frameFor,
+  DEFAULT_FRAME, GRAPHICS, OFFSET_MAX, PLACEMENTS, SCALE_MAX, SCALE_MIN,
+  autoScale, cleanEntry, cleanFrame, cleanFrames, frameFor, placementsOf,
 } from '../web/shared/legendframe.js';
 import { spliceFrames } from '../server/legendframes.js';
 
@@ -37,6 +37,41 @@ test('an entry keeps only the placements that exist', () => {
   assert.deepEqual(Object.keys(entry.per), ['profile']);
 });
 
+// The match card was one placement until 0.55.0, mirrored in CSS. A table
+// written then must keep meaning what it meant, on both sides.
+test('a table from before the match card split keeps working, right side mirrored', () => {
+  const entry = cleanEntry({ base: { scale: 1, x: 0, y: 0 }, per: { headtohead: { scale: 1.3, x: 12, y: -4 } } });
+  assert.deepEqual(Object.keys(entry.per).sort(), ['headtoheadLeft', 'headtoheadRight']);
+  assert.deepEqual(entry.per.headtoheadLeft, { scale: 1.3, x: 12, y: -4 });
+  assert.deepEqual(entry.per.headtoheadRight, { scale: 1.3, x: -12, y: -4 });
+});
+
+test('an explicit side beats the migrated one', () => {
+  const entry = cleanEntry({
+    base: { scale: 1, x: 0, y: 0 },
+    per: { headtohead: { scale: 1.3, x: 12, y: 0 }, headtoheadRight: { scale: 2, x: 5, y: 1 } },
+  });
+  assert.deepEqual(entry.per.headtoheadRight, { scale: 2, x: 5, y: 1 });
+});
+
+// Every legend slot has to sit inside its graphic's frame, or the framer draws
+// a window that does not match what airs.
+test('every placement sits inside its graphic at 1920x1080', () => {
+  for (const [k, p] of Object.entries(PLACEMENTS)) {
+    assert.ok(GRAPHICS[p.graphic], `${k} names a graphic that exists`);
+    assert.ok(p.frameX >= 0 && p.frameX + p.w <= 1920, `${k} fits across the frame`);
+    assert.ok(p.frameY >= 0 && p.frameY + p.h <= 1080, `${k} fits down the frame`);
+    assert.ok(p.label && p.short && p.where && p.scrim && p.scrimNote, `${k} describes itself`);
+  }
+  for (const [k, g] of Object.entries(GRAPHICS)) {
+    assert.ok(placementsOf(k).length, `${k} has at least one legend slot`);
+    for (const f of g.furniture) {
+      assert.ok(f.label && f.note, `${k} furniture describes itself`);
+      assert.ok(['plate', 'card', 'camera'].includes(f.kind), `${k} furniture has a known kind`);
+    }
+  }
+});
+
 test('the table drops keys that are not legend slugs and sorts what is left', () => {
   const frames = cleanFrames({ zed: {}, 'master-yi-wuju-bladesman': {}, 'Bad Slug': {}, '../etc': {} });
   assert.deepEqual(Object.keys(frames), ['master-yi-wuju-bladesman', 'zed']);
@@ -48,7 +83,7 @@ test('a placement uses its own override, else the legend base, else nothing', ()
     zed: { base: { scale: 1.3, x: -6, y: 2 } },
   });
   assert.equal(frameFor(frames, 'ahri', 'profile').scale, 1.6);
-  assert.equal(frameFor(frames, 'ahri', 'headtohead').scale, 1.1);
+  assert.equal(frameFor(frames, 'ahri', 'headtoheadLeft').scale, 1.1);
   assert.equal(frameFor(frames, 'zed', 'profile').x, -6);
   assert.equal(frameFor(frames, 'nobody', 'profile'), null);
   assert.equal(frameFor(frames, '', 'profile'), null);
@@ -57,7 +92,7 @@ test('a placement uses its own override, else the legend base, else nothing', ()
 // The untuned fallback. A cutout taller than its slot is already full height
 // under CONTAIN; a wider one has to grow, which is what crops its sides.
 test('autoscale stands a cutout full height in its slot', () => {
-  const h2h = PLACEMENTS.headtohead;
+  const h2h = PLACEMENTS.headtoheadLeft;
   // Annie, 639x1480: far narrower than the 760x1080 side, so CONTAIN fits her
   // by height and nothing more is needed.
   assert.equal(autoScale(639, 1480, h2h.w, h2h.h), 1);

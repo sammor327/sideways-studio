@@ -6,8 +6,12 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
-## Unreleased
+## 0.55.0 (2026-09-20)
 
+- Lock in now works in the installed app. The legend framer used to refuse to save unless the app was running from its source code, which is not how anybody runs it: framing is saved into the app's own data folder instead, and every graphic picks it up the next time its browser source loads. It survives updates, and there is nothing to rebuild.
+- The match card's two sides are framed separately. A legend on the left and the same legend on the right can now sit in different places, at different sizes, instead of the right side being forced to mirror the left.
+- The framer draws the whole graphic, not just the slot. A tab per graphic shows the real 1920 by 1080 frame with the legend art live in it and everything that sits over or beside it outlined in place: the centre column, the name plates, the legend and champion cards, the player card and the camera window, each labelled.
+- A key under the controls says what every box and every fade means and what it will do to the art behind it, and a Fades switch turns the fades off so the whole cutout can be seen while it is being placed.
 - Every graphic's line in the Graphics list says it in two sentences at most now, and is short enough to sit beside the row's preview picture instead of towering over it. The longest ran to fourteen lines against a picture four lines tall.
 - The lines are held to that height as well, so a narrower panel wraps them no further than the picture beside them.
 
