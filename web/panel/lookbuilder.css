@@ -162,19 +162,53 @@ body:not([data-view="look"]) .look-view { display: none; }
 }
 .look-tiles.size-s { --tile-min: 250px; }
 .look-tiles.size-l { --tile-min: 500px; }
+/* Each group of tiles folds from its heading, with the graphics starred in
+   the Studio gathered in Favorites above them (web/shared/tilegroups.js).
+   Shared by this stage and the Tournament platform's. */
+.look-group { display: block; }
+.look-group-head {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #1e242b;
+}
+.look-group:first-of-type > .look-group-head { margin-top: 2px; }
+.look-group-head::-webkit-details-marker { display: none; }
+.look-group-head::before {
+  content: '\25B8';
+  font-size: 11px;
+  color: #8b98a5;
+  transition: transform 0.15s linear;
+}
+.look-group[open] > .look-group-head::before { transform: rotate(90deg); }
+.look-group-head:hover .look-group-label { color: #e8edf1; }
+.look-group-head:focus-visible { outline: 2px solid var(--tes-blue); outline-offset: 2px; }
 .look-group-title {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  margin: 14px 0 8px;
+  margin: 0;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
   color: #8b98a5;
 }
-.look-group-title:first-child { margin-top: 2px; }
-.look-group-count { font-size: 11px; color: #5d6975; letter-spacing: 1px; }
+.look-group-note {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #5d6975;
+}
+.look-group-count { margin-left: auto; font-size: 11px; color: #5d6975; letter-spacing: 1px; }
+.look-group-fav .look-group-label { color: #ffd34d; }
+.tile-fav-empty { margin: 0 0 6px; }
 .look-group-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr));

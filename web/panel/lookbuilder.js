@@ -14,6 +14,7 @@
 
 import { TILES, TILE_GROUPS } from '../shared/looktiles.js';
 import { LOOK_SCENES, SCENE_LABELS, resolveLook } from '../shared/look.js';
+import { FAVORITES_GROUP, buildTileStage } from '../shared/tilegroups.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -82,6 +83,7 @@ function setView(next, { remember = true } = {}) {
   window.dispatchEvent(new CustomEvent('sideways:view', { detail: view }));
   if (view === 'look') {
     applyPrefs();
+    measureTiles();
     observeTiles();
     paint();
   } else {
@@ -107,7 +109,6 @@ window.addEventListener('hashchange', () => setView(viewFromHash(), { remember: 
 // --- the grid ---
 
 const grid = $('lookTiles');
-const tiles = [];
 
 function newFrame() {
   const frame = el('iframe');
@@ -118,70 +119,85 @@ function newFrame() {
   return frame;
 }
 
-for (const group of TILE_GROUPS) {
-  const members = TILES.filter((t) => t.group === group.key);
-  if (!members.length) continue;
-  const head = el('h3', 'look-group-title');
-  head.id = `lookGroup-${group.key}`;
-  head.append(el('span', '', group.label), el('span', 'look-group-count', String(members.length)));
-  const wrap = el('div', 'look-group-grid');
-  for (const t of members) {
-    const card = el('article', 'look-tile');
-    card.dataset.tile = t.key;
-    card.dataset.scene = t.scene;
-    card.tabIndex = 0;
-    card.setAttribute('role', 'button');
-    const frameBox = el('div', 'tile-frame');
-    const frame = newFrame();
-    frameBox.append(frame, el('span', 'tile-loading', 'Loading'));
-    const meta = el('div', 'tile-meta');
-    const names = el('div', 'tile-names');
-    names.append(el('span', 'tile-name', nameOf(t)));
-    if (t.variant) names.append(el('span', 'tile-variant', t.variant));
-    const actions = el('div', 'tile-actions');
-    const own = el('span', 'tile-own', 'Own look');
-    own.title = 'This graphic keeps its own look: edits for all graphics do not reach it.';
-    const zoom = el('button', 'tile-zoom', '⤢');
-    zoom.type = 'button';
-    zoom.title = `Enlarge ${nameOf(t)}${t.variant ? `, ${t.variant}` : ''}`;
-    zoom.setAttribute('aria-label', zoom.title);
-    actions.append(own, zoom);
-    meta.append(names, actions);
-    card.append(frameBox, meta);
-    wrap.append(card);
+function makeTile(t) {
+  const card = el('article', 'look-tile');
+  card.dataset.scene = t.scene;
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  const frameBox = el('div', 'tile-frame');
+  const frame = newFrame();
+  frameBox.append(frame, el('span', 'tile-loading', 'Loading'));
+  const meta = el('div', 'tile-meta');
+  const names = el('div', 'tile-names');
+  names.append(el('span', 'tile-name', nameOf(t)));
+  if (t.variant) names.append(el('span', 'tile-variant', t.variant));
+  const actions = el('div', 'tile-actions');
+  const own = el('span', 'tile-own', 'Own look');
+  own.title = 'This graphic keeps its own look: edits for all graphics do not reach it.';
+  const zoom = el('button', 'tile-zoom', '⤢');
+  zoom.type = 'button';
+  zoom.title = `Enlarge ${nameOf(t)}${t.variant ? `, ${t.variant}` : ''}`;
+  zoom.setAttribute('aria-label', zoom.title);
+  actions.append(own, zoom);
+  meta.append(names, actions);
+  card.append(frameBox, meta);
 
-    const entry = { tile: t, card, frameBox, frame, loaded: false };
-    tiles.push(entry);
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('.tile-zoom')) return;
-      pickScope(t.scene);
-    });
-    card.addEventListener('dblclick', (e) => {
-      if (e.target.closest('.tile-zoom')) return;
-      openZoom(tiles.indexOf(entry));
-    });
-    card.addEventListener('keydown', (e) => {
-      if (e.target !== card) return;
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickScope(t.scene); }
-    });
-    zoom.addEventListener('click', () => openZoom(tiles.indexOf(entry)));
-  }
-  grid.append(head, wrap);
-
-  const jump = el('button', 'look-jump-btn', group.label);
-  jump.type = 'button';
-  jump.addEventListener('click', () => head.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-  $('lookJump').append(jump);
+  const entry = { tile: t, card, frameBox, frame, loaded: false };
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.tile-zoom')) return;
+    pickScope(t.scene);
+  });
+  card.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.tile-zoom')) return;
+    openZoom(tiles.indexOf(entry));
+  });
+  card.addEventListener('keydown', (e) => {
+    if (e.target !== card) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickScope(t.scene); }
+  });
+  zoom.addEventListener('click', () => openZoom(tiles.indexOf(entry)));
+  return entry;
 }
 
-// Every tile is the same width (one grid track size for all three groups),
-// so one measurement scales them all.
-const sizer = new ResizeObserver(() => {
-  const first = tiles[0] && tiles[0].frameBox;
-  if (!first || !first.clientWidth) return;
-  grid.style.setProperty('--tile-scale', String(first.clientWidth / 1920));
-});
-if (tiles[0]) sizer.observe(tiles[0].frameBox);
+// Each group folds from its heading, and the graphics starred in the Studio
+// gather in Favorites above them (web/shared/tilegroups.js). The stage lays
+// its tiles out as it is built, before the loader below exists, so nothing
+// is asked to load until the rest of this module is wired.
+let wired = false;
+const stage = buildTileStage(
+  grid,
+  TILE_GROUPS.map((g) => ({ ...g, tiles: TILES.filter((t) => t.group === g.key) })),
+  makeTile,
+  {
+    store: 'sidewaysStudio.lookGroups',
+    emptyText: 'Nothing starred yet. Click the star beside a graphic’s name in the Studio’s Graphics card to keep it here.',
+    // A moved card carries its iframe, which reloads it: drop the frame and
+    // let the observer load a fresh one with the loading state showing.
+    reset: (entry) => unloadTile(entry),
+    onLayout: () => { measureTiles(); if (wired && view === 'look') observeTiles(); },
+  },
+);
+const tiles = stage.entries;
+
+// Every tile is the same width (one grid track size for all the groups), so
+// one measurement scales them all. The first one with a size: a folded
+// group's tiles have none to measure.
+function measureTiles() {
+  for (const box of grid.querySelectorAll('.tile-frame')) {
+    if (!box.clientWidth) continue;
+    grid.style.setProperty('--tile-scale', String(box.clientWidth / 1920));
+    return;
+  }
+}
+new ResizeObserver(measureTiles).observe(grid);
+
+for (const group of [{ key: FAVORITES_GROUP, label: 'Favorites' }, ...TILE_GROUPS]) {
+  const jump = el('button', 'look-jump-btn', group.label);
+  jump.type = 'button';
+  jump.title = `Open ${group.label} and scroll to it`;
+  jump.addEventListener('click', () => stage.reveal(group.key));
+  $('lookJump').append(jump);
+}
 
 function loadTile(entry) {
   const want = tileUrl(entry.tile);
@@ -218,6 +234,7 @@ function observeTiles() {
     nearby.observe(entry.card);
   }
 }
+wired = true;
 
 function unloadTiles() {
   for (const entry of tiles) unloadTile(entry);
@@ -269,7 +286,11 @@ function pickScope(key) {
 $('lookScope').addEventListener('change', () => {
   paint();
   const tile = tiles.find((x) => x.tile.scene === scopeValue());
-  if (tile && view === 'look') tile.card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (!tile || view !== 'look') return;
+  // The graphic being edited may sit in a folded group: open it, or the
+  // scroll lands on a heading with nothing under it.
+  stage.openFor(tile);
+  tile.card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 });
 $('lookAllGraphics').addEventListener('click', () => pickScope('global'));
 

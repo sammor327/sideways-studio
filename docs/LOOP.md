@@ -214,6 +214,66 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20e (out of band: one button for the event's data, folds on the tile stages, 0.49.0)
+
+Sam, three asks in one message: the Tournament platform's "Standings,
+pairings, legends, matchups and bracket" card "has started to have scope
+creep", so replace it with a "push all data live" button that outlines which
+graphics it is for; accordion the groups on the right of that tab (in-game
+overlays, match graphics) so they hide and show, with a Favorites section
+pulling from the Studio's starred graphics; and do the same on Look and
+setup.
+
+Asked two things before building, because both readings were live work.
+"Push all data live" could mean preview + program, the way Keep results up to
+date already reaches air: Sam's call was preview only, one click. And
+"instead" could have meant deleting the per-graphic buttons: Sam kept them,
+demoted to a "Just this" on each line.
+
+Event data is now one button over four lines, each naming the graphics it
+fills (Pairings names all three: pairings, ongoing matches and the ticker)
+and what it would load right now, read off the live summary. pushSteps()
+builds the list from the same settings the lines show, skipping what cannot
+load (a round with no tables, a bracket TopDeck has not cut), and the handler
+runs them one after the other rather than at once: each patch reads the
+preview bank and writes it back, so parallel calls would race. What is left
+behind is named in the status line, never swallowed. The card scrolls inside
+itself on a short column rather than pushing its own last line under the
+footer.
+
+The two tile stages had the same grid built twice, so the folds and Favorites
+went into web/shared/tilegroups.js and both call it; the starred list itself
+moved out of panel.js into web/shared/favorites.js, which announces changes on
+the window and listens for storage, so a star clicked in the Studio moves the
+tile on the other tabs and in a second panel window. A starred tile MOVES
+rather than being copied, matching the Studio's rows: one picture per graphic
+wherever it sits. Moving a card carries its iframe, which reloads it, so the
+stage drops the frame and lets its observer load a fresh one with the loading
+state showing. Favorites is keyed on the graphic, so starring the lower third
+brings all four of its tiles.
+
+Two things the folds broke and had to be fixed with them: the tile scale was
+measured off tiles[0].frameBox, which is zero wide when the first group is
+folded (it walks the grid for the first tile with a size now), and the
+IntersectionObserver never sees a folded group's tiles, so every fold toggle
+re-observes and re-measures.
+
+Verified against the real Convergence #3 on TopDeck (265 players, 4 groups):
+Push all ran its five steps in order, stepped its own label through each, came
+back enabled, and the preview bank held 80 standings rows, the grand final's
+table, 38 legends, a 234-pair matrix and a 16-player bracket with 15 results.
+Starring three graphics from the Studio moved 12 tiles into Favorites on the
+Look stage and 3 on the platform stage (the lower third does not draw event
+data, so it does not show there); unstarring put every tile back in exactly
+its laid-out order, checked against TILES. Folding persisted across a reload,
+a folded group loaded nothing, and opening one loaded 13 of its 19 tiles, the
+ones inside the 400px margin.
+
+Not verified here: lazy loading while the app window is occluded. The pane
+produces no frames when it is behind another window, so IntersectionObserver
+delivers nothing; the unmodified 0.45.0 build behaves identically, so this is
+the environment, not the change.
+
 ### 2026-09-20d (out of band: the legend framer, 0.48.0)
 
 Sam: "we need to place the legends full arts to be correctly positioned. Can

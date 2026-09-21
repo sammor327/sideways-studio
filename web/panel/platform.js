@@ -11,6 +11,7 @@
 
 import { tileFor } from '../shared/looktiles.js';
 import { SCENE_LABELS } from '../shared/look.js';
+import { buildTileStage } from '../shared/tilegroups.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -72,16 +73,18 @@ function paintConnection() {
   src.textContent = status.source === 'api' ? 'TopDeck API' : status.source === 'page' ? 'Public page' : '';
   src.title = status.source === 'page' ? 'No API key (or the API failed): reading the event\'s public page on topdeck.gg' : '';
   $('pfRefresh').disabled = !config.event;
-  for (const id of ['pfStandings', 'pfLegends', 'pfBracket', 'pfUpNextClear']) $(id).disabled = !summary;
+  for (const id of ['pfStandings', 'pfLegends', 'pfMatrix', 'pfUpNextClear']) $(id).disabled = !summary;
   $('pfBracket').disabled = !summary || !summary.bracketReady;
   $('pfBracket').title = summary && !summary.bracketReady ? 'The bracket has not started on TopDeck yet' : '';
-  paintPairingsButton();
+  paintFeed();
 }
 
-// What Pairings to preview loads: the round picked under Matches and, in a
-// pooled Swiss, the group picked there.
-// The ones still playing are what the Ongoing matches graphic shows.
-function paintPairingsButton() {
+// What each line of the event-data list would load right now, under its own
+// name, so the one button above it is never a leap of faith.
+function paintFeed() {
+  // Pairings: the round picked under Matches and, in a pooled Swiss, the
+  // group picked there. The ones still playing are what the Ongoing matches
+  // graphic shows; the ticker runs them all along the bottom.
   const r = currentRound();
   const picked = r ? r.tables.filter((t) => !ui.group || t.group === ui.group) : [];
   const tables = picked.length;
@@ -89,6 +92,44 @@ function paintPairingsButton() {
   $('pfPairings').disabled = !tables;
   $('pfPairingsWhat').textContent = r ? `${r.label}${ui.group ? ` · Group ${ui.group}` : ''} · ${tables} table${tables === 1 ? '' : 's'}`
     + `${playing && playing < tables ? `, ${playing} still playing` : ''}` : '';
+
+  $('pfStandWhat').textContent = summary ? `${summary.players} player${summary.players === 1 ? '' : 's'}`
+    + `${summary.groups.length ? ` across ${summary.groups.length} groups` : ''}` : '';
+  $('pfBracketWhat').textContent = !summary ? ''
+    : summary.bracketReady ? 'the single elimination cut, as TopDeck has it'
+      : 'the bracket has not started on TopDeck yet';
+
+  // The one button is only as good as the lines under it: it pushes what
+  // they can push.
+  const steps = pushSteps();
+  $('pfPushAll').disabled = busy || !steps.length;
+  $('pfPushAll').title = steps.length
+    ? `Loads ${list(steps.map((s) => s.label))} into preview, one after the other.`
+    : 'Connect an event first.';
+}
+
+const list = (parts) => (parts.length < 2 ? parts.join('') : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`);
+const capitalise = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Every line that can load right now, in the order they are listed: the
+// bracket before it starts, or a round with no tables, is not one of them.
+function pushSteps() {
+  if (!summary) return [];
+  const out = [];
+  const pick = $('pfStandGroup').value;
+  out.push({
+    label: 'the standings',
+    body: { kind: 'standings', group: pick === 'all' ? 'all' : Number(pick), cut: Number($('pfCut').value) },
+  });
+  const r = currentRound();
+  if (r && r.tables.some((t) => !ui.group || t.group === ui.group)) {
+    out.push({ label: 'the pairings, ongoing matches and ticker', body: { kind: 'pairings', round: r.id, group: ui.group } });
+  }
+  const group = Number($('pfLegendGroup').value) || 0;
+  out.push({ label: 'the legend distribution', body: { kind: 'legends', group } });
+  out.push({ label: 'the matchup matrix', body: { kind: 'matrix', group } });
+  if (summary.bracketReady) out.push({ label: 'the bracket', body: { kind: 'bracket' } });
+  return out;
 }
 
 $('pfEvent').addEventListener('input', () => { $('pfEvent').dataset.dirty = '1'; });
@@ -199,7 +240,7 @@ function paintRounds() {
       .map(([v, t]) => Object.assign(el('option', '', t), { value: String(v) })));
     if ([...lg.options].some((o) => o.value === keep)) lg.value = keep;
   }
-  paintPairingsButton();
+  paintFeed();
 }
 
 $('pfRound').addEventListener('change', () => {
@@ -360,6 +401,43 @@ $('pfUpNextClear').addEventListener('click', () => loadExtra({ kind: 'upnext-cle
 $('pfSwap').addEventListener('click', () => {
   if (loaded) loadMatch(loaded.round, loaded.table, !loaded.swap);
 });
+// The settings on the lines are what the one button would push: keep its
+// tooltip and its own enabled state honest as they change.
+for (const id of ['pfStandGroup', 'pfCut', 'pfLegendGroup']) $(id).addEventListener('change', paintFeed);
+
+// --- one button for the lot ---
+//
+// Every line of the event-data list, one after the other rather than at
+// once: each load reads the preview bank as it stands and writes it back,
+// so they would race each other. What cannot load (a bracket TopDeck has
+// not cut yet, a legend distribution with nothing finished) is named rather
+// than swallowed, and never stops the rest.
+let busy = false;
+$('pfPushAll').addEventListener('click', async () => {
+  const btn = $('pfPushAll');
+  const steps = pushSteps();
+  if (busy || !steps.length) return;
+  busy = true;
+  btn.disabled = true;
+  btn.classList.add('working');
+  const was = btn.textContent;
+  const done = [];
+  const left = [];
+  for (const step of steps) {
+    btn.textContent = `Pushing ${step.label}…`;
+    const res = await api('/api/platform/load', step.body);
+    if (res.ok) done.push(step.label);
+    else left.push(`${step.label} (${(res.error || 'it did not load.').replace(/\.$/, '')})`);
+  }
+  btn.textContent = was;
+  btn.classList.remove('working');
+  busy = false;
+  paintFeed();
+  const first = done.length
+    ? capitalise(`${list(done)} ${done.length === 1 ? 'is' : 'are'} in preview. TAKE to air whichever you want.`)
+    : 'Nothing loaded.';
+  say(`${first}${left.length ? ` Left as ${left.length === 1 ? 'it was' : 'they were'}: ${list(left)}.` : ''}`, !done.length);
+});
 
 function paintLoaded() {
   const bar = $('pfLoaded');
@@ -408,9 +486,9 @@ async function poll() {
 // --- the graphics that draw the event's data ---
 
 const PF_TILES = [
-  { label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
-  { label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
-  { label: 'Event graphics', keys: ['standings', 'pairings', 'ongoing', 'ticker', 'legendstats', 'matrix', 'bracket', 'slate'] },
+  { key: 'igo', label: 'In-game overlays', keys: ['igodual', 'igorows', 'igorows-bf', 'igo1v1', 'igoportrait', 'pov', 'scorebug'] },
+  { key: 'match', label: 'Match graphics', keys: ['matchup', 'headtohead', 'vscard', 'profile', 'profile-deck', 'decklists', 'sideboard', 'result'] },
+  { key: 'event', label: 'Event graphics', keys: ['standings', 'pairings', 'ongoing', 'ticker', 'legendstats', 'matrix', 'bracket', 'slate'] },
 ];
 
 const PREFS_KEY = 'sidewaysStudio.platform';
@@ -422,7 +500,6 @@ try {
 } catch { /* storage blocked: the default */ }
 
 const grid = $('pfTiles');
-const tiles = [];
 const newFrame = () => {
   const f = el('iframe');
   f.tabIndex = -1;
@@ -430,32 +507,48 @@ const newFrame = () => {
   f.setAttribute('allowtransparency', 'true');
   return f;
 };
-for (const group of PF_TILES) {
-  const members = group.keys.map(tileFor).filter(Boolean);
-  const head = el('h3', 'look-group-title');
-  head.append(el('span', '', group.label), el('span', 'look-group-count', String(members.length)));
-  const wrap = el('div', 'look-group-grid');
-  for (const t of members) {
-    const card = el('article', 'look-tile pf-tile');
-    const frameBox = el('div', 'tile-frame');
-    const frame = newFrame();
-    frameBox.append(frame, el('span', 'tile-loading', 'Loading'));
-    const meta = el('div', 'tile-meta');
-    const names = el('div', 'tile-names');
-    names.append(el('span', 'tile-name', SCENE_LABELS[t.scene] || t.scene));
-    if (t.variant) names.append(el('span', 'tile-variant', t.variant));
-    meta.append(names);
-    card.append(frameBox, meta);
-    wrap.append(card);
-    tiles.push({ tile: t, card, frameBox, frame, loaded: false });
-  }
-  grid.append(head, wrap);
+function makeTile(t) {
+  const card = el('article', 'look-tile pf-tile');
+  const frameBox = el('div', 'tile-frame');
+  const frame = newFrame();
+  frameBox.append(frame, el('span', 'tile-loading', 'Loading'));
+  const meta = el('div', 'tile-meta');
+  const names = el('div', 'tile-names');
+  names.append(el('span', 'tile-name', SCENE_LABELS[t.scene] || t.scene));
+  if (t.variant) names.append(el('span', 'tile-variant', t.variant));
+  meta.append(names);
+  card.append(frameBox, meta);
+  return { tile: t, card, frameBox, frame, loaded: false };
 }
+
+// Each group folds from its heading, and the graphics starred in the Studio
+// gather in Favorites above them (web/shared/tilegroups.js). This stage only
+// lays out the graphics that draw the event's data, so a star on one it does
+// not draw simply does not show here.
+let wired = false;
+const stage = buildTileStage(
+  grid,
+  PF_TILES.map((g) => ({ ...g, tiles: g.keys.map(tileFor).filter(Boolean) })),
+  makeTile,
+  {
+    store: 'sidewaysStudio.platformGroups',
+    emptyText: 'Nothing starred here yet. Click the star beside a graphic’s name in the Studio’s Graphics card; the ones that draw the event’s data gather here.',
+    reset: (entry) => unloadTile(entry),
+    onLayout: () => { measureTiles(); if (wired && view === 'platform') observeTiles(); },
+  },
+);
+const tiles = stage.entries;
+
 const tileUrl = (t) => `/scenes/${t.scene}/?transparent=1&preview=1&force=1&anim=0&tile=${encodeURIComponent(t.key)}`;
-new ResizeObserver(() => {
-  const first = tiles[0] && tiles[0].frameBox;
-  if (first && first.clientWidth) grid.style.setProperty('--tile-scale', String(first.clientWidth / 1920));
-}).observe(tiles[0].frameBox);
+// The first tile with a size: a folded group's tiles have none to measure.
+function measureTiles() {
+  for (const box of grid.querySelectorAll('.tile-frame')) {
+    if (!box.clientWidth) continue;
+    grid.style.setProperty('--tile-scale', String(box.clientWidth / 1920));
+    return;
+  }
+}
+new ResizeObserver(measureTiles).observe(grid);
 
 function loadTile(entry) {
   if (entry.loaded) return;
@@ -464,15 +557,18 @@ function loadTile(entry) {
   entry.frame.src = tileUrl(entry.tile);
   entry.loaded = true;
 }
+// A fresh element rather than about:blank: dropping the document is what
+// frees its memory and its connection to the server.
+function unloadTile(entry) {
+  if (!entry.loaded) return;
+  const fresh = newFrame();
+  entry.frame.replaceWith(fresh);
+  entry.frame = fresh;
+  entry.loaded = false;
+  entry.card.classList.remove('loaded');
+}
 function unloadTiles() {
-  for (const entry of tiles) {
-    if (!entry.loaded) continue;
-    const fresh = newFrame();
-    entry.frame.replaceWith(fresh);
-    entry.frame = fresh;
-    entry.loaded = false;
-    entry.card.classList.remove('loaded');
-  }
+  for (const entry of tiles) unloadTile(entry);
 }
 const nearby = new IntersectionObserver((seen) => {
   if (view !== 'platform') return;
@@ -482,6 +578,11 @@ const nearby = new IntersectionObserver((seen) => {
     if (entry) loadTile(entry);
   }
 }, { root: grid, rootMargin: '400px 0px' });
+
+function observeTiles() {
+  for (const entry of tiles) { nearby.unobserve(entry.card); nearby.observe(entry.card); }
+}
+wired = true;
 
 function applyBackdrop() {
   for (const b of BACKDROPS) grid.classList.toggle(`backdrop-${b}`, backdrop === b);
@@ -505,7 +606,8 @@ function onView(next) {
   view = next;
   if (view === 'platform') {
     applyBackdrop();
-    for (const entry of tiles) { nearby.unobserve(entry.card); nearby.observe(entry.card); }
+    measureTiles();
+    observeTiles();
     poll();
   } else {
     clearTimeout(pollTimer);

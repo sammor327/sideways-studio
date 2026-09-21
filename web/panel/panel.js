@@ -26,6 +26,7 @@ import { cardKey, drawChance, drawPool, formatChance, poolLine } from '../shared
 import { flowText } from '../shared/trash.js';
 import { tickerPlan } from '../shared/ticker.js';
 import { clockLabelOf, slateFields, slateGaps, slateScreen } from '../shared/slate.js';
+import { favorites as favoriteList, onFavorites, toggleFavorite as setFavorite } from '../shared/favorites.js';
 
 const $ = (id) => document.getElementById(id);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
@@ -4780,21 +4781,20 @@ function renderSections(s) {
 // The star beside a graphic's name moves its row into Favorites, above 1v1,
 // and the same star sends it home to where it was listed. The row moves
 // rather than being copied, so there is one picture, one switch and one ON
-// AIR badge per graphic wherever it sits. Which graphics are starred is one
-// operator's convenience, kept in this browser like the folds, never in
-// match state.
-const FAVORITES_KEY = 'sidewaysStudio.favorites';
+// AIR badge per graphic wherever it sits. The same stars also group the
+// tiles on the Look builder and Tournament platform stages, so the starred
+// list itself lives in web/shared/favorites.js: one operator's convenience,
+// kept in this browser like the folds, never in match state.
 const sceneRows = [...document.querySelectorAll('.scene-row[data-scene]')];
 // Where each row was listed, so an unstarred one goes back in its old place.
 const sceneHome = new Map(sceneRows.map((row, order) => [row.dataset.scene, { row, group: row.parentElement, order }]));
 
-let favorites = [];
-try {
-  const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
-  if (Array.isArray(saved)) favorites = [...new Set(saved.filter((key) => sceneHome.has(key)))];
-} catch { /* storage blocked or corrupt: nothing starred */ }
+// Of everything starred, the graphics this card lists: a key left over from
+// an older release names no row here.
+const listedFavorites = () => favoriteList().filter((key) => sceneHome.has(key));
 
 function placeFavorites() {
+  const favorites = listedFavorites();
   const favGroup = $('favoritesGroup');
   for (const key of favorites) favGroup.append(sceneHome.get(key).row);
   for (const [key, home] of sceneHome) {
@@ -4817,18 +4817,17 @@ function placeFavorites() {
 }
 
 function toggleFavorite(key) {
-  const starred = favorites.includes(key);
-  favorites = starred ? favorites.filter((k) => k !== key) : [...favorites, key];
-  try { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favorites)); } catch { /* this session only */ }
-  placeFavorites();
-  // The row just left for the top of the card: show where it went.
-  if (!starred) $('favoritesGroup').closest('details').open = true;
+  // The row just left for the top of the card: show where it went. The
+  // shared store calls placeFavorites back, here and on the other tabs.
+  if (setFavorite(key)) $('favoritesGroup').closest('details').open = true;
 }
 
-placeFavorites();
+// Called now with whatever is starred, and again on every change, including
+// a star clicked in a second panel window.
+onFavorites(placeFavorites);
 // Favorites is the one fold that starts open: it holds what the operator
 // asked to keep at hand.
-if (favorites.length) $('favoritesGroup').closest('details').open = true;
+if (listedFavorites().length) $('favoritesGroup').closest('details').open = true;
 
 // --- resizable cards: drag the bottom edge ---
 //

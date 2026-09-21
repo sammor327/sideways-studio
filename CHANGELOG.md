@@ -6,6 +6,17 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.49.0 (2026-09-20)
+
+- The Tournament platform's bottom card is now **Event data**, with one button over it: **Push all event data to preview** fills the standings, the pairings (and with them the Ongoing matches graphic and the Results ticker), the legend distribution, the matchup matrix and the bracket, one after the other, from the event as it stands (Sam). The card used to be five rows of buttons under the heading "Standings, pairings, legends, matchups and bracket".
+- Under the button, one line per thing it loads, each naming the graphics it fills and saying what it would load right now: "265 players across 4 groups", "Grand final · 1 table". The one button is never a leap of faith.
+- Each line keeps its own settings (the standings' group and cut line, the group the legend distribution and matchup matrix count) and its own button, for the one graphic you want to refresh mid-show without disturbing the rest.
+- The button says which line it is on while it works, and afterwards names what landed and what did not. A bracket TopDeck has not cut yet, or a legend distribution with nothing finished, is named rather than swallowed, and never stops the rest.
+- Nothing about this goes on air by itself: everything lands in preview, TAKE airs whichever graphic you want, and a graphic already up keeps drawing what it holds until you do. Keep results up to date, on air too is unchanged.
+- The graphics on the right of the **Look and setup** tab and the **Tournament platform** tab are now in folds: In-game overlays, Bugs cards and plates and Full screen on one, In-game overlays, Match graphics and Event graphics on the other. Click a heading to fold that group away, and the browser remembers which are folded. A folded group's graphics cost nothing: they are not drawn until you open it.
+- Both of those pages now open with **Favorites** at the top: the graphics you starred in the Studio's Graphics list, gathered where they are easy to reach. Starring a graphic anywhere moves it on every tab at once, and unstarring it puts it back where it was listed. A graphic with more than one picture (the four lower thirds, the two showdowns) brings all of them; the Tournament platform holds only the graphics that draw the event's data, so a star on any other one does not show there.
+- The Look and setup tab's Jump to buttons now open the group they jump to, Favorites among them, and picking a graphic to edit opens the fold it sits in.
+
 ## 0.48.0 (2026-09-20)
 
 - Every legend's full art can now be placed by hand, in a new Legend framer (the button on Setup, or http://localhost:4700/legendframe/). Pick a legend, drag its art where you want it in the match card and in the player profile, scroll to size it, then Lock in.

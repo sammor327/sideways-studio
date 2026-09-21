@@ -148,7 +148,9 @@ profile.
 
 Graphics are listed in three folds: 1v1, 2v2 and Other (the bugs, the card
 popup, the card row and the full screens). The star beside a graphic's name
-keeps it in Favorites at the top; the chain beside the star copies that
+keeps it in Favorites at the top, and gathers its pictures in the Favorites
+fold on the Look and setup and Tournament platform tabs as well; the chain
+beside the star copies that
 graphic's browser-source link for OBS or vMix (the same link Setup lists). They start closed; a fold's heading says how
 many of its graphics are in preview or on air, and putting a graphic in
 preview opens its fold. Each row still carries an Overlay or Full frame
@@ -237,6 +239,15 @@ through, Esc closes). Click a tile to point the controls at that graphic;
 the ones an edit would not reach fade (a graphic with its own look, while
 editing all graphics). Tiles load as they scroll into view and unload when
 you go back to the Studio.
+
+The tiles are in folds: **Favorites** (the graphics starred in the Studio's
+Graphics list, gathered at the top), In-game overlays, Bugs cards and
+plates, Full screen. Click a heading to fold that group away; the browser
+remembers which are folded, and a folded group's tiles are not drawn at all
+until you open it. The Jump to buttons open the group they jump to, and
+picking a graphic to edit opens the fold it sits in. A starred graphic
+brings every picture of it (all four lower thirds, both showdowns), and
+unstarring it puts them back where they were laid out.
 
 The look controls recolour every graphic: pick a preset
 (Turn'em Sideways, Regional gold, Ember, Arctic, Mono) or set the accents,
@@ -659,33 +670,49 @@ already up keeps what you have counted. A finished table brings its game
 score. **Swap sides** reloads it with the players the other way round, and
 **+** adds a table to the Up next board.
 
-**Standings to preview** writes every group's standings at once ("Every
-group"; the Studio switches between them beside the page arrows), one
-group's, or everyone in one list, labelled "after Round 3", or "Round 4 in
-progress" while that round's tables are being played. TopDeck's own points
-and tiebreaks are used while they agree with the finished tables; during a
-round TopDeck's standings still stand before it, so the app counts the
-tables itself until they catch up. A round's byes count with its first
-finished table. **Pairings to
-preview** writes every table of the round picked under Matches (only the
-picked group's, when a group chip is on) with each finished table's result
-and the round's byes; press it again during the round to bring in new
-results (a different round or group starts on page one, the same one stays
-on its page). The same tables feed the **Ongoing matches** graphic and the
-**Results ticker**. With
-**Keep results up to date, on air too** on (the default), every refresh
+**Event data** is one button over a list of what it loads. **Push all event
+data to preview** runs the lines below it one after the other, from the
+event as it stands, using each line's own settings; it says which line it is
+on while it works, and afterwards names what landed and what did not. A
+bracket TopDeck has not cut yet, or a legend distribution with nothing
+finished, is named rather than swallowed and never stops the rest. Each line
+also carries its own button, for the one graphic you want to refresh
+mid-show without disturbing the rest. The lines, and the graphics each
+fills:
+
+- **Standings** writes every group's standings at once ("Every group"; the
+  Studio switches between them beside the page arrows), one group's, or
+  everyone in one list, labelled "after Round 3", or "Round 4 in progress"
+  while that round's tables are being played. TopDeck's own points and
+  tiebreaks are used while they agree with the finished tables; during a
+  round TopDeck's standings still stand before it, so the app counts the
+  tables itself until they catch up. A round's byes count with its first
+  finished table.
+- **Pairings, Ongoing matches, Results ticker** writes every table of the
+  round picked under Matches (only the picked group's, when a group chip is
+  on) with each finished table's result and the round's byes; press it again
+  during the round to bring in new results (a different round or group
+  starts on page one, the same one stays on its page). All three graphics
+  draw those tables: Ongoing matches shows the ones still being played, and
+  the ticker runs them along the bottom.
+- **Legend distribution, Matchup matrix** count the whole event or one
+  group: how many players TopDeck lists for each legend, and each legend's
+  win rate against the others, with mirror matches, draws and byes left out.
+  TopDeck shows legends once the event ends or the organizer allows it;
+  until then the buttons say so.
+- **Bracket** writes the Top 8 or Top 16 as TopDeck ran it.
+
+With **Keep results up to date, on air too** on (the default), every refresh
 brings new results into the pairings preview and program already hold,
 each in its own bank and without a TAKE (`event.pairings.src` names the
 event, round and group they came from; typed tables have none, so they are
-never touched). **Bracket to
-preview** writes the Top 8 or Top 16 as TopDeck ran it. **Legend
-distribution to preview** counts the whole event or one group: how many
-players TopDeck lists for each legend, and each legend's win rate against the
-others, with mirror matches, draws and byes left out. TopDeck shows legends
-once the event ends or the organizer allows it; until then the button says
-so. Everything lands in preview; TAKE airs it. The right side shows every
+never touched). Nothing else here goes on air by itself: everything lands
+in preview, TAKE airs it, and a graphic already up keeps drawing what it
+holds until you TAKE. The right side shows every
 graphic that draws this data, from the preview bank, so a click shows at
-once what it filled.
+once what it filled. Those graphics are in folds (Favorites, In-game
+overlays, Match graphics, Event graphics): click a heading to fold a group
+away, and a folded group's graphics are not drawn at all.
 
 The event, the key and the refresh switch live in `data/platform.json`. The
 key never goes into the state the graphics receive, and the panel only

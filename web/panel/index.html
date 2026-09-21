@@ -2061,32 +2061,62 @@
     </section>
 
     <section class="card pf-event">
-      <h2>Standings, pairings, legends, matchups and bracket</h2>
-      <div class="row">
-        <select id="pfStandGroup" aria-label="Standings for" title="Every group loads each group's standings at once; the Studio switches between them beside the standings' page arrows"></select>
-        <select id="pfCut" aria-label="Cut line">
-          <option value="4">Top 4 cut</option>
-          <option value="8">Top 8 cut</option>
-          <option value="16">Top 16 cut</option>
-          <option value="0">No cut line</option>
-        </select>
-        <button type="button" id="pfStandings">Standings to preview</button>
-      </div>
-      <div class="row">
-        <button type="button" id="pfPairings" title="Every table of the round picked under Matches (and of its group, when one is picked) onto the Pairings graphic and the Ongoing matches graphic, which shows the tables still being played.">Pairings to preview</button>
-        <span class="pf-what" id="pfPairingsWhat"></span>
-      </div>
-      <div class="row">
+      <h2>Event data</h2>
+      <button type="button" id="pfPushAll" class="pf-go pf-push">Push all event data to preview</button>
+      <p class="hint">One press fills every graphic listed below from the event as it stands, using the settings on each line. Nothing goes on air by itself: TAKE puts up whichever graphic you want, and a graphic already up keeps drawing what it holds until you do.</p>
+
+      <ul class="pf-feed">
+        <li class="pf-feed-row">
+          <div class="pf-feed-lead">
+            <span class="pf-feed-name">Standings</span>
+            <span class="pf-feed-what" id="pfStandWhat"></span>
+          </div>
+          <div class="pf-feed-opts">
+            <select id="pfStandGroup" aria-label="Standings for" title="Every group loads each group's standings at once; the Studio switches between them beside the standings' page arrows"></select>
+            <select id="pfCut" aria-label="Cut line">
+              <option value="4">Top 4 cut</option>
+              <option value="8">Top 8 cut</option>
+              <option value="16">Top 16 cut</option>
+              <option value="0">No cut line</option>
+            </select>
+          </div>
+          <div class="pf-feed-go"><button type="button" id="pfStandings" class="pf-one" title="Load the standings on their own, leaving every other graphic holding what it holds">Just this</button></div>
+        </li>
+
+        <li class="pf-feed-row">
+          <div class="pf-feed-lead">
+            <span class="pf-feed-name">Pairings, Ongoing matches, Results ticker</span>
+            <span class="pf-feed-what" id="pfPairingsWhat"></span>
+          </div>
+          <div class="pf-feed-opts"><span class="pf-feed-note">the round and group picked under Matches</span></div>
+          <div class="pf-feed-go"><button type="button" id="pfPairings" class="pf-one" title="Every table of the round picked under Matches, and of its group when one is picked. All three graphics draw those tables: Ongoing matches shows the ones still being played, and the ticker runs them along the bottom.">Just this</button></div>
+        </li>
+
+        <li class="pf-feed-row">
+          <div class="pf-feed-lead">
+            <span class="pf-feed-name">Legend distribution, Matchup matrix</span>
+            <span class="pf-feed-what">how many played each legend, and every legend's win rate against the others</span>
+          </div>
+          <div class="pf-feed-opts"><select id="pfLegendGroup" aria-label="Legend distribution and matchup matrix for"></select></div>
+          <div class="pf-feed-go">
+            <button type="button" id="pfLegends" class="pf-one" title="How many played each legend and each legend's win rate against the others, from TopDeck">Distribution</button>
+            <button type="button" id="pfMatrix" class="pf-one" title="Every legend's win rate against every other legend, from TopDeck's finished matches">Matrix</button>
+          </div>
+        </li>
+
+        <li class="pf-feed-row">
+          <div class="pf-feed-lead">
+            <span class="pf-feed-name">Bracket</span>
+            <span class="pf-feed-what" id="pfBracketWhat"></span>
+          </div>
+          <div class="pf-feed-opts"><span class="pf-feed-note">the single elimination cut, as TopDeck has it</span></div>
+          <div class="pf-feed-go"><button type="button" id="pfBracket" class="pf-one">Just this</button></div>
+        </li>
+      </ul>
+
+      <div class="row pf-event-foot">
         <label class="inline" title="Every refresh brings each finished table's result into the pairings that preview and program already hold, on air too, without a TAKE: finished tables leave the Ongoing matches graphic as they finish. Never changes which round is loaded or which graphic is up."><input type="checkbox" id="pfFollow" checked> Keep results up to date, on air too</label>
-      </div>
-      <div class="row">
-        <select id="pfLegendGroup" aria-label="Legend distribution for"></select>
-        <button type="button" id="pfLegends" title="How many played each legend and each legend's win rate against the others, from TopDeck">Legend distribution to preview</button>
-        <button type="button" id="pfMatrix" title="Every legend's win rate against every other legend, from TopDeck's finished matches (the group picked beside it, or the whole event)">Matchup matrix to preview</button>
-      </div>
-      <div class="row">
-        <button type="button" id="pfBracket">Bracket to preview</button>
-        <button type="button" id="pfUpNextClear">Clear Up next</button>
+        <button type="button" id="pfUpNextClear" title="Empty the Up next board that the + beside a match fills">Clear Up next</button>
       </div>
       <p class="pf-last" id="pfLast" role="status"></p>
     </section>
