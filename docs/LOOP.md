@@ -214,6 +214,76 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20h (out of band: the victory set, the between-games run, the round board, 0.53.0)
+
+Sam, twelve items in one message, with two hours before a show. Every one
+shipped; what each turned into:
+
+1-3. **A victory set, not three one-offs.** The game victory, the match
+victory and the tournament champion all answer "who won and what by", so
+they read it from one place: `web/shared/victory.js` (`matchWinner`,
+`gameWinner`, `victory`), which the panel's own labels could use too. The
+champion scene takes the finalists from the match already loaded rather
+than asking for two more names at the end of a long day, and its decklists
+go through `parseDeck`, so they are the same lists every other deck graphic
+draws.
+
+4. **The game intro takes the window instead of sitting in it.** It was a
+fixed 1600x900 card fitted inside the game window with a margin, which on
+the rows overlay left 24px either side and 31 top and bottom. Now the book
+IS the window: the two pages divide its width, and each page's content is
+drawn in a 900-tall sheet scaled by `--bs` and centred, so 930 tall fills
+exactly. `fillWindow` in gamewindow.js holds the scale down to what the
+page's widest fixed block (the 580 name bar) can take, so the narrow
+windows do not push it off the page. Every overlay got a bigger intro out
+of it, not just the rows.
+
+5. **The between-games run is a cue, not a macro.** It lives in state.js
+(`advanceRun`, `RUN_STEPS`) and drives BOTH banks, so nothing in the middle
+of a sequence waits for a TAKE and every panel window sees the same step.
+Two decisions worth keeping: the sideboard step has no clock at all (a
+player thinking is not a timing error), and the battlefields are watched on
+PREVIEW but carried across to program two fields at a time rather than
+firing a TAKE, which would have aired whatever else was staged. It requires
+BOTH sides to change, so a player who keeps the same battlefield needs the
+block's own Next; that is the honest trade for not guessing.
+
+6. Descriptions drifted from their names because the row's 70px picture
+spanned both grid rows and the spare height was split between them. The
+name and the line now share one cell.
+
+7. **The links.** Nothing was broken on disk (test/source-links.test.js now
+walks every link the app hands out and everything each page pulls in, 812
+requests live), but a link pasted without its trailing slash 404'd, with no
+way for an operator to tell that from a broken graphic. The server now
+sends `/scenes/igorows` to `/scenes/igorows/` rather than serving the page
+from one level up, where its relative imports would all miss.
+
+8. The round board is a slate screen rather than a new graphic: it is a
+hold, and the slate already had the rail, the clock and the sponsors a hold
+needs. `roundBoard(rows)` reads the ONE set of pairings and decides what it
+is looking at, so the next round's pairings replacing the last round's
+results needs no second store and no operator action.
+
+9-11. The Graphics list went from five sections to eight (Pre-game, Stats,
+Victory, Archive added). The fold machinery was already generic, so this
+was markup; the list test now also proves every graphic the look can
+recolour is in exactly one section.
+
+12. The matrix pull was checked end to end from the app (17 events listed,
+Singapore loaded: 40 legends, 673 pairs, 5831 matches) and the endpoints
+answer with and without browser headers. What could NOT be checked from
+here is a genuinely different egress IP. test/rift-registry-reach.test.js
+guards the part that is checkable: the matrix asks exactly the way the card
+download asks, over the public name, with nothing of this machine attached.
+
+Verified: 510 tests; the run driven end to end through the panel in a real
+browser (Run, hold, one battlefield holds, both moves it, the new
+battlefields on air with the intro, out after its hold, the rows overlay
+untouched); the game intro filling the rows game window with no gaps; all
+three victory scenes at 1920x1080; the round board turning between Still
+playing and Results so far.
+
 ### 2026-09-20g (out of band: the trash, the odds and a spotted card dock into the rows column, 0.51.0)
 
 Sam: "can we create options to put the following into the left side of the

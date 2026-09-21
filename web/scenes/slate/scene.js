@@ -19,8 +19,9 @@ import { clockText, applyVisibility } from '../../stage/exp.js';
 import { setClock } from '../../shared/clockcells.js';
 import {
   SLATE_MODES, clockLabelOf, clockSet, commandList, nextMatch, nextThing, seedLines, slateBand, slateLine, slateMode,
-  SLATE_SPONSORS_ROW, slatePages, slateScreen, slateSlot, slateSponsors, slateSub, slateTitle,
+  SLATE_SPONSORS_ROW, roundBoard, roundTitle, slatePages, slateScreen, slateSlot, slateSponsors, slateSub, slateTitle,
 } from '../../shared/slate.js';
+import { tableResult } from '../../shared/ticker.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -419,6 +420,60 @@ function bandTable(t, i) {
   return div;
 }
 
+// --- the round board (2026-09-20) ---
+//
+// The pages the round can fill right now (web/shared/slate.js), turned
+// through on the slate's own rotate from the wall clock, so a second copy
+// of the source and the preview monitor are always on the same page. Rows
+// grow as the page shrinks: a round of four tables reads across the room,
+// a round of forty still fits.
+let roundPages = [];
+let roundAt = -1;
+
+function roundRow(r, size) {
+  const res = tableResult(r);
+  const row = el('div', 'rb-row');
+  row.style.setProperty('--rs', String(size));
+  const name = (p) => (p && p.name) || '';
+  const left = el('div', 'p', name(r.left) || ' ');
+  const right = el('div', 'p r', name(r.right) || ' ');
+  if (res.win === 'left') { left.classList.add('won'); right.classList.add('lost'); }
+  if (res.win === 'right') { right.classList.add('won'); left.classList.add('lost'); }
+  // A table still out says so rather than showing 0 - 0, which reads like
+  // a result nobody has scored.
+  const shown = res.kind === 'vs' ? 'vs' : (res.kind === 'draw' && !res.a ? 'draw' : `${res.a} - ${res.b}`);
+  const score = el('div', 's', shown);
+  if (res.kind === 'vs') score.classList.add('open');
+  row.append(el('div', 't', r.table ? `T${r.table}` : ''), left, score, right);
+  return row;
+}
+
+function renderRound(bank) {
+  const pages = roundBoard((bank.event.pairings || {}).rows || []);
+  $('rbEmpty').classList.toggle('hidden', pages.length > 0);
+  if (!changed('round', pages)) return;
+  roundPages = pages;
+  roundAt = -1;
+  if (!pages.length) { $('rbGrid').replaceChildren(); return; }
+}
+
+// Which page is up: read on the clock rather than on state, like the side
+// panel's, and only redrawn when the page turns.
+function paintRound(bank, now) {
+  if (!roundPages.length) return;
+  const slot = slateSlot(roundPages.length, every, now);
+  if (slot.index === roundAt) return;
+  roundAt = slot.index;
+  const page = roundPages[slot.index];
+  setText($('rbCount'), `${page.rows.length} table${page.rows.length === 1 ? '' : 's'}`);
+  // Two columns of rows in the 776 the column has: bigger rows while there
+  // are few, down to the size forty tables need.
+  const perCol = Math.ceil(page.rows.length / 2);
+  const size = Math.max(13, Math.min(26, Math.floor(1400 / Math.max(4, perCol) / 2)));
+  $('rbGrid').replaceChildren(...page.rows.map((r) => roundRow(r, size)));
+  setText($('title'), roundTitle(page, bank.event));
+}
+
 function renderBand(bank, mode) {
   const on = slateBand(bank, mode);
   root.classList.toggle('has-band', on);
@@ -473,7 +528,12 @@ function tick() {
   $('prog').style.setProperty('--pg', String(anim ? slot.into || 0 : 1));
   turn(bandPages, slateSlot(bandPages.length, BAND_HOLD, now), anim);
   turn(sponsorEls, slateSlot(sponsorEls.length, sponsorEvery, now), anim);
+  if (lastBank && slateMode(lastBank.scenes.slate.mode) === 'round') paintRound(lastBank, now);
 }
+
+// The last bank the scene drew: the tick runs on its own clock, and the
+// round board's page turn needs the round to read when it comes round.
+let lastBank = null;
 
 let countdownState = null;
 function paintClocks() {
@@ -504,6 +564,7 @@ const params = initStage({
   onState(state, first) {
     $('diag').classList.remove('on');
     const bank = sceneBank(state, params);
+    lastBank = bank;
     const cfg = bank.scenes.slate;
     const ev = bank.event;
     const mode = slateMode(cfg.mode);
@@ -522,6 +583,7 @@ const params = initStage({
     if (mode === 'custom') renderCustom(bank, cfg);
     if (mode === 'schedule') renderDay(bank);
     if (mode === 'format') renderFormat(bank);
+    if (mode === 'round') { renderRound(bank); paintRound(bank, Date.now()); }
     renderRail(bank, cfg, mode);
     renderBand(bank, mode);
 

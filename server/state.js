@@ -343,6 +343,22 @@ function defaultBank() {
       ticker: { visible: false, show: 'all', per: 0, hold: HOLD_DEFAULT, legends: true, dock: true, title: '' },
       // Result strip: the match winner and where they go next.
       result: { visible: false },
+      // --- the victory set (2026-09-20, Sam) ---
+      // Game victory: who took the game just finished, over the game window
+      // of whichever in-game overlay is up, with the series score under it.
+      // side '' reads the winner off the game wins the operator just moved
+      // (whichever side went up last); 'left' or 'right' pins it.
+      gamewin: { visible: false, side: '', game: 0 },
+      // Match victory: the winner of the series, full frame. side '' uses
+      // match.result.winner, then the side that reached the games needed.
+      // decks puts the winner's list down one side.
+      matchwin: { visible: false, side: '', deck: false },
+      // Tournament champion: the champion and the runner up side by side
+      // with both legends. The two are the finalists, which is to say the
+      // match that is loaded; side names the champion the way the two above
+      // do. decks opens both decklists under the legends, title relabels
+      // the event line ('' = the event's own name).
+      champion: { visible: false, side: '', decks: false, title: '' },
       // Sponsor plate: a 3:1 plate rotating through items every `interval`
       // seconds, docked into whichever in-game overlay is up (position
       // 'auto') or pinned to a corner. every/duration: 0 minutes = up the
@@ -421,6 +437,29 @@ function mergeTheme(raw) {
   return theme;
 }
 
+// The between-games run (2026-09-20, Sam: "I would like to automate the
+// between game portion. The flow should be Game Victory Scene into
+// sideboard and hold on sideboards until battlefields for the next game
+// are chosen then game intro for 5 seconds then transition out the game
+// intro").
+//
+// It is a cue, not an edit: it drives both banks, so the operator presses
+// Run once when a game ends and never has to TAKE again in the middle of
+// it. Four steps:
+//   gamewin    the game victory, for `winHold` seconds
+//   sideboard  the sideboard fly-in, held until BOTH players' battlefields
+//              for the next game are set and different from the ones the
+//              run started on (there is no clock on a player thinking)
+//   intro      the game intro, for `introHold` seconds
+//   ''         nothing: the run is over and the graphics are down
+// `bf` is the battlefields as they stood when the run started, which is
+// what "chosen for the next game" is measured against; `side` is the game
+// winner pinned at the start, so a game that levels the series still names
+// the right player after the score moves on.
+function defaultRun() {
+  return { active: false, step: '', at: 0, side: '', bf: '', winHold: 6, introHold: 5 };
+}
+
 function defaultState() {
   return {
     version: 0,
@@ -428,6 +467,7 @@ function defaultState() {
     preview: defaultBank(),
     program: defaultBank(),
     theme: defaultTheme(),
+    run: defaultRun(),
   };
 }
 
@@ -585,6 +625,9 @@ export async function initState() {
       state.preview = structuredClone(state.program);
     }
     if (Number.isInteger(raw.version)) state.version = raw.version;
+    // A run never survives a restart: the app comes up with nothing of it
+    // on air, which is the only safe thing to do with a timed sequence.
+    state.run = defaultRun();
   } catch {
     // First run or unreadable save: start from defaults.
   }
@@ -1443,6 +1486,29 @@ function applyBankPatch(bank, patch) {
       if (ss.visible !== undefined) bank.scenes.sidespot.visible = Boolean(ss.visible);
       if (ss.hold !== undefined) bank.scenes.sidespot.hold = clampInt(ss.hold, SPOT_HOLD_MIN, SPOT_HOLD_MAX);
     }
+    // --- the victory set (2026-09-20) ---
+    if (patch.scenes.gamewin && typeof patch.scenes.gamewin === 'object') {
+      const g = patch.scenes.gamewin;
+      const cfg = bank.scenes.gamewin;
+      if (g.visible !== undefined) cfg.visible = Boolean(g.visible);
+      if (g.side !== undefined) cfg.side = ['left', 'right'].includes(g.side) ? g.side : '';
+      if (g.game !== undefined) cfg.game = clampInt(g.game, 0, 5);
+    }
+    if (patch.scenes.matchwin && typeof patch.scenes.matchwin === 'object') {
+      const w = patch.scenes.matchwin;
+      const cfg = bank.scenes.matchwin;
+      if (w.visible !== undefined) cfg.visible = Boolean(w.visible);
+      if (w.side !== undefined) cfg.side = ['left', 'right'].includes(w.side) ? w.side : '';
+      if (w.deck !== undefined) cfg.deck = Boolean(w.deck);
+    }
+    if (patch.scenes.champion && typeof patch.scenes.champion === 'object') {
+      const c = patch.scenes.champion;
+      const cfg = bank.scenes.champion;
+      if (c.visible !== undefined) cfg.visible = Boolean(c.visible);
+      if (c.side !== undefined) cfg.side = ['left', 'right'].includes(c.side) ? c.side : '';
+      if (c.decks !== undefined) cfg.decks = Boolean(c.decks);
+      if (c.title !== undefined) cfg.title = cleanStr(c.title, 40);
+    }
   }
 }
 
@@ -1585,6 +1651,15 @@ export function getState() {
   return state;
 }
 
+// The server's clock calls this while the app runs: the two timed steps of
+// the between-games run need something to move them when nobody is editing.
+// True when the run moved, which is when everything connected is told.
+export function tickRun() {
+  if (!advanceRun()) return false;
+  bump();
+  return true;
+}
+
 // A bank built from the defaults through the same whitelist every edit
 // passes. server/sample.js builds the look builder's sample match with it,
 // so the sample always carries the current shape and only values the store
@@ -1616,11 +1691,99 @@ export function onChange(fn) {
   return () => listeners.delete(fn);
 }
 
+// Guards bump's call into the run: runStep does not bump, so this can only
+// ever be one level deep, but a future step that edits state must not be
+// able to set the run going round.
+let advancing = false;
+
 function bump() {
+  // Every edit is also a chance for the run to move: the step that waits
+  // on the battlefields then goes the moment they are typed, rather than on
+  // the next tick of the clock.
+  if (!advancing) {
+    advancing = true;
+    try { advanceRun(); } finally { advancing = false; }
+  }
   state.version += 1;
   state.updatedAt = new Date().toISOString();
   scheduleSave();
   for (const fn of listeners) fn(state);
+}
+
+// --- the between-games run (2026-09-20) ---
+//
+// Which graphics each step has up. Everything named here is put where the
+// step says, in BOTH banks, so preview shows what is on air through the
+// whole sequence and nothing needs a TAKE in the middle of it.
+const RUN_STEPS = {
+  gamewin: { gamewin: true, sideboard: false, matchup: false },
+  sideboard: { gamewin: false, sideboard: true, matchup: false },
+  intro: { gamewin: false, sideboard: false, matchup: true },
+  '': { gamewin: false, sideboard: false, matchup: false },
+};
+export const RUN_ORDER = ['gamewin', 'sideboard', 'intro', ''];
+
+// The battlefields in play, as one string: what "the battlefields for the
+// next game have been chosen" is measured against. A battlefield typed
+// without a card still counts, so a venue with no card database can run
+// the sequence too.
+const bfPair = (match) => [match.left, match.right]
+  .map((p) => String(p.battlefieldCardId || p.battlefield || '').trim().toLowerCase());
+const bfMark = (match) => bfPair(match).join('|');
+
+// Both players have chosen for the next game: each side has a battlefield
+// and each is a different one from the game just played. BOTH, because one
+// player picking is not the two of them being ready. A player who wants the
+// same battlefield again leaves their side unchanged and the run waits, so
+// the panel's own Next button is the way through that.
+
+function runStep(step, at) {
+  state.run.step = step;
+  state.run.at = at;
+  state.run.active = step !== '';
+  for (const bank of [state.preview, state.program]) {
+    for (const [key, on] of Object.entries(RUN_STEPS[step])) bank.scenes[key].visible = on;
+  }
+  // The game victory names the side the run pinned, whatever the score has
+  // moved to since.
+  for (const bank of [state.preview, state.program]) bank.scenes.gamewin.side = state.run.side;
+}
+
+// One tick of the run: true when it moved. Called on the server's clock and
+// again after every edit, so a battlefield typed in moves the run at once
+// rather than on the next tick.
+export function advanceRun(now = Date.now()) {
+  const run = state.run;
+  if (!run.active) return false;
+  const held = (now - run.at) / 1000;
+  if (run.step === 'gamewin') {
+    if (held < run.winHold) return false;
+    runStep('sideboard', now);
+    return true;
+  }
+  if (run.step === 'sideboard') {
+    // No clock here on purpose: the players take as long as they take.
+    // Watched on PREVIEW, because that is where the operator types the
+    // new battlefields; the run then carries those two fields across to
+    // program itself rather than firing a TAKE, which would air whatever
+    // else happened to be staged in the middle of a sequence.
+    const next = bfPair(state.preview.match);
+    const was = String(run.bf).split('|');
+    if (!next.every((v, i) => v && v !== was[i])) return false;
+    for (const p of ['left', 'right']) {
+      state.program.match[p].battlefield = state.preview.match[p].battlefield;
+      state.program.match[p].battlefieldCardId = state.preview.match[p].battlefieldCardId;
+    }
+    runStep('intro', now);
+    return true;
+  }
+  if (run.step === 'intro') {
+    if (held < run.introHold) return false;
+    runStep('', now);
+    return true;
+  }
+  runStep('', now);
+  return true;
 }
 
 // Whitelist merge: unknown keys are dropped silently, numerics clamped.
@@ -1724,6 +1887,34 @@ export function applyUpdate(patch) {
     if (patch.op !== undefined && !ROLL_OPS.includes(patch.op)) return { ok: false, error: 'unknown roll op' };
     const now = Date.now();
     for (const bank of [state.preview, state.program]) applyRoll(bank.scenes.legendstats, patch, now);
+    bump();
+    return { ok: true, version: state.version };
+  }
+  // The between-games run: start it as a game ends, skip a step on, or
+  // stop it and take its graphics down. Its two holds are set here too.
+  if (patch.action === 'run') {
+    const now = Date.now();
+    const run = state.run;
+    if (patch.winHold !== undefined) run.winHold = clampInt(patch.winHold, 0, 60);
+    if (patch.introHold !== undefined) run.introHold = clampInt(patch.introHold, 0, 60);
+    if (patch.op === 'start') {
+      const m = state.program.match;
+      // Pinned now, because the operator moves the game wins as the game
+      // ends and the run reads them at that moment.
+      run.side = ['left', 'right'].includes(patch.side) ? patch.side
+        : ((m.left.gameWins || 0) === (m.right.gameWins || 0) ? '' : ((m.left.gameWins || 0) > (m.right.gameWins || 0) ? 'left' : 'right'));
+      // Measured on preview, which is where the next game's battlefields
+      // will be typed.
+      run.bf = bfMark(state.preview.match);
+      runStep('gamewin', now);
+    } else if (patch.op === 'next') {
+      const at = RUN_ORDER.indexOf(run.step);
+      runStep(at < 0 ? '' : (RUN_ORDER[at + 1] ?? ''), now);
+    } else if (patch.op === 'stop') {
+      runStep('', now);
+    } else if (patch.op !== 'holds') {
+      return { ok: false, error: 'unknown run op' };
+    }
     bump();
     return { ok: true, version: state.version };
   }

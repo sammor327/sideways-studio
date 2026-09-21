@@ -18,7 +18,7 @@ import {
   finishUpdatePid, finishUpdate,
 } from './updater.js';
 import { initFonts, listFonts, downloadFont, fontsCss, fontFilePath } from './fonts.js';
-import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline } from './state.js';
+import { getState, applyUpdate, onChange, setThemeLogo, setThemeImage, initState, cleanMultiline, tickRun } from './state.js';
 import { LOOK_SCENES } from '../web/shared/look.js';
 import { initCardDb, cardDbStatus, cardDbBusy, syncCardDb, autoRefreshCardDb, fillFullArt, fullArtComplete, searchCards, getArtBytes, migrateLegacyArt } from './carddb.js';
 import { initLegends, listLegends, listBattlefields, listChampionUnits, readHeroArt, readFullArt, readIconArt } from './legends.js';
@@ -629,6 +629,20 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // A folder's link pasted without its trailing slash (/scenes/igorows, or
+  // /panel) used to 404: the operator then had a browser source showing
+  // nothing, with no way to tell a slash missing off the end of a pasted URL
+  // from a broken graphic (Sam, 2026-09-20: "the links for the graphics
+  // sometimes do not work"). Send it to the folder's own URL rather than
+  // serving the page from one level up, where every relative import inside
+  // it would then miss.
+  if ((req.method === 'GET' || req.method === 'HEAD') && !url.pathname.startsWith('/api/')
+    && !path.extname(url.pathname) && !url.pathname.endsWith('/')) {
+    res.writeHead(302, { location: `${url.pathname}/${url.search}` });
+    res.end();
+    return;
+  }
+
   // Static files. The packaged build serves them from the assets embedded in
   // the exe; from source they come off disk, traversal-guarded. Directories
   // resolve to index.html.
@@ -692,6 +706,13 @@ onLog((entry) => {
     if (client.isWindow && client.readyState === 1) client.send(msg);
   }
 });
+// The between-games run's clock (2026-09-20). The run's two timed steps
+// need something to move them when nobody is editing; a tick that does
+// nothing costs a comparison, and a tick that moves the run pushes the new
+// state out through onChange below like any other edit. Unrefed, so it
+// never holds the process open on the way out.
+setInterval(() => { tickRun(); }, 250).unref();
+
 onChange((state) => {
   const msg = JSON.stringify({ type: 'state', state });
   for (const client of wss.clients) {

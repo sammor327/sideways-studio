@@ -47,6 +47,7 @@ export const TILES = [
   { key: 'odds', scene: 'odds', group: 'parts', variant: 'Both players', vary: { side: 'both' } },
   { key: 'trash', scene: 'trash', group: 'parts', variant: 'Both players', vary: { side: 'both' } },
   { key: 'sidespot', scene: 'sidespot', group: 'parts' },
+  { key: 'gamewin', scene: 'gamewin', group: 'parts' },
 
   { key: 'slate', scene: 'slate', group: 'full', variant: 'Up next', vary: { mode: 'upnext' } },
   { key: 'slate-starting', scene: 'slate', group: 'full', variant: 'Starting soon', vary: { mode: 'starting' } },
@@ -55,6 +56,7 @@ export const TILES = [
   { key: 'slate-schedule', scene: 'slate', group: 'full', variant: "Today's schedule", vary: { mode: 'schedule' } },
   { key: 'slate-format', scene: 'slate', group: 'full', variant: 'Format', vary: { mode: 'format' } },
   { key: 'slate-custom', scene: 'slate', group: 'full', variant: 'Custom line', vary: { mode: 'custom' } },
+  { key: 'slate-round', scene: 'slate', group: 'full', variant: 'Round board', vary: { mode: 'round' } },
   { key: 'headtohead', scene: 'headtohead', group: 'full' },
   { key: 'vscard', scene: 'vscard', group: 'full' },
   { key: 'profile', scene: 'profile', group: 'full' },
@@ -67,6 +69,9 @@ export const TILES = [
   { key: 'ongoing', scene: 'ongoing', group: 'full' },
   { key: 'decklist', scene: 'decklist', group: 'full' },
   { key: 'decklists', scene: 'decklists', group: 'full' },
+  { key: 'matchwin', scene: 'matchwin', group: 'full' },
+  { key: 'champion', scene: 'champion', group: 'full' },
+  { key: 'champion-decks', scene: 'champion', group: 'full', variant: 'With decklists', vary: { decks: true } },
 ];
 
 const BY_KEY = new Map(TILES.map((t) => [t.key, t]));

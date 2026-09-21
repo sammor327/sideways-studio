@@ -64,7 +64,8 @@
 .main { position: absolute; left: calc(80 * var(--u)); top: calc(150 * var(--u)); width: calc(1220 * var(--u)); bottom: calc(154 * var(--u)); transform: translateY(calc((1 - var(--t, 1)) * 24 * var(--u))); }
 .scr { position: absolute; inset: 0; display: none; flex-direction: column; min-height: 0; }
 .mode-upnext .scr.upnext, .mode-starting .scr.starting, .mode-brb .scr.brb, .mode-thanks .scr.thanks,
-.mode-custom .scr.custom, .mode-schedule .scr.schedule, .mode-format .scr.format { display: flex; }
+.mode-custom .scr.custom, .mode-schedule .scr.schedule, .mode-format .scr.format,
+.mode-round .scr.round { display: flex; }
 
 .empty { padding: calc(40 * var(--u)); text-align: center; font: 500 calc(20 * var(--u))/1.4 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); background: var(--ss-plate, #10151d); border: calc(1 * var(--u)) dashed var(--ss-frame, #26303c); opacity: 0.94; }
 
@@ -296,3 +297,38 @@ html:not(.transparent) .camwin .win::after { content: 'Camera window: the source
 .bt-ic img.crop-legend { object-position: center 18%; }
 .bt-ic.none { display: none; }
 .bt-mid { font: 800 calc(19 * var(--u))/1 var(--tes-font); letter-spacing: calc(2.4 * var(--u)); color: var(--ss-text-muted, #9aa7b6); text-align: center; }
+
+/* --- the round board (2026-09-20): the round's tables in two columns,
+   the page it is on named above them. One row a table: its number, the
+   two players and the result, the loser dimmed. It turns between its
+   pages on the slate's own rotate, so a hold left up follows the round
+   through by itself. --- */
+/* The head above the board already names the page it is on, so this row
+   only counts the tables on it. */
+.rb-head { display: flex; align-items: baseline; gap: calc(16 * var(--u)); margin-bottom: calc(14 * var(--u)); }
+.rb-count { font: 700 calc(16 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); }
+.rb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(8 * var(--u)) calc(16 * var(--u)); align-content: start; min-height: 0; overflow: hidden; }
+.rb-grid:empty { display: none; }
+.rb-row {
+  display: grid;
+  grid-template-columns: calc(58 * var(--u)) minmax(0, 1fr) calc(92 * var(--u)) minmax(0, 1fr);
+  align-items: center;
+  gap: calc(10 * var(--u));
+  padding: calc(9 * var(--u)) calc(12 * var(--u));
+  background: var(--ss-plate, #10151d);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+  opacity: 0.96;
+}
+.rb-row .t { font: 800 calc(var(--rs, 20) * var(--u))/1 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); font-variant-numeric: tabular-nums; }
+.rb-row .p { font: 800 calc(var(--rs, 20) * var(--u))/1.1 var(--tes-font); text-transform: uppercase; color: var(--ss-text, #f3f6f9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-row .p.r { text-align: right; }
+.rb-row .p.lost { color: var(--ss-text-muted, #9aa7b6); opacity: 0.7; }
+.rb-row .p.won { color: var(--ss-accent-b, #1bef19); }
+.rb-row .s {
+  text-align: center;
+  font: 800 calc(var(--rs, 20) * var(--u))/1 var(--tes-font);
+  font-variant-numeric: tabular-nums;
+  color: var(--ss-text, #f3f6f9);
+  white-space: nowrap;
+}
+.rb-row .s.open { font-weight: 700; font-size: calc(var(--rs, 20) * 0.7 * var(--u)); letter-spacing: calc(1.4 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }

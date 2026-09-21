@@ -1,0 +1,168 @@
+/* Match victory (2026-09-20, Sam: "we need to design a Match victory
+   scene"). The full-frame end of a series, where the result strip is the
+   band that holds while the players shake hands: the winner's legend figure
+   fills the right of the frame, and a card down the left carries the legend
+   card itself, MATCH WINNER, the name, the legend, the games, the points
+   and the best of, with the line about who they beat and where they go
+   next under it.
+
+   It stands on the glowing-arrows ground the head to head and the bracket
+   use, because it belongs to the same run of full screens.
+
+   Motion: --t (900 ms) lifts the card in from the left and the figure in
+   from the right, then the numbers count up their own row; --o (400 ms)
+   fades the lot. Every read falls back to settled: var(--t, 1), var(--o, 1). */
+
+.mw { position: absolute; inset: 0; overflow: hidden; opacity: var(--o, 1); }
+.mw.off { display: none; }
+.mw, .mw * { box-sizing: border-box; }
+.mw {
+  --cd: clamp(0, calc(var(--t, 1) / 0.45), 1);
+  --fg: clamp(0, calc((var(--t, 1) - 0.1) / 0.5), 1);
+  --hd: clamp(0, calc((var(--t, 1) - 0.25) / 0.3), 1);
+  --nm: clamp(0, calc((var(--t, 1) - 0.4) / 0.3), 1);
+  --ft: clamp(0, calc((var(--t, 1) - 0.62) / 0.38), 1);
+}
+
+/* The winner's legend, big on the right and cut off at the frame's edge the
+   way the profile does it. */
+.mw .figure {
+  position: absolute;
+  right: calc(-40 * var(--u));
+  top: 0;
+  bottom: 0;
+  width: calc(1000 * var(--u));
+  opacity: calc(0.9 * var(--fg));
+  transform: translateX(calc((1 - var(--fg)) * 90 * var(--u)));
+}
+.mw .figure .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; }
+.mw .figure .art.hidden { display: none; }
+.mw .figure .art.icon-tier { object-fit: contain; padding: 22%; opacity: 0.5; }
+.mw .figure::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--ss-ink, #0a0d12) 4%, rgba(10, 13, 18, 0.55) 42%, transparent 78%);
+}
+
+.mw .head {
+  position: absolute;
+  left: calc(96 * var(--u));
+  top: calc(74 * var(--u));
+  opacity: var(--hd);
+  transform: translateY(calc((1 - var(--hd)) * -20 * var(--u)));
+}
+.mw .head .rd {
+  font: 800 calc(40 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1 * var(--u));
+  color: var(--ss-text, #f3f6f9);
+}
+.mw .head .ev {
+  margin-top: calc(10 * var(--u));
+  font: 500 calc(17 * var(--u))/1.2 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(3 * var(--u));
+  color: var(--ss-text-muted, #9aa7b6);
+}
+.mw .head .ev:empty { display: none; }
+
+.mw .card {
+  position: absolute;
+  left: calc(96 * var(--u));
+  top: calc(206 * var(--u));
+  width: calc(1020 * var(--u));
+  display: grid;
+  grid-template-columns: calc(320 * var(--u)) minmax(0, 1fr);
+  gap: calc(34 * var(--u));
+  padding: calc(34 * var(--u));
+  background: color-mix(in srgb, var(--ss-plate, #10151d) 88%, transparent);
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  box-shadow: 0 calc(28 * var(--u)) calc(80 * var(--u)) rgba(0, 0, 0, 0.6);
+  opacity: var(--cd);
+  transform: translateX(calc((1 - var(--cd)) * -70 * var(--u)));
+}
+.mw .card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: calc(6 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+}
+
+/* The legend card itself, in a box of the card's own shape (744 x 1039). */
+.mw .crest {
+  position: relative;
+  width: calc(320 * var(--u));
+  height: calc(447 * var(--u));
+  overflow: hidden;
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  background: radial-gradient(circle at 50% 36%, var(--ss-ink, #10151d), #05070a 78%);
+  box-shadow: 0 calc(16 * var(--u)) calc(44 * var(--u)) rgba(0, 0, 0, 0.6);
+}
+.mw .crest .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mw .crest .art.hidden { display: none; }
+.mw .crest .art.icon-tier { object-fit: contain; padding: 22%; opacity: 0.6; }
+
+.mw .lines { min-width: 0; display: flex; flex-direction: column; }
+.mw .w {
+  font: 800 calc(30 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(4 * var(--u));
+  color: var(--ss-accent-b, #1bef19);
+  opacity: var(--hd);
+}
+.mw .nm {
+  display: flex; align-items: center; gap: calc(16 * var(--u));
+  margin-top: calc(12 * var(--u));
+  font: 800 calc(96 * var(--u))/0.92 var(--tes-font);
+  text-transform: uppercase;
+  color: var(--ss-text, #f3f6f9);
+  min-width: 0;
+  opacity: var(--nm);
+  transform: translateY(calc((1 - var(--nm)) * 24 * var(--u)));
+}
+.mw .nm .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mw .nm .k-chip { font-size: calc(19 * var(--u)); padding: calc(7 * var(--u)) calc(10 * var(--u)) calc(6 * var(--u)); }
+.mw .lg {
+  margin-top: calc(12 * var(--u));
+  font: 800 calc(26 * var(--u))/1.2 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.4 * var(--u));
+  color: var(--ss-text-muted, #9aa7b6);
+  opacity: var(--nm);
+}
+.mw .lg:empty { display: none; }
+
+.mw .facts {
+  display: flex;
+  gap: calc(14 * var(--u));
+  margin-top: calc(28 * var(--u));
+  opacity: var(--ft);
+  transform: translateY(calc((1 - var(--ft)) * 16 * var(--u)));
+}
+.mw .fact {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: calc(14 * var(--u)) calc(16 * var(--u));
+  background: var(--ss-ink, #0a0d12);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+}
+.mw .fact .k { display: block; font: 800 calc(12 * var(--u))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(2 * var(--u)); color: var(--ss-text-muted, #9aa7b6); }
+.mw .fact strong { display: block; margin-top: calc(8 * var(--u)); font: 800 calc(40 * var(--u))/1 var(--tes-font); color: var(--ss-text, #f3f6f9); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.mw .beat {
+  margin-top: calc(22 * var(--u));
+  font: 500 calc(20 * var(--u))/1.35 var(--tes-font);
+  color: var(--ss-text-muted, #9aa7b6);
+  opacity: var(--ft);
+}
+.mw .beat:empty { display: none; }
+.mw .beat b { font-weight: 800; color: var(--ss-text, #f3f6f9); }
+.mw .adv {
+  margin-top: calc(10 * var(--u));
+  font: 800 calc(22 * var(--u))/1.3 var(--tes-font);
+  color: var(--ss-accent-a, #11b6fb);
+  opacity: var(--ft);
+}
+.mw .adv:empty { display: none; }

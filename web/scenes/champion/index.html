@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Tournament Champion</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="ch off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+
+    <div class="head">
+      <div class="t" id="title">Champion</div>
+      <div class="sub" id="event"></div>
+    </div>
+
+    <div class="pair" id="pair">
+      <!-- The champion, then the runner up: the same block twice, the first
+           at full size and the second stepped down by CSS. -->
+      <div class="who win" id="whoWin">
+        <span class="rank">Champion</span>
+        <div class="crest"><img class="art hidden" id="winCard" alt="" draggable="false"></div>
+        <div class="nm"><span class="k-chip" id="winCountry"></span><span class="n" id="winName"></span></div>
+        <div class="lg" id="winLegend"></div>
+        <div class="meta" id="winMeta"></div>
+        <div class="deck hidden" id="winDeck"></div>
+      </div>
+      <div class="split"><span class="line"></span><span class="score" id="finalScore"></span><span class="line"></span></div>
+      <div class="who up" id="whoUp">
+        <span class="rank">Runner up</span>
+        <div class="crest"><img class="art hidden" id="upCard" alt="" draggable="false"></div>
+        <div class="nm"><span class="k-chip" id="upCountry"></span><span class="n" id="upName"></span></div>
+        <div class="lg" id="upLegend"></div>
+        <div class="meta" id="upMeta"></div>
+        <div class="deck hidden" id="upDeck"></div>
+      </div>
+    </div>
+
+    <div class="k-foot"><span class="note">Riftbound is a trademark of Riot Games. Fan content, not endorsed by Riot.</span></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server&hellip;</div>
+  <div class="stage-diag" id="hiddenHint">The tournament champion is hidden: set the final's winner, switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

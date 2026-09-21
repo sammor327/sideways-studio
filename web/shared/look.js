@@ -20,7 +20,8 @@
 export const LOOK_SCENES = ['scorebug', 'cardpopup', 'cardrow', 'igo1v1', 'igo2v2', 'igodual', 'igobars', 'pov', 'decklist',
   'igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown',
   'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'legendstats', 'result', 'sponsor',
-  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'matrix', 'odds', 'trash', 'sidespot', 'ticker'];
+  'matchup', 'sideboard', 'decklists', 'vscard', 'pairings', 'ongoing', 'matrix', 'odds', 'trash', 'sidespot', 'ticker',
+  'gamewin', 'matchwin', 'champion'];
 
 // The September 2026 graphics (from the five-game overlay scouting). They
 // sat behind Setup's Experimental switch until 0.10.0; the panel now lists
@@ -63,6 +64,9 @@ export const SCENE_LABELS = {
   trash: 'Trash',
   sidespot: 'Sideboard card spotted',
   ticker: 'Results ticker',
+  gamewin: 'Game victory',
+  matchwin: 'Match victory',
+  champion: 'Tournament champion',
 };
 
 // What paints the ground of a graphic (the sidebar, the columns, the plates,
@@ -292,6 +296,23 @@ export const DESIGNED = {
   trash: {
     colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
     background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 30, dim: 0 },
+  },
+  // The victory set (2026-09-20). The game victory plays over the game,
+  // so it paints plates only on the sideboard fly-in's ground; the match
+  // victory and the tournament champion are full screens and stand on the
+  // head to head's glowing-arrows plate, which is where the event's last
+  // graphic belongs.
+  gamewin: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'gradient', color: '#141a22', color2: '#0a0d12', angle: 180, image: '', grain: 30, dim: 0 },
+  },
+  matchwin: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 35 },
+  },
+  champion: {
+    colors: { ink: '#0a0d12', plate: '#10151d', frame: '#26303c', text: '#f3f6f9', textMuted: '#9aa7b6', trim: '' },
+    background: { kind: 'arrows', color: '#142131', color2: '#0a0d12', angle: 160, image: '', grain: 20, dim: 30 },
   },
 };
 

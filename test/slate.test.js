@@ -8,8 +8,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   FADE_MS, SLATE_EVERY_DEFAULT, SLATE_MODES, SLATE_PAGES, SLATE_SCREENS, SLATE_SWITCHES,
-  clockLabelOf, clockSet, nextMatch, nextThing, seedLines, slateBand, slateFields, slateGaps, slateLine,
-  slateMain, slateMode, slatePages, slateSlot, slateSponsors, slateSub, slateTitle,
+  clockLabelOf, clockSet, nextMatch, nextThing, roundBoard, roundTitle, seedLines, slateBand, slateFields, slateGaps, slateLine,
+  slateMain, slateMode, slatePages, slateScreen, slateSlot, slateSponsors, slateSub, slateTitle,
 } from '../web/shared/slate.js';
 import { TILES } from '../web/shared/looktiles.js';
 
@@ -232,5 +232,60 @@ describe('what the panel shows', () => {
   it('gives the look builder a tile for every screen', () => {
     const modes = TILES.filter((t) => t.scene === 'slate').map((t) => t.vary.mode);
     assert.deepEqual([...modes].sort(), [...SLATE_MODES].sort());
+  });
+});
+
+// The round board (2026-09-20, Sam: "a slate that has ongoing matches and
+// then automatically transitions to show the results for the last round and
+// then next round's pairings once they are ready"). One screen that follows
+// a round through off the event's own pairings, so what it shows has to come
+// from the tables alone.
+describe('the round board', () => {
+  const t = (table, over = {}) => ({ table, left: { name: `A${table}` }, right: { name: `B${table}` }, score: [0, 0], status: '', winner: '', ...over });
+
+  it('shows nothing but its own line with no round loaded', () => {
+    assert.deepEqual(roundBoard([]), []);
+    assert.deepEqual(roundBoard(), []);
+  });
+
+  it('calls a round with nothing decided the pairings, on one page', () => {
+    const pages = roundBoard([t(1), t(2), t(3)]);
+    assert.deepEqual(pages.map((p) => p.key), ['pairings']);
+    assert.equal(pages[0].rows.length, 3);
+  });
+
+  it('turns between what is still out and what has come in while both exist', () => {
+    const pages = roundBoard([t(1, { winner: 'left', score: [2, 0] }), t(2), t(3, { status: 'done' })]);
+    assert.deepEqual(pages.map((p) => p.key), ['ongoing', 'results']);
+    assert.deepEqual(pages[0].rows.map((r) => r.table), [2]);
+    assert.deepEqual(pages[1].rows.map((r) => r.table), [1, 3]);
+  });
+
+  it('holds on the results once the round is in', () => {
+    const pages = roundBoard([t(1, { winner: 'left' }), t(2, { winner: 'right' })]);
+    assert.deepEqual(pages.map((p) => p.key), ['results']);
+  });
+
+  it('becomes the pairings again the moment the next round is loaded', () => {
+    const done = roundBoard([t(1, { winner: 'left' }), t(2, { winner: 'right' })]);
+    assert.equal(done[0].key, 'results');
+    const next = roundBoard([t(7), t(8), t(9), t(10)]);
+    assert.deepEqual(next.map((p) => p.key), ['pairings']);
+  });
+
+  it('names the round over the page it is on', () => {
+    const [page] = roundBoard([t(1, { winner: 'left' })]);
+    assert.equal(roundTitle(page, { pairings: { label: 'Round 6' } }), 'Results: Round 6');
+    assert.equal(roundTitle(page, { roundTitle: 'Top 8' }), 'Results: Top 8');
+    assert.equal(roundTitle(page, {}), 'Results');
+    assert.equal(roundTitle(null, { roundTitle: 'Top 8' }), 'Top 8');
+  });
+
+  it('is a screen like the rest: listed, titled, and reading its own switches', () => {
+    assert.ok(SLATE_MODES.includes('round'));
+    const screen = slateScreen('round');
+    assert.equal(screen.label, 'Round board');
+    assert.ok(screen.switches.length, 'the round board reads no switches at all');
+    assert.equal(screen.text, '', 'the round board has no line of its own to type');
   });
 });

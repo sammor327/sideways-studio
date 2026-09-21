@@ -1,0 +1,194 @@
+/* Tournament champion (2026-09-20, Sam: "a tournament champion scene that
+   should include the runner up and showcase both their legends with the
+   option to display their decklists").
+
+   The last graphic of an event: the two finalists side by side on the
+   glowing-arrows ground, the champion at full size on the left and the
+   runner up stepped down on the right, each showing their legend's card
+   large with their name, their legend and their record under it. The final
+   score sits on the rule between them. Decklists off, the two legends have
+   the frame to themselves; Decklists on, each player's main deck opens
+   under them as a grid of card pictures and both crests step down to make
+   the room, so the graphic still fits 1080 without scrolling.
+
+   The two are whoever is loaded as the match, which is the final: the
+   champion is the winner, the runner up the other seat. Nothing new to
+   type at the end of a long day.
+
+   Motion: --t (1 s) raises the head, then each finalist in turn, then the
+   decks; --o (400 ms) fades it. Every read falls back to settled. */
+
+.ch { position: absolute; inset: 0; overflow: hidden; opacity: var(--o, 1); }
+.ch.off { display: none; }
+.ch, .ch * { box-sizing: border-box; }
+.ch {
+  --hd: clamp(0, calc(var(--t, 1) / 0.3), 1);
+  --w1: clamp(0, calc((var(--t, 1) - 0.18) / 0.34), 1);
+  --w2: clamp(0, calc((var(--t, 1) - 0.34) / 0.34), 1);
+  --dk: clamp(0, calc((var(--t, 1) - 0.6) / 0.4), 1);
+  /* The crest steps down when the decklists are open. */
+  --crest-w: 386;
+  --crest-h: 539;
+}
+.ch.with-decks { --crest-w: 250; --crest-h: 349; }
+
+.ch .head {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(52 * var(--u));
+  text-align: center;
+  opacity: var(--hd);
+  transform: translateY(calc((1 - var(--hd)) * -24 * var(--u)));
+}
+.ch .head .t {
+  font: 800 calc(64 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(5 * var(--u));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ch .head .sub {
+  margin-top: calc(10 * var(--u));
+  font: 500 calc(18 * var(--u))/1.2 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(3.4 * var(--u));
+  color: var(--ss-text-muted, #9aa7b6);
+}
+.ch .head .sub:empty { display: none; }
+
+.ch .pair {
+  position: absolute;
+  left: calc(70 * var(--u));
+  right: calc(70 * var(--u));
+  top: calc(186 * var(--u));
+  bottom: calc(74 * var(--u));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(96 * var(--u)) minmax(0, 1fr);
+  align-items: start;
+}
+
+.ch .who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(26 * var(--u)) calc(22 * var(--u));
+  background: color-mix(in srgb, var(--ss-plate, #10151d) 82%, transparent);
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+}
+.ch .who.win { opacity: var(--w1); transform: translateY(calc((1 - var(--w1)) * 34 * var(--u))); border-top: calc(6 * var(--u)) solid var(--ss-accent-b, #1bef19); }
+.ch .who.up { opacity: calc(0.86 * var(--w2)); transform: translateY(calc((1 - var(--w2)) * 34 * var(--u))); }
+/* The runner up is the same block one step quieter, so the eye lands on the
+   champion first without either being a different design. */
+.ch .who.up .rank { color: var(--ss-text-muted, #9aa7b6); }
+.ch .who.up .nm { font-size: calc(58 * var(--u)); }
+.ch .who.up .crest { width: calc(var(--crest-w) * 0.86 * var(--u)); height: calc(var(--crest-h) * 0.86 * var(--u)); }
+
+.ch .rank {
+  font: 800 calc(20 * var(--u))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(4 * var(--u));
+  color: var(--ss-accent-b, #1bef19);
+}
+.ch .crest {
+  position: relative;
+  margin-top: calc(18 * var(--u));
+  width: calc(var(--crest-w) * var(--u));
+  height: calc(var(--crest-h) * var(--u));
+  overflow: hidden;
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  background: radial-gradient(circle at 50% 36%, var(--ss-ink, #10151d), #05070a 78%);
+  box-shadow: 0 calc(18 * var(--u)) calc(50 * var(--u)) rgba(0, 0, 0, 0.6);
+}
+.ch .crest .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ch .crest .art.hidden { display: none; }
+.ch .crest .art.icon-tier { object-fit: contain; padding: 22%; opacity: 0.6; }
+
+.ch .nm {
+  display: flex; align-items: center; justify-content: center; gap: calc(12 * var(--u));
+  margin-top: calc(18 * var(--u));
+  max-width: 100%;
+  font: 800 calc(70 * var(--u))/0.95 var(--tes-font);
+  text-transform: uppercase;
+  color: var(--ss-text, #f3f6f9);
+}
+.ch .nm .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch .nm .k-chip { font-size: calc(16 * var(--u)); padding: calc(6 * var(--u)) calc(9 * var(--u)) calc(5 * var(--u)); }
+.ch .lg {
+  margin-top: calc(10 * var(--u));
+  font: 800 calc(22 * var(--u))/1.25 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.4 * var(--u));
+  color: var(--ss-accent-a, #11b6fb);
+  text-align: center;
+}
+.ch .lg:empty { display: none; }
+.ch .meta {
+  margin-top: calc(8 * var(--u));
+  font: 500 calc(17 * var(--u))/1.35 var(--tes-font);
+  color: var(--ss-text-muted, #9aa7b6);
+  text-align: center;
+}
+.ch .meta:empty { display: none; }
+
+/* The rule between them, with the final score on it. */
+.ch .split { display: flex; flex-direction: column; align-items: center; gap: calc(14 * var(--u)); padding-top: calc(60 * var(--u)); opacity: var(--w2); }
+.ch .split .line { flex: 1 1 auto; width: calc(2 * var(--u)); background: linear-gradient(180deg, transparent, var(--ss-frame, #26303c) 20%, var(--ss-frame, #26303c) 80%, transparent); }
+.ch .split .score {
+  font: 800 calc(42 * var(--u))/1 var(--tes-font);
+  color: var(--ss-text, #f3f6f9);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: calc(10 * var(--u)) calc(12 * var(--u));
+  background: var(--ss-ink, #0a0d12);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+}
+.ch .split .score:empty { display: none; }
+
+/* Each finalist's main deck, small: the pictures only, so the block reads as
+   "this is what they played" rather than as a list to be read off screen.
+   The decklist graphic is still the one for reading. */
+.ch .deck {
+  margin-top: calc(18 * var(--u));
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(5 * var(--u));
+  opacity: var(--dk);
+}
+.ch .deck.hidden { display: none; }
+.ch .deck .cd {
+  position: relative;
+  width: calc(var(--cw, 62) * var(--u));
+  height: calc(var(--cw, 62) / 0.716 * var(--u));
+  overflow: hidden;
+  background: var(--ss-ink, #0a0d12);
+  border: calc(1 * var(--u)) solid var(--ss-frame, #26303c);
+}
+.ch .deck .cd .art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ch .deck .cd .art.hidden { display: none; }
+.ch .deck .cd .miss {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  padding: calc(3 * var(--u));
+  font: 700 calc(8 * var(--u))/1.1 var(--tes-font);
+  text-align: center;
+  color: var(--ss-text-muted, #9aa7b6);
+  overflow: hidden;
+}
+.ch .deck .cd .qty {
+  position: absolute;
+  right: 0; bottom: 0;
+  padding: calc(1 * var(--u)) calc(4 * var(--u));
+  font: 800 calc(11 * var(--u))/1.2 var(--tes-font);
+  color: #06110a;
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  z-index: 1;
+}
+.ch .deck .none {
+  font: 500 calc(16 * var(--u))/1.3 var(--tes-font);
+  color: var(--ss-text-muted, #9aa7b6);
+}

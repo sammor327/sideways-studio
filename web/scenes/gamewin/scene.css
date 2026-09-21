@@ -1,0 +1,121 @@
+/* Game victory (2026-09-20, Sam: "we need to design a game victory scene").
+   The moment one game of a series ends, played over the game window of
+   whichever in-game overlay is up (--gx, --gy, --gw, --gh from
+   web/shared/gamewindow.js), so it never crosses the overlay's chrome and
+   the table camera stays visible around it. One plate across the middle of
+   that window: the winner's legend card on the left fading into the plate,
+   the game number and the best of, GAME WINNER, the name, the legend, and
+   the series tally on the right with a pip for every game it takes.
+
+   It is the first beat of the between-games run (server/between.js): the
+   run brings it up, the sideboard fly-in follows it and the game intro
+   closes the sequence, so it is sized off the window the same way the game
+   intro is.
+
+   Motion: --t (700 ms) opens the plate from its middle, then brings the
+   inside up in three beats; --o (400 ms) fades it. Every read falls back to
+   settled: var(--t, 1), var(--o, 1). */
+
+.gw { position: absolute; inset: 0; opacity: var(--o, 1); }
+.gw.off { display: none; }
+.gw, .gw * { box-sizing: border-box; }
+
+.plate {
+  position: absolute;
+  left: calc((var(--gx, 0) + var(--gw, 1920) / 2) * var(--u));
+  top: calc((var(--gy, 0) + var(--gh, 1080) / 2) * var(--u));
+  width: calc(var(--pw, 1200) * var(--u));
+  height: calc(var(--ph, 280) * var(--u));
+  margin-left: calc(var(--pw, 1200) * var(--u) / -2);
+  margin-top: calc(var(--ph, 280) * var(--u) / -2);
+  display: grid;
+  grid-template-columns: calc(var(--pw, 1200) * 0.25 * var(--u)) minmax(0, 1fr) calc(var(--pw, 1200) * 0.25 * var(--u));
+  background: var(--ss-plate, #10151d);
+  border: calc(2 * var(--u)) solid var(--ss-frame, #26303c);
+  box-shadow: 0 calc(24 * var(--u)) calc(70 * var(--u)) rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  transform: scaleX(var(--pl)) scaleY(calc(0.3 + 0.7 * var(--pl)));
+  --pl: clamp(0, calc(var(--t, 1) / 0.42), 1);
+  --in: clamp(0, calc((var(--t, 1) - 0.34) / 0.3), 1);
+  --nm: clamp(0, calc((var(--t, 1) - 0.48) / 0.3), 1);
+  --tl: clamp(0, calc((var(--t, 1) - 0.6) / 0.4), 1);
+  /* One unit for everything inside, so the plate keeps its proportions in a
+     narrow game window as well as the whole frame. */
+  --pu: calc(var(--u) * var(--ps, 1));
+}
+.plate::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: calc(5 * var(--pu));
+  background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19));
+  z-index: 3;
+}
+
+/* The winner's legend card, cropped to the head and faded into the plate so
+   the name never sits on busy art. */
+.gw .art { position: relative; overflow: hidden; background: var(--ss-ink, #0a0d12); }
+.gw .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 22%; }
+.gw .art img.hidden { display: none; }
+.gw .art img.icon-tier { object-fit: contain; padding: 18%; opacity: 0.6; }
+.gw .art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 40%, var(--ss-plate, #10151d)); }
+
+.gw .body { position: relative; padding: calc(26 * var(--pu)) calc(30 * var(--pu)); display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.gw .kick { display: flex; gap: calc(10 * var(--pu)); align-items: center; opacity: var(--in); transform: translateY(calc((1 - var(--in)) * -14 * var(--pu))); }
+.gw .kick .k-chip { font-size: calc(14 * var(--pu)); }
+.gw .w {
+  margin-top: calc(12 * var(--pu));
+  font: 800 calc(30 * var(--pu))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(3 * var(--pu));
+  color: var(--ss-accent-b, #1bef19);
+  opacity: var(--in);
+}
+.gw .nm {
+  display: flex; align-items: center; gap: calc(14 * var(--pu));
+  margin-top: calc(8 * var(--pu));
+  font: 800 calc(84 * var(--pu))/0.92 var(--tes-font);
+  text-transform: uppercase;
+  color: var(--ss-text, #f3f6f9);
+  min-width: 0;
+  opacity: var(--nm);
+  transform: translateY(calc((1 - var(--nm)) * 22 * var(--pu)));
+}
+.gw .nm .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gw .nm .k-chip { font-size: calc(17 * var(--pu)); padding: calc(6 * var(--pu)) calc(9 * var(--pu)) calc(5 * var(--pu)); }
+.gw .lg {
+  margin-top: calc(10 * var(--pu));
+  font: 800 calc(22 * var(--pu))/1 var(--tes-font);
+  text-transform: uppercase;
+  letter-spacing: calc(1.4 * var(--pu));
+  color: var(--ss-text-muted, #9aa7b6);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: var(--nm);
+}
+.gw .lg:empty { display: none; }
+
+/* The series tally: the score big, a pip a game under it, and the two names
+   short, so the numbers are never read the wrong way round on a glance. */
+.gw .tally {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: calc(8 * var(--pu));
+  padding: calc(20 * var(--pu)) calc(14 * var(--pu));
+  background: var(--ss-ink, #0a0d12);
+  border-left: calc(1 * var(--pu)) solid var(--ss-frame, #26303c);
+  opacity: var(--tl);
+}
+.gw .tally .label { font: 800 calc(12 * var(--pu))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(2.4 * var(--pu)); color: var(--ss-text-muted, #9aa7b6); }
+.gw .tally .score { display: flex; align-items: baseline; gap: calc(10 * var(--pu)); font: 800 calc(64 * var(--pu))/1 var(--tes-font); color: var(--ss-text, #f3f6f9); font-variant-numeric: tabular-nums; }
+.gw .tally .score i { font-style: normal; font-size: calc(34 * var(--pu)); color: var(--ss-text-muted, #9aa7b6); }
+.gw .pips { display: flex; gap: calc(7 * var(--pu)); }
+.gw .pips span {
+  width: calc(26 * var(--pu));
+  height: calc(8 * var(--pu));
+  background: var(--ss-frame, #26303c);
+}
+.gw .pips span.l { background: var(--ss-accent-a, #11b6fb); }
+.gw .pips span.r { background: var(--ss-accent-b, #1bef19); }
+.gw .tally .who { display: flex; align-items: center; gap: calc(8 * var(--pu)); font: 700 calc(12 * var(--pu))/1 var(--tes-font); text-transform: uppercase; letter-spacing: calc(1.2 * var(--pu)); color: var(--ss-text-muted, #9aa7b6); max-width: 100%; }
+.gw .tally .who span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(110 * var(--pu)); }
+.gw .tally .who i { font-style: normal; opacity: 0.45; }

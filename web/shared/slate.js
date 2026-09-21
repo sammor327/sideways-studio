@@ -13,7 +13,7 @@
 // reads, and why one that is on shows nothing) and the tests. Plain ESM with
 // no browser or Node dependencies, like look.js.
 
-export const SLATE_MODES = ['upnext', 'starting', 'brb', 'thanks', 'custom', 'schedule', 'format'];
+export const SLATE_MODES = ['upnext', 'starting', 'brb', 'thanks', 'custom', 'schedule', 'format', 'round'];
 
 // Seconds each page of the side panel holds before the next one turns in.
 export const SLATE_EVERY_MIN = 5;
@@ -61,7 +61,49 @@ export const SLATE_SCREENS = {
     label: 'Format', title: 'Format', clock: 'Starting in',
     switches: ['countdown', 'schedule', 'panel', 'sponsors', 'ticker'], text: '',
   },
+  // The round board (2026-09-20, Sam: "a slate that has ongoing matches
+  // and then automatically transitions to show the results for the last
+  // round and then next round's pairings once they are ready"). Its title
+  // is the page it is turning through, so roundTitle below writes it.
+  round: {
+    label: 'Round board', title: 'Round', clock: 'Next round in',
+    switches: ['countdown', 'panel', 'sponsors'], text: '',
+  },
 };
+
+// --- the round board -------------------------------------------------
+//
+// One hold screen that follows a round through, off the event's own
+// pairings and nothing else: while tables are out it shows what is still
+// being played, as results land it turns between those and the results so
+// far, once the round is in it holds on the results, and the moment the
+// next round's pairings are loaded (tables with no results yet) it becomes
+// the pairings. The operator loads the round and leaves the slate up.
+export const ROUND_PAGES = ['ongoing', 'results', 'pairings'];
+const done = (r) => r && (r.status === 'done' || Boolean(r.winner));
+
+// The pages the tables can fill right now, in the order they turn. Empty
+// when no round is loaded, which is what the screen says instead.
+export function roundBoard(rows = []) {
+  const tables = (rows || []).filter(Boolean);
+  if (!tables.length) return [];
+  const finished = tables.filter(done);
+  const playing = tables.filter((r) => !done(r));
+  // A round with nothing decided is the round about to start.
+  if (!finished.length) return [{ key: 'pairings', label: 'Pairings', rows: tables }];
+  if (!playing.length) return [{ key: 'results', label: 'Results', rows: finished }];
+  return [
+    { key: 'ongoing', label: 'Still playing', rows: playing },
+    { key: 'results', label: 'Results so far', rows: finished },
+  ];
+}
+
+// The head over the board: the page it is on, then the round it is about.
+export function roundTitle(page, ev = {}) {
+  const round = String((ev.pairings && ev.pairings.label) || ev.roundTitle || '').trim();
+  if (!page) return round || 'Round';
+  return round ? `${page.label}: ${round}` : page.label;
+}
 
 export const slateScreen = (mode) => SLATE_SCREENS[mode] || SLATE_SCREENS.upnext;
 export const slateMode = (mode) => (SLATE_MODES.includes(mode) ? mode : 'upnext');

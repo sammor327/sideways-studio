@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Match Victory</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/ground.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="mw off" id="root">
+    <div class="ground">
+      <div class="g-fill"></div><div class="g-image"></div>
+      <div class="g-shards"></div><div class="g-shade"></div><div class="g-glint"></div>
+      <div class="g-grain"></div><div class="g-dim"></div>
+    </div>
+    <div class="figure"><img class="art hidden" id="figure" alt="" draggable="false"></div>
+
+    <div class="head">
+      <div class="rd" id="round"></div>
+      <div class="ev" id="event"></div>
+    </div>
+
+    <div class="card">
+      <div class="crest"><img class="art hidden" id="legendCard" alt="" draggable="false"></div>
+      <div class="lines">
+        <div class="w">Match winner</div>
+        <div class="nm"><span class="k-chip" id="country"></span><span class="n" id="name"></span></div>
+        <div class="lg" id="legend"></div>
+        <div class="facts">
+          <div class="fact"><span class="k">Games</span><strong id="games">0 - 0</strong></div>
+          <div class="fact"><span class="k">Points</span><strong id="points">0 - 0</strong></div>
+          <div class="fact"><span class="k">Series</span><strong id="bestOf">Best of 3</strong></div>
+        </div>
+        <div class="beat" id="beat"></div>
+        <div class="adv" id="adv"></div>
+      </div>
+    </div>
+
+    <div class="k-foot"><span class="note">Riftbound is a trademark of Riot Games. Fan content, not endorsed by Riot.</span></div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server&hellip;</div>
+  <div class="stage-diag" id="hiddenHint">The match victory is hidden: set a winner, switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

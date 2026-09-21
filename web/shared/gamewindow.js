@@ -46,6 +46,21 @@ export function fitInto(win, dw, dh, { margin = 24, max = 1 } = {}) {
   return { scale, x: win.x + (win.w - dw * scale) / 2, y: win.y + (win.h - dh * scale) / 2 };
 }
 
+// A design that TAKES the window instead of sitting inside it (the game
+// intro, 2026-09-20: "fit the entire in game overlay, rows scene with no
+// gaps in it"). The graphic is laid out at the window's own size and its
+// contents are scaled by one factor, so nothing is stretched: the scale is
+// what the window's height can take, held down to what its width can take
+// of the design's widest fixed block (`inner`, the name bar and its
+// padding) so a narrow window never pushes that block off a page.
+// Two pages divide the width, hence the halving.
+export function fillWindow(win, dh, inner, { pages = 2, gap = 30, pad = 48, max = 2 } = {}) {
+  const byHeight = win.h / dh;
+  const perPage = (win.w - gap) / pages;
+  const byWidth = (perPage - pad) / inner;
+  return { ...win, scale: Math.max(0.1, Math.min(byHeight, byWidth, max)) };
+}
+
 // The game being played: pinned (1 to 5), or counted from the game wins and
 // held to the series length.
 export function gameNumber(match, pinned = 0) {

@@ -146,8 +146,15 @@ profile.
 
 ## Panel layout
 
-Graphics are listed in three folds: 1v1, 2v2 and Other (the bugs, the card
-popup, the card row and the full screens). The star beside a graphic's name
+Graphics are listed in eight folds: **1v1**, **2v2**, **Pre-game** (the
+standings, the head to head VS, the decklists side by side, the match card
+and the player profile), **Stats** (the matchup matrix and the legend
+distribution), **Victory** (the game victory, the match victory, the result
+strip and the tournament champion), **Between games** (the slate, the corner
+tag, the lower third, the bracket, the pairings, the ongoing matches and the
+results ticker), **Other** (the card popup, the card row, the decklist and
+the sponsor plate) and **Archive** (the score bug, the arena score bug and
+the in-game overlay 1v1: earlier layouts, still here if a show uses them). The star beside a graphic's name
 keeps it in Favorites at the top, and gathers its pictures in the Favorites
 fold on the Look and setup and Tournament platform tabs as well; the chain
 beside the star copies that
@@ -155,8 +162,9 @@ graphic's browser-source link for OBS or vMix (the same link Setup lists). They 
 many of its graphics are in preview or on air, and putting a graphic in
 preview opens its fold. Each row still carries an Overlay or Full frame
 tag and a line under the name saying what the graphic is and where its
-data comes from; that line sits in the name's column, so it starts under
-the name and stops at the row's switch. The Studio's control band is three columns: Graphics, Graphic
+data comes from; the name and that line share one cell between the picture
+and the switch, so the line always starts directly under the name and stops
+at the switch. The Studio's control band is three columns: Graphics, Graphic
 features and Decklist. Graphic features and Decklist fold from their heading
 too, and every control card can be dragged taller or shorter by the grip
 along its bottom edge (double-click puts it back); the browser remembers
@@ -169,6 +177,34 @@ card.
 TAKE, CLEAR PROGRAM and CLEAR PREVIEW stay at the top of their column
 and the tip about them is TAKE's hover text; what is on air fills the
 column from the bottom.
+
+### Between games (the run)
+
+Under the clears is the **Between games** block, which plays the sequence
+a match has between every game so the operator does not (0.53.0). Move the
+game wins as a game ends, press **Run**, and:
+
+1. the **game victory** goes up, naming whoever went ahead, and holds for
+   **Victory** seconds (6 by default);
+2. the **sideboard fly-in** comes in and holds for as long as the players
+   take, with no clock on it at all;
+3. when both battlefields for the next game are typed under Match data,
+   the **game intro** comes in with them and holds for **Intro** seconds
+   (5 by default);
+4. the game intro goes out and the run is over.
+
+Nothing in it waits for a TAKE: every step lands in preview and on air at
+once, like the clock. Nothing else on air is touched either, so the
+in-game overlay, the score bug and the results ticker stay where they
+are, and only the two battlefields ride on air with the run (a name half
+typed in preview while a game is being played cannot reach the screen on
+the back of it).
+
+**Next** skips a step, which is what to press when a player keeps the same
+battlefield for the next game and there is nothing new for the run to see.
+**Stop** ends the run and takes its three graphics down. The three steps
+light up as the run reaches them, and the block says where it has got to.
+A run never survives a restart: the app comes up with none of it on air.
 
 What is on air is listed under the clears, each row with an X that takes
 that one graphic off air; a graphic's red ON AIR badge does the same thing
@@ -228,7 +264,7 @@ Studio) is where looks are made: the look controls run down the left the way
 Match data does in the Studio, with Setup (the card database, browser source
 links and updates) under them, and every graphic is laid out on the right as a
 live tile, 30 in all (each graphic once, plus the variants worth judging a
-look on: the slate's seven screens, the lower third's four, the showdown's
+look on: the slate's eight screens, the lower third's four, the showdown's
 strip and takeover, the dual columns with cards in hand). Tiles draw a
 built-in sample match by default, so no graphic is judged empty; "Your
 preview" switches them to the preview bank. Behind sets what shows through
@@ -376,13 +412,22 @@ and their source URLs are in Setup's browser source links.
   schedule, the seeds, the format, the desk, the chat commands, the next
   event) and the sponsors (the Sponsor plate's logos, else the names under
   Event); the feature tables run along the bottom in the Results ticker's
-  shape. Seven screens: **Up next** (the feature tables typed in Match data,
+  shape. Eight screens: **Up next** (the feature tables typed in Match data,
   one line each, see the field's tooltip, with the seeds under them),
   **Starting soon** (the clock large and the day's schedule), **Be right
   back** (a window cut through the graphic for a camera source, your line
   under it), **Thanks for watching** (the champion with their legend figure,
   your line, the next event), **Today's schedule**, **Format** (best of,
-  points to win, who chose first, the format text) and a **Custom line**.
+  points to win, who chose first, the format text), a **Custom line** and
+  the **Round board** (0.53.0), which follows a round through on its own:
+  while tables are out it lists what is still being played, as results
+  land it turns between those and the results so far, once the round is in
+  it holds on the results, and the moment the next round's pairings are
+  loaded it becomes the pairings. Two columns of tables, each with its
+  number, the two players and the score, the winner in the accent colour
+  and the loser dimmed; rows grow as the round shrinks. All of it off the
+  round already loaded from the Tournament platform tab, and it turns on
+  the slate's own rotate, so a hold left up keeps itself current.
   Graphic features › Slate lists only the switches the chosen screen uses
   (Break clock, Camera window, Schedule, Side panel, Sponsors, Tables
   ticker), with the break clock's own controls, and says why a switch that
@@ -622,6 +667,31 @@ results from RiftAtlas.
   card by hand for either player, and **Show again** and **Take it down**
   act on air at once too. With the rows overlay up it docks into the middle
   of its column instead of flying in over the game (0.51.0).
+- **Game victory** (Victory, `/scenes/gamewin/`, 0.53.0): one game of a
+  series ends. A plate across the game window of whichever in-game
+  overlay is up: the winner's legend card faded into it, the game number
+  and the best of, GAME WINNER, the name, the legend, and the series
+  tally with a pip for every game it takes. It names whoever is ahead on
+  game wins, so move the score first; **Winner** under Graphic features
+  pins a side for the game that levels a series, and **Game** pins the
+  number. It is the first beat of the between-games run below.
+- **Match victory** (Victory, `/scenes/matchwin/`, 0.53.0, full frame):
+  the series ends. The winner's legend figure across the right of the
+  frame, and a card down the left with their legend card, MATCH WINNER,
+  the name, the legend, the games, the points, the best of, who they beat
+  and the line about where they go next (the same one the result strip
+  prints, under Match data › Match card and result). The winner is that
+  same result, or the side that has taken the series; **Winner** under
+  Graphic features pins one.
+- **Tournament champion** (Victory, `/scenes/champion/`, 0.53.0, full
+  frame): the last graphic of the event. The champion and the runner up
+  side by side, each with their legend's card, their name, their legend
+  and their record, the final score on the rule between them, and the
+  word over them ("Champion" unless you type another). The two are the
+  final, which is to say the match already loaded, so nothing new is
+  typed at the end of a long day. **Decklists** under Graphic features
+  opens both finalists' main decks under them as card pictures and steps
+  the two legend cards down to make the room.
 - **Decklists side by side** (Between games, full frame): both players'
   lists with legend, runes, champion, battlefields, the main deck and,
   optionally, the sideboards.
@@ -632,8 +702,8 @@ results from RiftAtlas.
   champion and this game's battlefield, built in over about two seconds. The game number counts from the game wins unless
   pinned under Graphic features.
 
-The game intro, the sideboard fly-in and the sideboard card spotted fit
-themselves into the table area
+The game intro, the game victory, the sideboard fly-in and the sideboard
+card spotted fit themselves into the table area
 of whichever in-game overlay is up (the rows, the dual columns, the pillars,
 the bars, the sidebars, the POV) and take the whole frame with none. They
 play underneath the overlay: add their browser sources below your in-game

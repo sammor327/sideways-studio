@@ -102,6 +102,9 @@ const SCENE_FIELDS = {
   // Sideboard card spotted (2026-09-19): the name under the card; the cards
   // it spots are held against each player's list.
   sidespot: ['name', 'deck'],
+  gamewin: ['seriesLength', 'name', 'gameWins', 'legend', 'country'],
+  matchwin: ['seriesLength', 'name', 'score', 'gameWins', 'legend', 'country', 'roundTitle', 'eventName'],
+  champion: ['name', 'gameWins', 'legend', 'country', 'record', 'eventName', 'deck'],
   decklists: ['name', 'country', 'legend', 'record', 'deck'],
   // The VS head to head (2026-09-19).
   vscard: ['name', 'legend', 'legendText', 'roundTitle', 'eventName'],
@@ -146,6 +149,9 @@ const SCENE_NAMES = {
   matchup: 'the game intro',
   sideboard: 'the sideboard fly-in',
   sidespot: 'the sideboard card spotted',
+  gamewin: 'the game victory',
+  matchwin: 'the match victory',
+  champion: 'the tournament champion',
   decklists: 'the side by side decklists',
   vscard: 'the VS head to head',
   odds: 'the odds to draw',
@@ -162,6 +168,7 @@ const SCENE_SHORT = {
   cornertag: 'Corner tag', lowerthird: 'Lower third', headtohead: 'Match card', profile: 'Profile', bracket: 'Bracket', standings: 'Standings', pairings: 'Pairings', ongoing: 'Ongoing', result: 'Result',
   legendstats: 'Legends', matrix: 'Matchups', sponsor: 'Sponsor', ticker: 'Ticker',
   matchup: 'Game intro', sideboard: 'Sideboard', sidespot: 'Sideboard spot', decklists: 'Decklists 2up', vscard: 'VS card',
+  gamewin: 'Game victory', matchwin: 'Match victory', champion: 'Champion',
   odds: 'Odds', trash: 'Trash',
 };
 // Whether one graphic, set up the way preview has it, draws one field on one
@@ -697,11 +704,60 @@ function render(s) {
   renderDecks(s);
   renderSidespot(s);
   renderExtras(s);
+  renderRun(s);
   revealNewGraphics(s);
 
   // The TAKE button lights up whenever preview differs from what is on air.
   const pending = JSON.stringify(s.preview) !== JSON.stringify(s.program);
   $('takeBtn').classList.toggle('pending', pending);
+}
+
+// --- the between-games run (2026-09-20) ---
+//
+// Show transport, not a graphic's option, so it sits with TAKE: one press
+// as a game ends and the game victory, the sideboards and the game intro
+// follow each other without another click. The panel only asks for it and
+// draws where it has got to; the sequence itself is the server's
+// (server/state.js, advanceRun), so every panel window and every browser
+// source sees the same step at the same moment.
+const RUN_LABELS = { gamewin: 'Game victory', sideboard: 'Sideboards', intro: 'Game intro' };
+const RUN_HINTS = {
+  gamewin: 'The game victory is up. The sideboards come in on their own.',
+  sideboard: 'Holding on the sideboards. Type both battlefields for the next game under Match data and the game intro follows, or press Next.',
+  intro: 'The game intro is up. It goes out on its own.',
+};
+
+function renderRun(s) {
+  const run = s.run || { active: false, step: '', winHold: 6, introHold: 5 };
+  const order = ['gamewin', 'sideboard', 'intro'];
+  const at = order.indexOf(run.step);
+  $('runBox').classList.toggle('on', run.active);
+  $('runNow').textContent = run.active ? (RUN_LABELS[run.step] || 'Running') : 'Off';
+  for (const cell of document.querySelectorAll('#runSteps span')) {
+    const i = order.indexOf(cell.dataset.step);
+    cell.classList.toggle('now', run.active && i === at);
+    cell.classList.toggle('done', run.active && i < at);
+  }
+  $('runStart').disabled = run.active;
+  $('runNext').disabled = !run.active;
+  $('runStop').disabled = !run.active;
+  if (document.activeElement !== $('runWinHold')) $('runWinHold').value = String(run.winHold);
+  if (document.activeElement !== $('runIntroHold')) $('runIntroHold').value = String(run.introHold);
+  $('runHint').textContent = run.active
+    ? (RUN_HINTS[run.step] || '')
+    : 'Move the game wins, then press Run.';
+}
+
+$('runStart').addEventListener('click', () => post({ action: 'run', op: 'start' }));
+$('runNext').addEventListener('click', () => post({ action: 'run', op: 'next' }));
+$('runStop').addEventListener('click', () => post({ action: 'run', op: 'stop' }));
+for (const id of ['runWinHold', 'runIntroHold']) {
+  $(id).addEventListener('change', () => post({
+    action: 'run',
+    op: 'holds',
+    winHold: Number($('runWinHold').value),
+    introHold: Number($('runIntroHold').value),
+  }));
 }
 
 // --- bus controls ---
@@ -855,6 +911,7 @@ $('resetMatch').addEventListener('click', () => {
       bracket: { visible: false }, standings: { visible: false }, legendstats: { visible: false }, matrix: { visible: false }, pairings: { visible: false }, ongoing: { visible: false }, ticker: { visible: false }, result: { visible: false }, sponsor: { visible: false },
       matchup: { visible: false }, sideboard: { visible: false }, sidespot: { visible: false }, decklists: { visible: false }, vscard: { visible: false },
       odds: { visible: false }, trash: { visible: false },
+      gamewin: { visible: false }, matchwin: { visible: false }, champion: { visible: false },
     },
   });
   post({ action: 'turn', op: 'reset' });
@@ -1241,7 +1298,7 @@ $('sponsorUrl').value = `${location.origin}/scenes/sponsor/?transparent=1`;
 $('slateUrl').value = `${location.origin}/scenes/slate/?transparent=1`;
 $('handfanUrl').value = `${location.origin}/scenes/handfan/?transparent=1`;
 $('showdownUrl').value = `${location.origin}/scenes/showdown/?transparent=1`;
-for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing', 'ticker', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash']) {
+for (const key of ['cornertag', 'lowerthird', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing', 'ticker', 'result', 'matchup', 'sideboard', 'sidespot', 'decklists', 'odds', 'trash', 'gamewin', 'matchwin', 'champion']) {
   $(`${key}Url`).value = `${location.origin}/scenes/${key}/?transparent=1`;
 }
 
@@ -2375,17 +2432,19 @@ pollUpdate();
 // the showdown. Until 0.10.0 they sat behind Setup > Experimental; now they
 // are listed with everything else in the Graphics folds. theme.experimental
 // is still saved for older events and no longer read here.
-const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'matrix', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker'];
+const EXP_SCENES = ['igoportrait', 'igorows', 'arenabug', 'slate', 'handfan', 'showdown', 'cornertag', 'lowerthird', 'headtohead', 'profile', 'bracket', 'standings', 'result', 'matchup', 'sideboard', 'decklists', 'vscard', 'legendstats', 'matrix', 'pairings', 'ongoing', 'odds', 'trash', 'sidespot', 'ticker', 'gamewin', 'matchwin', 'champion'];
 const EXP_TOGGLES = { igoportrait: 'toggleIgoPortrait', matrix: 'toggleMatrix', igorows: 'toggleIgoRows', arenabug: 'toggleArena', slate: 'toggleSlate', handfan: 'toggleHandfan', showdown: 'toggleShowdown',
   cornertag: 'toggleCornertag', lowerthird: 'toggleLowerthird', headtohead: 'toggleHeadtohead', profile: 'toggleProfile', bracket: 'toggleBracket', standings: 'toggleStandings', result: 'toggleResult',
-  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', odds: 'toggleOdds', trash: 'toggleTrash', sidespot: 'toggleSidespot', ticker: 'toggleTicker' };
+  matchup: 'toggleMatchup', sideboard: 'toggleSideboard', decklists: 'toggleDecklists', vscard: 'toggleVscard', legendstats: 'toggleLegendstats', pairings: 'togglePairings', ongoing: 'toggleOngoing', odds: 'toggleOdds', trash: 'toggleTrash', sidespot: 'toggleSidespot', ticker: 'toggleTicker',
+  gamewin: 'toggleGamewin', matchwin: 'toggleMatchwin', champion: 'toggleChampion' };
 const EXP_ON_AIR = { igoportrait: 'igoPortraitOnAir', matrix: 'matrixOnAir', igorows: 'igoRowsOnAir', arenabug: 'arenaOnAir', slate: 'slateOnAir', handfan: 'handfanOnAir', showdown: 'showdownOnAir',
   cornertag: 'cornertagOnAir', lowerthird: 'lowerthirdOnAir', headtohead: 'headtoheadOnAir', profile: 'profileOnAir', bracket: 'bracketOnAir', standings: 'standingsOnAir', result: 'resultOnAir',
-  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', odds: 'oddsOnAir', trash: 'trashOnAir', sidespot: 'sidespotOnAir', ticker: 'tickerOnAir' };
+  matchup: 'matchupOnAir', sideboard: 'sideboardOnAir', decklists: 'decklistsOnAir', vscard: 'vscardOnAir', legendstats: 'legendstatsOnAir', pairings: 'pairingsOnAir', ongoing: 'ongoingOnAir', odds: 'oddsOnAir', trash: 'trashOnAir', sidespot: 'sidespotOnAir', ticker: 'tickerOnAir',
+  gamewin: 'gamewinOnAir', matchwin: 'matchwinOnAir', champion: 'championOnAir' };
 
 // The full-frame graphics cover everything, so switching one on in preview
 // switches the others off, the way the edge overlays do.
-const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing', 'decklists'];
+const FULL_SCENES = ['slate', 'decklist', 'headtohead', 'vscard', 'profile', 'bracket', 'standings', 'legendstats', 'matrix', 'pairings', 'ongoing', 'decklists', 'matchwin', 'champion'];
 function setFullScene(key, next) {
   const scenes = { [key]: { visible: next } };
   if (next) for (const other of FULL_SCENES) if (other !== key) scenes[other] = { visible: false };
@@ -2488,6 +2547,28 @@ $(EXP_TOGGLES.decklists).addEventListener('click', () => {
   setFullScene('decklists', !state.preview.scenes.decklists.visible);
 });
 $('matchupGame').addEventListener('change', () => post({ scenes: { matchup: { game: Number($('matchupGame').value) } } }));
+
+// --- the victory set (2026-09-20): game victory, match victory, champion ---
+//
+// The game victory plays in the game window like the game intro, so it is
+// an overlay switch; the other two are full screens and take the frame off
+// whatever else had it.
+$(EXP_TOGGLES.gamewin).addEventListener('click', () => {
+  if (!state) return;
+  post({ scenes: { gamewin: { visible: !state.preview.scenes.gamewin.visible } } });
+});
+for (const key of ['matchwin', 'champion']) {
+  $(EXP_TOGGLES[key]).addEventListener('click', () => {
+    if (!state) return;
+    setFullScene(key, !state.preview.scenes[key].visible);
+  });
+}
+$('gamewinSide').addEventListener('change', () => post({ scenes: { gamewin: { side: $('gamewinSide').value } } }));
+$('gamewinGame').addEventListener('change', () => post({ scenes: { gamewin: { game: Number($('gamewinGame').value) } } }));
+$('matchwinSide').addEventListener('change', () => post({ scenes: { matchwin: { side: $('matchwinSide').value } } }));
+$('championSide').addEventListener('change', () => post({ scenes: { champion: { side: $('championSide').value } } }));
+$('championDecks').addEventListener('change', () => post({ scenes: { champion: { decks: $('championDecks').checked } } }));
+$('championTitle').addEventListener('input', () => post({ scenes: { champion: { title: $('championTitle').value } } }));
 $('sideboardSide').addEventListener('change', () => post({ scenes: { sideboard: { side: $('sideboardSide').value } } }));
 $('decklistsSideboards').addEventListener('change', () => post({ scenes: { decklists: { sideboards: $('decklistsSideboards').checked } } }));
 $('igoRowsBattlefields').addEventListener('change', () => post({ scenes: { igorows: { battlefields: $('igoRowsBattlefields').value } } }));
@@ -4400,6 +4481,14 @@ function renderExtras(s) {
   if (document.activeElement !== $('igoRowsBattlefields')) $('igoRowsBattlefields').value = rw.battlefields || 'off';
   if (document.activeElement !== $('matchupGame')) $('matchupGame').value = String(prev.scenes.matchup.game || 0);
   if (document.activeElement !== $('sideboardSide')) $('sideboardSide').value = prev.scenes.sideboard.side;
+  const gw = prev.scenes.gamewin;
+  if (document.activeElement !== $('gamewinSide')) $('gamewinSide').value = gw.side || '';
+  if (document.activeElement !== $('gamewinGame')) $('gamewinGame').value = String(gw.game || 0);
+  if (document.activeElement !== $('matchwinSide')) $('matchwinSide').value = prev.scenes.matchwin.side || '';
+  const ch = prev.scenes.champion;
+  if (document.activeElement !== $('championSide')) $('championSide').value = ch.side || '';
+  if (document.activeElement !== $('championDecks')) $('championDecks').checked = Boolean(ch.decks);
+  if (document.activeElement !== $('championTitle')) $('championTitle').value = ch.title || '';
   const od = prev.scenes.odds;
   if (document.activeElement !== $('oddsSide')) $('oddsSide').value = od.side || 'left';
   if (document.activeElement !== $('oddsDraws')) $('oddsDraws').value = String(od.draws || 1);

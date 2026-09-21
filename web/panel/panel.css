@@ -706,7 +706,8 @@ footer p { margin: 0; }
 }
 .graphics-card .scene-row.popup-row { grid-template-columns: 124px minmax(0, 1fr) auto; }
 .scene-thumb {
-  grid-row: 1 / span 2;
+  grid-row: 1;
+  align-self: start;
   position: relative;
   width: 124px;
   height: 70px;
@@ -750,12 +751,22 @@ footer p { margin: 0; }
 .scene-thumb.empty { opacity: 0.5; }
 .graphics-card .scene-options { grid-column: 2 / -1; padding-left: 0; }
 /* A line under a graphic's name: what it is and when it airs. Every graphic
-   in the list has one. It sits in the name's own column, so it starts under
-   the name and stops at the switch instead of running beneath it, and every
-   line then begins and ends in the same place down the list. It turns into a
-   warning while the graphic is up with nothing to show. */
-.scene-note {
+   in the list has one. The name and the line share one cell (.scene-text) in
+   the column between the picture and the switch, so the line always starts
+   directly under the name and stops at the switch instead of running beneath
+   it, and every line then begins and ends in the same place down the list.
+   Before 2026-09-20 the two sat in separate grid rows, and a short line was
+   pushed away from its name by the picture spanning both (Sam: "bumped up to
+   directly underneath the title"). It turns into a warning while the graphic
+   is up with nothing to show. */
+.scene-text {
   grid-column: 2;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.scene-note {
   margin: 0;
   font-size: 11.5px;
   line-height: 1.35;
@@ -766,8 +777,9 @@ footer p { margin: 0; }
 .scene-group { display: flex; flex-direction: column; gap: 10px; }
 .group-label { color: #b8c4cf; }
 .group-label .muted { font-weight: 400; letter-spacing: 0; text-transform: none; }
-/* Graphics are listed in three folds, 1v1, 2v2 and Other, closed on load;
-   a fold's heading counts what is in preview and on air inside it. */
+/* Graphics are listed in folds (1v1, 2v2, Pre-game, Stats, Victory,
+   Between games, Other and Archive), closed on load; a fold's heading counts
+   what is in preview and on air inside it. */
 details.scene-section { display: block; padding-top: 8px; border-top: 1px solid #1e242b; }
 details.scene-section:first-of-type { padding-top: 0; border-top: 0; }
 details.scene-section > summary {
@@ -1292,3 +1304,38 @@ button.focus-chip.gone { opacity: 0.55; font-style: italic; }
 .mx-mini .lit { border-color: #f3f6f9; box-shadow: 0 0 0 1px #f3f6f9; }
 .mx-mini .dim { opacity: 0.4; }
 .focus-chips .focus-chip .lt { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #1a2027; font-size: 11px; flex: none; }
+
+/* The between-games run (2026-09-20): a block under the TAKE buttons,
+   because it is show transport rather than one graphic's option. The three
+   steps light as the run reaches them, so the operator can see where it is
+   without reading the monitors. */
+.run-box { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: #0c0f12; border: 1px solid #1e242b; }
+.run-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.run-label { font-size: 10px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #8b98a5; }
+.run-now { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #5b6874; }
+.run-box.on .run-now { color: var(--tes-green); }
+.run-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.run-steps span {
+  padding: 4px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #5b6874;
+  background: #12171d;
+  border: 1px solid #1e242b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.run-steps span.done { color: #8b98a5; border-color: #2a323b; }
+.run-steps span.now { color: #06110a; background: var(--tes-grad); border-color: transparent; }
+.run-btns { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; }
+.run-btns button { font-size: 12px; font-weight: 700; padding: 5px 8px; }
+.run-go { background: var(--tes-grad); color: #06110a; border: none; }
+.run-go[disabled] { background: #1a2027; color: #5b6874; }
+.run-holds { display: flex; gap: 10px; }
+.run-holds label { font-size: 11px; color: #8b98a5; }
+.run-holds input { width: 46px; padding: 2px 4px; font-size: 12px; }
+#runHint { font-size: 10.5px; }

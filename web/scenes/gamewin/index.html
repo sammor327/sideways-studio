@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sideways Studio: Game Victory</title>
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/brand.css">
+<link rel="stylesheet" href="/theme/fonts.css">
+<link rel="stylesheet" href="/stage/stage.css">
+<link rel="stylesheet" href="/stage/kit.css">
+<link rel="stylesheet" href="./scene.css">
+</head>
+<body>
+<div class="stage">
+  <div class="gw off" id="root">
+    <div class="plate" id="plate">
+      <div class="art"><img class="hero hidden" id="hero" alt="" draggable="false"></div>
+      <div class="body">
+        <div class="kick"><span class="k-chip" id="game"></span><span class="k-chip ghost" id="bestOf"></span></div>
+        <div class="w" id="won">Game winner</div>
+        <div class="nm"><span class="k-chip" id="country"></span><span class="n" id="name"></span></div>
+        <div class="lg" id="legend"></div>
+      </div>
+      <div class="tally">
+        <span class="label">Series</span>
+        <div class="score"><span id="lwins">0</span><i>-</i><span id="rwins">0</span></div>
+        <div class="pips" id="pips"></div>
+        <div class="who"><span id="lshort"></span><i>v</i><span id="rshort"></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-diag" id="diag">Sideways Studio: waiting for the control panel server&hellip;</div>
+  <div class="stage-diag" id="hiddenHint">The game victory is hidden: switch it on and press TAKE in the control panel. (This hint never appears on the transparent broadcast URL.)</div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>

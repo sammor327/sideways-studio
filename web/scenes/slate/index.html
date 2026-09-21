@@ -87,6 +87,15 @@
         <div class="empty hidden" id="dayEmpty">No schedule yet. Type it under Match data › Event › Schedule in the control panel.</div>
       </div>
 
+      <!-- Round board: the round's tables, turning between what is still
+           being played, the results so far and the next round's pairings.
+           One page is drawn at a time, from the event's own pairings. -->
+      <div class="scr round">
+        <div class="rb-head"><span class="rb-count" id="rbCount"></span></div>
+        <div class="rb-grid" id="rbGrid"></div>
+        <div class="empty hidden" id="rbEmpty">No round loaded. Load one from the Tournament platform tab, or type the tables under Match data &rsaquo; Pairings.</div>
+      </div>
+
       <!-- Format: best of, points to win, who chose first, the format text. -->
       <div class="scr format">
         <div class="facts" id="facts"></div>
