@@ -6,6 +6,15 @@ current version's section as the GitHub release notes and the update
 prompt's text, and it refuses to publish a version that has no section
 here. Write the section before running `npm run release`.
 
+## 0.51.0 (2026-09-20)
+
+- The Trash, the Odds to draw and the Sideboard card spotted can be drawn inside the rows overlay's column, where the cards in hand list, instead of over the game (Sam). Three switches under Graphic features › In-game overlay, rows, all on: **Dock the trash**, **Dock the odds to draw** and **Dock the sideboard card spotted**.
+- Each player's trash or odds takes the half of the column their cards in hand list in: player 1's under their camera, player 2's over theirs, with the same rows, Flow cards lit, banished cards, bars and chances as the sheet, and the same hold / scroll / hold cycle when the list is long. Each keeps its own graphic's settings.
+- A card spotted takes the whole middle of the column, lit, with "Sideboard card for" and the player under it, and goes when its time on screen runs out.
+- The column holds one thing at a time, in this order: the card popup's card, a spotted card, the showdown, the players' lists, the event logo. A graphic stands down only for what the column is really showing: the trash set to both players with player 1's half taken by their odds still flies player 2's sheet in over the game, and a spotted card that loses the middle to a docked card flies in over the game as before. Nothing is lost for being outranked, and nothing airs twice.
+- Each fold under Graphic features now says where that graphic will draw: in the column for the players it has taken, or over the game window.
+- The game intro shows each player's legend card itself rather than a crop of its painting (Sam), the way the champion and battlefield cards below it are shown. A legend picked without a card still shows the legend figure.
+
 ## 0.50.0 (2026-09-20)
 
 - Everything 0.49.0 was meant to be. **Do not run 0.49.0**: it was built without its card database, so card search, the pickers, the decklist and every graphic that draws a card came up empty on a machine that could not reach Rift Registry. It was withdrawn within minutes of publishing; this is the same release with the cards in it.

@@ -214,6 +214,58 @@ enough that persona 1 sees a different product.
 
 ## Loop log
 
+### 2026-09-20g (out of band: the trash, the odds and a spotted card dock into the rows column, 0.51.0)
+
+Sam: "can we create options to put the following into the left side of the
+in game overlay, rows where the hands live: 1. Trash 2. Odds to Draw
+3. Sideboard Card Spotted. Treat this similar to how the card popup was
+generated." Plus: the game intro should show the legend's card art rather
+than the full art.
+
+The docked card's rule grown to four graphics, in web/shared/rowsdock.js:
+one pure plan the rows overlay, the three graphics, the side sheets' layout
+and the tests all read. The column's middle holds one thing at a time, in
+this order: the popup's card, a spotted card, the open showdown, the
+players' lists, the event logo.
+
+Two calls worth keeping. First, the two sheets are per player, so they take
+the half of the column that player's hand lists in rather than the whole
+middle: the halves already exist, a long list scrolls the way a hand does,
+and the trash of one player can sit opposite the other's draw odds. Second,
+a graphic stands down only for what the column is really showing, not for
+"the dock is on": the trash set to both players with player 1's half taken
+by their odds still flies player 2's sheet in over the game, a spotted card
+that loses the middle to a docked card flies in as it always has, and
+sheetSlots leaves no gap for a side the column took. Nothing is lost for
+being outranked, which is what makes the precedence safe to have at all.
+Where two sheets want one half, the trash wins and the odds fly in.
+
+The rows scene's onState became a render() a timer can call again: a
+spotted card's hold runs out at a moment no state push announces. Its
+glow breathes on the legend glow's own --breath waveform, which now also
+runs while a card is docked in webcam mode. The docked sheets keep their
+own graphic's settings (art, Flow first, banished, rows, draws), and the
+odds read the deck the same way the sheet does: a live game's count, else
+the parsed list, cached per list with the half keeping its rows while the
+answer is in flight. cardRow's neighbours (the Flow tag, the banished row,
+the Banished label, the odds row) moved into stage/exp.js so the sheet and
+the column draw one grammar at two sizes; handTotal and handUp moved into
+shared/handlist.js so the plan can read them outside the browser.
+
+Verified on a worktree server with the sample match: both sheets docked and
+scrolling with real art, the mixed case (trash docked left, that player's
+odds flying in over the game at slot 0 with no gap left for the docked one),
+a spotted card taking the column and handing it back, and the combined
+/output/ source showing each of them exactly once. The hold was timed from
+inside the page rather than across tool calls, which is the only way to see
+it: dock up by 934 ms, gone at 7 s on a six-second hold, with no state push
+in between. 451 tests, 10 of them new in test/rowsdock.test.js.
+
+The game intro's legend window is now the legend card itself, in a box of
+the card's own shape (280 x 391), the way the champion and battlefield
+cards under it are drawn; the crop of the painting is gone and a legend
+picked without a card still falls back to the figure.
+
 ### 2026-09-20f (out of band: 0.49.0 shipped cardless, republished as 0.50.0)
 
 My error, caught by the build's own warning a moment too late. The release

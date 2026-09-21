@@ -227,8 +227,15 @@ function defaultBank() {
       // popup is on (the hands or the event logo slide out for it) instead
       // of the popup flying in over the feed. showdownView splits the middle
       // of the column between the players while a showdown is open: each
-      // side's might and the cards it played (2026-09-19).
-      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true, showdownView: true,
+      // side's might and the cards it played (2026-09-19). trashDock,
+      // oddsDock and spotDock (2026-09-20, Sam: "options to put the
+      // following into the left side of the in game overlay, rows where
+      // the hands live") dock the other three graphics the same way: each
+      // player's trash and their odds to draw in the half their hand
+      // lists in, a spotted sideboard card in the whole middle.
+      // web/shared/rowsdock.js decides which the column holds, and the
+      // graphic whose content it is holding stands down.
+      igorows: { visible: false, mode: 'legend', hand: true, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true, showdownView: true, trashDock: true, oddsDock: true, spotDock: true,
         // Battlefields in each player's block: 'off', 'one' (this game's) or
         // 'all' (the three brought, the played ones marked).
         battlefields: 'off' },
@@ -1201,7 +1208,7 @@ function applyBankPatch(bank, patch) {
     const IGO_FLAGS = {
       igodual: ['track', 'clock', 'eventBlock', 'cardSlot', 'hand', 'handArt'],
       igoportrait: ['topBar', 'handCam', 'cardWell'],
-      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo', 'clock', 'cardDock', 'showdownView'],
+      igorows: ['hand', 'handArt', 'activeTurn', 'points', 'turnCounter', 'eventLogo', 'clock', 'cardDock', 'showdownView', 'trashDock', 'oddsDock', 'spotDock'],
     };
     for (const key of ['igo1v1', 'igo2v2', 'igodual', 'igobars', 'igoportrait', 'igorows']) {
       if (patch.scenes[key] && typeof patch.scenes[key] === 'object') {

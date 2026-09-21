@@ -887,17 +887,17 @@
         <div class="scene-row" data-scene="odds">
           <div class="scene-name">Odds to draw <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="oddsOnAir">ON AIR</button></div>
           <button id="toggleOdds" class="scene-toggle">OFF</button>
-          <p class="scene-note">The cards a player's deck can still give them, the likeliest first, on their side of the game window (or both players'). From their list under Match data &rsaquo; Decks and battlefields less the cards seen this game, or counted by a RiftAtlas game.</p>
+          <p class="scene-note">The cards a player's deck can still give them, the likeliest first, on their side of the game window (or both players'), or in the rows overlay's column when one is up and docks them. From their list under Match data &rsaquo; Decks and battlefields less the cards seen this game, or counted by a RiftAtlas game.</p>
         </div>
         <div class="scene-row" data-scene="trash">
           <div class="scene-name">Trash <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="trashOnAir">ON AIR</button></div>
           <button id="toggleTrash" class="scene-toggle">OFF</button>
-          <p class="scene-note">A player's trash (Riftbound's graveyard), the newest first, cards with Flow lit up with their Flow cost. Fill it under Match data &rsaquo; Trash and draw odds; a RiftAtlas game fills it on its own.</p>
+          <p class="scene-note">A player's trash (Riftbound's graveyard), the newest first, cards with Flow lit up with their Flow cost, on the game window or in the rows overlay's column when one is up and docks it. Fill it under Match data &rsaquo; Trash and draw odds; a RiftAtlas game fills it on its own.</p>
         </div>
         <div class="scene-row" data-scene="sidespot">
           <div class="scene-name">Sideboard card spotted <span class="kind">Overlay</span> <button type="button" class="onair hidden" id="sidespotOnAir">ON AIR</button></div>
           <button id="toggleSidespot" class="scene-toggle">OFF</button>
-          <p class="scene-note">A card a player sided in, flown in over the game with "Sideboard Card for" and their name when it turns up in their hand after turn 1. Once it is on air it waits and flies each card in as it is spotted: Live game spots them from RiftAtlas, or spot one by hand under Graphic features.</p>
+          <p class="scene-note">A card a player sided in, flown in over the game with "Sideboard Card for" and their name when it turns up in their hand after turn 1, or docked in the middle of the rows overlay's column when one is up. Once it is on air it waits and flies each card in as it is spotted: Live game spots them from RiftAtlas, or spot one by hand under Graphic features.</p>
         </div>
       </div>
     </details>
@@ -1190,6 +1190,9 @@
         <label class="inline" title="Turn N after the round title on the bottom bar"><input type="checkbox" id="igoRowsTurn" checked> Turn counter</label>
         <label class="inline" title="The theme's event logo in the middle of the column (the event name when no logo is uploaded). It slides out while a hand is listed or a featured card is docked, and back in when they clear"><input type="checkbox" id="igoRowsLogo" checked> Event logo</label>
         <label class="inline" title="Shows the card popup's card in the middle of the column instead of the popup flying in over the feed: the hands or the event logo slide out, the card slides in with its name, and they come back when the card popup goes off"><input type="checkbox" id="igoRowsCard" checked> Dock featured card</label>
+        <label class="inline" title="Shows the trash graphic in the column instead of on the game: each player it lists takes the half of the column their cards in hand list in, with their banished cards under it. Switch the trash itself on under Graphics"><input type="checkbox" id="igoRowsTrash" checked> Dock the trash</label>
+        <label class="inline" title="Shows the odds to draw in the column instead of on the game: each player it lists takes the half of the column their cards in hand list in. Switch the odds themselves on under Graphics"><input type="checkbox" id="igoRowsOdds" checked> Dock the odds to draw</label>
+        <label class="inline" title="Shows a spotted sideboard card in the middle of the column, lit, with the player it was spotted on under it, instead of flying it in over the game. Switch Sideboard card spotted on under Graphics"><input type="checkbox" id="igoRowsSpot" checked> Dock the sideboard card spotted</label>
         <label class="inline" title="While a showdown is open (from RiftAtlas, or opened by hand under Hands and showdown) the middle of the column splits between the players: each one's might at the battlefield and the cards they played into it, newest first. The showdown graphic stands down meanwhile, so it never airs twice."><input type="checkbox" id="igoRowsSdView" checked> Showdown in the column</label>
         <label class="inline" title="The round clock at the right end of the bottom bar, running from the match timer"><input type="checkbox" id="igoRowsClock" checked> Round clock</label>
         <label class="inline" title="A strip beside each player's camera: the battlefield this game is on, or the three they brought side by side with an arrow on this game's and the ones played earlier greyed out. Set them under Match data &rsaquo; Decks and battlefields">Battlefields
@@ -1604,6 +1607,7 @@
     </div>
     <div class="feature-group hidden" data-scene="sidespot">
       <h3>Sideboard card spotted</h3>
+      <p class="scene-note" id="spotWhere"></p>
       <div class="scene-options">
         <label class="inline" title="How long each spotted card stays up before it flies out">On screen
           <select id="sidespotHold">
@@ -1627,6 +1631,7 @@
     </div>
     <div class="feature-group hidden" data-scene="odds">
       <h3>Odds to draw</h3>
+      <p class="scene-note" id="oddsWhere"></p>
       <div class="scene-options">
         <label class="inline">Player
           <select id="oddsSide"><option value="left">Player 1</option><option value="right">Player 2</option><option value="both">Both, player 1 on the left</option></select>
@@ -1643,6 +1648,7 @@
     </div>
     <div class="feature-group hidden" data-scene="trash">
       <h3>Trash</h3>
+      <p class="scene-note" id="trashWhere"></p>
       <div class="scene-options">
         <label class="inline">Player
           <select id="trashSide"><option value="left">Player 1</option><option value="right">Player 2</option><option value="both">Both, player 1 on the left</option></select>

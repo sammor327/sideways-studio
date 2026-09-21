@@ -43,6 +43,17 @@
           <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="lhandCount"></span></div>
           <div class="cards" id="lhandView"><div class="scroll" id="lhand"></div></div>
         </div>
+        <!-- The player's trash and their odds to draw, docked
+             (2026-09-20): each takes the half player 1's hand lists in, one at a
+             time, and slides in and out the way the hand does. -->
+        <div class="hand sheet gone" id="ltrashBlock">
+          <div class="h"><span class="label">Trash</span><span class="sub" id="ltrashSub"></span><span class="cnt" id="ltrashCount"></span></div>
+          <div class="cards" id="ltrashView"><div class="scroll" id="ltrash"></div></div>
+        </div>
+        <div class="hand sheet gone" id="loddsBlock">
+          <div class="h"><span class="label">Odds to draw</span><span class="sub" id="loddsSub"></span><span class="cnt" id="loddsCount"></span></div>
+          <div class="cards" id="loddsView"><div class="scroll" id="lodds"></div></div>
+        </div>
       </div>
 
       <div class="divider"></div>
@@ -51,6 +62,17 @@
         <div class="hand gone" id="rhandBlock">
           <div class="h"><span class="label">Cards in hand</span><span class="cnt" id="rhandCount"></span></div>
           <div class="cards" id="rhandView"><div class="scroll" id="rhand"></div></div>
+        </div>
+        <!-- The player's trash and their odds to draw, docked
+             (2026-09-20): each takes the half player 2's hand lists in, one at a
+             time, and slides in and out the way the hand does. -->
+        <div class="hand sheet gone" id="rtrashBlock">
+          <div class="h"><span class="label">Trash</span><span class="sub" id="rtrashSub"></span><span class="cnt" id="rtrashCount"></span></div>
+          <div class="cards" id="rtrashView"><div class="scroll" id="rtrash"></div></div>
+        </div>
+        <div class="hand sheet gone" id="roddsBlock">
+          <div class="h"><span class="label">Odds to draw</span><span class="sub" id="roddsSub"></span><span class="cnt" id="roddsCount"></span></div>
+          <div class="cards" id="roddsView"><div class="scroll" id="rodds"></div></div>
         </div>
       </div>
       </div>
@@ -73,6 +95,21 @@
           <div class="dock-trim"></div>
           <div class="dock-name" id="dockName"></div>
           <div class="dock-type" id="dockType"></div>
+        </div>
+      </div>
+      <!-- A sideboard card spotted, docked (2026-09-20): the card takes the
+           middle the way the popup's does, lit, with the player it was
+           spotted on under it, and goes when its hold runs out. -->
+      <div class="card-dock spot gone" id="spotDock">
+        <div class="dock-inner">
+          <div class="dock-card">
+            <div class="dock-halo"></div>
+            <img class="art hidden" id="spotArt" alt="" draggable="false">
+            <div class="dock-fallback" id="spotFallback"><span id="spotFallbackName"></span></div>
+          </div>
+          <div class="dock-trim"></div>
+          <div class="dock-lead">Sideboard card for</div>
+          <div class="dock-name" id="spotWho"></div>
         </div>
       </div>
       <!-- The showdown (2026-09-19): while one is open and Showdown in the

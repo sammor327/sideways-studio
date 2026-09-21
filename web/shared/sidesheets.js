@@ -11,21 +11,26 @@ export const FOOT_H = 34;
 const MARGIN = 24;
 const GAP = 24;
 
+// The sides a sheet graphic draws: one player's, or both players'.
+export const sheetSides = (cfg) => (cfg && (cfg.side === 'left' || cfg.side === 'right') ? [cfg.side] : ['left', 'right']);
+
 // Which sheets are up in a bank, and where each stands on its side: the odds
 // against the window's edge, the trash beside them, further in, when both
 // show the same player, so the two never land on top of each other. Both
 // scenes read the same bank, so they agree without talking. `self` is the
 // graphic asking, counted as up (a thumbnail draws itself switched off).
+// `docked` is what the rows overlay's column is holding (shared/rowsdock.js):
+// a side listed there is not on the game window at all, so it takes no slot.
 const hasDeck = (side) => Boolean(side && (((side.deckLeft || []).length) || String(side.deckList || '').trim()));
-export function sheetSlots(bank, self) {
-  const sides = (cfg) => (cfg && (cfg.side === 'left' || cfg.side === 'right') ? [cfg.side] : ['left', 'right']);
+export function sheetSlots(bank, self, docked = {}) {
   const scenes = (bank && bank.scenes) || {};
   const up = [];
   for (const key of ['odds', 'trash']) {
     const cfg = scenes[key];
     if (!cfg || !(cfg.visible || key === self)) continue;
-    for (const side of sides(cfg)) {
+    for (const side of sheetSides(cfg)) {
       if (key === 'odds' && !hasDeck(bank.match && bank.match[side])) continue;
+      if ((docked[key] || []).includes(side)) continue;
       up.push([key, side]);
     }
   }

@@ -3,6 +3,17 @@
 // count, and the hold / scroll / hold cycle a list longer than its box plays.
 // Pure arithmetic, shared by the scenes (stage/exp.js) and the tests.
 
+// How many cards a side is holding: the spotter's count when they gave one,
+// otherwise the length of the list they typed.
+export const handTotal = (side) => (side && side.handCount > 0 ? side.handCount : ((side && side.hand) || []).length);
+
+// Whether one side's cards-in-hand block is up: the scene's switch, and a
+// hand with something in it. A block that claims another graphic's space
+// (the dual columns take the event block and a docked card; the rows column
+// takes a docked card, the trash and the draw odds) and that graphic have to
+// agree on this, so both ask here.
+export const handUp = (cfg, side) => Boolean(cfg && cfg.hand && handTotal(side) > 0);
+
 // One row per card, in the order each card first appears. A copy on the
 // chain is its own row, apart from the copies still held, so a played copy
 // greys out while the rest keep reading as in hand.

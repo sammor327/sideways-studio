@@ -4,32 +4,18 @@
 // else the player's list less the cards seen to leave it (web/shared/odds.js).
 import { initStage, sceneBank } from '../../stage/stage.js';
 import { parseDeck } from '../../stage/decks.js';
-import { cardRow } from '../../stage/exp.js';
+import { oddsRow } from '../../stage/exp.js';
 import { gameWindow } from '../../shared/gamewindow.js';
 import { ROWS_DEFAULT, drawPool, drawsLabel, formatChance, oddsRows, poolLine } from '../../shared/odds.js';
+import { rowsDocks } from '../../shared/rowsdock.js';
 import { Sheet, SheetVisibility, placeSheets, sheetSlots, sheetHeight, sheetSides } from '../../stage/sidesheet.js';
 
 const $ = (id) => document.getElementById(id);
 const ROW_H = 46;
 const vis = new SheetVisibility($('root'));
+// A still of the graphic draws the odds whatever the column is holding.
+const NO_DOCKS = { trash: [], odds: [], spot: false };
 const sheets = { left: new Sheet('left', 'Odds to draw'), right: new Sheet('right', 'Odds to draw') };
-
-// One card: the copies left, its art, its name and cost, over a bar as long
-// as its chance against the likeliest card's, and the chance at the right.
-function oddsRow(r, art) {
-  const row = cardRow({ cardId: r.cardId, cardName: r.cardName, energy: r.energy, domains: r.domains, qty: r.left }, art);
-  row.classList.add('odds');
-  if (r.weight >= 0.999) row.classList.add('lead');
-  const bar = document.createElement('span');
-  bar.className = 'bar';
-  bar.style.setProperty('--w', r.weight.toFixed(4));
-  row.prepend(bar);
-  const pct = document.createElement('span');
-  pct.className = 'pct';
-  pct.textContent = formatChance(r.chance);
-  row.append(pct);
-  return row;
-}
 
 function restLine(rest) {
   if (!rest.count) return '';
@@ -42,7 +28,10 @@ async function render(state) {
   const token = ++renderToken;
   const bank = sceneBank(state, params);
   const cfg = bank.scenes.odds || { visible: false, side: 'left', draws: 1, rows: ROWS_DEFAULT, art: true };
-  const wanted = sheetSides(cfg);
+  // The rows overlay's column can be listing these odds for one player or
+  // both (web/shared/rowsdock.js); this graphic flies in only the rest.
+  const docks = params.force ? NO_DOCKS : rowsDocks(bank);
+  const wanted = sheetSides(cfg).filter((key) => !docks.odds.includes(key));
   // A live deck needs no list; otherwise the list is parsed the way every
   // other graphic reads a paste.
   const decks = await Promise.all(wanted.map((key) => {
@@ -66,7 +55,7 @@ async function render(state) {
   });
   for (const key of ['left', 'right']) sheets[key].show(up.some((p) => p.key === key));
 
-  const slots = sheetSlots(bank, 'odds');
+  const slots = sheetSlots(bank, 'odds', docks);
   const places = placeSheets(gameWindow(bank), Object.fromEntries(up.map((p) => [p.key, p.height])), {
     slot: (key) => slots.slot('odds', key), count: slots.count,
   });

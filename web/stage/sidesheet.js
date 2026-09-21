@@ -15,7 +15,7 @@ import { SHEET_W } from '../shared/sidesheets.js';
 
 // The layout arithmetic lives in web/shared/sidesheets.js, where the tests
 // can reach it; the scenes import it from here.
-export { SHEET_W, placeSheets, rowsThatFit, sheetHeight, sheetSlots } from '../shared/sidesheets.js';
+export { SHEET_W, placeSheets, rowsThatFit, sheetHeight, sheetSlots, sheetSides } from '../shared/sidesheets.js';
 
 // One player's sheet, built from the page's #sheetTpl into its own box.
 export class Sheet {
@@ -107,6 +107,3 @@ export class SheetVisibility {
     }
   }
 }
-
-// The sides a sheet graphic draws: one player's, or both players'.
-export const sheetSides = (cfg) => (cfg && (cfg.side === 'left' || cfg.side === 'right') ? [cfg.side] : ['left', 'right']);

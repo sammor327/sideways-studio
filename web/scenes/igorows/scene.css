@@ -450,3 +450,58 @@
 .dock-name:empty { display: none; }
 .dock-type { font: 600 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.6 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-text-muted, #9aa7b6); }
 .dock-type:empty { display: none; }
+
+/* --- the trash and the draw odds, docked (2026-09-20) ---
+   Sam: "can we create options to put the following into the left side of the
+   in game overlay, rows where the hands live: 1. Trash 2. Odds to Draw
+   3. Sideboard Card Spotted". Each player's sheet takes the half their hand
+   lists in, on the hand's own --hs clock, so the three take turns in one
+   place (web/shared/rowsdock.js decides which). The rows are the graphics'
+   own rows (stage/exp.js), sized for a 298 px column rather than a 460 px
+   plate: the head carries a muted line beside its label, a trash row lights
+   its Flow cost the way a reaction lights in a marked hand, a banished card
+   greys out, and an odds row lies over a bar as long as its chance with the
+   chance itself at the right. The runes come off an odds row: at this width
+   the percentage is what the row is for. */
+.hand.sheet .h { gap: calc(8 * var(--u)); }
+.hand.sheet .h .sub { min-width: 0; font: 500 calc(12 * var(--u))/1 var(--tes-font); letter-spacing: calc(1 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hand.sheet .h .sub:empty { display: none; }
+.hand.sheet .h .cnt { margin-left: auto; }
+.hand.sheet .empty { padding: calc(8 * var(--u)) calc(10 * var(--u)); font: 500 calc(14 * var(--u))/1.2 var(--tes-font); color: var(--ss-text-muted, #9aa7b6); }
+.hand.sheet .card { border-left: calc(3 * var(--u)) solid transparent; padding-left: calc(7 * var(--u)); }
+
+/* A card with [FLOW] can still be played out of the trash, so its row lights
+   up and prints that cost instead of its printed one. */
+.card.flow { border-left-color: var(--ss-accent-b, #1bef19); background: rgba(27, 239, 25, 0.08); box-shadow: inset 0 0 calc(14 * var(--u)) rgba(27, 239, 25, 0.28); }
+.card.flow .nm { font-weight: 700; }
+.flow-tag { display: inline-flex; align-items: center; gap: calc(4 * var(--u)); padding: calc(2 * var(--u)) calc(5 * var(--u)) calc(2 * var(--u)) calc(6 * var(--u)); border: calc(1 * var(--u)) solid var(--ss-accent-b, #1bef19); border-radius: calc(2 * var(--u)); }
+.flow-tag b { font: 800 calc(10 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.2 * var(--u)); text-transform: uppercase; color: var(--ss-accent-b, #1bef19); }
+.flow-tag .e { width: calc(18 * var(--u)); height: calc(18 * var(--u)); line-height: calc(16 * var(--u)); font-size: calc(12 * var(--u)); }
+.flow-tag .rune { width: calc(16 * var(--u)); height: calc(16 * var(--u)); }
+.flow-tag .any { width: calc(10 * var(--u)); height: calc(10 * var(--u)); margin: 0 calc(1 * var(--u)); transform: rotate(45deg); border: calc(2 * var(--u)) solid var(--ss-text-muted, #9aa7b6); }
+
+/* The banished cards under the trash, behind a label row of their own. */
+.card.section { align-items: flex-end; justify-content: space-between; padding-bottom: calc(7 * var(--u)); border-left-color: transparent; border-bottom: calc(1 * var(--u)) solid var(--ss-frame, #26303c); font: 800 calc(11 * var(--u))/1 var(--tes-font); letter-spacing: calc(1.8 * var(--u)); text-transform: uppercase; color: var(--ss-text-muted, #9aa7b6); }
+.card.section b { font-weight: 800; color: var(--ss-text, #fff); }
+.card.banished .strip { filter: grayscale(1) brightness(0.7); }
+.card.banished .nm, .card.banished .qty { color: var(--ss-text-muted, #9aa7b6); }
+.card.banished .rune { filter: grayscale(1); opacity: 0.7; }
+
+/* One card's odds: the bar behind the row, the chance at the right. */
+.card.odds { position: relative; }
+.card.odds .bar { position: absolute; left: 0; top: calc(4 * var(--u)); bottom: calc(4 * var(--u)); width: calc(var(--w, 0) * 100%); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); opacity: 0.16; border-radius: calc(2 * var(--u)); }
+.card.odds.lead .bar { opacity: 0.32; }
+.card.odds .cost .rune { display: none; }
+.card.odds .pct { flex: 0 0 auto; min-width: calc(58 * var(--u)); text-align: right; font: 800 calc(16 * var(--u))/1 var(--tes-font); font-variant-numeric: tabular-nums; color: var(--ss-text, #fff); }
+.card.odds.lead .pct { color: var(--ss-accent-b, #1bef19); }
+.card.odds.lead .nm { font-weight: 700; }
+
+/* --- a sideboard card spotted, docked (2026-09-20) ---
+   The docked card's block, lit: the accent glow behind the card breathes on
+   the overlay's own --breath (the legend glow's waveform, worked out in
+   scene.js so the CSS only multiplies), with "Sideboard card for" and the
+   player under it. It goes on its own when the spot's hold runs out. */
+.dock-halo { position: absolute; inset: calc(-14 * var(--u)); border-radius: calc(26 * var(--u)); background: var(--ss-trim-grad, linear-gradient(135deg, #11b6fb, #1bef19)); filter: blur(calc(18 * var(--u))); opacity: calc(0.34 + var(--breath, 0.5) * 0.3); }
+.card-dock.spot .dock-trim { width: calc(92 * var(--u)); }
+.dock-lead { font: 800 calc(13 * var(--u))/1 var(--tes-font); letter-spacing: calc(2.6 * var(--u)); text-transform: uppercase; text-align: center; color: var(--ss-accent-a, #11b6fb); }
+.card-dock.spot .dock-name { margin-top: calc(-2 * var(--u)); font-style: italic; }

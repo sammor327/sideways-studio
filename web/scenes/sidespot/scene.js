@@ -10,6 +10,7 @@ import { SeekClock, animEnabled, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps } from '../../stage/art.js';
 import { scheduleNameFit } from '../../stage/fitnames.js';
 import { clipToWindow, gameWindow } from '../../shared/gamewindow.js';
+import { rowsDocks, spotUntil } from '../../shared/rowsdock.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -115,8 +116,12 @@ async function render(state, first) {
   const on = params.force || Boolean(cfg.visible);
   // The panel's picture and the look builder's tile hold the card up.
   const pinned = params.force || Boolean(params.tile);
-  const until = spot.at ? spot.at + (Number(cfg.hold) || 8) * 1000 : 0;
-  const live = on && hasCard && (pinned || Date.now() < until);
+  const until = spotUntil(cfg);
+  // The rows overlay's column can be showing this card in the middle of its
+  // column (web/shared/rowsdock.js); the graphic then stands down, the way
+  // the card popup does for a docked card, rather than air it twice.
+  const docked = !pinned && rowsDocks(bank).spot;
+  const live = on && hasCard && !docked && (pinned || Date.now() < until);
   $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !live);
   $('diag').classList.remove('on');
 

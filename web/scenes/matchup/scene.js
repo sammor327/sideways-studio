@@ -21,15 +21,12 @@ function load(img, key, steps, onShow) {
   chainLoad(img, steps, onShow);
 }
 
-// The legend card's painting (full art, then the thumb), in the same crop
-// for both players; the hero cutout only for a legend picked without a card.
-const legendArt = (side) => [
-  ...(side.legendCardId ? [
-    { src: `/cardart/full/${side.legendCardId}.webp`, cls: 'crop-legend' },
-    { src: `/cardart/thumb/${side.legendCardId}.webp`, cls: 'crop-legend' },
-  ] : []),
-  ...heroSteps(side),
-];
+// The legend card itself (2026-09-20, Sam: "for the game intro, can we just
+// use the legend's card art instead of the full art?"): the whole card in
+// the window, the way the champion and the battlefield show theirs under it,
+// full art then the thumb. The hero cutout is still the answer for a legend
+// picked without a card.
+const legendArt = (side) => [...artSteps(side.legendCardId), ...heroSteps(side)];
 
 function renderSide(p, side) {
   setText($(`${p}name`), side.name || ' ');

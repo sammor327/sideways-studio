@@ -2,9 +2,15 @@ import { initStage, sceneBank, setText } from '../../stage/stage.js';
 import { SeekClock, animEnabled, bump } from '../../stage/seekclock.js';
 import { chainLoad, clearArt, cardSteps, heroSteps, battlefieldSteps, rotateIfPortrait } from '../../stage/art.js';
 import { Slider, SwapSlot, loadArt } from '../../stage/slide.js';
-import { clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility, handEls, handKey, handTotal, HandScroller } from '../../stage/exp.js';
+import {
+  clockText, fitText, renderRunes, loadLegendDomains, legendDomains, applyVisibility,
+  handEls, handKey, handTotal, HandScroller, banishedRow, oddsRow, trashRow, trashSection,
+} from '../../stage/exp.js';
+import { parseDeck } from '../../stage/decks.js';
 import { setClock } from '../../shared/clockcells.js';
-import { rowsDockCard } from '../../shared/carddock.js';
+import { rowsPlan, spotUntil } from '../../shared/rowsdock.js';
+import { ROWS_DEFAULT, drawPool, drawsLabel, formatChance, oddsRows } from '../../shared/odds.js';
+import { banishedRows, trashCounts, trashRows } from '../../shared/trash.js';
 
 const $ = (id) => document.getElementById(id);
 const root = $('root');
@@ -46,10 +52,38 @@ function fillDock(card) {
   });
 }
 
+// --- the trash, the odds to draw and a spotted sideboard card (2026-09-20) ---
+//
+// Sam: "can we create options to put the following into the left side of the
+// in game overlay, rows where the hands live: 1. Trash 2. Odds to Draw
+// 3. Sideboard Card Spotted. Treat this similar to how the card popup was
+// generated." So they dock the way the popup's card does, each behind its own
+// switch: a spotted card takes the whole middle the way a featured card does,
+// and the two sheets take the half their player's hand lists in, one at a
+// time. web/shared/rowsdock.js works out which, and the graphic whose content
+// the column is really showing stands down, so nothing airs twice and nothing
+// is lost for being outranked.
+const SIDES = [['l', 'left'], ['r', 'right']];
+const LISTS = ['hand', 'trash', 'odds'];
+
+// The spotted card, through the same fallback chain as the docked card. Its
+// player's name is written on every state, so a rename lands without a fly.
+function fillSpot(spot) {
+  const fallback = $('spotFallback');
+  setText($('spotFallbackName'), spot.cardName || 'No card');
+  fallback.classList.remove('on');
+  return loadArt($('spotArt'), cardSteps(spot.cardId), {
+    cap: ART_WAIT_MS,
+    onFail: () => fallback.classList.add('on'),
+  });
+}
+
 const logoSlide = new Slider($('logoWell'), '--lg', 450);
-const handSlide = { l: new Slider($('lhandBlock'), '--hs', 450), r: new Slider($('rhandBlock'), '--hs', 450) };
+const listSlide = Object.fromEntries(SIDES.map(([p]) => [p,
+  Object.fromEntries(LISTS.map((what) => [what, new Slider($(`${p}${what}Block`), '--hs', 450)]))]));
 const ruleSlide = new Slider(document.querySelector('#root .divider'), '--hs', 450);
 const dock = new SwapSlot($('cardDock'), '--cd', 500, { key: (card) => card.cardId, fill: fillDock });
+const spotSlot = new SwapSlot($('spotDock'), '--cd', 500, { key: (spot) => spot.id, fill: fillSpot });
 const sdSlide = new Slider($('sdView'), '--sv', 450);
 const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 
@@ -66,17 +100,22 @@ const winsNeeded = (seriesLength) => Math.ceil(seriesLength / 2);
 // showing nothing should cost nothing.
 const BREATH_MS = 6000;
 const glowSlide = { l: new Slider($('lglow'), '--on', 800), r: new Slider($('rglow'), '--on', 800) };
+// The glow behind a docked sideboard card breathes on the same waveform; the
+// legends' own glow is off in webcam mode, where there are no legends.
+let spotUp = false;
 if (animEnabled()) {
   setInterval(() => {
-    if (root.classList.contains('off') || root.classList.contains('mode-webcam')) return;
-    if (!glowSlide.l.on && !glowSlide.r.on) return;
+    if (root.classList.contains('off')) return;
+    const legends = !root.classList.contains('mode-webcam') && (glowSlide.l.on || glowSlide.r.on);
+    if (!legends && !spotUp) return;
     const phase = (Date.now() % BREATH_MS) / BREATH_MS;
     root.style.setProperty('--breath', (0.5 - 0.5 * Math.cos(2 * Math.PI * phase)).toFixed(3));
   }, 100);
 }
 
-const shown = { hero: {}, hand: {}, sd: {} };
-const scrollers = { l: new HandScroller($('lhandView'), $('lhand')), r: new HandScroller($('rhandView'), $('rhand')) };
+const shown = { hero: {}, hand: {}, trash: {}, odds: {}, sd: {} };
+const scrollers = Object.fromEntries(SIDES.map(([p]) => [p,
+  Object.fromEntries(LISTS.map((what) => [what, new HandScroller($(`${p}${what}View`), $(`${p}${what}`))]))]));
 const sdFans = { l: $('lsdFan'), r: $('rsdFan') };
 let lastState = null;
 
@@ -128,7 +167,95 @@ function renderHand(p, side, show, lanes, art) {
   if (shown.hand[p] === key) return;
   shown.hand[p] = key;
   $(`${p}hand`).replaceChildren(...handEls(list, { art }));
-  scrollers[p].restart();
+  scrollers[p].hand.restart();
+}
+
+// The line a list puts up when it has nothing, and the odds' last row.
+function noteRow(text) {
+  const row = document.createElement('div');
+  row.className = 'empty';
+  row.textContent = text;
+  return row;
+}
+
+// Everything a list's rows are drawn from, in one string, so a score bump
+// never rebuilds them (the hands' rule).
+const cardsKey = (list) => list.map((c) => `${c.cardId}|${c.cardName}|${c.energy}|${(c.domains || []).join(',')}|${c.flow ? 1 : 0}`).join(';');
+
+// One player's trash in their half of the column: the trash graphic's own
+// list (web/shared/trash.js), newest first, the Flow cards lit and, with Flow
+// first on, ahead of the rest, the banished cards under a label row. Art
+// follows the trash graphic's own switch, not the hands'.
+function renderTrash(p, side, show, cfg) {
+  if (!show) return;
+  const art = cfg.art !== false;
+  const flowFirst = cfg.flowFirst !== false;
+  const list = side.trash || [];
+  const banished = cfg.banished !== false ? (side.banished || []) : [];
+  const counts = trashCounts(list);
+  setText($(`${p}trashCount`), String(counts.cards));
+  setText($(`${p}trashSub`), [
+    counts.flow ? `${counts.flow} with Flow` : '',
+    banished.length ? `${banished.length} banished` : '',
+  ].filter(Boolean).join(' · '));
+  const key = `${art ? 'A' : 'N'}${flowFirst ? 'F' : ''}:${cardsKey(list)}#${cardsKey(banished)}`;
+  if (shown.trash[p] === key) return;
+  shown.trash[p] = key;
+  const rows = trashRows(list, { flowFirst });
+  const bRows = banishedRows(banished);
+  $(`${p}trash`).replaceChildren(
+    ...(rows.length ? rows.map((r) => trashRow(r, art)) : [noteRow('No cards in the trash yet')]),
+    ...(bRows.length ? [trashSection(banished.length), ...bRows.map((r) => banishedRow(r, art))] : []),
+  );
+  scrollers[p].trash.restart();
+}
+
+// The decks the odds are worked out from. A live game counts the deck itself;
+// otherwise the player's list is parsed by the server, once per list, and the
+// half fills when the answer lands (the champion catalog's rule).
+const decks = new Map();
+const parsing = new Set();
+function drawPoolFor(side) {
+  if ((side.deckLeft || []).length) return drawPool(side, null);
+  const text = String(side.deckList || '');
+  if (!text.trim()) return null;
+  if (!decks.has(text)) {
+    if (!parsing.has(text)) {
+      parsing.add(text);
+      parseDeck(text).then((deck) => {
+        parsing.delete(text);
+        if (decks.size > 8) decks.delete(decks.keys().next().value);
+        decks.set(text, deck || null);
+        if (lastState) render(lastState, false);
+      });
+    }
+    return null;
+  }
+  const deck = decks.get(text);
+  return deck ? drawPool(side, deck) : null;
+}
+
+// One player's odds to draw in their half: the odds graphic's own rows
+// (web/shared/odds.js), likeliest first, as many as that graphic lists, the
+// rest summed on a last row. While a list is still being read the half keeps
+// the rows it has rather than blinking empty.
+function renderOdds(p, side, show, cfg) {
+  if (!show) return;
+  const art = cfg.art !== false;
+  const draws = cfg.draws || 1;
+  const pool = drawPoolFor(side);
+  setText($(`${p}oddsSub`), drawsLabel(draws));
+  setText($(`${p}oddsCount`), pool ? String(pool.total) : '');
+  if (!pool) return;
+  const odds = oddsRows(pool, { draws, rows: cfg.rows || ROWS_DEFAULT });
+  const key = `${art ? 'A' : 'N'}:${odds.rows.map((r) => `${r.cardId}|${r.cardName}|${r.left}|${r.chance.toFixed(5)}|${r.weight.toFixed(4)}`).join(';')}+${odds.rest.count}`;
+  if (shown.odds[p] === key) return;
+  shown.odds[p] = key;
+  $(`${p}odds`).replaceChildren(
+    ...(odds.rows.length ? odds.rows.map((r) => oddsRow(r, art)) : [noteRow('Nothing left to draw')]),
+    ...(odds.rest.count ? [noteRow(`+ ${odds.rest.count} more card${odds.rest.count === 1 ? '' : 's'}, ${formatChance(odds.rest.best)} or less each`)] : []),
+  );
+  scrollers[p].odds.restart();
 }
 
 // --- the showdown in the column (2026-09-19) ---
@@ -356,81 +483,101 @@ setInterval(() => {
 }, 250);
 
 let shownVisible = null;
+let spotTimer = null;
+
+function render(state, first) {
+  $('diag').classList.remove('on');
+  const bank = sceneBank(state, params);
+  const m = bank.match;
+  const scene = bank.scenes.igorows;
+  // The docked sheets keep their own graphic's settings: its art, its Flow
+  // order, how many rows of odds and over how many draws.
+  const trashCfg = bank.scenes.trash || {};
+  const oddsCfg = bank.scenes.odds || {};
+  const animate = !first;
+
+  root.classList.toggle('mode-webcam', scene.mode === 'webcam');
+  root.classList.toggle('mode-legend', scene.mode !== 'webcam');
+  // Each piece of the game state is the operator's to switch off: the
+  // active-turn mark, the points boxes, the turn in the round title.
+  const activeOn = scene.activeTurn !== false;
+  root.classList.toggle('active-left', activeOn && m.activeSide === 'left');
+  root.classList.toggle('active-right', activeOn && m.activeSide === 'right');
+  glowSlide.l.set(activeOn && m.activeSide === 'left', first);
+  glowSlide.r.set(activeOn && m.activeSide === 'right', first);
+  root.classList.toggle('no-points', scene.points === false);
+
+  renderSide('l', m.left, m, animate);
+  renderSide('r', m.right, m, animate);
+  const bfMode = scene.battlefields || 'off';
+  root.classList.toggle('bf-l', renderBattlefields('l', m.left, bfMode));
+  root.classList.toggle('bf-r', renderBattlefields('r', m.right, bfMode));
+  // The showdown pill and the lit reactions: the operator's switch, or a
+  // showdown that is really open.
+  const sdOpen = Boolean(m.showdown && m.showdown.active);
+  root.classList.toggle('showdown', Boolean(scene.showdown) || sdOpen);
+  const lanes = scene.handStyle === 'lanes';
+  const art = scene.handArt !== false;
+
+  const turnOn = scene.turnCounter !== false && m.turn > 0;
+  const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
+  const logoHas = renderLogo(state, bank, scene, round);
+  // The middle of the column holds one thing at a time: the card popup's
+  // card, a card a player was spotted siding in, the open showdown, the
+  // players' lists (each half its player's trash, their odds to draw or
+  // their cards in hand) or the event logo. web/shared/rowsdock.js decides,
+  // and the graphic whose content the column shows stands down. Whatever is
+  // leaving slides out before the one coming in slides in.
+  const plan = rowsPlan(bank);
+  const halves = plan.halves;
+  renderShowdown(m, plan.middle === 'showdown', art, animate);
+  renderHand('l', m.left, halves.left === 'hand', lanes, art);
+  renderHand('r', m.right, halves.right === 'hand', lanes, art);
+  for (const [p, key] of SIDES) {
+    renderTrash(p, m[key], halves[key] === 'trash', trashCfg);
+    renderOdds(p, m[key], halves[key] === 'odds', oddsCfg);
+  }
+  spotUp = plan.middle === 'spot';
+  if (plan.spot) setText($('spotWho'), plan.spot.player || (m[plan.spot.side] || {}).name || '');
+  const middle = plan.middle || (logoHas ? 'logo' : '');
+  const twoLists = middle === 'lists' && Boolean(halves.left) && Boolean(halves.right);
+  const out = Promise.all([
+    middle !== 'card' && dock.set(null, first),
+    middle !== 'spot' && spotSlot.set(null, first),
+    ...SIDES.flatMap(([p, key]) => LISTS.map((what) => halves[key] !== what && listSlide[p][what].set(false, first))),
+    !twoLists && ruleSlide.set(false, first),
+    middle !== 'logo' && logoSlide.set(false, first),
+    middle !== 'showdown' && sdSlide.set(false, first),
+  ]);
+  if (middle === 'card') dock.set(plan.card, first, out);
+  if (middle === 'spot') spotSlot.set(plan.spot, first, out);
+  if (middle === 'lists') {
+    for (const [p, key] of SIDES) if (halves[key]) listSlide[p][halves[key]].set(true, first, out);
+    if (twoLists) ruleSlide.set(true, first, out);
+  }
+  if (middle === 'logo') logoSlide.set(true, first, out);
+  if (middle === 'showdown') sdSlide.set(true, first, out);
+
+  // A spotted card's hold runs out at a moment, which no state push
+  // announces: the column looks again for itself, and the card goes.
+  clearTimeout(spotTimer);
+  const until = plan.spot ? spotUntil(bank.scenes.sidespot) : 0;
+  if (until) spotTimer = setTimeout(() => { if (lastState) render(lastState, false); }, Math.max(0, until - Date.now()) + 30);
+
+  $('clock').classList.toggle('hidden', scene.clock === false);
+  timerState = m.timer || timerState;
+  setClock($('clock'), clockText(timerState));
+
+  const visible = params.force || scene.visible;
+  $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
+  shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
+}
 
 const params = initStage({
   scene: 'igorows',
   onState(state, first) {
     lastState = state;
-    $('diag').classList.remove('on');
-    const bank = sceneBank(state, params);
-    const m = bank.match;
-    const scene = bank.scenes.igorows;
-    const animate = !first;
-
-    root.classList.toggle('mode-webcam', scene.mode === 'webcam');
-    root.classList.toggle('mode-legend', scene.mode !== 'webcam');
-    // Each piece of the game state is the operator's to switch off: the
-    // active-turn mark, the points boxes, the turn in the round title.
-    const activeOn = scene.activeTurn !== false;
-    root.classList.toggle('active-left', activeOn && m.activeSide === 'left');
-    root.classList.toggle('active-right', activeOn && m.activeSide === 'right');
-    glowSlide.l.set(activeOn && m.activeSide === 'left', first);
-    glowSlide.r.set(activeOn && m.activeSide === 'right', first);
-    root.classList.toggle('no-points', scene.points === false);
-
-    renderSide('l', m.left, m, animate);
-    renderSide('r', m.right, m, animate);
-    const bfMode = scene.battlefields || 'off';
-    root.classList.toggle('bf-l', renderBattlefields('l', m.left, bfMode));
-    root.classList.toggle('bf-r', renderBattlefields('r', m.right, bfMode));
-    // The showdown pill and the lit reactions: the operator's switch, or a
-    // showdown that is really open.
-    const sdOpen = Boolean(m.showdown && m.showdown.active);
-    root.classList.toggle('showdown', Boolean(scene.showdown) || sdOpen);
-    const lanes = scene.handStyle === 'lanes';
-    const art = scene.handArt !== false;
-    const handL = Boolean(scene.hand) && handTotal(m.left) > 0;
-    const handR = Boolean(scene.hand) && handTotal(m.right) > 0;
-    renderHand('l', m.left, handL, lanes, art);
-    renderHand('r', m.right, handR, lanes, art);
-
-    const turnOn = scene.turnCounter !== false && m.turn > 0;
-    const round = [bank.event.roundTitle, turnOn ? `Turn ${m.turn}` : ''].filter(Boolean).join(' · ');
-    const logoHas = renderLogo(state, bank, scene, round);
-    const card = rowsDockCard(bank);
-    // The middle of the column holds one thing at a time: the docked card
-    // while the card popup is on, else the hands while either player has
-    // one listed, else the event logo. Whatever is leaving slides out
-    // before the one coming in slides in, and the hands keep their lists up
-    // to date while a card holds their place.
-    const sdShow = sdOpen && scene.showdownView !== false;
-    renderShowdown(m, sdShow, art, animate);
-    const middle = card ? 'card' : (sdShow ? 'showdown' : (handL || handR ? 'hands' : (logoHas ? 'logo' : '')));
-    const twoHands = middle === 'hands' && handL && handR;
-    const out = Promise.all([
-      middle !== 'card' && dock.set(null, first),
-      middle !== 'hands' && handSlide.l.set(false, first),
-      middle !== 'hands' && handSlide.r.set(false, first),
-      !twoHands && ruleSlide.set(false, first),
-      middle !== 'logo' && logoSlide.set(false, first),
-      middle !== 'showdown' && sdSlide.set(false, first),
-    ]);
-    if (middle === 'card') dock.set(card, first, out);
-    if (middle === 'hands') {
-      handSlide.l.set(handL, first, out);
-      handSlide.r.set(handR, first, out);
-      if (twoHands) ruleSlide.set(true, first, out);
-    }
-    if (middle === 'logo') logoSlide.set(true, first, out);
-    if (middle === 'showdown') sdSlide.set(true, first, out);
-
-    $('clock').classList.toggle('hidden', scene.clock === false);
-    timerState = m.timer || timerState;
-    setClock($('clock'), clockText(timerState));
-
-    const visible = params.force || scene.visible;
-    $('hiddenHint').classList.toggle('on', !params.transparent && !params.preview && !visible);
-    shownVisible = applyVisibility({ root, clock: inOut, visible, shown: shownVisible, first });
+    render(state, first);
   },
 });
 

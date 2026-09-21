@@ -11,6 +11,7 @@ import { refreshFontSheet } from '../shared/fontsheet.js';
 
 import { BRACKET_FORMATS, buildBracket } from '../shared/bracket.js';
 import { SPONSOR_MAX, sponsorDock } from '../shared/sponsor.js';
+import { rowsDocks } from '../shared/rowsdock.js';
 import { TAG_ANCHORS, TAG_FRAME, anchorHost, anchorLabel, tagPlace } from '../shared/anchor.js';
 import { SCENE_SOURCES } from '../shared/sources.js';
 import {
@@ -2454,7 +2455,7 @@ $('igoRowsMode').addEventListener('change', () => post({ scenes: { igorows: { mo
 $('igoRowsHand').addEventListener('change', () => post({ scenes: { igorows: { hand: $('igoRowsHand').checked } } }));
 $('igoRowsHandStyle').addEventListener('change', () => post({ scenes: { igorows: { handStyle: $('igoRowsHandStyle').value } } }));
 $('igoRowsHandArt').addEventListener('change', () => post({ scenes: { igorows: { handArt: $('igoRowsHandArt').checked } } }));
-for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock'], ['igoRowsCard', 'cardDock'], ['igoRowsSdView', 'showdownView']]) {
+for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock'], ['igoRowsCard', 'cardDock'], ['igoRowsSdView', 'showdownView'], ['igoRowsTrash', 'trashDock'], ['igoRowsOdds', 'oddsDock'], ['igoRowsSpot', 'spotDock']]) {
   $(id).addEventListener('change', () => post({ scenes: { igorows: { [flag]: $(id).checked } } }));
 }
 $('igoRowsShowdown').addEventListener('change', () => post({ scenes: { igorows: { showdown: $('igoRowsShowdown').checked } } }));
@@ -4392,9 +4393,24 @@ function renderExtras(s) {
   if (document.activeElement !== $('trashArt')) $('trashArt').checked = tr.art !== false;
   if (document.activeElement !== $('trashBanished')) $('trashBanished').checked = tr.banished !== false;
   if (document.activeElement !== $('decklistsSideboards')) $('decklistsSideboards').checked = prev.scenes.decklists.sideboards !== false;
+  // Where each of the three docking graphics will draw: in the rows
+  // overlay's column for the players it has taken (web/shared/rowsdock.js),
+  // over the game window for the rest.
+  const docks = rowsDocks(prev);
+  const whose = (sides) => (sides.length === 2 ? "both players'" : (sides[0] === 'left' ? "player 1's" : "player 2's"));
+  const sheetWhere = (taken, cfg, what) => {
+    if (!taken.length) return `Flies in over the game window, on ${cfg.side === 'both' ? "each player's own side" : "that player's side"}.`;
+    const rest = cfg.side === 'both' && taken.length === 1 ? ' The other player\'s flies in over the game.' : '';
+    return `The rows overlay's column is holding ${whose(taken)} ${what}, in the half their cards in hand list in.${rest}`;
+  };
+  $('oddsWhere').textContent = sheetWhere(docks.odds, od, 'odds to draw');
+  $('trashWhere').textContent = sheetWhere(docks.trash, tr, 'trash');
+  $('spotWhere').textContent = rw.visible && rw.spotDock !== false
+    ? "The rows overlay's column takes each card spotted, in the middle of the column where the hands list, for as long as it is on screen."
+    : "Each card spotted flies in over the game window, on that player's side.";
   if (document.activeElement !== $('igoRowsHandArt')) $('igoRowsHandArt').checked = rw.handArt !== false;
   if (document.activeElement !== $('igoRowsShowdown')) $('igoRowsShowdown').checked = Boolean(rw.showdown);
-  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock'], ['igoRowsCard', 'cardDock'], ['igoRowsSdView', 'showdownView']]) {
+  for (const [id, flag] of [['igoRowsActive', 'activeTurn'], ['igoRowsPoints', 'points'], ['igoRowsTurn', 'turnCounter'], ['igoRowsLogo', 'eventLogo'], ['igoRowsClock', 'clock'], ['igoRowsCard', 'cardDock'], ['igoRowsSdView', 'showdownView'], ['igoRowsTrash', 'trashDock'], ['igoRowsOdds', 'oddsDock'], ['igoRowsSpot', 'spotDock']]) {
     if (document.activeElement !== $(id)) $(id).checked = rw[flag] !== false;
   }
   const hf = prev.scenes.handfan;

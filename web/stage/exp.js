@@ -4,6 +4,7 @@
 import { setText } from './stage.js';
 import { animEnabled } from './seekclock.js';
 import { groupHand, scrollAt, scrollTravelMs } from '../shared/handlist.js';
+import { formatChance } from '../shared/odds.js';
 
 // Wall-clock arithmetic from a timer's three numbers, the same as the dual
 // overlay draws, so every output shows the same time without a server tick.
@@ -161,15 +162,98 @@ export function cardRow(c, art) {
   return row;
 }
 
-// How many cards a side is holding: the spotter's count when they gave one,
-// otherwise the length of the list they typed.
-export const handTotal = (side) => (side && side.handCount > 0 ? side.handCount : ((side && side.hand) || []).length);
+// --- the trash's rows and the odds' rows ---
+//
+// The trash graphic and the odds sheet draw these on their own plates, and
+// the rows overlay draws the same rows in its column when they dock into it
+// (web/shared/rowsdock.js), so the markup lives here and each scene's CSS
+// sizes it: the sheets in their own unit, the column in the overlay's.
 
-// Whether one side's cards-in-hand block is up: the scene's switch, and a
-// hand with something in it. A block that claims another graphic's space
-// (the dual columns take the event block and the docked card) and that
-// graphic have to agree on this, so both ask here.
-export const handUp = (cfg, side) => Boolean(cfg && cfg.hand && handTotal(side) > 0);
+// A Flow cost the way the card prints it: the energy, then a rune per power
+// of its domain, or a plain gem per rune of any domain.
+export function flowTag(flow) {
+  const tag = document.createElement('span');
+  tag.className = 'flow-tag';
+  const label = document.createElement('b');
+  label.textContent = 'Flow';
+  tag.append(label);
+  if (Number.isFinite(flow.energy)) {
+    const e = document.createElement('span');
+    e.className = 'e';
+    e.textContent = String(flow.energy);
+    tag.append(e);
+  }
+  for (let i = 0; i < Math.min(flow.power || 0, 4); i += 1) {
+    if (DOMAINS.includes(flow.domain)) {
+      const img = document.createElement('img');
+      img.className = 'rune';
+      img.src = runeSrc(flow.domain);
+      img.alt = flow.domain;
+      img.draggable = false;
+      img.onerror = () => img.classList.add('hidden');
+      tag.append(img);
+    } else {
+      const gem = document.createElement('span');
+      gem.className = 'any';
+      tag.append(gem);
+    }
+  }
+  return tag;
+}
+
+// One card in the trash: the hand list's row, and for a card with [FLOW] the
+// lit row with its Flow cost in place of its printed one.
+export function trashRow(r, art) {
+  const row = cardRow(r, art);
+  if (r.flow) {
+    row.classList.add('flow');
+    row.querySelector('.cost').replaceChildren(flowTag(r.flow));
+  }
+  return row;
+}
+
+// A banished card: the same row, greyed. Nothing plays it back out.
+export function banishedRow(r, art) {
+  const row = cardRow(r, art);
+  row.classList.add('banished');
+  return row;
+}
+
+// The label between the trash and the banished cards: a row of the list, so
+// it scrolls and rises in with them.
+export function trashSection(count) {
+  const row = document.createElement('div');
+  row.className = 'card section';
+  const label = document.createElement('span');
+  label.textContent = 'Banished';
+  const n = document.createElement('b');
+  n.textContent = String(count);
+  row.append(label, n);
+  return row;
+}
+
+// One card's odds: the copies left, its art, its name and cost, over a bar
+// as long as its chance against the likeliest card's, and the chance itself
+// at the right.
+export function oddsRow(r, art) {
+  const row = cardRow({ cardId: r.cardId, cardName: r.cardName, energy: r.energy, domains: r.domains, qty: r.left }, art);
+  row.classList.add('odds');
+  if (r.weight >= 0.999) row.classList.add('lead');
+  const bar = document.createElement('span');
+  bar.className = 'bar';
+  bar.style.setProperty('--w', r.weight.toFixed(4));
+  row.prepend(bar);
+  const pct = document.createElement('span');
+  pct.className = 'pct';
+  pct.textContent = formatChance(r.chance);
+  row.append(pct);
+  return row;
+}
+
+// How many cards a side is holding, and whether its block is up: the rule
+// lives with the rest of the hand arithmetic (web/shared/handlist.js), where
+// the panel and the tests can reach it, and the scenes read it from here.
+export { handTotal, handUp } from '../shared/handlist.js';
 
 // The rows one hand draws: every card in the order it was typed, copies on
 // one row. `art` puts a strip of the card's art beside each name.

@@ -66,7 +66,10 @@ describe('experimental overlay fields', () => {
     } });
     const sc = getState().preview.scenes;
     assert.deepEqual(sc.igoportrait, { visible: true, mode: 'webcam', topBar: true, handCam: true, cardWell: false });
-    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true, showdownView: true, battlefields: 'off' });
+    assert.deepEqual(sc.igorows, { visible: true, mode: 'legend', hand: false, handStyle: 'list', handArt: true, showdown: false, activeTurn: true, points: true, turnCounter: true, eventLogo: true, clock: true, cardDock: true, showdownView: true, trashDock: true, oddsDock: true, spotDock: true, battlefields: 'off' });
+    applyUpdate({ scenes: { igorows: { trashDock: false, oddsDock: 0, spotDock: false } } });
+    assert.deepEqual([sc.igorows.trashDock, sc.igorows.oddsDock, sc.igorows.spotDock], [false, false, false], 'each dock is the operator\'s own switch');
+    applyUpdate({ scenes: { igorows: { trashDock: true, oddsDock: true, spotDock: true } } });
     applyUpdate({ scenes: { igorows: { handStyle: 'lanes', showdown: true }, handfan: { visible: true, side: 'right', opponent: false, showdown: true } } });
     assert.equal(getState().preview.scenes.igorows.handStyle, 'lanes');
     assert.deepEqual(getState().preview.scenes.handfan, { visible: true, side: 'right', opponent: false, showdown: true, identity: true, clock: true });

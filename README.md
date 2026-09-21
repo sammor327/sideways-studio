@@ -338,6 +338,21 @@ and their source URLs are in Setup's browser source links.
   takes the hands or the logo out and brings the card in over the column
   with its name and type, instead of the popup flying in over the table;
   taking the popup off brings them back.
+  Three more graphics dock into the column the same way, each behind its
+  own switch, all on by default (0.51.0): **Dock the trash** and **Dock the
+  odds to draw** give each player their sheet in the half of the column
+  their cards in hand list in, so player 1's is under their camera and
+  player 2's is over theirs, scrolling like a hand when the list is long;
+  **Dock the sideboard card spotted** takes the whole middle for each card
+  spotted, lit, with the player's name under it, and lets it go when its
+  hold runs out. The column holds one thing at a time, in this order: the
+  popup's card, a spotted card, the showdown, the players' lists, the event
+  logo. A graphic stands down only for what the column is really showing, so
+  the trash set to both players with player 1's half taken by their odds
+  still flies player 2's sheet in over the game, and nothing is lost for
+  being outranked. Each sheet keeps its own graphic's settings (card art,
+  Flow first, the banished cards, how many rows of odds and over how many
+  draws).
   While a showdown is open and **Showdown in the column** is on (the
   default), the middle splits between the players instead: each half heads
   with that player's might at the battlefield (the side ahead in the accent
@@ -590,14 +605,16 @@ results from RiftAtlas.
   TAKE it once: on air it waits and flies each card in as it is spotted.
   Live game spots them (below); **Spot it** under Graphic features spots a
   card by hand for either player, and **Show again** and **Take it down**
-  act on air at once too.
+  act on air at once too. With the rows overlay up it docks into the middle
+  of its column instead of flying in over the game (0.51.0).
 - **Decklists side by side** (Between games, full frame): both players'
   lists with legend, runes, champion, battlefields, the main deck and,
   optionally, the sideboards.
 - **Game intro** (1v1 graphics): the round and the game number over both
-  players' legend (the legend card's painting, one size for both, a VS
-  between them), name, champion and this game's battlefield, built in over
-  about two seconds. The game number counts from the game wins unless
+  players' legend card, one size for both with a VS between them (0.51.0:
+  the card itself, the way the champion and battlefield show theirs under
+  it; a legend picked without a card still shows the legend figure), name,
+  champion and this game's battlefield, built in over about two seconds. The game number counts from the game wins unless
   pinned under Graphic features.
 
 The game intro, the sideboard fly-in and the sideboard card spotted fit
@@ -614,7 +631,10 @@ overlay's panels however the sources are layered.
 Two side sheets that sit on a player's side of the game window of whichever
 in-game overlay is up (player 1's against its left edge, player 2's against
 its right), fly in from that side, and scale down only where the window is
-too small for them. Either can show one player or both.
+too small for them. Either can show one player or both. With the rows
+overlay up, each player they list is drawn in that player's half of its
+column instead, unless the column is holding something else (0.51.0; the
+switches are on the rows overlay, under Graphic features).
 
 - **Odds to draw** (1v1 graphics): the cards the player's main deck can
   still give them, the likeliest first, each with the copies left, its
